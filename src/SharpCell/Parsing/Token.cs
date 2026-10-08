@@ -38,7 +38,7 @@ internal enum TokenKind
 /// <summary>The sheet part of a reference: <c>Sheet1!</c>, or <c>Sheet1:Sheet3!</c> for a 3D reference.</summary>
 internal sealed record SheetPrefix(string First, string? Last = null);
 
-internal readonly record struct Token(TokenKind Kind, int Start, int Length)
+internal sealed record Token(TokenKind Kind, int Start, int Length)
 {
     /// <summary>Whether whitespace precedes the token; a space between operands is the intersection operator.</summary>
     public bool SpaceBefore { get; init; }

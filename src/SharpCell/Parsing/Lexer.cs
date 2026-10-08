@@ -26,12 +26,13 @@ internal sealed class Lexer
         _style = style;
     }
 
-    public static List<Token> Tokenize(string text, CellAddress origin, ReferenceStyle style)
+    /// <param name="start">Index to start at, e.g. 1 to skip a leading <c>=</c>; positions stay relative to <paramref name="text"/>.</param>
+    public static List<Token> Tokenize(string text, CellAddress origin, ReferenceStyle style, int start = 0)
     {
         if (text.Length > FormulaLimits.MaxLength)
             throw new FormulaParseException($"Formula is longer than {FormulaLimits.MaxLength} characters.", FormulaLimits.MaxLength);
 
-        var lexer = new Lexer(text, origin, style);
+        var lexer = new Lexer(text, origin, style) { _pos = start };
         lexer.Run();
         return lexer._tokens;
     }
