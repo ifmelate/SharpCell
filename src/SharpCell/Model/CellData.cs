@@ -27,4 +27,7 @@ internal sealed class CellData
 
     /// <summary>What the last (possibly unfinished) evaluation read; used when a loop is resolved.</summary>
     public Dependencies? LastAttempt;
+
+    /// <summary>Whether the last (possibly unfinished) evaluation used a volatile function.</summary>
+    public bool LastAttemptVolatile;
 }

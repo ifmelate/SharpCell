@@ -15,7 +15,6 @@ namespace SharpCell;
 public sealed class Workbook
 {
     private readonly List<Worksheet> _sheets = [];
-    private readonly List<CalculationDiagnostic> _diagnostics = [];
     private CultureInfo _culture = CultureInfo.InvariantCulture;
     private DateSystem _dateSystem;
 
@@ -50,8 +49,12 @@ public sealed class Workbook
         }
     }
 
-    /// <summary>What calculation reported: circular references, failing functions.</summary>
-    public IReadOnlyList<CalculationDiagnostic> Diagnostics => _diagnostics;
+    /// <summary>
+    /// Current calculation problems: circular references and failing functions. An entry of a cell
+    /// disappears when the cell is edited or calculated without the problem; entries from
+    /// <see cref="Evaluate"/> last until the next call of it.
+    /// </summary>
+    public IReadOnlyList<CalculationDiagnostic> Diagnostics => Calculation.Diagnostics;
 
     internal NameTable Names { get; } = new();
 
@@ -65,7 +68,6 @@ public sealed class Workbook
     /// <summary>Source for RAND and friends; replaced in tests.</summary>
     internal Random Random { get; set; } = Random.Shared;
 
-    internal void AddDiagnostic(CalculationDiagnostic diagnostic) => _diagnostics.Add(diagnostic);
 
     /// <summary>Gets a sheet by name, ignoring case.</summary>
     public Worksheet this[string name] =>
@@ -119,7 +121,7 @@ public sealed class Workbook
 
     /// <summary>
     /// Calculates every formula that is out of date: those whose inputs changed since the last
-    /// calculation and those using volatile functions (NOW, RAND). Clears <see cref="Diagnostics"/> first.
+    /// calculation and those using volatile functions (NOW, RAND).
     /// </summary>
     /// <exception cref="OperationCanceledException">The token was cancelled; finished cells keep their new values.</exception>
     public void Recalculate(CancellationToken cancellationToken = default) => Calculation.Recalculate(cancellationToken);
@@ -137,7 +139,6 @@ public sealed class Workbook
         return Calculation.EvaluateDetached(node, _sheets.Count > 0 ? _sheets[0] : null, origin);
     }
 
-    internal void ClearDiagnostics() => _diagnostics.Clear();
 
     // A name must read as a name in both reference styles: "A1", "R1C1", "R", "TRUE" are not names.
     private static bool IsValidName(string name)

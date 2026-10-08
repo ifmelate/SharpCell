@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using SharpCell.Functions;
 using SharpCell.Parsing;
 
@@ -28,6 +29,11 @@ internal static class Evaluator
 
     public static Operand Evaluate(FormulaNode node, EvaluationContext context)
     {
+        // Tree depth is bounded per formula, but names and functions nest formulas inside formulas.
+        // Rather than overflow the thread stack, a formula that nests too deep evaluates to #NUM!.
+        if (!RuntimeHelpers.TryEnsureSufficientExecutionStack())
+            return CellValue.Error(ErrorKind.Num);
+
         switch (node)
         {
             case NumberNode n:

@@ -37,6 +37,10 @@ internal static class FunctionInvoker
             }
         }
 
+        // Arguments already met a dirty cell: the result will be discarded, so do not run the body.
+        if (call.MetPendingInput)
+            return EvaluationContext.PendingPlaceholder;
+
         return lifted is null ? Run(function, call) : RunElementWise(function, call, lifted);
     }
 
@@ -52,6 +56,9 @@ internal static class FunctionInvoker
             rows = Math.Max(rows, arrays[i].GetLength(0));
             columns = Math.Max(columns, arrays[i].GetLength(1));
         }
+
+        if ((long)rows * columns > Evaluator.MaxArrayCells)
+            return CellValue.Error(ErrorKind.Num);
 
         var result = new CellValue[rows, columns];
         for (var r = 0; r < rows; r++)

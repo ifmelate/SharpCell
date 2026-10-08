@@ -26,10 +26,31 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// <summary>Set when a volatile function ran, so the cell is recalculated every time.</summary>
     public bool UsedVolatile { get; set; }
 
-    public void Report(DiagnosticKind kind, string message) =>
-        Workbook.AddDiagnostic(new CalculationDiagnostic(kind, Sheet, Sheet is null ? null : Origin.ToString(), message));
+    // One entry per distinct message: an element-wise call can fail a million times the same way.
+    public void Report(DiagnosticKind kind, string message)
+    {
+        foreach (var existing in _diagnostics)
+        {
+            if (existing.Kind == kind && existing.Message == message)
+                return;
+        }
+
+        _diagnostics.Add(IsDetached || Sheet is null
+            ? new CalculationDiagnostic(kind, null, null, message)
+            : new CalculationDiagnostic(kind, Sheet, Origin.ToString(), message));
+    }
 
     private readonly HashSet<CellKey> _pendingSet = [];
+    private readonly List<CalculationDiagnostic> _diagnostics = [];
+
+    /// <summary>What a read of a dirty cell returns; any value would do, the evaluation is discarded.</summary>
+    public static CellValue PendingPlaceholder => CellValue.Error(ErrorKind.NA);
+
+    /// <summary>A formula evaluated through <see cref="Workbook.Evaluate"/>, not in a cell.</summary>
+    public bool IsDetached { get; init; }
+
+    /// <summary>Problems reported by this evaluation; they count only if the evaluation is kept.</summary>
+    public IReadOnlyList<CalculationDiagnostic> Diagnostics => _diagnostics;
 
     /// <summary>Records what the evaluation reads, for the dependency graph; null when not needed.</summary>
     public Dependencies? Dependencies { get; init; }
@@ -64,8 +85,7 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
             if (_pendingSet.Add(key))
                 Pending.Add(key);
 
-            // Any value will do: the evaluation is discarded and repeated.
-            return CellValue.Error(ErrorKind.NA);
+            return PendingPlaceholder;
         }
 
         return data.Value;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -22,10 +23,35 @@ internal sealed class Calculation(Workbook workbook)
     private readonly List<CellKey> _dirty = [];
     private readonly HashSet<CellKey> _volatile = [];
 
+    // Diagnostics describe the current state: a cell's entries go away when it is edited or
+    // calculated without problems. Entries from Evaluate last until the next Evaluate.
+    private readonly Dictionary<CellKey, IReadOnlyList<CalculationDiagnostic>> _cellDiagnostics = [];
+    private IReadOnlyList<CalculationDiagnostic> _detachedDiagnostics = [];
+
     public DependencyGraph Graph { get; } = new();
 
     /// <summary>Formula evaluations attempted by recalculation, restarts included. For tests.</summary>
     public int EvaluationCount { get; private set; }
+
+    public IReadOnlyList<CalculationDiagnostic> Diagnostics
+    {
+        get
+        {
+            var seen = new HashSet<CalculationDiagnostic>(ReferenceEqualityComparer.Instance);
+            var result = new List<CalculationDiagnostic>();
+            foreach (var entries in _cellDiagnostics.Values)
+            {
+                foreach (var diagnostic in entries)
+                {
+                    if (seen.Add(diagnostic))
+                        result.Add(diagnostic);
+                }
+            }
+
+            result.AddRange(_detachedDiagnostics);
+            return result;
+        }
+    }
 
     /// <summary>Call before a cell's content changes: its old dependencies stop counting.</summary>
     public void BeforeChange(CellKey key, CellData? data)
@@ -37,6 +63,7 @@ internal sealed class Calculation(Workbook workbook)
         }
 
         _volatile.Remove(key);
+        _cellDiagnostics.Remove(key);
     }
 
     /// <summary>Call after a cell's content changed: it (if a formula) and everything reading it become dirty.</summary>
@@ -74,7 +101,6 @@ internal sealed class Calculation(Workbook workbook)
 
     public void Recalculate(CancellationToken cancellationToken)
     {
-        workbook.ClearDiagnostics();
         cancellationToken.ThrowIfCancellationRequested();
 
         foreach (var key in (CellKey[])[.. _volatile])
@@ -96,10 +122,13 @@ internal sealed class Calculation(Workbook workbook)
     {
         while (true)
         {
-            var context = new EvaluationContext(workbook, sheet, origin);
-            var value = Evaluator.EvaluateFormula(formula, context);
+            var context = new EvaluationContext(workbook, sheet, origin) { IsDetached = true };
+            var value = EvaluateGuarded(formula, context);
             if (context.Pending.Count == 0)
+            {
+                _detachedDiagnostics = [.. context.Diagnostics];
                 return value;
+            }
 
             foreach (var key in context.Pending)
                 Compute(key, CancellationToken.None);
@@ -160,12 +189,14 @@ internal sealed class Calculation(Workbook workbook)
                     Dependencies = new Dependencies(),
                 };
                 EvaluationCount++;
-                var value = Evaluator.EvaluateFormula(data.Formula, context);
+                var value = EvaluateGuarded(data.Formula, context);
                 data.LastAttempt = context.Dependencies;
+                data.LastAttemptVolatile = context.UsedVolatile;
 
                 if (context.Pending.Count == 0)
                 {
                     Commit(key, data, value, context.Dependencies, context.UsedVolatile);
+                    SetDiagnostics(key, context.Diagnostics);
                     stack.RemoveAt(stack.Count - 1);
                     continue;
                 }
@@ -194,6 +225,33 @@ internal sealed class Calculation(Workbook workbook)
                 }
             }
         }
+    }
+
+    // The last line of defence: whatever goes wrong inside one formula (a bug, an allocation that
+    // fails) turns into #VALUE! for that cell, so one cell cannot stop the workbook from calculating.
+    private static CellValue EvaluateGuarded(FormulaNode formula, EvaluationContext context)
+    {
+        try
+        {
+            return Evaluator.EvaluateFormula(formula, context);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            context.Report(DiagnosticKind.FunctionFailure, $"Evaluation failed: {ex.GetType().Name}: {ex.Message}");
+            return CellValue.Error(ErrorKind.Value);
+        }
+    }
+
+    private void SetDiagnostics(CellKey key, IReadOnlyList<CalculationDiagnostic> diagnostics)
+    {
+        if (diagnostics.Count == 0)
+            _cellDiagnostics.Remove(key);
+        else
+            _cellDiagnostics[key] = [.. diagnostics];
     }
 
     private void Commit(CellKey key, CellData data, CellValue value, Dependencies dependencies, bool usedVolatile)
@@ -225,16 +283,17 @@ internal sealed class Calculation(Workbook workbook)
             current = member.Data?.Requester;
         }
 
-        foreach (var member in members)
-        {
-            var data = member.Data!;
-            Commit(member, data, CellValue.Number(0), data.LastAttempt ?? new Dependencies(), usedVolatile: false);
-        }
-
         var path = new StringBuilder("Circular reference: ");
         for (var i = members.Count - 1; i >= 0; i--)
             path.Append(members[i]).Append(" -> ");
         path.Append(members[^1]);
-        workbook.AddDiagnostic(new CalculationDiagnostic(DiagnosticKind.CircularReference, asked.Sheet, asked.Address.ToString(), path.ToString()));
+        var diagnostic = new CalculationDiagnostic(DiagnosticKind.CircularReference, asked.Sheet, asked.Address.ToString(), path.ToString());
+
+        foreach (var member in members)
+        {
+            var data = member.Data!;
+            Commit(member, data, CellValue.Number(0), data.LastAttempt ?? new Dependencies(), data.LastAttemptVolatile);
+            SetDiagnostics(member, [diagnostic]);
+        }
     }
 }

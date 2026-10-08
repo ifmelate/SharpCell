@@ -8,6 +8,9 @@ namespace SharpCell.Evaluation;
 /// <summary>Excel semantics of the formula operators on scalar values and on references.</summary>
 internal static class Operators
 {
+    /// <summary>Excel's limit on text length; longer results are <c>#VALUE!</c>.</summary>
+    public const int MaxTextLength = 32_767;
+
     public static CellValue Negate(CellValue value, CultureInfo culture)
     {
         var number = Coercion.ToNumber(value, culture);
@@ -33,7 +36,11 @@ internal static class Operators
                 if (leftText.IsError)
                     return leftText;
                 var rightText = Coercion.ToText(right, culture);
-                return rightText.IsError ? rightText : CellValue.Text(leftText.AsText() + rightText.AsText());
+                if (rightText.IsError)
+                    return rightText;
+                if ((long)leftText.AsText().Length + rightText.AsText().Length > MaxTextLength)
+                    return CellValue.Error(ErrorKind.Value);
+                return CellValue.Text(leftText.AsText() + rightText.AsText());
             case BinaryOperator.Equal:
             case BinaryOperator.NotEqual:
             case BinaryOperator.Less:

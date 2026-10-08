@@ -20,11 +20,17 @@ internal static class Aggregation
 {
     private const int CancellationCheckInterval = 4096;
 
-    /// <summary>Visits every value; the visitor returns false to stop early.</summary>
+    /// <summary>
+    /// Visits every value; the visitor returns false to stop early. Once a dirty cell has been met,
+    /// the remaining referenced cells are still read (not visited) so that all dirty inputs are
+    /// collected in one pass: a total above 100 000 dirty formulas is then evaluated twice, not
+    /// 100 000 times.
+    /// </summary>
     public static void ForEach(FunctionCall call, Func<CellValue, ValueSource, bool> visit)
     {
         var context = call.Context;
         var visited = 0;
+        var visiting = true;
         for (var i = 0; i < call.Count; i++)
         {
             var argument = call[i];
@@ -36,26 +42,38 @@ internal static class Aggregation
                     {
                         if (++visited % CancellationCheckInterval == 0)
                             context.CancellationToken.ThrowIfCancellationRequested();
-                        if (!visit(context.ReadCell(sheet, cell), ValueSource.Reference))
+                        var value = context.ReadCell(sheet, cell);
+                        if (visiting && !visit(value, ValueSource.Reference))
+                            visiting = false;
+                        if (!visiting && !call.MetPendingInput)
                             return;
                     }
                 }
+            }
+            else if (!visiting)
+            {
+                continue;
             }
             else if (argument.Value.Kind == CellValueKind.Array)
             {
                 foreach (var element in argument.Value.AsArray())
                 {
                     if (!visit(element, ValueSource.Array))
-                        return;
+                    {
+                        visiting = false;
+                        break;
+                    }
                 }
             }
             else
             {
                 // An omitted argument counts as 0: SUM(1,) is 1, COUNT(1,) is 2.
                 var value = argument.Value.Kind == CellValueKind.Missing ? CellValue.Number(0) : argument.Value;
-                if (!visit(value, ValueSource.Direct))
-                    return;
+                visiting = visit(value, ValueSource.Direct);
             }
+
+            if (!visiting && !call.MetPendingInput)
+                return;
         }
     }
 

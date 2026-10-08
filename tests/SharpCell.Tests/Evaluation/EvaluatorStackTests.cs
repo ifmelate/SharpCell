@@ -5,7 +5,7 @@ namespace SharpCell.Tests.Evaluation;
 
 public class EvaluatorStackTests
 {
-    private static CellValue EvaluateOnSmallStack(Workbook wb, string formula)
+    private static CellValue EvaluateOnSmallStack(Workbook wb, string formula, int stackSize = 512 * 1024)
     {
         CellValue result = default;
         Exception? error = null;
@@ -19,7 +19,7 @@ public class EvaluatorStackTests
             {
                 error = ex;
             }
-        }, maxStackSize: 512 * 1024);
+        }, maxStackSize: stackSize);
         thread.Start();
         thread.Join();
         Assert.Null(error);
@@ -46,9 +46,17 @@ public class EvaluatorStackTests
     }
 
     [Fact]
-    public void Percent_chain_at_the_tree_limit_evaluates()
+    public void Percent_chain_at_the_tree_limit_evaluates_on_a_1MB_stack()
     {
         var formula = "=1" + new string('%', FormulaLimits.MaxTreeDepth - 2);
-        Assert.Equal(CellValue.Number(0), EvaluateOnSmallStack(new Workbook(), formula));
+        Assert.Equal(CellValue.Number(0), EvaluateOnSmallStack(new Workbook(), formula, 1024 * 1024));
+    }
+
+    [Fact]
+    public void Too_little_stack_gives_NUM_instead_of_a_crash()
+    {
+        var formula = "=1" + new string('%', FormulaLimits.MaxTreeDepth - 2);
+        var result = EvaluateOnSmallStack(new Workbook(), formula, 256 * 1024);
+        Assert.True(result == CellValue.Number(0) || result == CellValue.Error(ErrorKind.Num), result.ToString());
     }
 }

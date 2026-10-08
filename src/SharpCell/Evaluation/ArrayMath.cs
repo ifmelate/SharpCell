@@ -34,6 +34,8 @@ internal static class ArrayMath
         var b = AsArray(right);
         var rows = Math.Max(a.GetLength(0), b.GetLength(0));
         var columns = Math.Max(a.GetLength(1), b.GetLength(1));
+        if ((long)rows * columns > Evaluator.MaxArrayCells)
+            return CellValue.Error(ErrorKind.Num);
         var result = new CellValue[rows, columns];
         for (var r = 0; r < rows; r++)
         {
@@ -59,6 +61,8 @@ internal static class ArrayMath
         var c = AsArray(third);
         var rows = Math.Max(a.GetLength(0), Math.Max(b.GetLength(0), c.GetLength(0)));
         var columns = Math.Max(a.GetLength(1), Math.Max(b.GetLength(1), c.GetLength(1)));
+        if ((long)rows * columns > Evaluator.MaxArrayCells)
+            return CellValue.Error(ErrorKind.Num);
         var result = new CellValue[rows, columns];
         for (var r = 0; r < rows; r++)
         {
