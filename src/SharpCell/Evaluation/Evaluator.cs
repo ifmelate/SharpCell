@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SharpCell.Functions;
 using SharpCell.Parsing;
 
 namespace SharpCell.Evaluation;
@@ -59,8 +60,10 @@ internal static class Evaluator
             case BinaryNode b:
                 return EvaluateBinary(b, context, isRoot: false);
 
-            // Functions arrive with the registry; tables, spill, @ and lambda calls in later stages.
-            case FunctionNode:
+            case FunctionNode f:
+                return FunctionInvoker.Invoke(f, context);
+
+            // Tables are not evaluated in v0.1; spill, @ and lambda calls arrive in stage 3.
             case StructuredReferenceNode:
                 return CellValue.Error(ErrorKind.Name);
             default:

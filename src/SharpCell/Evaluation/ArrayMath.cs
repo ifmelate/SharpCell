@@ -48,6 +48,31 @@ internal static class ArrayMath
         return CellValue.Array(result);
     }
 
+    /// <summary>Three-way element-wise combination with the same broadcasting rules.</summary>
+    public static CellValue Map(CellValue first, CellValue second, CellValue third, Func<CellValue, CellValue, CellValue, CellValue> f)
+    {
+        if (first.Kind != CellValueKind.Array && second.Kind != CellValueKind.Array && third.Kind != CellValueKind.Array)
+            return f(first, second, third);
+
+        var a = AsArray(first);
+        var b = AsArray(second);
+        var c = AsArray(third);
+        var rows = Math.Max(a.GetLength(0), Math.Max(b.GetLength(0), c.GetLength(0)));
+        var columns = Math.Max(a.GetLength(1), Math.Max(b.GetLength(1), c.GetLength(1)));
+        var result = new CellValue[rows, columns];
+        for (var r = 0; r < rows; r++)
+        {
+            for (var col = 0; col < columns; col++)
+            {
+                result[r, col] = At(a, r, col) is { } x && At(b, r, col) is { } y && At(c, r, col) is { } z
+                    ? f(x, y, z)
+                    : CellValue.Error(ErrorKind.NA);
+            }
+        }
+
+        return CellValue.Array(result);
+    }
+
     private static CellValue[,] AsArray(CellValue value) =>
         value.Kind == CellValueKind.Array ? value.AsArray() : new[,] { { value } };
 

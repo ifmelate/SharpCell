@@ -1,4 +1,10 @@
 #nullable enable
+SharpCell.CalculationDiagnostic
+SharpCell.CalculationDiagnostic.Address.get -> string?
+SharpCell.CalculationDiagnostic.CalculationDiagnostic(SharpCell.DiagnosticKind kind, SharpCell.Worksheet? sheet, string? address, string! message) -> void
+SharpCell.CalculationDiagnostic.Kind.get -> SharpCell.DiagnosticKind
+SharpCell.CalculationDiagnostic.Message.get -> string!
+SharpCell.CalculationDiagnostic.Sheet.get -> SharpCell.Worksheet?
 SharpCell.Cell
 SharpCell.Cell.Address.get -> string!
 SharpCell.Cell.Column.get -> int
@@ -31,6 +37,9 @@ SharpCell.CellValueKind.Text = 3 -> SharpCell.CellValueKind
 SharpCell.DateSystem
 SharpCell.DateSystem.Date1900 = 0 -> SharpCell.DateSystem
 SharpCell.DateSystem.Date1904 = 1 -> SharpCell.DateSystem
+SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.CircularReference = 0 -> SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.FunctionFailure = 1 -> SharpCell.DiagnosticKind
 SharpCell.ErrorKind
 SharpCell.ErrorKind.Calc = 14 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Div0 = 2 -> SharpCell.ErrorKind
@@ -53,6 +62,7 @@ SharpCell.Workbook.Culture.set -> void
 SharpCell.Workbook.DateSystem.get -> SharpCell.DateSystem
 SharpCell.Workbook.DateSystem.set -> void
 SharpCell.Workbook.DefineName(string! name, string! formula, SharpCell.Worksheet? scope = null) -> void
+SharpCell.Workbook.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CalculationDiagnostic!>!
 SharpCell.Workbook.Evaluate(string! formula) -> SharpCell.CellValue
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
 SharpCell.Workbook.TryGetSheet(string! name, out SharpCell.Worksheet? sheet) -> bool
@@ -63,6 +73,7 @@ SharpCell.Worksheet.Name.get -> string!
 SharpCell.Worksheet.Workbook.get -> SharpCell.Workbook!
 SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
 SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
+override SharpCell.CalculationDiagnostic.ToString() -> string!
 override SharpCell.Cell.ToString() -> string!
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int

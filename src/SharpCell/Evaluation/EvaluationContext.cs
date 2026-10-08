@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 
 namespace SharpCell.Evaluation;
 
@@ -19,6 +20,14 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     public CellAddress Origin { get; } = origin;
 
     public CultureInfo Culture => Workbook.Culture;
+
+    public CancellationToken CancellationToken { get; init; }
+
+    /// <summary>Set when a volatile function ran, so the cell is recalculated every time.</summary>
+    public bool UsedVolatile { get; set; }
+
+    public void Report(DiagnosticKind kind, string message) =>
+        Workbook.AddDiagnostic(new CalculationDiagnostic(kind, Sheet, Sheet is null ? null : Origin.ToString(), message));
 
     public CellValue ReadCell(Worksheet sheet, int row, int column) =>
         sheet.Store.Get(row, column)?.Value ?? CellValue.Empty;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using SharpCell.Evaluation;
+using SharpCell.Functions;
 using SharpCell.Parsing;
 
 namespace SharpCell;
@@ -13,6 +14,7 @@ namespace SharpCell;
 public sealed class Workbook
 {
     private readonly List<Worksheet> _sheets = [];
+    private readonly List<CalculationDiagnostic> _diagnostics = [];
     private CultureInfo _culture = CultureInfo.InvariantCulture;
 
     public IReadOnlyList<Worksheet> Sheets => _sheets;
@@ -29,7 +31,20 @@ public sealed class Workbook
 
     public DateSystem DateSystem { get; set; }
 
+    /// <summary>What calculation reported: circular references, failing functions.</summary>
+    public IReadOnlyList<CalculationDiagnostic> Diagnostics => _diagnostics;
+
     internal NameTable Names { get; } = new();
+
+    internal FunctionRegistry Functions { get; set; } = FunctionRegistry.Default;
+
+    /// <summary>Clock for NOW and TODAY; replaced in tests.</summary>
+    internal TimeProvider Clock { get; set; } = TimeProvider.System;
+
+    /// <summary>Source for RAND and friends; replaced in tests.</summary>
+    internal Random Random { get; set; } = Random.Shared;
+
+    internal void AddDiagnostic(CalculationDiagnostic diagnostic) => _diagnostics.Add(diagnostic);
 
     /// <summary>Gets a sheet by name, ignoring case.</summary>
     public Worksheet this[string name] =>
