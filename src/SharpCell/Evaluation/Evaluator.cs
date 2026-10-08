@@ -24,7 +24,14 @@ internal static class Evaluator
 
         var result = node is BinaryNode binary ? EvaluateBinary(binary, context, isRoot: true) : Evaluate(node, context);
         var value = ToValue(result, context);
-        return value.Kind is CellValueKind.Empty or CellValueKind.Missing ? CellValue.Number(0) : value;
+        return value.Kind switch
+        {
+            CellValueKind.Empty or CellValueKind.Missing => CellValue.Number(0),
+
+            // A function value cannot be shown in a cell.
+            CellValueKind.Lambda => CellValue.Error(ErrorKind.Calc),
+            _ => value,
+        };
     }
 
     public static Operand Evaluate(FormulaNode node, EvaluationContext context)
@@ -69,7 +76,10 @@ internal static class Evaluator
             case FunctionNode f:
                 return FunctionInvoker.Invoke(f, context);
 
-            // Tables are not evaluated in v0.1; spill, @ and lambda calls arrive in stage 3.
+            case SpillNode s:
+                return EvaluateSpill(s, context);
+
+            // Tables are not evaluated in v0.1.
             case StructuredReferenceNode:
                 return CellValue.Error(ErrorKind.Name);
             default:
@@ -138,6 +148,25 @@ internal static class Evaluator
         var b = ToValue(right, context);
         var culture = context.Culture;
         return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, last));
+    }
+
+    // A1#: the area the array result of anchor A1 currently covers.
+    private static Operand EvaluateSpill(SpillNode node, EvaluationContext context)
+    {
+        var operand = Evaluate(node.Operand, context);
+        if (operand.Reference is not { IsSingleArea: true } reference || !reference.Areas[0].Area.IsSingleCell)
+            return operand.IsReference || !operand.Value.IsError ? CellValue.Error(ErrorKind.Ref) : operand;
+
+        var (sheet, area) = reference.Areas[0];
+        var anchor = sheet.Store.Get(area.FirstRow, area.FirstColumn);
+        if (anchor is { IsDirty: true, Formula: not null })
+            return context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
+        if (anchor?.SpillArea is not { } spill)
+            return CellValue.Error(ErrorKind.Ref);
+
+        var result = new Reference(sheet, spill);
+        context.RecordReference(result);
+        return Operand.Of(result);
     }
 
     private static Operand EvaluateReference(ReferenceNode node, EvaluationContext context)

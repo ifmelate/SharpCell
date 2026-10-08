@@ -80,15 +80,20 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
         if (data is null)
             return CellValue.Empty;
         if (data.IsDirty && data.Formula is not null)
-        {
-            var key = new CellKey(sheet, row, column);
-            if (_pendingSet.Add(key))
-                Pending.Add(key);
+            return Wait(new CellKey(sheet, row, column));
 
-            return PendingPlaceholder;
-        }
+        // A spilled value is only as current as its anchor.
+        if (data.SpillAnchor is { } anchor && anchor.Data is { IsDirty: true, Formula: not null })
+            return Wait(anchor);
 
         return data.Value;
+    }
+
+    private CellValue Wait(CellKey key)
+    {
+        if (_pendingSet.Add(key))
+            Pending.Add(key);
+        return PendingPlaceholder;
     }
 
     public bool TryEnterName(NameDefinition name)

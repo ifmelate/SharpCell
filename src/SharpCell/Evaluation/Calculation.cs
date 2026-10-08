@@ -53,13 +53,19 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
-    /// <summary>Call before a cell's content changes: its old dependencies stop counting.</summary>
+    /// <summary>Call before a cell's content changes: its old dependencies and its spill stop counting.</summary>
     public void BeforeChange(CellKey key, CellData? data)
     {
         if (data?.Registered is { } registered)
         {
             Graph.Unregister(key, registered);
             data.Registered = null;
+        }
+
+        if (data?.SpillArea is { } spill)
+        {
+            ClearSpill(key, data);
+            InvalidateArea(key.Sheet, spill, except: key);
         }
 
         _volatile.Remove(key);
@@ -227,6 +233,82 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
+    // An array result fills the rectangle below and right of its anchor, unless the rectangle leaves
+    // the sheet or holds anything else (#SPILL!, neighbours untouched). The anchor reads its
+    // rectangle, so clearing a blocking cell makes it try again. Returns the anchor's own value.
+    private static CellValue Spill(CellKey key, CellData data, CellValue[,] array, Dependencies dependencies)
+    {
+        var rows = array.GetLength(0);
+        var columns = array.GetLength(1);
+        var lastRow = (long)key.Row + rows - 1;
+        var lastColumn = (long)key.Column + columns - 1;
+        if (lastRow > CellAddress.MaxRow || lastColumn > CellAddress.MaxColumn)
+            return CellValue.Error(ErrorKind.Spill);
+
+        var area = new Area(key.Row, key.Column, (int)lastRow, (int)lastColumn);
+        dependencies.Areas.Add(new SheetArea(key.Sheet, area));
+        var store = key.Sheet.Store;
+        foreach (var cell in store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
+        {
+            if (cell.Row != key.Row || cell.Column != key.Column)
+                return CellValue.Error(ErrorKind.Spill);
+        }
+
+        for (var r = 0; r < rows; r++)
+        {
+            for (var c = 0; c < columns; c++)
+            {
+                if (r == 0 && c == 0)
+                    continue;
+                var spilled = store.GetOrCreate(key.Row + r, key.Column + c);
+                spilled.Value = SpilledValue(array[r, c]);
+                spilled.SpillAnchor = key;
+            }
+        }
+
+        data.SpillArea = area;
+        return SpilledValue(array[0, 0]);
+    }
+
+    private static CellValue SpilledValue(CellValue value) => value.Kind switch
+    {
+        CellValueKind.Empty or CellValueKind.Missing => CellValue.Number(0),
+        CellValueKind.Lambda or CellValueKind.Array => CellValue.Error(ErrorKind.Calc),
+        _ => value,
+    };
+
+    private static void ClearSpill(CellKey key, CellData data)
+    {
+        if (data.SpillArea is not { } area)
+            return;
+
+        var store = key.Sheet.Store;
+        var owned = new List<StoredCell>();
+        foreach (var cell in store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
+        {
+            if (cell.Data.SpillAnchor == key)
+                owned.Add(cell);
+        }
+
+        foreach (var cell in owned)
+            store.Remove(cell.Row, cell.Column);
+        data.SpillArea = null;
+    }
+
+    private void InvalidateArea(Worksheet sheet, Area area, CellKey except)
+    {
+        var readers = new List<CellKey>();
+        Graph.ForEachReader(sheet, area, readers.Add);
+        foreach (var reader in readers)
+        {
+            if (reader != except && reader.Data is { Formula: not null, IsDirty: false } data)
+            {
+                MarkDirty(reader, data);
+                Invalidate(reader);
+            }
+        }
+    }
+
     // The last line of defence: whatever goes wrong inside one formula (a bug, an allocation that
     // fails) turns into #VALUE! for that cell, so one cell cannot stop the workbook from calculating.
     private static CellValue EvaluateGuarded(FormulaNode formula, EvaluationContext context)
@@ -256,6 +338,12 @@ internal sealed class Calculation(Workbook workbook)
 
     private void Commit(CellKey key, CellData data, CellValue value, Dependencies dependencies, bool usedVolatile)
     {
+        var oldSpill = data.SpillArea;
+        if (oldSpill is not null)
+            ClearSpill(key, data);
+        if (value.Kind == CellValueKind.Array)
+            value = Spill(key, data, value.AsArray(), dependencies);
+
         data.Value = value;
         data.IsDirty = false;
         data.InProgress = false;
@@ -268,6 +356,14 @@ internal sealed class Calculation(Workbook workbook)
             _volatile.Add(key);
         else
             _volatile.Remove(key);
+
+        // Cells the spill left or newly covers changed for whoever reads them. This runs after the
+        // anchor is clean, so a reader that the anchor itself depends on makes the anchor dirty
+        // again and a loop through the spill is detected instead of leaving a stale value.
+        if (oldSpill is { } before)
+            InvalidateArea(key.Sheet, before, except: key);
+        if (data.SpillArea is { } after && after != oldSpill)
+            InvalidateArea(key.Sheet, after, except: key);
     }
 
     // The loop is the chain of requesters from the cell that asked back up to the cell it asked for.

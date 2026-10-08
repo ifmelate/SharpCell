@@ -30,4 +30,10 @@ internal sealed class CellData
 
     /// <summary>Whether the last (possibly unfinished) evaluation used a volatile function.</summary>
     public bool LastAttemptVolatile;
+
+    /// <summary>For a cell filled by another cell's array result: that anchor. Such a cell has no formula.</summary>
+    public CellKey? SpillAnchor;
+
+    /// <summary>For an anchor whose array result spilled: the area it covers, anchor included.</summary>
+    public Area? SpillArea;
 }

@@ -52,6 +52,9 @@ public sealed class Cell
                 data.FormulaText = null;
                 data.Formula = null;
                 data.IsDirty = false;
+
+                // Typing into a spilled cell makes it the user's: it now blocks the spill.
+                data.SpillAnchor = null;
             }
 
             calculation.AfterChange(key, data);
@@ -89,6 +92,7 @@ public sealed class Cell
             data.FormulaText = text;
             data.Formula = node;
             data.Value = CellValue.Empty;
+            data.SpillAnchor = null;
             calculation.AfterChange(key, data);
         }
     }
