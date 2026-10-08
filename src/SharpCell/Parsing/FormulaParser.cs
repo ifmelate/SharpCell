@@ -60,7 +60,7 @@ internal sealed class FormulaParser
                 return left;
 
             Advance();
-            left = new BinaryNode(op, left, ParseBinary(precedence + 1));
+            left = Limit(new BinaryNode(op, left, ParseBinary(precedence + 1)));
         }
     }
 
@@ -95,14 +95,14 @@ internal sealed class FormulaParser
         var node = ParseReferenceExpression(1);
         for (var i = signs.Count - 1; i >= 0; i--)
         {
-            node = new UnaryNode(signs[i], node);
+            node = Limit(new UnaryNode(signs[i], node));
             Leave();
         }
 
         while (Current.Kind == TokenKind.Percent)
         {
             Advance();
-            node = new UnaryNode(UnaryOperator.Percent, node);
+            node = Limit(new UnaryNode(UnaryOperator.Percent, node));
         }
 
         return node;
@@ -128,14 +128,15 @@ internal sealed class FormulaParser
 
             if (op == BinaryOperator.Union)
                 Advance();
-            left = new BinaryNode(op, left, ParseReferenceExpression(precedence + 1));
+            left = Limit(new BinaryNode(op, left, ParseReferenceExpression(precedence + 1)));
         }
     }
 
     // Only operands that can evaluate to a reference make a space mean intersection;
-    // "A1 -B1" stays a subtraction and "1 2" stays an error.
+    // "A1 -B1" stays a subtraction and "1 2" stays an error. Error literals count because
+    // Excel writes #REF! in place of a deleted reference: "A1:B2 #REF!".
     private static bool StartsReferenceOperand(TokenKind kind) => kind is TokenKind.Reference or TokenKind.Name
-        or TokenKind.Function or TokenKind.StructuredReference or TokenKind.OpenParen or TokenKind.At;
+        or TokenKind.Function or TokenKind.StructuredReference or TokenKind.OpenParen or TokenKind.At or TokenKind.Error;
 
     // '@' applies to a whole range expression: @A1:A10.
     private FormulaNode ParseRangeOperand()
@@ -152,12 +153,12 @@ internal sealed class FormulaParser
         while (Current.Kind == TokenKind.Colon)
         {
             Advance();
-            node = MakeRange(node, ParsePostfix());
+            node = Limit(MakeRange(node, ParsePostfix()));
         }
 
         for (var i = 0; i < ats; i++)
         {
-            node = new ImplicitIntersectionNode(node);
+            node = Limit(new ImplicitIntersectionNode(node));
             Leave();
         }
 
@@ -181,12 +182,12 @@ internal sealed class FormulaParser
             if (Current.Kind == TokenKind.Hash)
             {
                 Advance();
-                node = new SpillNode(node);
+                node = Limit(new SpillNode(node));
             }
             else if (Current.Kind == TokenKind.OpenParen && !Current.SpaceBefore
                      && node is FunctionNode or CallNode or ParenthesesNode)
             {
-                node = new CallNode(node, ParseArguments());
+                node = Limit(new CallNode(node, ParseArguments()));
             }
             else
             {
@@ -240,11 +241,11 @@ internal sealed class FormulaParser
         switch (name)
         {
             case "ANCHORARRAY":
-                return new SpillNode(SingleArgument(arguments, token));
+                return Limit(new SpillNode(SingleArgument(arguments, token)));
             case "SINGLE":
-                return new ImplicitIntersectionNode(SingleArgument(arguments, token));
+                return Limit(new ImplicitIntersectionNode(SingleArgument(arguments, token)));
             default:
-                return new FunctionNode(name, arguments);
+                return Limit(new FunctionNode(name, arguments));
         }
     }
 
@@ -298,7 +299,7 @@ internal sealed class FormulaParser
         _unionAllowed = unionAllowed;
         Expect(TokenKind.CloseParen);
         Leave();
-        return new ParenthesesNode(inner);
+        return Limit(new ParenthesesNode(inner));
     }
 
     private FormulaNode ParseArray()
@@ -388,6 +389,14 @@ internal sealed class FormulaParser
     }
 
     private void Leave() => _depth--;
+
+    private T Limit<T>(T node)
+        where T : FormulaNode
+    {
+        if (node.Depth > FormulaLimits.MaxTreeDepth)
+            throw new FormulaParseException("Formula is nested too deeply.", Current.Start);
+        return node;
+    }
 
     // Prefixes are stripped only when the rest still reads as the same kind of word:
     // "_xlpm.x1" must not turn into the cell X1, nor "_xlfn.(" into an unnamed call.

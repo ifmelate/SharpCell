@@ -1,3 +1,4 @@
+using System.Globalization;
 using SharpCell;
 using SharpCell.Parsing;
 
@@ -13,7 +14,7 @@ internal static class TreeDump
     /// <param name="ignoreParentheses">Dump explicit parentheses as their content, for comparing meaning.</param>
     public static string Dump(FormulaNode node, bool ignoreParentheses) => node switch
     {
-        NumberNode n => NumberText.FormatLiteral(n.Value),
+        NumberNode n => n.Value.ToString("R", CultureInfo.InvariantCulture),
         TextNode t => "\"" + t.Value + "\"",
         BooleanNode b => b.Value ? "TRUE" : "FALSE",
         ErrorNode e => e.Error.ToText(),
@@ -23,7 +24,7 @@ internal static class TreeDump
         NameNode n => $"(name {Sheet(n.Sheet)}{n.Name})",
         StructuredReferenceNode s => $"(struct {s.Text})",
         UnaryNode u => $"({UnaryText(u.Operator)} {Dump(u.Operand, ignoreParentheses)})",
-        BinaryNode b => $"({BinaryText(b.Operator)} {Dump(b.Left, ignoreParentheses)} {Dump(b.Right, ignoreParentheses)})",
+        BinaryNode b => DumpBinary(b, ignoreParentheses),
         FunctionNode f => $"(fn {f.Name}{Args(f.Arguments, ignoreParentheses)})",
         CallNode c => $"(call {Dump(c.Callee, ignoreParentheses)}{Args(c.Arguments, ignoreParentheses)})",
         ParenthesesNode p => ignoreParentheses ? Dump(p.Inner, true) : $"(paren {Dump(p.Inner)})",
@@ -32,6 +33,26 @@ internal static class TreeDump
         ImplicitIntersectionNode i => $"(single {Dump(i.Operand, ignoreParentheses)})",
         _ => throw new ArgumentException(node.GetType().Name),
     };
+
+    // Walks the left spine in a loop: parsed operator chains are thousands of nodes tall.
+    private static string DumpBinary(BinaryNode node, bool ignoreParentheses)
+    {
+        var spine = new List<BinaryNode>();
+        FormulaNode current = node;
+        while (current is BinaryNode b)
+        {
+            spine.Add(b);
+            current = b.Left;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var b in spine)
+            sb.Append('(').Append(BinaryText(b.Operator)).Append(' ');
+        sb.Append(Dump(current, ignoreParentheses));
+        for (var i = spine.Count - 1; i >= 0; i--)
+            sb.Append(' ').Append(Dump(spine[i].Right, ignoreParentheses)).Append(')');
+        return sb.ToString();
+    }
 
     private static string Args(IReadOnlyList<FormulaNode> args, bool ignoreParentheses) =>
         string.Concat(args.Select(a => " " + Dump(a, ignoreParentheses)));

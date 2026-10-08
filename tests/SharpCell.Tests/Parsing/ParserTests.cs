@@ -64,6 +64,8 @@ public class ParserTests
     [InlineData("A1:INDEX(B:B,2)", "(range (ref A1) (fn INDEX (ref B:B) 2))")]
     [InlineData("A1:B2 B1:C3", "(isect (ref A1:B2) (ref B1:C3))")]
     [InlineData("A1 B1 C1", "(isect (isect (ref A1) (ref B1)) (ref C1))")]
+    [InlineData("SUM(A1:B2 #REF!)", "(fn SUM (isect (ref A1:B2) #REF!))")]
+    [InlineData("A1 Sheet1!#REF!", "(isect (ref A1) (referror Sheet1!))")]
     [InlineData("SUM(A1 , B1)", "(fn SUM (ref A1) (ref B1))")]
     [InlineData("A1 -B1", "(- (ref A1) (ref B1))")]
     [InlineData("A1 + B1", "(+ (ref A1) (ref B1))")]
@@ -232,5 +234,31 @@ public class ParserTests
         thread.Start();
         thread.Join();
         Assert.IsType<FormulaParseException>(caught);
+    }
+
+    [Theory]
+    [InlineData("1", "%")]
+    [InlineData("A1", "#")]
+    [InlineData("(1)", "(1)")]
+    [InlineData("1", "%#")]
+    public void Long_postfix_chains_are_rejected(string head, string repeated)
+    {
+        var text = head + string.Concat(Enumerable.Repeat(repeated, 2000));
+        Assert.True(text.Length < FormulaLimits.MaxLength);
+        Fails(text);
+    }
+
+    [Fact]
+    public void Trees_compare_by_reference()
+    {
+        // Nodes are plain classes: no deep (recursive) equality that a tall tree could overflow.
+        Assert.NotEqual(FormulaParser.Parse("1+A1", new CellAddress(1, 1)), FormulaParser.Parse("1+A1", new CellAddress(1, 1)));
+    }
+
+    [Fact]
+    public void Left_spines_of_binary_chains_do_not_count_toward_tree_depth()
+    {
+        var text = "A1" + string.Concat(Enumerable.Repeat("+A1", 2000));
+        Assert.True(FormulaParser.Parse(text, new CellAddress(1, 1)).Depth < 5);
     }
 }

@@ -18,6 +18,11 @@ public class PrinterTests
     [InlineData("0.0000000001")]
     [InlineData("3+0.0000000000000001")]
     [InlineData("1E-30")]
+    [InlineData("0.30000000000000004")]
+    [InlineData("1.0000000000000002")]
+    [InlineData("1.2345678901234568E+16")]
+    [InlineData("5E-324")]
+    [InlineData("1.7976931348623157E+308")]
     [InlineData("\"\"")]
     [InlineData("\"say \"\"hi\"\"\"")]
     [InlineData("TRUE")]
@@ -65,6 +70,8 @@ public class PrinterTests
     [InlineData("Sheet1!Rate")]
     [InlineData("Table1[[#This Row],[Col]]")]
     [InlineData("A1:B2 B1:C3")]
+    [InlineData("SUM(A1:B2 #REF!)")]
+    [InlineData("A1 Sheet1!#REF!")]
     [InlineData("SUM((A1,B1),C1)")]
     [InlineData("SUM((A1,B1,C1))")]
     [InlineData("A1:INDEX(B:B,2)")]
@@ -151,6 +158,24 @@ public class PrinterTests
         Assert.True(text.Length < FormulaLimits.MaxLength);
         string? printed = null;
         var thread = new Thread(() => printed = RoundTrip(text), maxStackSize: 256 * 1024);
+        thread.Start();
+        thread.Join();
+        Assert.Equal(text, printed);
+    }
+
+    [Theory]
+    [InlineData("1", "%")]
+    [InlineData("A1", "#")]
+    [InlineData("(1)", "(1)")]
+    [InlineData("-", "")]
+    public void Tree_at_the_depth_limit_prints_on_a_512KB_stack(string head, string repeated)
+    {
+        var text = head == "-"
+            ? new string('-', FormulaLimits.MaxDepth) + "1"
+            : head + string.Concat(Enumerable.Repeat(repeated, FormulaLimits.MaxTreeDepth - 2));
+        var node = FormulaParser.Parse(text, Origin);
+        string? printed = null;
+        var thread = new Thread(() => printed = FormulaPrinter.Print(node, Origin), maxStackSize: 512 * 1024);
         thread.Start();
         thread.Join();
         Assert.Equal(text, printed);

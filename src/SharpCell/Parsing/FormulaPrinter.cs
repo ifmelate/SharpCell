@@ -159,7 +159,7 @@ internal sealed class FormulaPrinter
             _sb.Append(OperatorText(b.Operator));
 
             // A space means intersection only when a reference-like operand follows it.
-            if (b.Operator == BinaryOperator.Intersect && b.Right is NumberNode or TextNode or BooleanNode or ErrorNode or ArrayNode)
+            if (b.Operator == BinaryOperator.Intersect && b.Right is NumberNode or TextNode or BooleanNode or ArrayNode)
             {
                 _sb.Append('(');
                 WriteBare(b.Right, unionAllowed: true);

@@ -41,6 +41,7 @@ public class ParserFuzzTests
         DeepNesting,
         Mutation,
         LongChain,
+        PostfixChain,
     }
 
     [Theory]
@@ -51,13 +52,16 @@ public class ParserFuzzTests
     [InlineData(Generator.Mutation, 5)]
     [InlineData(Generator.Mutation, 6)]
     [InlineData(Generator.LongChain, 7)]
+    [InlineData(Generator.PostfixChain, 8)]
     public void Parser_survives_generated_input(Generator generator, int seed)
     {
         var failures = new List<string>();
         var thread = new Thread(() =>
         {
             var random = new Random(seed);
-            var iterations = generator is Generator.DeepNesting or Generator.LongChain ? Iterations / 10 : Iterations;
+            var iterations = generator is Generator.DeepNesting or Generator.LongChain or Generator.PostfixChain
+                ? Iterations / 10
+                : Iterations;
             for (var i = 0; i < iterations && failures.Count < 10; i++)
             {
                 var text = Generate(generator, random);
@@ -67,7 +71,7 @@ public class ParserFuzzTests
                 if (failure is not null)
                     failures.Add($"{failure}\n  input: {Escape(text)}\n  origin: {origin}, style: {style}");
             }
-        }, maxStackSize: 16 * 1024 * 1024);
+        }, maxStackSize: 1024 * 1024);
         thread.Start();
         thread.Join();
 
@@ -126,7 +130,8 @@ public class ParserFuzzTests
         Generator.RandomCharacters => RandomCharacters(random),
         Generator.DeepNesting => DeepNesting(random),
         Generator.Mutation => Mutate(random, Seeds[random.Next(Seeds.Length)]),
-        _ => LongChain(random),
+        Generator.LongChain => LongChain(random),
+        _ => PostfixChain(random),
     };
 
     private static string TokenSoup(Random random, int count)
@@ -158,7 +163,7 @@ public class ParserFuzzTests
     private static string DeepNesting(Random random)
     {
         string[] openers = ["(", "SUM(", "-", "@", "{", "LAMBDA(x,", "+", "A1:("];
-        var depth = random.Next(50, 1500);
+        var depth = random.Next(50, FormulaLimits.MaxLength);
         var sb = new StringBuilder();
         for (var i = 0; i < depth && sb.Length < FormulaLimits.MaxLength - 10; i++)
             sb.Append(openers[random.Next(openers.Length)]);
@@ -200,6 +205,26 @@ public class ParserFuzzTests
         var sb = new StringBuilder(operands[random.Next(operands.Length)]);
         while (sb.Length < FormulaLimits.MaxLength - random.Next(0, 30))
             sb.Append(operators[random.Next(operators.Length)]).Append(operands[random.Next(operands.Length)]);
+        return sb.ToString();
+    }
+
+    // Postfix operators grow the tree without nesting the text: 1%%%, A1###, f(1)(1)(1).
+    // Tails come from one group so the chain stays parsable and reaches the printer.
+    private static string PostfixChain(Random random)
+    {
+        string[] heads = ["1", "A1", "(1)", "SUM(1)", "LAMBDA(x,x)", "-1", "@A1"];
+        string[][] groups = [["%"], ["#"], ["(1)", "()", "(A1)"]];
+        var group = groups[random.Next(groups.Length)];
+        var sb = new StringBuilder(heads[random.Next(heads.Length)]);
+        var count = random.Next(10, FormulaLimits.MaxLength);
+        for (var i = 0; i < count; i++)
+        {
+            var tail = group[random.Next(group.Length)];
+            if (sb.Length + tail.Length > FormulaLimits.MaxLength)
+                break;
+            sb.Append(tail);
+        }
+
         return sb.ToString();
     }
 

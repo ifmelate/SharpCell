@@ -74,29 +74,49 @@ internal static class NumberText
     }
 
     /// <summary>Formats a number the way Excel's General format does when converting to text.</summary>
-    public static string FormatGeneral(double number, CultureInfo culture) =>
-        Format(number, culture.NumberFormat.NumberDecimalSeparator, MinFixedExponentGeneral);
-
-    /// <summary>Formats a number literal for canonical formula text.</summary>
-    public static string FormatLiteral(double number) =>
-        Format(number, ".", MinFixedExponentLiteral);
-
-    private static string Format(double number, string separator, int minFixedExponent)
+    public static string FormatGeneral(double number, CultureInfo culture)
     {
         if (number == 0)
             return "0";
 
-        // "d.ddddddddddddddE+ddd": rounding to 15 significant digits may carry into the exponent,
-        // so the exponent is read back from the rounded representation.
-        var scientific = number.ToString("E" + (SignificantDigits - 1), CultureInfo.InvariantCulture);
-        var ePos = scientific.IndexOf('E');
-        var exponent = int.Parse(scientific.AsSpan(ePos + 1), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
-        var mantissa = scientific.AsSpan(0, ePos);
-        var negative = mantissa[0] == '-';
-        if (negative)
-            mantissa = mantissa[1..];
+        // Rounding to 15 significant digits may carry into the exponent (9.9999999999999999 -> 10),
+        // so digits and exponent are read back from the rounded representation.
+        var rounded = number.ToString("E" + (SignificantDigits - 1), CultureInfo.InvariantCulture);
+        return Layout(rounded, culture.NumberFormat.NumberDecimalSeparator, MinFixedExponentGeneral);
+    }
 
-        var digits = (mantissa[0] + mantissa[2..].ToString()).TrimEnd('0');
+    /// <summary>
+    /// Formats a number literal for canonical formula text. Uses the shortest digits that read back
+    /// as the same double, so printing never changes a value.
+    /// </summary>
+    public static string FormatLiteral(double number) =>
+        number == 0 ? "0" : Layout(number.ToString("R", CultureInfo.InvariantCulture), ".", MinFixedExponentLiteral);
+
+    // Re-lays out an invariant number string ("-1.5E-07", "0.30000000000000004", "1E+20") in
+    // Excel's style: fixed notation for exponents in [minFixedExponent, 15), scientific otherwise.
+    private static string Layout(string invariant, string separator, int minFixedExponent)
+    {
+        var s = invariant.AsSpan();
+        var negative = s[0] == '-';
+        if (negative)
+            s = s[1..];
+
+        var exponent = 0;
+        var ePos = s.IndexOfAny('E', 'e');
+        if (ePos >= 0)
+        {
+            exponent = int.Parse(s[(ePos + 1)..], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            s = s[..ePos];
+        }
+
+        var point = s.IndexOf('.');
+        var integerPart = point < 0 ? s : s[..point];
+        var fractionPart = point < 0 ? ReadOnlySpan<char>.Empty : s[(point + 1)..];
+        var all = string.Concat(integerPart, fractionPart);
+        var leadingZeros = all.Length - all.TrimStart('0').Length;
+        var digits = all[leadingZeros..].TrimEnd('0');
+        exponent += integerPart.Length - leadingZeros - 1;
+
         var sb = new StringBuilder();
         if (negative)
             sb.Append('-');
