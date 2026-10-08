@@ -14,15 +14,19 @@ namespace SharpCell.Parsing;
 internal sealed class FormulaParser
 {
     private readonly List<Token> _tokens;
+    private readonly CellAddress _origin;
+    private readonly ReferenceStyle _style;
     private int _index;
     private int _depth;
 
     // A comma is the union operator only inside parentheses; elsewhere it separates arguments.
     private bool _unionAllowed;
 
-    private FormulaParser(List<Token> tokens)
+    private FormulaParser(List<Token> tokens, CellAddress origin, ReferenceStyle style)
     {
         _tokens = tokens;
+        _origin = origin;
+        _style = style;
     }
 
     /// <summary>Parses formula text with an optional leading <c>=</c>.</summary>
@@ -31,7 +35,7 @@ internal sealed class FormulaParser
     {
         ArgumentNullException.ThrowIfNull(text);
         var start = text.StartsWith('=') ? 1 : 0;
-        var parser = new FormulaParser(Lexer.Tokenize(text, origin, style, start));
+        var parser = new FormulaParser(Lexer.Tokenize(text, origin, style, start), origin, style);
         var node = parser.ParseExpression();
         if (parser.Current.Kind != TokenKind.End)
             throw Unexpected(parser.Current);
@@ -148,7 +152,7 @@ internal sealed class FormulaParser
         while (Current.Kind == TokenKind.Colon)
         {
             Advance();
-            node = new BinaryNode(BinaryOperator.Range, node, ParsePostfix());
+            node = MakeRange(node, ParsePostfix());
         }
 
         for (var i = 0; i < ats; i++)
@@ -158,6 +162,15 @@ internal sealed class FormulaParser
         }
 
         return node;
+    }
+
+    // "A1 : B2" is the same area as "A1:B2"; fusing keeps one tree per meaning, as Excel does.
+    private static FormulaNode MakeRange(FormulaNode left, FormulaNode right)
+    {
+        if (left is ReferenceNode { Area.Kind: AreaKind.Cell } first && right is ReferenceNode { Sheet: null, Area.Kind: AreaKind.Cell } last)
+            return new ReferenceNode(first.Sheet, AreaRef.Range(first.Area.First, last.Area.First));
+
+        return new BinaryNode(BinaryOperator.Range, left, right);
     }
 
     private FormulaNode ParsePostfix()
@@ -376,26 +389,49 @@ internal sealed class FormulaParser
 
     private void Leave() => _depth--;
 
-    // "_xlpm." appears on calls of LET/LAMBDA-bound functions: _xlpm.area(D1,E1).
-    private static string NormalizeFunctionName(string name)
+    // Prefixes are stripped only when the rest still reads as the same kind of word:
+    // "_xlpm.x1" must not turn into the cell X1, nor "_xlfn.(" into an unnamed call.
+    // "_xlpm." also appears on calls of LET/LAMBDA-bound functions: _xlpm.area(D1,E1).
+    private string NormalizeFunctionName(string name)
     {
-        var upper = name.ToUpperInvariant();
+        var rest = name;
         while (true)
         {
-            if (upper.StartsWith("_XLFN.", StringComparison.Ordinal))
-                upper = upper[6..];
-            else if (upper.StartsWith("_XLWS.", StringComparison.Ordinal))
-                upper = upper[6..];
-            else if (upper.StartsWith("_XLPM.", StringComparison.Ordinal))
-                upper = upper[6..];
+            if (rest.StartsWith("_xlfn.", StringComparison.OrdinalIgnoreCase)
+                || rest.StartsWith("_xlws.", StringComparison.OrdinalIgnoreCase)
+                || rest.StartsWith("_xlpm.", StringComparison.OrdinalIgnoreCase))
+                rest = rest[6..];
             else
-                return upper;
+                break;
         }
+
+        if (rest.Length != name.Length && !LexesAsSingle(rest + "(", TokenKind.Function, rest.Length, expectedTokens: 3))
+            rest = name;
+        return rest.ToUpperInvariant();
     }
 
     // Files store LAMBDA/LET parameter names as "_xlpm.x".
-    private static string StripParameterPrefix(string name) =>
-        name.StartsWith("_xlpm.", StringComparison.OrdinalIgnoreCase) ? name[6..] : name;
+    private string StripParameterPrefix(string name)
+    {
+        if (!name.StartsWith("_xlpm.", StringComparison.OrdinalIgnoreCase))
+            return name;
+
+        var rest = name[6..];
+        return LexesAsSingle(rest, TokenKind.Name, rest.Length, expectedTokens: 2) ? rest : name;
+    }
+
+    private bool LexesAsSingle(string text, TokenKind kind, int length, int expectedTokens)
+    {
+        try
+        {
+            var tokens = Lexer.Tokenize(text, _origin, _style);
+            return tokens.Count == expectedTokens && tokens[0].Kind == kind && tokens[0].Length == length;
+        }
+        catch (FormulaParseException)
+        {
+            return false;
+        }
+    }
 
     private static FormulaParseException Unexpected(Token token) => token.Kind == TokenKind.End
         ? new FormulaParseException("Unexpected end of formula.", token.Start)

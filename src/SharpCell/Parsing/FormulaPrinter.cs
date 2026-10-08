@@ -155,6 +155,7 @@ internal sealed class FormulaPrinter
         for (var i = chain.Count - 1; i >= 0; i--)
         {
             var b = chain[i];
+            var operatorAt = _sb.Length;
             _sb.Append(OperatorText(b.Operator));
 
             // A space means intersection only when a reference-like operand follows it.
@@ -168,6 +169,36 @@ internal sealed class FormulaPrinter
             {
                 Write(b.Right, PrecedenceOf(b) + 1, unionAllowed);
             }
+
+            if (b.Operator == BinaryOperator.Range && !FusesToSameArea(b) && !LexesAsColon(operatorAt))
+                _sb.Insert(operatorAt, ' ');
+        }
+    }
+
+    // Two cells fuse into the same area the parser builds from "A1 : B2", so no space is needed.
+    private static bool FusesToSameArea(BinaryNode range) =>
+        range.Left is ReferenceNode { Area.Kind: AreaKind.Cell } && range.Right is ReferenceNode { Sheet: null, Area.Kind: AreaKind.Cell };
+
+    // The lexer reads words across a colon ("1:1" rows, "A:B" columns, "X:Y!" sheets), so text on
+    // both sides of a range operator can fuse into one token: Range(1, rows 1:3) would print as
+    // "1:1:3". The printed text is checked with the lexer itself; a space before ':' prevents fusion.
+    private bool LexesAsColon(int position)
+    {
+        try
+        {
+            foreach (var token in Lexer.Tokenize(_sb.ToString(), _origin, _style))
+            {
+                if (token.Start == position)
+                    return token.Kind == TokenKind.Colon;
+                if (token.Start > position)
+                    return false;
+            }
+
+            return false;
+        }
+        catch (FormulaParseException)
+        {
+            return false;
         }
     }
 

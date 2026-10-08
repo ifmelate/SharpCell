@@ -1,4 +1,3 @@
-using System.Globalization;
 using SharpCell;
 using SharpCell.Parsing;
 
@@ -9,9 +8,12 @@ internal static class TreeDump
 {
     private static readonly CellAddress Origin = new(1, 1);
 
-    public static string Dump(FormulaNode node) => node switch
+    public static string Dump(FormulaNode node) => Dump(node, ignoreParentheses: false);
+
+    /// <param name="ignoreParentheses">Dump explicit parentheses as their content, for comparing meaning.</param>
+    public static string Dump(FormulaNode node, bool ignoreParentheses) => node switch
     {
-        NumberNode n => n.Value.ToString("R", CultureInfo.InvariantCulture),
+        NumberNode n => NumberText.FormatLiteral(n.Value),
         TextNode t => "\"" + t.Value + "\"",
         BooleanNode b => b.Value ? "TRUE" : "FALSE",
         ErrorNode e => e.Error.ToText(),
@@ -20,18 +22,19 @@ internal static class TreeDump
         RefErrorNode r => $"(referror {Sheet(r.Sheet)})",
         NameNode n => $"(name {Sheet(n.Sheet)}{n.Name})",
         StructuredReferenceNode s => $"(struct {s.Text})",
-        UnaryNode u => $"({UnaryText(u.Operator)} {Dump(u.Operand)})",
-        BinaryNode b => $"({BinaryText(b.Operator)} {Dump(b.Left)} {Dump(b.Right)})",
-        FunctionNode f => $"(fn {f.Name}{Args(f.Arguments)})",
-        CallNode c => $"(call {Dump(c.Callee)}{Args(c.Arguments)})",
-        ParenthesesNode p => $"(paren {Dump(p.Inner)})",
+        UnaryNode u => $"({UnaryText(u.Operator)} {Dump(u.Operand, ignoreParentheses)})",
+        BinaryNode b => $"({BinaryText(b.Operator)} {Dump(b.Left, ignoreParentheses)} {Dump(b.Right, ignoreParentheses)})",
+        FunctionNode f => $"(fn {f.Name}{Args(f.Arguments, ignoreParentheses)})",
+        CallNode c => $"(call {Dump(c.Callee, ignoreParentheses)}{Args(c.Arguments, ignoreParentheses)})",
+        ParenthesesNode p => ignoreParentheses ? Dump(p.Inner, true) : $"(paren {Dump(p.Inner)})",
         ArrayNode a => $"(array {CellValue.Array(a.Values)})",
-        SpillNode s => $"(spill {Dump(s.Operand)})",
-        ImplicitIntersectionNode i => $"(single {Dump(i.Operand)})",
+        SpillNode s => $"(spill {Dump(s.Operand, ignoreParentheses)})",
+        ImplicitIntersectionNode i => $"(single {Dump(i.Operand, ignoreParentheses)})",
         _ => throw new ArgumentException(node.GetType().Name),
     };
 
-    private static string Args(IReadOnlyList<FormulaNode> args) => string.Concat(args.Select(a => " " + Dump(a)));
+    private static string Args(IReadOnlyList<FormulaNode> args, bool ignoreParentheses) =>
+        string.Concat(args.Select(a => " " + Dump(a, ignoreParentheses)));
 
     private static string Sheet(SheetPrefix? sheet) =>
         sheet is null ? "" : sheet.Last is null ? sheet.First + "!" : $"{sheet.First}:{sheet.Last}!";

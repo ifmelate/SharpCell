@@ -58,6 +58,9 @@ public class ParserTests
     [Theory]
     [InlineData("-A1:B2", "(neg (ref A1:B2))")]
     [InlineData("A1:B2:C3", "(range (ref A1:B2) (ref C3))")]
+    [InlineData("A1: B2", "(ref A1:B2)")]
+    [InlineData("Sheet1!A1 :B2", "(ref Sheet1!A1:B2)")]
+    [InlineData("A1:Sheet1!B2", "(range (ref A1) (ref Sheet1!B2))")]
     [InlineData("A1:INDEX(B:B,2)", "(range (ref A1) (fn INDEX (ref B:B) 2))")]
     [InlineData("A1:B2 B1:C3", "(isect (ref A1:B2) (ref B1:C3))")]
     [InlineData("A1 B1 C1", "(isect (isect (ref A1) (ref B1)) (ref C1))")]
@@ -97,6 +100,12 @@ public class ParserTests
     [InlineData("_xlfn.LAMBDA(_xlpm.x,_xlpm.x+1)", "(fn LAMBDA (name x) (+ (name x) 1))")]
     [InlineData("LAMBDA(x,x+1)(2)", "(call (fn LAMBDA (name x) (+ (name x) 1)) 2)")]
     [InlineData("TRUE()", "(fn TRUE)")]
+    [InlineData("_xlpm.x1", "(name _xlpm.x1)")]
+    [InlineData("_xlpm.xA1+1", "(+ (name _xlpm.xA1) 1)")]
+    [InlineData("_xlpm.TRUE", "(name _xlpm.TRUE)")]
+    [InlineData("_xlpm.", "(name _xlpm.)")]
+    [InlineData("_xlfn.(1)", "(fn _XLFN. 1)")]
+    [InlineData("_xlfn.1X(1)", "(fn _XLFN.1X 1)")]
     public void Function_calls(string text, string expected)
     {
         Assert.Equal(expected, Parse(text));

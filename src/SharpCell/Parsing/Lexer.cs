@@ -334,7 +334,7 @@ internal sealed class Lexer
         if (next == ':')
         {
             var end2 = ScanWord(end + 1);
-            if (end2 > end + 1 && end2 < _text.Length && _text[end2] == '!')
+            if (end2 > end + 1 && end2 < _text.Length && _text[end2] == '!' && !IsRangeIntoPrefixedCell(word, _text[(end + 1)..end2]))
             {
                 var prefix = new SheetPrefix(ValidateUnquotedSheet(word, start), ValidateUnquotedSheet(_text[(end + 1)..end2], start));
                 LexAfterPrefix(start, end2 + 1, prefix);
@@ -367,6 +367,14 @@ internal sealed class Lexer
 
         Add(new Token(TokenKind.Name, start, end - start) { Text = ValidateName(word, start) });
     }
+
+    // "A1:Sheet1!B2" is the range A1 to Sheet1!B2, not sheets "A1" through "Sheet1". Excel does write
+    // cell-like sheet names unquoted (LOG10!A1), so "LOG10:LOG20!A1" stays a 3D prefix.
+    private bool IsRangeIntoPrefixedCell(string first, string second) =>
+        _style == ReferenceStyle.A1 && IsA1Cell(first) && !IsA1Cell(second);
+
+    private bool IsA1Cell(string word) =>
+        ReferenceSyntax.TryParseA1Area(word, _origin, out var area) && area.Kind == AreaKind.Cell;
 
     // After "Sheet!": a reference, a name, or #REF!. Errors point at the start of the prefix.
     private void LexAfterPrefix(int tokenStart, int pos, SheetPrefix prefix)

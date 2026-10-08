@@ -68,6 +68,9 @@ public class PrinterTests
     [InlineData("SUM((A1,B1),C1)")]
     [InlineData("SUM((A1,B1,C1))")]
     [InlineData("A1:INDEX(B:B,2)")]
+    [InlineData("A1:B2:C3")]
+    [InlineData("1 :1:3")]
+    [InlineData("Rate :Other!B2")]
     [InlineData("A1#")]
     [InlineData("SUM(Sheet1!A1#)")]
     [InlineData("@A1:A10")]
@@ -110,6 +113,8 @@ public class PrinterTests
     [InlineData("1E-10", "0.0000000001")]
     [InlineData("'Sheet1'!A1", "Sheet1!A1")]
     [InlineData("{+1}", "{1}")]
+    [InlineData("1: 1:3", "1 :1:3")]
+    [InlineData("A1 : B2", "A1:B2")]
     public void Non_canonical_input_prints_canonically(string text, string expected)
     {
         Assert.Equal(expected, RoundTrip(text));
