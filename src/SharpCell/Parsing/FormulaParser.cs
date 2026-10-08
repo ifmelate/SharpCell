@@ -376,6 +376,7 @@ internal sealed class FormulaParser
 
     private void Leave() => _depth--;
 
+    // "_xlpm." appears on calls of LET/LAMBDA-bound functions: _xlpm.area(D1,E1).
     private static string NormalizeFunctionName(string name)
     {
         var upper = name.ToUpperInvariant();
@@ -384,6 +385,8 @@ internal sealed class FormulaParser
             if (upper.StartsWith("_XLFN.", StringComparison.Ordinal))
                 upper = upper[6..];
             else if (upper.StartsWith("_XLWS.", StringComparison.Ordinal))
+                upper = upper[6..];
+            else if (upper.StartsWith("_XLPM.", StringComparison.Ordinal))
                 upper = upper[6..];
             else
                 return upper;

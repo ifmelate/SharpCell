@@ -10,8 +10,12 @@ internal static class NumberText
     // Excel keeps 15 significant digits when it turns a number into text.
     private const int SignificantDigits = 15;
 
-    // Below this decimal exponent Excel switches to scientific notation.
-    private const int MinFixedExponent = -9;
+    // Below this decimal exponent the General format switches to scientific notation.
+    private const int MinFixedExponentGeneral = -9;
+
+    // Number literals in formula text stay in fixed notation much longer: Excel writes
+    // 3+0.0000000000000001 in files. The exact cut-off is not known; -20 covers what was seen.
+    private const int MinFixedExponentLiteral = -20;
 
     /// <summary>
     /// Parses text the way Excel coerces it to a number: surrounding spaces, sign, parentheses for
@@ -70,7 +74,14 @@ internal static class NumberText
     }
 
     /// <summary>Formats a number the way Excel's General format does when converting to text.</summary>
-    public static string FormatGeneral(double number, CultureInfo culture)
+    public static string FormatGeneral(double number, CultureInfo culture) =>
+        Format(number, culture.NumberFormat.NumberDecimalSeparator, MinFixedExponentGeneral);
+
+    /// <summary>Formats a number literal for canonical formula text.</summary>
+    public static string FormatLiteral(double number) =>
+        Format(number, ".", MinFixedExponentLiteral);
+
+    private static string Format(double number, string separator, int minFixedExponent)
     {
         if (number == 0)
             return "0";
@@ -86,12 +97,11 @@ internal static class NumberText
             mantissa = mantissa[1..];
 
         var digits = (mantissa[0] + mantissa[2..].ToString()).TrimEnd('0');
-        var separator = culture.NumberFormat.NumberDecimalSeparator;
         var sb = new StringBuilder();
         if (negative)
             sb.Append('-');
 
-        if (exponent >= SignificantDigits || exponent < MinFixedExponent)
+        if (exponent >= SignificantDigits || exponent < minFixedExponent)
         {
             sb.Append(digits[0]);
             if (digits.Length > 1)
