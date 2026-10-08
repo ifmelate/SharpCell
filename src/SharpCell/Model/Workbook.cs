@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
 namespace SharpCell;
@@ -73,6 +74,19 @@ public sealed class Workbook
         var text = formula.StartsWith('=') ? formula : "=" + formula;
         var node = FormulaParser.Parse(text, new CellAddress(1, 1));
         Names.Set(new NameDefinition(name.ToUpperInvariant(), text, node, scope));
+    }
+
+    /// <summary>
+    /// Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet.
+    /// References without a sheet are <c>#REF!</c> when the workbook has no sheets.
+    /// </summary>
+    public CellValue Evaluate(string formula)
+    {
+        ArgumentNullException.ThrowIfNull(formula);
+        var origin = new CellAddress(1, 1);
+        var node = FormulaParser.Parse(formula, origin);
+        var context = new EvaluationContext(this, _sheets.Count > 0 ? _sheets[0] : null, origin);
+        return Evaluator.EvaluateFormula(node, context);
     }
 
     internal void OnCellChanged(Worksheet sheet, int row, int column)
