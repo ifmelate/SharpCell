@@ -1,3 +1,4 @@
+using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
 namespace SharpCell;
@@ -11,4 +12,19 @@ internal sealed class CellData
     public string? FormulaText;
 
     public FormulaNode? Formula;
+
+    /// <summary>The formula must be (re)calculated; <see cref="Value"/> is stale.</summary>
+    public bool IsDirty;
+
+    /// <summary>Evaluation started and waits for dirty inputs; meeting it again means a loop.</summary>
+    public bool InProgress;
+
+    /// <summary>The cell whose evaluation asked for this one while <see cref="InProgress"/>.</summary>
+    public CellKey? Requester;
+
+    /// <summary>Dependencies registered in the graph from the last completed evaluation.</summary>
+    public Dependencies? Registered;
+
+    /// <summary>What the last (possibly unfinished) evaluation read; used when a loop is resolved.</summary>
+    public Dependencies? LastAttempt;
 }

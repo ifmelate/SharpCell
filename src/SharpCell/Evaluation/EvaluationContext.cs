@@ -29,10 +29,47 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     public void Report(DiagnosticKind kind, string message) =>
         Workbook.AddDiagnostic(new CalculationDiagnostic(kind, Sheet, Sheet is null ? null : Origin.ToString(), message));
 
-    public CellValue ReadCell(Worksheet sheet, int row, int column) =>
-        sheet.Store.Get(row, column)?.Value ?? CellValue.Empty;
+    private readonly HashSet<CellKey> _pendingSet = [];
 
-    public CellValue ReadCell(Worksheet sheet, StoredCell cell) => cell.Data.Value;
+    /// <summary>Records what the evaluation reads, for the dependency graph; null when not needed.</summary>
+    public Dependencies? Dependencies { get; init; }
+
+    /// <summary>
+    /// Dirty formula cells the evaluation tried to read. When not empty the result is meaningless:
+    /// these cells are computed and the formula is evaluated again.
+    /// </summary>
+    public List<CellKey> Pending { get; } = [];
+
+    public CellValue ReadCell(Worksheet sheet, int row, int column) => Read(sheet, row, column, sheet.Store.Get(row, column));
+
+    public CellValue ReadCell(Worksheet sheet, StoredCell cell) => Read(sheet, cell.Row, cell.Column, cell.Data);
+
+    public void RecordReference(Reference reference)
+    {
+        if (Dependencies is null)
+            return;
+        foreach (var area in reference.Areas)
+            Dependencies.Areas.Add(area);
+    }
+
+    public void RecordName(string upperName) => Dependencies?.Names.Add(upperName);
+
+    private CellValue Read(Worksheet sheet, int row, int column, CellData? data)
+    {
+        if (data is null)
+            return CellValue.Empty;
+        if (data.IsDirty && data.Formula is not null)
+        {
+            var key = new CellKey(sheet, row, column);
+            if (_pendingSet.Add(key))
+                Pending.Add(key);
+
+            // Any value will do: the evaluation is discarded and repeated.
+            return CellValue.Error(ErrorKind.NA);
+        }
+
+        return data.Value;
+    }
 
     public bool TryEnterName(NameDefinition name)
     {

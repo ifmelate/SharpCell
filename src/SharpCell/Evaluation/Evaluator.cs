@@ -117,7 +117,11 @@ internal static class Evaluator
         switch (op)
         {
             case BinaryOperator.Range:
-                return Operators.Range(left, right);
+                // The bounding box covers cells neither side named (B2 in A1:C3), so it is recorded too.
+                var range = Operators.Range(left, right);
+                if (range.Reference is { } box)
+                    context.RecordReference(box);
+                return range;
             case BinaryOperator.Intersect:
                 return Operators.Intersect(left, right);
             case BinaryOperator.Union:
@@ -131,6 +135,14 @@ internal static class Evaluator
     }
 
     private static Operand EvaluateReference(ReferenceNode node, EvaluationContext context)
+    {
+        var result = ResolveReference(node, context);
+        if (result.Reference is { } reference)
+            context.RecordReference(reference);
+        return result;
+    }
+
+    private static Operand ResolveReference(ReferenceNode node, EvaluationContext context)
     {
         var area = Area.Resolve(node.Area, context.Origin);
         if (node.Sheet is null)
@@ -176,6 +188,7 @@ internal static class Evaluator
             return CellValue.Error(ErrorKind.Ref);
 
         var upper = node.Name.ToUpperInvariant();
+        context.RecordName(upper);
         if (!(scope is not null && workbook.Names.TryGet(upper, scope, out var definition))
             && !workbook.Names.TryGet(upper, null, out definition))
             return CellValue.Error(ErrorKind.Name);

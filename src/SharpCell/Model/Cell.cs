@@ -1,4 +1,5 @@
 using System;
+using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
 namespace SharpCell;
@@ -36,19 +37,24 @@ public sealed class Cell
             if (value.Kind is CellValueKind.Missing or CellValueKind.Array or CellValueKind.Lambda)
                 throw new ArgumentException($"A cell cannot hold a {value.Kind} value.", nameof(value));
 
+            var key = Key;
+            var calculation = Worksheet.Workbook.Calculation;
+            calculation.BeforeChange(key, Worksheet.Store.Get(Row, Column));
+            CellData? data = null;
             if (value.Kind == CellValueKind.Empty)
             {
                 Worksheet.Store.Remove(Row, Column);
             }
             else
             {
-                var data = Worksheet.Store.GetOrCreate(Row, Column);
+                data = Worksheet.Store.GetOrCreate(Row, Column);
                 data.Value = value;
                 data.FormulaText = null;
                 data.Formula = null;
+                data.IsDirty = false;
             }
 
-            Worksheet.Workbook.OnCellChanged(Worksheet, Row, Column);
+            calculation.AfterChange(key, data);
         }
     }
 
@@ -61,12 +67,16 @@ public sealed class Cell
         get => Worksheet.Store.Get(Row, Column)?.FormulaText;
         set
         {
+            var key = Key;
+            var calculation = Worksheet.Workbook.Calculation;
             if (string.IsNullOrEmpty(value))
             {
-                if (Worksheet.Store.Get(Row, Column)?.FormulaText is not null)
+                var existing = Worksheet.Store.Get(Row, Column);
+                if (existing?.FormulaText is not null)
                 {
+                    calculation.BeforeChange(key, existing);
                     Worksheet.Store.Remove(Row, Column);
-                    Worksheet.Workbook.OnCellChanged(Worksheet, Row, Column);
+                    calculation.AfterChange(key, null);
                 }
 
                 return;
@@ -74,13 +84,16 @@ public sealed class Cell
 
             var text = value.StartsWith('=') ? value : "=" + value;
             var node = FormulaParser.Parse(text, new CellAddress(Row, Column));
+            calculation.BeforeChange(key, Worksheet.Store.Get(Row, Column));
             var data = Worksheet.Store.GetOrCreate(Row, Column);
             data.FormulaText = text;
             data.Formula = node;
             data.Value = CellValue.Empty;
-            Worksheet.Workbook.OnCellChanged(Worksheet, Row, Column);
+            calculation.AfterChange(key, data);
         }
     }
+
+    private CellKey Key => new(Worksheet, Row, Column);
 
     public override string ToString() => $"{Worksheet.Name}!{Address}";
 }

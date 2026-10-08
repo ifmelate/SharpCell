@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using SharpCell.Evaluation;
 using SharpCell.Functions;
 using SharpCell.Parsing;
@@ -16,6 +17,12 @@ public sealed class Workbook
     private readonly List<Worksheet> _sheets = [];
     private readonly List<CalculationDiagnostic> _diagnostics = [];
     private CultureInfo _culture = CultureInfo.InvariantCulture;
+    private DateSystem _dateSystem;
+
+    public Workbook()
+    {
+        Calculation = new Calculation(this);
+    }
 
     public IReadOnlyList<Worksheet> Sheets => _sheets;
 
@@ -26,15 +33,29 @@ public sealed class Workbook
     public CultureInfo Culture
     {
         get => _culture;
-        set => _culture = value ?? throw new ArgumentNullException(nameof(value));
+        set
+        {
+            _culture = value ?? throw new ArgumentNullException(nameof(value));
+            Calculation.InvalidateAll();
+        }
     }
 
-    public DateSystem DateSystem { get; set; }
+    public DateSystem DateSystem
+    {
+        get => _dateSystem;
+        set
+        {
+            _dateSystem = value;
+            Calculation.InvalidateAll();
+        }
+    }
 
     /// <summary>What calculation reported: circular references, failing functions.</summary>
     public IReadOnlyList<CalculationDiagnostic> Diagnostics => _diagnostics;
 
     internal NameTable Names { get; } = new();
+
+    internal Calculation Calculation { get; }
 
     internal FunctionRegistry Functions { get; set; } = FunctionRegistry.Default;
 
@@ -73,6 +94,9 @@ public sealed class Workbook
 
         var sheet = new Worksheet(this, name);
         _sheets.Add(sheet);
+
+        // Formulas that pointed at a missing sheet of this name were #REF! and may resolve now.
+        Calculation.InvalidateAll();
         return sheet;
     }
 
@@ -88,25 +112,32 @@ public sealed class Workbook
 
         var text = formula.StartsWith('=') ? formula : "=" + formula;
         var node = FormulaParser.Parse(text, new CellAddress(1, 1));
-        Names.Set(new NameDefinition(name.ToUpperInvariant(), text, node, scope));
+        var upper = name.ToUpperInvariant();
+        Names.Set(new NameDefinition(upper, text, node, scope));
+        Calculation.InvalidateName(upper);
     }
 
     /// <summary>
+    /// Calculates every formula that is out of date: those whose inputs changed since the last
+    /// calculation and those using volatile functions (NOW, RAND). Clears <see cref="Diagnostics"/> first.
+    /// </summary>
+    /// <exception cref="OperationCanceledException">The token was cancelled; finished cells keep their new values.</exception>
+    public void Recalculate(CancellationToken cancellationToken = default) => Calculation.Recalculate(cancellationToken);
+
+    /// <summary>
     /// Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet.
-    /// References without a sheet are <c>#REF!</c> when the workbook has no sheets.
+    /// Out-of-date cells it reads are calculated first. References without a sheet are
+    /// <c>#REF!</c> when the workbook has no sheets.
     /// </summary>
     public CellValue Evaluate(string formula)
     {
         ArgumentNullException.ThrowIfNull(formula);
         var origin = new CellAddress(1, 1);
         var node = FormulaParser.Parse(formula, origin);
-        var context = new EvaluationContext(this, _sheets.Count > 0 ? _sheets[0] : null, origin);
-        return Evaluator.EvaluateFormula(node, context);
+        return Calculation.EvaluateDetached(node, _sheets.Count > 0 ? _sheets[0] : null, origin);
     }
 
-    internal void OnCellChanged(Worksheet sheet, int row, int column)
-    {
-    }
+    internal void ClearDiagnostics() => _diagnostics.Clear();
 
     // A name must read as a name in both reference styles: "A1", "R1C1", "R", "TRUE" are not names.
     private static bool IsValidName(string name)

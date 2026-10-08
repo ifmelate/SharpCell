@@ -1,0 +1,240 @@
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using SharpCell.Parsing;
+
+namespace SharpCell.Evaluation;
+
+/// <summary>
+/// Dirty tracking and recalculation for one workbook.
+/// <para>
+/// Editing a cell marks the formulas that read it, transitively, as dirty. Recalculation computes
+/// dirty formulas on an explicit stack: an evaluation that reads a dirty cell collects every such
+/// cell instead of recursing, they are computed first, and the formula is evaluated again. Chains
+/// of any length therefore use no thread stack. A dirty cell met again while it waits for its
+/// inputs closes a loop: every cell of the loop gets 0 and a diagnostic, as in Excel without
+/// iterative calculation.
+/// </para>
+/// </summary>
+internal sealed class Calculation(Workbook workbook)
+{
+    // Dirty formulas in the order they were marked; the IsDirty flag on the cell removes duplicates.
+    private readonly List<CellKey> _dirty = [];
+    private readonly HashSet<CellKey> _volatile = [];
+
+    public DependencyGraph Graph { get; } = new();
+
+    /// <summary>Formula evaluations attempted by recalculation, restarts included. For tests.</summary>
+    public int EvaluationCount { get; private set; }
+
+    /// <summary>Call before a cell's content changes: its old dependencies stop counting.</summary>
+    public void BeforeChange(CellKey key, CellData? data)
+    {
+        if (data?.Registered is { } registered)
+        {
+            Graph.Unregister(key, registered);
+            data.Registered = null;
+        }
+
+        _volatile.Remove(key);
+    }
+
+    /// <summary>Call after a cell's content changed: it (if a formula) and everything reading it become dirty.</summary>
+    public void AfterChange(CellKey key, CellData? data)
+    {
+        if (data?.Formula is not null)
+            MarkDirty(key, data);
+        Invalidate(key);
+    }
+
+    /// <summary>Settings changed or a sheet appeared: every formula is dirty.</summary>
+    public void InvalidateAll()
+    {
+        foreach (var sheet in workbook.Sheets)
+        {
+            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            {
+                if (cell.Data.Formula is not null)
+                    MarkDirty(new CellKey(sheet, cell.Row, cell.Column), cell.Data);
+            }
+        }
+    }
+
+    public void InvalidateName(string upperName)
+    {
+        foreach (var user in Graph.UsersOf(upperName))
+        {
+            if (user.Data is { Formula: not null } data)
+            {
+                MarkDirty(user, data);
+                Invalidate(user);
+            }
+        }
+    }
+
+    public void Recalculate(CancellationToken cancellationToken)
+    {
+        workbook.ClearDiagnostics();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        foreach (var key in (CellKey[])[.. _volatile])
+        {
+            if (key.Data is { Formula: not null } data)
+            {
+                MarkDirty(key, data);
+                Invalidate(key);
+            }
+        }
+
+        for (var i = 0; i < _dirty.Count; i++)
+            Compute(_dirty[i], cancellationToken);
+        _dirty.Clear();
+    }
+
+    /// <summary>Evaluates a formula outside any cell, computing dirty cells it reads first.</summary>
+    public CellValue EvaluateDetached(FormulaNode formula, Worksheet? sheet, CellAddress origin)
+    {
+        while (true)
+        {
+            var context = new EvaluationContext(workbook, sheet, origin);
+            var value = Evaluator.EvaluateFormula(formula, context);
+            if (context.Pending.Count == 0)
+                return value;
+
+            foreach (var key in context.Pending)
+                Compute(key, CancellationToken.None);
+        }
+    }
+
+    private void MarkDirty(CellKey key, CellData data)
+    {
+        if (data.IsDirty)
+            return;
+        data.IsDirty = true;
+        _dirty.Add(key);
+    }
+
+    // Breadth-first over readers: everything that (transitively) reads the cell becomes dirty.
+    private void Invalidate(CellKey start)
+    {
+        var queue = new Queue<CellKey>();
+        queue.Enqueue(start);
+        while (queue.Count > 0)
+        {
+            Graph.ForEachReader(queue.Dequeue(), reader =>
+            {
+                if (reader.Data is { Formula: not null, IsDirty: false } data)
+                {
+                    MarkDirty(reader, data);
+                    queue.Enqueue(reader);
+                }
+            });
+        }
+    }
+
+    private void Compute(CellKey root, CancellationToken cancellationToken)
+    {
+        var stack = new List<(CellKey Key, CellKey? Requester)> { (root, null) };
+        try
+        {
+            while (stack.Count > 0)
+            {
+                var (key, requester) = stack[^1];
+                var data = key.Data;
+                if (data?.Formula is null || !data.IsDirty)
+                {
+                    stack.RemoveAt(stack.Count - 1);
+                    continue;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!data.InProgress)
+                {
+                    data.InProgress = true;
+                    data.Requester = requester;
+                }
+
+                var context = new EvaluationContext(workbook, key.Sheet, key.Address)
+                {
+                    CancellationToken = cancellationToken,
+                    Dependencies = new Dependencies(),
+                };
+                EvaluationCount++;
+                var value = Evaluator.EvaluateFormula(data.Formula, context);
+                data.LastAttempt = context.Dependencies;
+
+                if (context.Pending.Count == 0)
+                {
+                    Commit(key, data, value, context.Dependencies, context.UsedVolatile);
+                    stack.RemoveAt(stack.Count - 1);
+                    continue;
+                }
+
+                foreach (var input in context.Pending)
+                {
+                    if (input.Data is { InProgress: true })
+                    {
+                        ResolveCycle(key, input);
+                        break;
+                    }
+
+                    stack.Add((input, key));
+                }
+            }
+        }
+        finally
+        {
+            // After cancellation or a bug, nothing may stay marked as in progress.
+            foreach (var (key, _) in stack)
+            {
+                if (key.Data is { } data)
+                {
+                    data.InProgress = false;
+                    data.Requester = null;
+                }
+            }
+        }
+    }
+
+    private void Commit(CellKey key, CellData data, CellValue value, Dependencies dependencies, bool usedVolatile)
+    {
+        data.Value = value;
+        data.IsDirty = false;
+        data.InProgress = false;
+        data.Requester = null;
+        if (data.Registered is { } previous)
+            Graph.Unregister(key, previous);
+        data.Registered = dependencies;
+        Graph.Register(key, dependencies);
+        if (usedVolatile)
+            _volatile.Add(key);
+        else
+            _volatile.Remove(key);
+    }
+
+    // The loop is the chain of requesters from the cell that asked back up to the cell it asked for.
+    private void ResolveCycle(CellKey asker, CellKey asked)
+    {
+        var members = new List<CellKey>();
+        CellKey? current = asker;
+        while (current is { } member)
+        {
+            members.Add(member);
+            if (member == asked)
+                break;
+            current = member.Data?.Requester;
+        }
+
+        foreach (var member in members)
+        {
+            var data = member.Data!;
+            Commit(member, data, CellValue.Number(0), data.LastAttempt ?? new Dependencies(), usedVolatile: false);
+        }
+
+        var path = new StringBuilder("Circular reference: ");
+        for (var i = members.Count - 1; i >= 0; i--)
+            path.Append(members[i]).Append(" -> ");
+        path.Append(members[^1]);
+        workbook.AddDiagnostic(new CalculationDiagnostic(DiagnosticKind.CircularReference, asked.Sheet, asked.Address.ToString(), path.ToString()));
+    }
+}
