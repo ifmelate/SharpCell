@@ -43,6 +43,24 @@ public static class ErrorKinds
         throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown error kind.");
     }
 
+    /// <summary>Matches an error literal at the start of <paramref name="text"/>, ignoring case.</summary>
+    internal static bool TryMatchPrefix(ReadOnlySpan<char> text, out ErrorKind kind, out int length)
+    {
+        foreach (var (k, literal) in Table)
+        {
+            if (text.StartsWith(literal, StringComparison.OrdinalIgnoreCase))
+            {
+                kind = k;
+                length = literal.Length;
+                return true;
+            }
+        }
+
+        kind = default;
+        length = 0;
+        return false;
+    }
+
     /// <summary>Parses an error literal, ignoring case. The whole span must be the literal.</summary>
     public static bool TryParse(ReadOnlySpan<char> text, out ErrorKind kind)
     {

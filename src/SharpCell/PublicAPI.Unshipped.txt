@@ -30,6 +30,9 @@ SharpCell.ErrorKind.Ref = 4 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Spill = 9 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Value = 3 -> SharpCell.ErrorKind
 SharpCell.ErrorKinds
+SharpCell.FormulaParseException
+SharpCell.FormulaParseException.FormulaParseException(string! message, int position) -> void
+SharpCell.FormulaParseException.Position.get -> int
 SharpCell.LambdaValue
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
