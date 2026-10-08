@@ -1,4 +1,19 @@
 #nullable enable
+SharpCell.CalculationDiagnostic
+SharpCell.CalculationDiagnostic.Address.get -> string?
+SharpCell.CalculationDiagnostic.CalculationDiagnostic(SharpCell.DiagnosticKind kind, SharpCell.Worksheet? sheet, string? address, string! message) -> void
+SharpCell.CalculationDiagnostic.Kind.get -> SharpCell.DiagnosticKind
+SharpCell.CalculationDiagnostic.Message.get -> string!
+SharpCell.CalculationDiagnostic.Sheet.get -> SharpCell.Worksheet?
+SharpCell.Cell
+SharpCell.Cell.Address.get -> string!
+SharpCell.Cell.Column.get -> int
+SharpCell.Cell.Formula.get -> string?
+SharpCell.Cell.Formula.set -> void
+SharpCell.Cell.Row.get -> int
+SharpCell.Cell.Value.get -> SharpCell.CellValue
+SharpCell.Cell.Value.set -> void
+SharpCell.Cell.Worksheet.get -> SharpCell.Worksheet!
 SharpCell.CellValue
 SharpCell.CellValue.AsArray() -> SharpCell.CellValue[,]!
 SharpCell.CellValue.AsBoolean() -> bool
@@ -19,6 +34,12 @@ SharpCell.CellValueKind.Lambda = 7 -> SharpCell.CellValueKind
 SharpCell.CellValueKind.Missing = 1 -> SharpCell.CellValueKind
 SharpCell.CellValueKind.Number = 2 -> SharpCell.CellValueKind
 SharpCell.CellValueKind.Text = 3 -> SharpCell.CellValueKind
+SharpCell.DateSystem
+SharpCell.DateSystem.Date1900 = 0 -> SharpCell.DateSystem
+SharpCell.DateSystem.Date1904 = 1 -> SharpCell.DateSystem
+SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.CircularReference = 0 -> SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.FunctionFailure = 1 -> SharpCell.DiagnosticKind
 SharpCell.ErrorKind
 SharpCell.ErrorKind.Calc = 14 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Div0 = 2 -> SharpCell.ErrorKind
@@ -34,9 +55,31 @@ SharpCell.FormulaParseException
 SharpCell.FormulaParseException.FormulaParseException(string! message, int position) -> void
 SharpCell.FormulaParseException.Position.get -> int
 SharpCell.LambdaValue
+SharpCell.Workbook
+SharpCell.Workbook.AddSheet(string! name) -> SharpCell.Worksheet!
+SharpCell.Workbook.Culture.get -> System.Globalization.CultureInfo!
+SharpCell.Workbook.Culture.set -> void
+SharpCell.Workbook.DateSystem.get -> SharpCell.DateSystem
+SharpCell.Workbook.DateSystem.set -> void
+SharpCell.Workbook.DefineName(string! name, string! formula, SharpCell.Worksheet? scope = null) -> void
+SharpCell.Workbook.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CalculationDiagnostic!>!
+SharpCell.Workbook.Evaluate(string! formula) -> SharpCell.CellValue
+SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
+SharpCell.Workbook.TryGetSheet(string! name, out SharpCell.Worksheet? sheet) -> bool
+SharpCell.Workbook.Workbook() -> void
+SharpCell.Workbook.this[string! name].get -> SharpCell.Worksheet!
+SharpCell.Worksheet
+SharpCell.Worksheet.Name.get -> string!
+SharpCell.Worksheet.Workbook.get -> SharpCell.Workbook!
+SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
+SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
+override SharpCell.CalculationDiagnostic.ToString() -> string!
+override SharpCell.Cell.ToString() -> string!
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
 override SharpCell.CellValue.ToString() -> string!
+override SharpCell.Worksheet.ToString() -> string!
 static SharpCell.CellValue.Array(SharpCell.CellValue[,]! values) -> SharpCell.CellValue
 static SharpCell.CellValue.Boolean(bool value) -> SharpCell.CellValue
 static SharpCell.CellValue.Empty.get -> SharpCell.CellValue
