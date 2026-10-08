@@ -1,1 +1,53 @@
 #nullable enable
+SharpCell.CellValue
+SharpCell.CellValue.AsArray() -> SharpCell.CellValue[,]!
+SharpCell.CellValue.AsBoolean() -> bool
+SharpCell.CellValue.AsError() -> SharpCell.ErrorKind
+SharpCell.CellValue.AsLambda() -> SharpCell.LambdaValue!
+SharpCell.CellValue.AsNumber() -> double
+SharpCell.CellValue.AsText() -> string!
+SharpCell.CellValue.CellValue() -> void
+SharpCell.CellValue.Equals(SharpCell.CellValue other) -> bool
+SharpCell.CellValue.IsError.get -> bool
+SharpCell.CellValue.Kind.get -> SharpCell.CellValueKind
+SharpCell.CellValueKind
+SharpCell.CellValueKind.Array = 6 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Boolean = 4 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Empty = 0 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Error = 5 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Lambda = 7 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Missing = 1 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Number = 2 -> SharpCell.CellValueKind
+SharpCell.CellValueKind.Text = 3 -> SharpCell.CellValueKind
+SharpCell.ErrorKind
+SharpCell.ErrorKind.Calc = 14 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Div0 = 2 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.NA = 7 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Name = 5 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Null = 1 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Num = 6 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Ref = 4 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Spill = 9 -> SharpCell.ErrorKind
+SharpCell.ErrorKind.Value = 3 -> SharpCell.ErrorKind
+SharpCell.ErrorKinds
+SharpCell.LambdaValue
+override SharpCell.CellValue.Equals(object? obj) -> bool
+override SharpCell.CellValue.GetHashCode() -> int
+override SharpCell.CellValue.ToString() -> string!
+static SharpCell.CellValue.Array(SharpCell.CellValue[,]! values) -> SharpCell.CellValue
+static SharpCell.CellValue.Boolean(bool value) -> SharpCell.CellValue
+static SharpCell.CellValue.Empty.get -> SharpCell.CellValue
+static SharpCell.CellValue.Error(SharpCell.ErrorKind kind) -> SharpCell.CellValue
+static SharpCell.CellValue.False.get -> SharpCell.CellValue
+static SharpCell.CellValue.Lambda(SharpCell.LambdaValue! value) -> SharpCell.CellValue
+static SharpCell.CellValue.Missing.get -> SharpCell.CellValue
+static SharpCell.CellValue.Number(double value) -> SharpCell.CellValue
+static SharpCell.CellValue.Text(string! value) -> SharpCell.CellValue
+static SharpCell.CellValue.True.get -> SharpCell.CellValue
+static SharpCell.CellValue.implicit operator SharpCell.CellValue(bool value) -> SharpCell.CellValue
+static SharpCell.CellValue.implicit operator SharpCell.CellValue(double value) -> SharpCell.CellValue
+static SharpCell.CellValue.implicit operator SharpCell.CellValue(string! value) -> SharpCell.CellValue
+static SharpCell.CellValue.operator !=(SharpCell.CellValue left, SharpCell.CellValue right) -> bool
+static SharpCell.CellValue.operator ==(SharpCell.CellValue left, SharpCell.CellValue right) -> bool
+static SharpCell.ErrorKinds.ToText(this SharpCell.ErrorKind kind) -> string!
+static SharpCell.ErrorKinds.TryParse(System.ReadOnlySpan<char> text, out SharpCell.ErrorKind kind) -> bool
