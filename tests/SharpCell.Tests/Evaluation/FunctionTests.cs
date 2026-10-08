@@ -196,8 +196,9 @@ public class FunctionTests
     [Fact]
     public void Default_registry_lists_the_implemented_functions()
     {
-        string[] expected = ["ABS", "AND", "AVERAGE", "CHOOSE", "COLUMNS", "COUNT", "COUNTA", "IF", "IFERROR", "ISBLANK",
-            "ISERROR", "ISOMITTED", "MAX", "MIN", "NOT", "NOW", "OR", "RAND", "ROWS", "SUM"];
+        string[] expected = ["ABS", "AND", "AVERAGE", "BYCOL", "BYROW", "CHOOSE", "COLUMNS", "COUNT", "COUNTA", "IF", "IFERROR",
+            "ISBLANK", "ISERROR", "ISOMITTED", "MAKEARRAY", "MAP", "MAX", "MIN", "NOT", "NOW", "OR", "RAND", "REDUCE", "ROWS",
+            "SCAN", "SUM"];
         Assert.Equal(expected, FunctionRegistry.Default.All.Select(f => f.Name).Order());
         Assert.True(FunctionRegistry.Default.All.Single(f => f.Name == "NOW").IsVolatile);
     }

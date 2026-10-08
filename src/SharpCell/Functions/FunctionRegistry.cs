@@ -26,6 +26,7 @@ internal sealed class FunctionRegistry
         LogicalFunctions.Register(registry);
         InformationFunctions.Register(registry);
         DateTimeFunctions.Register(registry);
+        LambdaFunctions.Register(registry);
         return registry;
     }
 }
