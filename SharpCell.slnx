@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SharpCell/SharpCell.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SharpCell.Tests/SharpCell.Tests.csproj" />
+  </Folder>
+</Solution>
