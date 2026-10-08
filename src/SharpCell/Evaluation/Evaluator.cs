@@ -76,7 +76,9 @@ internal static class Evaluator
                 return EvaluateBinary(b, context, isRoot: false);
 
             case FunctionNode f:
-                return FunctionInvoker.Invoke(f, context);
+                return EvaluateCall(f, context);
+            case CallNode c:
+                return Lambdas.Call(ToValue(Evaluate(c.Callee, context), context), c.Arguments, context);
 
             case SpillNode s:
                 return EvaluateSpill(s, context);
@@ -246,7 +248,26 @@ internal static class Evaluator
         return -1;
     }
 
-    // Lookup order: the sheet's own names, then workbook names. Relative references inside a name
+    // A name followed by arguments: LET/LAMBDA syntax, a LET-bound function, a registry function,
+    // or a defined name holding a LAMBDA, in that order.
+    private static Operand EvaluateCall(FunctionNode node, EvaluationContext context)
+    {
+        if (Lambdas.TryEvaluateSpecialForm(node, context, out var special))
+            return special;
+
+        if (context.Scope is { } scope && scope.TryFind(node.Name, out var binding))
+            return Lambdas.Call(ToValue(Lambdas.Read(binding!, context), context), node.Arguments, context);
+
+        if (context.Workbook.Functions.TryGet(node.Name, out _))
+            return FunctionInvoker.Invoke(node, context);
+
+        var name = EvaluateName(new NameNode(null, node.Name), context);
+        if (!name.IsReference && name.Value.Kind == CellValueKind.Error && name.Value.AsError() == ErrorKind.Name)
+            return name;
+        return Lambdas.Call(ToValue(name, context), node.Arguments, context);
+    }
+
+    // Lookup order: LET names and LAMBDA parameters, the sheet's own names, then workbook names. Relative references inside a name
     // were parsed at A1 and move with the cell that uses the name.
     private static Operand EvaluateName(NameNode node, EvaluationContext context)
     {
@@ -256,6 +277,9 @@ internal static class Evaluator
             return CellValue.Error(ErrorKind.Ref);
 
         var upper = node.Name.ToUpperInvariant();
+        if (node.Sheet is null && context.Scope is { } local && local.TryFind(upper, out var binding))
+            return Lambdas.Read(binding!, context);
+
         context.RecordName(upper);
         if (!(scope is not null && workbook.Names.TryGet(upper, scope, out var definition))
             && !workbook.Names.TryGet(upper, null, out definition))

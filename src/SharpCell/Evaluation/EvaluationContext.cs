@@ -46,6 +46,12 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// <summary>What a read of a dirty cell returns; any value would do, the evaluation is discarded.</summary>
     public static CellValue PendingPlaceholder => CellValue.Error(ErrorKind.NA);
 
+    /// <summary>LET names and LAMBDA parameters in effect; null outside any LET or LAMBDA.</summary>
+    public Scope? Scope { get; set; }
+
+    /// <summary>Lambda calls currently in progress.</summary>
+    public int LambdaDepth { get; set; }
+
     /// <summary>The formula predates dynamic arrays; see <see cref="CellData.IsLegacy"/>.</summary>
     public bool Legacy { get; init; }
 
