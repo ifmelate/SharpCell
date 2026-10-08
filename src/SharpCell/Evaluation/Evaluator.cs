@@ -23,6 +23,8 @@ internal static class Evaluator
             node = p.Inner;
 
         var result = node is BinaryNode binary ? EvaluateBinary(binary, context, isRoot: true) : Evaluate(node, context);
+        if (context.Legacy)
+            result = ImplicitIntersection(result, context);
         var value = ToValue(result, context);
         return value.Kind switch
         {
@@ -78,6 +80,8 @@ internal static class Evaluator
 
             case SpillNode s:
                 return EvaluateSpill(s, context);
+            case ImplicitIntersectionNode i:
+                return ImplicitIntersection(Evaluate(i.Operand, context), context);
 
             // Tables are not evaluated in v0.1.
             case StructuredReferenceNode:
@@ -148,6 +152,35 @@ internal static class Evaluator
         var b = ToValue(right, context);
         var culture = context.Culture;
         return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, last));
+    }
+
+    /// <summary>
+    /// The @ operator. A range gives the cell in the formula's row (single column), column (single
+    /// row) or both; no such cell is #VALUE!. An array gives its top-left element.
+    /// </summary>
+    public static Operand ImplicitIntersection(Operand operand, EvaluationContext context)
+    {
+        if (operand.Reference is not { } reference)
+        {
+            var value = operand.Value;
+            return value.Kind == CellValueKind.Array ? value.AsArray()[0, 0] : value;
+        }
+
+        if (!reference.IsSingleArea)
+            return CellValue.Error(ErrorKind.Value);
+
+        var (sheet, area) = reference.Areas[0];
+        if (area.IsSingleCell)
+            return operand;
+
+        var row = area.Rows == 1 ? area.FirstRow : context.Origin.Row;
+        var column = area.Columns == 1 ? area.FirstColumn : context.Origin.Column;
+        if (!area.Contains(row, column))
+            return CellValue.Error(ErrorKind.Value);
+
+        var cell = new Reference(sheet, Area.Cell(row, column));
+        context.RecordReference(cell);
+        return Operand.Of(cell);
     }
 
     // A1#: the area the array result of anchor A1 currently covers.

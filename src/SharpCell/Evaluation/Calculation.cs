@@ -193,6 +193,7 @@ internal sealed class Calculation(Workbook workbook)
                 {
                     CancellationToken = cancellationToken,
                     Dependencies = new Dependencies(),
+                    Legacy = data.IsLegacy,
                 };
                 EvaluationCount++;
                 var value = EvaluateGuarded(data.Formula, context);

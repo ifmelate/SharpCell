@@ -46,6 +46,9 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// <summary>What a read of a dirty cell returns; any value would do, the evaluation is discarded.</summary>
     public static CellValue PendingPlaceholder => CellValue.Error(ErrorKind.NA);
 
+    /// <summary>The formula predates dynamic arrays; see <see cref="CellData.IsLegacy"/>.</summary>
+    public bool Legacy { get; init; }
+
     /// <summary>A formula evaluated through <see cref="Workbook.Evaluate"/>, not in a cell.</summary>
     public bool IsDetached { get; init; }
 
