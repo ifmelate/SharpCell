@@ -438,3 +438,21 @@ public class XlsxReaderTests
         public override bool CanSeek => false;
     }
 }
+
+public class ExternalReferenceDetectionTests
+{
+    [Theory]
+    [InlineData("[1]Sheet1!A1", true)]
+    [InlineData("'[1]My sheet'!A1+1", true)]
+    [InlineData("SUM([2]S!A1:A3)", true)]
+    [InlineData("[1]!Name", true)]
+    [InlineData("Table1[Col]", false)]
+    [InlineData("SUM(Table1[[#This Row],[1]])", false)]
+    [InlineData("Table1[[1]:[2]]", false)]
+    [InlineData("\"[1]\"&A1", false)]
+    [InlineData("A1+1", false)]
+    public void Recognises_links_to_other_workbooks(string formula, bool expected)
+    {
+        Assert.Equal(expected, FormulaText.ReferencesOtherWorkbook(formula));
+    }
+}

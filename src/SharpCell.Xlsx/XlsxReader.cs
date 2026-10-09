@@ -265,11 +265,13 @@ internal static class FormulaText
     /// <summary>
     /// Whether the formula refers to another workbook, which files write as an index in brackets:
     /// <c>[1]Sheet1!A1</c>, <c>'[1]My sheet'!A1</c>, <c>[1]!Name</c>. Table references such as
-    /// <c>Table1[Col]</c> follow a name, so they do not match.
+    /// <c>Table1[Col]</c> follow a name, and brackets inside them (<c>Table1[[#This Row],[1]]</c>)
+    /// are nested, so they do not match.
     /// </summary>
     public static bool ReferencesOtherWorkbook(string formula)
     {
         var inString = false;
+        var depth = 0;
         for (var i = 0; i < formula.Length; i++)
         {
             var ch = formula[i];
@@ -279,10 +281,19 @@ internal static class FormulaText
                 continue;
             }
 
-            if (inString || ch != '[')
+            if (inString)
                 continue;
+            if (ch == ']')
+            {
+                depth = Math.Max(0, depth - 1);
+                continue;
+            }
+
+            if (ch != '[')
+                continue;
+            depth++;
             var previous = i == 0 ? ' ' : formula[i - 1];
-            if (char.IsLetterOrDigit(previous) || previous is '_' or '.' or '[' or ']' or '\\')
+            if (depth > 1 || char.IsLetterOrDigit(previous) || previous is '_' or '.' or '\\')
                 continue;
 
             var j = i + 1;
