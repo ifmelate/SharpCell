@@ -33,6 +33,7 @@ internal sealed class FunctionRegistry
         FinancialCashFlows.Register(registry);
         FinancialDepreciation.Register(registry);
         FinancialSecurities.Register(registry);
+        FinancialBonds.Register(registry);
         return registry;
     }
 }
