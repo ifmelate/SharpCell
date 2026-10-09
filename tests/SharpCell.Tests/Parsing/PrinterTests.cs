@@ -157,9 +157,7 @@ public class PrinterTests
         var text = "A1" + string.Concat(Enumerable.Repeat("+A1", 2000));
         Assert.True(text.Length < FormulaLimits.MaxLength);
         string? printed = null;
-        var thread = new Thread(() => printed = RoundTrip(text), maxStackSize: 256 * 1024);
-        thread.Start();
-        thread.Join();
+        OnThread.Run(() => printed = RoundTrip(text), maxStackSize: 256 * 1024);
         Assert.Equal(text, printed);
     }
 
@@ -175,9 +173,7 @@ public class PrinterTests
             : head + string.Concat(Enumerable.Repeat(repeated, FormulaLimits.MaxTreeDepth - 2));
         var node = FormulaParser.Parse(text, Origin);
         string? printed = null;
-        var thread = new Thread(() => printed = FormulaPrinter.Print(node, Origin), maxStackSize: 512 * 1024);
-        thread.Start();
-        thread.Join();
+        OnThread.Run(() => printed = FormulaPrinter.Print(node, Origin), maxStackSize: 512 * 1024);
         Assert.Equal(text, printed);
     }
 

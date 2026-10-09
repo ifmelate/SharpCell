@@ -19,7 +19,9 @@ public class FunctionFuzzTests
     private static readonly int CallsPerFunction =
         int.TryParse(Environment.GetEnvironmentVariable("SHARPCELL_FUZZ_ITERATIONS"), out var n) ? Math.Max(1, n / 10) : 60;
 
-    private static readonly TimeSpan Budget = TimeSpan.FromSeconds(5);
+    // Wall-clock time, so it catches hangs, not slow machines: SORT over a whole column takes seconds
+    // when both target frameworks run at once.
+    private static readonly TimeSpan Budget = TimeSpan.FromSeconds(30);
 
     private static readonly string[] Pool =
     [

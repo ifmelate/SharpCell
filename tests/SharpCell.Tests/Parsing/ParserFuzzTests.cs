@@ -15,7 +15,11 @@ public class ParserFuzzTests
     // Set SHARPCELL_FUZZ_ITERATIONS for a longer local run; CI uses the default.
     private static readonly int Iterations =
         int.TryParse(Environment.GetEnvironmentVariable("SHARPCELL_FUZZ_ITERATIONS"), out var n) ? n : 3000;
-    private static readonly TimeSpan PerInputBudget = TimeSpan.FromMilliseconds(250);
+    // Wall-clock time, so it catches hangs and exponential blowups, not slow machines: an input that
+    // parses in a millisecond can wait over a second for a CPU when both target frameworks run at once.
+    // SHARPCELL_FUZZ_BUDGET_MS overrides it.
+    private static readonly TimeSpan PerInputBudget = TimeSpan.FromMilliseconds(
+        int.TryParse(Environment.GetEnvironmentVariable("SHARPCELL_FUZZ_BUDGET_MS"), out var ms) ? ms : 10_000);
 
     private static readonly string[] TokenPool =
     [
@@ -56,7 +60,7 @@ public class ParserFuzzTests
     public void Parser_survives_generated_input(Generator generator, int seed)
     {
         var failures = new List<string>();
-        var thread = new Thread(() =>
+        OnThread.Run(() =>
         {
             var random = new Random(seed);
             var iterations = generator is Generator.DeepNesting or Generator.LongChain or Generator.PostfixChain
@@ -72,8 +76,6 @@ public class ParserFuzzTests
                     failures.Add($"{failure}\n  input: {Escape(text)}\n  origin: {origin}, style: {style}");
             }
         }, maxStackSize: 1024 * 1024);
-        thread.Start();
-        thread.Join();
 
         Assert.True(failures.Count == 0, string.Join("\n\n", failures));
     }
@@ -81,6 +83,12 @@ public class ParserFuzzTests
     private static string? Check(string text, CellAddress origin, ReferenceStyle style)
     {
         var stopwatch = Stopwatch.StartNew();
+        var failure = Verify(text, origin, style);
+        return failure ?? (stopwatch.Elapsed > PerInputBudget ? $"took {stopwatch.Elapsed.TotalMilliseconds:0} ms" : null);
+    }
+
+    private static string? Verify(string text, CellAddress origin, ReferenceStyle style)
+    {
         try
         {
             FormulaNode node;
@@ -116,11 +124,6 @@ public class ParserFuzzTests
         catch (Exception ex)
         {
             return $"{ex.GetType().Name}: {ex.Message}";
-        }
-        finally
-        {
-            if (stopwatch.Elapsed > PerInputBudget)
-                throw new TimeoutException($"Input took {stopwatch.Elapsed.TotalMilliseconds} ms: {Escape(text)}");
         }
     }
 
