@@ -14,12 +14,12 @@ Excel error values. Numeric values match the codes returned by `ERROR.TYPE`.
 
 | Name | Value | Description |
 |---|---|---|
-| `Null` | 1 | `#NULL!`: the intersection of two ranges is empty. |
-| `Div0` | 2 | `#DIV/0!`: division by zero. |
-| `Value` | 3 | `#VALUE!`: an argument has the wrong type. |
-| `Ref` | 4 | `#REF!`: a reference is not valid. |
-| `Name` | 5 | `#NAME?`: an unknown function or name. |
-| `Num` | 6 | `#NUM!`: a number is out of range or a calculation does not converge. |
-| `NA` | 7 | `#N/A`: a value is not available, such as a lookup that found nothing. |
-| `Spill` | 9 | `#SPILL!`: a dynamic array result cannot spill because cells are in the way. |
-| `Calc` | 14 | `#CALC!`: the calculation cannot produce a result, such as an empty array. |
+| <a id="null"></a>`Null` | 1 | `#NULL!`: the intersection of two ranges is empty. |
+| <a id="div0"></a>`Div0` | 2 | `#DIV/0!`: division by zero. |
+| <a id="value"></a>`Value` | 3 | `#VALUE!`: an argument has the wrong type. |
+| <a id="ref"></a>`Ref` | 4 | `#REF!`: a reference is not valid. |
+| <a id="name"></a>`Name` | 5 | `#NAME?`: an unknown function or name. |
+| <a id="num"></a>`Num` | 6 | `#NUM!`: a number is out of range or a calculation does not converge. |
+| <a id="na"></a>`NA` | 7 | `#N/A`: a value is not available, such as a lookup that found nothing. |
+| <a id="spill"></a>`Spill` | 9 | `#SPILL!`: a dynamic array result cannot spill because cells are in the way. |
+| <a id="calc"></a>`Calc` | 14 | `#CALC!`: the calculation cannot produce a result, such as an empty array. |

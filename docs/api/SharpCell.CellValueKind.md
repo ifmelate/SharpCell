@@ -14,11 +14,11 @@ The kind of value a [CellValue](SharpCell.CellValue.md) holds.
 
 | Name | Value | Description |
 |---|---|---|
-| `Empty` | 0 | An empty cell. Reads as 0, "" or FALSE depending on what the formula expects. |
-| `Missing` | 1 | An argument left out of a function call, as in `IF(A1,,B1)`. |
-| `Number` | 2 | A number. Dates and times are numbers too: serial days since the workbook's date system epoch. |
-| `Text` | 3 | Text. |
-| `Boolean` | 4 | TRUE or FALSE. |
-| `Error` | 5 | An Excel error value such as `#DIV/0!`; errors are values, not exceptions. |
-| `Array` | 6 | A rectangular array, the result of a dynamic array formula or an array constant. |
-| `Lambda` | 7 | A function value created by `LAMBDA`. |
+| <a id="empty"></a>`Empty` | 0 | An empty cell. Reads as 0, "" or FALSE depending on what the formula expects. |
+| <a id="missing"></a>`Missing` | 1 | An argument left out of a function call, as in `IF(A1,,B1)`. |
+| <a id="number"></a>`Number` | 2 | A number. Dates and times are numbers too: serial days since the workbook's date system epoch. |
+| <a id="text"></a>`Text` | 3 | Text. |
+| <a id="boolean"></a>`Boolean` | 4 | TRUE or FALSE. |
+| <a id="error"></a>`Error` | 5 | An Excel error value such as `#DIV/0!`; errors are values, not exceptions. |
+| <a id="array"></a>`Array` | 6 | A rectangular array, the result of a dynamic array formula or an array constant. |
+| <a id="lambda"></a>`Lambda` | 7 | A function value created by `LAMBDA`. |

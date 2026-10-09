@@ -14,5 +14,5 @@ The workbook's date system: which day serial number 0 or 1 stands for.
 
 | Name | Value | Description |
 |---|---|---|
-| `Date1900` | 0 | Serial 1 is 1900-01-01 and the non-existent 1900-02-29 is serial 60, as in Excel for Windows. |
-| `Date1904` | 1 | Serial 0 is 1904-01-01, as in old Excel for Mac. |
+| <a id="date1900"></a>`Date1900` | 0 | Serial 1 is 1900-01-01 and the non-existent 1900-02-29 is serial 60, as in Excel for Windows. |
+| <a id="date1904"></a>`Date1904` | 1 | Serial 0 is 1904-01-01, as in old Excel for Mac. |

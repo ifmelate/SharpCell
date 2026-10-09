@@ -95,7 +95,8 @@ internal static class ApiReference
             {
                 var value = CSharpSignature.Of(field)[(field.Name.Length + 3)..];
                 var text = docs.Summary(DocId.Of(field), link).Replace("|", "\\|", StringComparison.Ordinal).Replace("\n\n", " ", StringComparison.Ordinal);
-                sb.Append("| `").Append(field.Name).Append("` | ").Append(value).Append(" | ").Append(text).Append(" |\n");
+                sb.Append("| <a id=\"").Append(CSharpSignature.Anchor(field)).Append("\"></a>`").Append(field.Name).Append("` | ")
+                    .Append(value).Append(" | ").Append(text).Append(" |\n");
             }
 
             return sb.ToString().TrimEnd() + "\n";

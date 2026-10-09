@@ -40,7 +40,7 @@ public class ApiReferenceTests
     {
         var page = Page("docs/api/SharpCell.ErrorKind.md");
         Assert.Contains("| Name | Value | Description |", page);
-        Assert.Contains("| `Div0` | 2 | `#DIV/0!`: division by zero. |", page);
+        Assert.Contains("| <a id=\"div0\"></a>`Div0` | 2 | `#DIV/0!`: division by zero. |", page);
     }
 
     [Fact]
@@ -50,6 +50,24 @@ public class ApiReferenceTests
         var start = page.IndexOf("### Load(Stream)", StringComparison.Ordinal);
         var section = page[start..page.IndexOf("### Load(string)", StringComparison.Ordinal)];
         Assert.DoesNotContain("`path`", section);
+    }
+
+    [Fact]
+    public void Every_link_to_a_member_has_an_anchor_on_the_target_page()
+    {
+        var pages = Output.Files.ToDictionary(f => Path.GetFileName(f.Path), f => f.Content);
+        var broken = new List<string>();
+        foreach (var file in Output.Files)
+        {
+            foreach (System.Text.RegularExpressions.Match link in System.Text.RegularExpressions.Regex.Matches(file.Content, @"\]\(([^)#]+\.md)#([^)]+)\)"))
+            {
+                var target = link.Groups[1].Value;
+                if (!pages.TryGetValue(target, out var content) || !content.Contains($"<a id=\"{link.Groups[2].Value}\"></a>", StringComparison.Ordinal))
+                    broken.Add($"{file.Path}: {target}#{link.Groups[2].Value}");
+            }
+        }
+
+        Assert.True(broken.Count == 0, string.Join("\n", broken));
     }
 
     [Fact]

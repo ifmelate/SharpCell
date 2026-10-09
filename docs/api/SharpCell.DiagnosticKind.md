@@ -14,7 +14,7 @@ What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
 
 | Name | Value | Description |
 |---|---|---|
-| `CircularReference` | 0 | Cells reference each other in a loop; every cell in the loop got 0. |
-| `FunctionFailure` | 1 | A function failed unexpectedly; the cell got `#VALUE!`. |
-| `UnsupportedFormula` | 2 | A formula uses something SharpCell cannot evaluate, such as a table reference or (in a file) a link to another workbook; the cell got `#NAME?`. |
-| `LimitExceeded` | 3 | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together; the cell got an error. |
+| <a id="circularreference"></a>`CircularReference` | 0 | Cells reference each other in a loop; every cell in the loop got 0. |
+| <a id="functionfailure"></a>`FunctionFailure` | 1 | A function failed unexpectedly; the cell got `#VALUE!`. |
+| <a id="unsupportedformula"></a>`UnsupportedFormula` | 2 | A formula uses something SharpCell cannot evaluate, such as a table reference or (in a file) a link to another workbook; the cell got `#NAME?`. |
+| <a id="limitexceeded"></a>`LimitExceeded` | 3 | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together; the cell got an error. |
