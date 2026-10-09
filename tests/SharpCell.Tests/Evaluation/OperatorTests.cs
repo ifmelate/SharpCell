@@ -19,7 +19,7 @@ public class OperatorTests
         { "=1/0", Err(ErrorKind.Div0) },
         { "=0^0", Err(ErrorKind.Num) },
         { "=0^-1", Err(ErrorKind.Div0) },
-        { "=(-8)^(1/3)", Err(ErrorKind.Num) },
+        { "=(-8)^(1/2)", Err(ErrorKind.Num) },
         { "=1E308*10", Err(ErrorKind.Num) },
         { "=\"3\"+1", 4 },
         { "=\" 2.5 \"*2", 5 },

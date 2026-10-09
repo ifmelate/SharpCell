@@ -73,10 +73,22 @@ internal static class Operators
                     return CellValue.Error(ErrorKind.Num);
                 if (a == 0 && b < 0)
                     return CellValue.Error(ErrorKind.Div0);
+                if (a < 0 && b != Math.Floor(b))
+                    return OddRoot(a, b);
                 return CellValue.Number(Math.Pow(a, b));
             default:
                 throw new ArgumentOutOfRangeException(nameof(op), op, "Not a value operator.");
         }
+    }
+
+    // A negative base with a fractional exponent has a real result only for odd roots: Excel
+    // gives (-8)^(1/3) = -2 and #NUM! for (-8)^(1/2) or (-8)^0.4.
+    private static CellValue OddRoot(double a, double b)
+    {
+        var degree = Math.Round(1 / b);
+        if (Math.Abs(1 / b - degree) > 1e-9 * Math.Abs(degree) || Math.Abs(degree % 2) != 1)
+            return CellValue.Error(ErrorKind.Num);
+        return CellValue.Number(-Math.Pow(-a, b));
     }
 
     // Values are never coerced for comparison. Types order as number < text < boolean, and an

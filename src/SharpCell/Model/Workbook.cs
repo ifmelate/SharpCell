@@ -65,6 +65,12 @@ public sealed class Workbook
     /// <summary>Clock for NOW and TODAY; replaced in tests.</summary>
     internal TimeProvider Clock { get; set; } = TimeProvider.System;
 
+    /// <summary>
+    /// Cells all spills and array formulas may cover together, anchors included; a result that would
+    /// go beyond is #SPILL!. Bounds the memory a small file can claim (about 400 bytes per cell).
+    /// </summary>
+    internal long MaxSpillCells { get; set; } = 1L << 22;
+
     /// <summary>Source for RAND and friends; replaced in tests.</summary>
     internal Random Random { get; set; } = Random.Shared;
 
@@ -119,6 +125,15 @@ public sealed class Workbook
         Calculation.InvalidateName(upper);
     }
 
+    /// <summary>Defines a name read from a file whose formula cannot be parsed: using it gives <c>#NAME?</c>.</summary>
+    internal void DefineUnsupportedName(string name, string formula, string reason, Worksheet? scope)
+    {
+        var text = formula.StartsWith('=') ? formula : "=" + formula;
+        var upper = name.ToUpperInvariant();
+        Names.Set(new NameDefinition(upper, text, new UnsupportedNode(text[1..], reason), scope));
+        Calculation.InvalidateName(upper);
+    }
+
     /// <summary>
     /// Calculates every formula that is out of date: those whose inputs changed since the last
     /// calculation and those using volatile functions (NOW, RAND).
@@ -145,7 +160,7 @@ public sealed class Workbook
 
 
     // A name must read as a name in both reference styles: "A1", "R1C1", "R", "TRUE" are not names.
-    private static bool IsValidName(string name)
+    internal static bool IsValidName(string name)
     {
         if (name.Length is 0 or > 255)
             return false;

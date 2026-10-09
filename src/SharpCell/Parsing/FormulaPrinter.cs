@@ -96,6 +96,9 @@ internal sealed class FormulaPrinter
             case StructuredReferenceNode s:
                 _sb.Append(s.Text);
                 break;
+            case UnsupportedNode u:
+                _sb.Append(u.Text);
+                break;
             case UnaryNode { Operator: UnaryOperator.Percent } u:
                 Write(u.Operand, Percent, unionAllowed);
                 _sb.Append('%');

@@ -91,6 +91,18 @@ internal sealed class StructuredReferenceNode(string text) : FormulaNode(1)
     public string Text { get; } = text;
 }
 
+/// <summary>
+/// A formula from a file that could not be parsed, kept as its raw text. It evaluates to
+/// <c>#NAME?</c> and reports why, so one formula cannot stop a workbook from loading.
+/// </summary>
+internal sealed class UnsupportedNode(string text, string reason) : FormulaNode(1)
+{
+    /// <summary>The formula text without the leading '='.</summary>
+    public string Text { get; } = text;
+
+    public string Reason { get; } = reason;
+}
+
 internal enum UnaryOperator
 {
     Negate,

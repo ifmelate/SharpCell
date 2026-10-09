@@ -26,6 +26,20 @@ internal enum ArgumentKind
 
     /// <summary>Evaluated only when the function asks for it: the branches of IF.</summary>
     Lazy,
+
+    /// <summary>
+    /// Passed as evaluated, like <see cref="Any"/>, but in a formula without the dynamic array flag a
+    /// range is first reduced by implicit intersection: IF's condition, IFERROR's value.
+    /// </summary>
+    ScalarAny,
+
+    /// <summary>
+    /// Passed as evaluated, like <see cref="Any"/>; in a formula without the dynamic array flag the
+    /// argument is still calculated as an array, with no implicit intersection inside it. Excel
+    /// before dynamic arrays did this for array parameters such as SUMPRODUCT's, which is why
+    /// <c>SUMPRODUCT((A1:A9&gt;1)*B1:B9)</c> worked without Ctrl+Shift+Enter.
+    /// </summary>
+    ArrayContext,
 }
 
 internal delegate Operand FunctionBody(FunctionCall call);

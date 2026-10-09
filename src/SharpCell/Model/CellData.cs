@@ -32,8 +32,9 @@ internal sealed class CellData
     public bool LastAttemptVolatile;
 
     /// <summary>
-    /// A formula written by Excel before dynamic arrays (no array flag in the file): its result is
-    /// reduced by implicit intersection instead of spilling.
+    /// A formula written without the dynamic array flag (as Excel before dynamic arrays did): ranges
+    /// where one value is expected, and the result, are reduced by implicit intersection instead of
+    /// being calculated as arrays and spilled.
     /// </summary>
     public bool IsLegacy;
 
@@ -49,4 +50,11 @@ internal sealed class CellData
     /// filling the rectangle is not reading it.
     /// </summary>
     public Area? SpillWatch;
+
+    /// <summary>
+    /// For an array formula (Ctrl+Shift+Enter, read from a file): the fixed area its result fills.
+    /// The result is fitted to the area instead of spilling, so it is never <c>#SPILL!</c>; the
+    /// other cells of the area are its spilled cells and cannot be changed on their own.
+    /// </summary>
+    public Area? FixedArray;
 }

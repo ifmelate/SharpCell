@@ -218,6 +218,8 @@ internal sealed class FormulaParser
                 return new ReferenceNode(token.Sheet, token.Area);
             case TokenKind.Name:
                 Advance();
+                if (token.Sheet is null && OptionalParameter(token.Text!) is { } optional)
+                    return optional;
                 return new NameNode(token.Sheet, StripParameterPrefix(token.Text!));
             case TokenKind.StructuredReference:
                 Advance();
@@ -417,6 +419,16 @@ internal sealed class FormulaParser
         if (rest.Length != name.Length && !LexesAsSingle(rest + "(", TokenKind.Function, rest.Length, expectedTokens: 3))
             rest = name;
         return rest.ToUpperInvariant();
+    }
+
+    // Files store an optional LAMBDA parameter [x] as "_xlop.x"; it becomes the [x] form.
+    private StructuredReferenceNode? OptionalParameter(string name)
+    {
+        if (!name.StartsWith("_xlop.", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var rest = name[6..];
+        return LexesAsSingle(rest, TokenKind.Name, rest.Length, expectedTokens: 2) ? new StructuredReferenceNode("[" + rest + "]") : null;
     }
 
     // Files store LAMBDA/LET parameter names as "_xlpm.x".

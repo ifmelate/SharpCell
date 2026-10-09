@@ -7,8 +7,8 @@ internal static class LogicalFunctions
     public static void Register(FunctionRegistry registry)
     {
         var max = FunctionRegistry.MaxArguments;
-        registry.Add(new FunctionInfo("IF", 2, 3, [ArgumentKind.Any, ArgumentKind.Lazy], If));
-        registry.Add(new FunctionInfo("IFERROR", 2, 2, [ArgumentKind.Any, ArgumentKind.Lazy], IfError));
+        registry.Add(new FunctionInfo("IF", 2, 3, [ArgumentKind.ScalarAny, ArgumentKind.Lazy], If));
+        registry.Add(new FunctionInfo("IFERROR", 2, 2, [ArgumentKind.ScalarAny, ArgumentKind.Lazy], IfError));
         registry.Add(new FunctionInfo("CHOOSE", 2, max, [ArgumentKind.Value, ArgumentKind.Lazy], Choose));
         registry.Add(new FunctionInfo("AND", 1, max, [ArgumentKind.Any], call => Junction(call, isAnd: true)));
         registry.Add(new FunctionInfo("OR", 1, max, [ArgumentKind.Any], call => Junction(call, isAnd: false)));
@@ -43,7 +43,7 @@ internal static class LogicalFunctions
         if (value.Kind == CellValueKind.Array)
         {
             var fallback = Branch(call, 1, absent: CellValue.Number(0));
-            return ArrayMath.Map(value, fallback, (v, f) => v.IsError ? f : v);
+            return ArrayMath.MapOutside(value, fallback, (v, f) => v.IsError ? f : v);
         }
 
         return value.IsError ? BranchOperand(call, 1, CellValue.Number(0)) : value;
@@ -78,7 +78,10 @@ internal static class LogicalFunctions
             if (value.Kind == CellValueKind.Empty || (value.Kind == CellValueKind.Text && source != ValueSource.Direct))
                 return true;
 
+            // Text typed into the call counts only if it reads as TRUE or FALSE; other text is skipped.
             var flag = Coercion.ToBoolean(value);
+            if (flag.IsError && value.Kind == CellValueKind.Text)
+                return true;
             if (flag.IsError)
             {
                 error = flag;

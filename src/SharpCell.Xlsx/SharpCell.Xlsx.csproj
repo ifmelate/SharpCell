@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <RootNamespace>SharpCell.Xlsx</RootNamespace>
+    <Description>Reads .xlsx files into SharpCell workbooks: values, formulas, cached results, defined names.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt;PublicAPI.Unshipped.txt" />
+    <InternalsVisibleTo Include="SharpCell.Tests" />
+    <ProjectReference Include="../SharpCell/SharpCell.csproj" />
+  </ItemGroup>
+</Project>

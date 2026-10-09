@@ -14,5 +14,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <ProjectReference Include="../../src/SharpCell/SharpCell.csproj" />
+    <ProjectReference Include="../../src/SharpCell.Xlsx/SharpCell.Xlsx.csproj" />
+    <ProjectReference Include="../../tools/SharpCell.Conformance/SharpCell.Conformance.csproj" />
   </ItemGroup>
 </Project>

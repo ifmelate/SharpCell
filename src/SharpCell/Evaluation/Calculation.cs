@@ -24,6 +24,15 @@ internal sealed class Calculation(Workbook workbook)
     private readonly HashSet<CellKey> _volatile = [];
     private readonly Dictionary<Worksheet, RangeIndex> _spillWatch = [];
 
+    // Areas of array formulas (Ctrl+Shift+Enter): no cell inside may be changed on its own.
+    private readonly Dictionary<Worksheet, RangeIndex> _fixedArrays = [];
+
+    // Cells covered by spill and array formula areas, anchors included, against Workbook.MaxSpillCells.
+    private long _spillCells;
+
+    // Why the result being committed did not spill; reported with the cell's diagnostics.
+    private string? _spillRefusal;
+
     // A cell evaluated this often within one calculation is not settling (spills that keep waking
     // each other): it is treated as a loop. Ordinary restarts stay far below.
     private const int MaxEvaluationsPerCell = 1000;
@@ -75,6 +84,9 @@ internal sealed class Calculation(Workbook workbook)
             ClearSpill(key, data);
             InvalidateArea(key.Sheet, spill, key, quiet: new HashSet<CellKey> { key });
         }
+
+        if (data?.FixedArray is { } fixedArea && _fixedArrays.TryGetValue(key.Sheet, out var arrays))
+            arrays.Remove(fixedArea, key);
 
         _volatile.Remove(key);
         _cellDiagnostics.Remove(key);
@@ -167,6 +179,42 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
+    /// <summary>A formula was put in place by a file loader: it is calculated by the next recalculation.</summary>
+    public void MarkLoaded(CellKey key, CellData data) => MarkDirty(key, data);
+
+    /// <summary>Claims room in the spill budget for an area a file says a formula covers.</summary>
+    public bool TryReserveLoadedArea(Area area) => TryReserve(area);
+
+    /// <summary>Records an array formula's area, so no cell inside it can be changed on its own.</summary>
+    public void RegisterFixedArray(CellKey anchor, Area area)
+    {
+        if (!_fixedArrays.TryGetValue(anchor.Sheet, out var arrays))
+            _fixedArrays[anchor.Sheet] = arrays = new RangeIndex();
+        arrays.Add(area, anchor);
+    }
+
+    /// <summary>The array formula whose area holds the cell, other than at its own top-left cell; or null.</summary>
+    public CellKey? FixedArrayAt(Worksheet sheet, int row, int column)
+    {
+        if (!_fixedArrays.TryGetValue(sheet, out var arrays))
+            return null;
+        CellKey? found = null;
+        arrays.Query(row, column, anchor =>
+        {
+            if (anchor.Row != row || anchor.Column != column)
+                found = anchor;
+        });
+        return found;
+    }
+
+    private bool TryReserve(Area area)
+    {
+        if (area.CellCount > workbook.MaxSpillCells - _spillCells)
+            return false;
+        _spillCells += area.CellCount;
+        return true;
+    }
+
     private void MarkDirty(CellKey key, CellData data)
     {
         if (data.IsDirty)
@@ -235,6 +283,7 @@ internal sealed class Calculation(Workbook workbook)
                     CancellationToken = cancellationToken,
                     Dependencies = new Dependencies(),
                     Legacy = data.IsLegacy,
+                    LegacyFormula = data.IsLegacy,
                 };
                 EvaluationCount++;
                 var value = EvaluateGuarded(data.Formula, context);
@@ -295,6 +344,12 @@ internal sealed class Calculation(Workbook workbook)
                 return CellValue.Error(ErrorKind.Spill);
         }
 
+        if (!TryReserve(area))
+        {
+            _spillRefusal = $"The result has {area.CellCount} cells; spills of this workbook may cover {workbook.MaxSpillCells} cells in all.";
+            return CellValue.Error(ErrorKind.Spill);
+        }
+
         // Set before writing, so an interrupted write can be cleaned up by ClearSpill.
         data.SpillArea = area;
         var written = 0;
@@ -315,6 +370,53 @@ internal sealed class Calculation(Workbook workbook)
         return SpilledValue(array[0, 0]);
     }
 
+    // An array formula fills exactly its area: a single value or a single row or column repeats,
+    // cells beyond a larger result are #N/A, and a result larger than the area is cut. The area
+    // is the formula's own, so nothing can block it.
+    private CellValue FillFixed(CellKey key, CellData data, CellValue value, Area area, CancellationToken cancellationToken)
+    {
+        if (!TryReserve(area))
+        {
+            _spillRefusal = $"The array formula covers {area.CellCount} cells; spills of this workbook may cover {workbook.MaxSpillCells} cells in all.";
+            return CellValue.Error(ErrorKind.Spill);
+        }
+
+        CellValue[,]? array = value.Kind == CellValueKind.Array ? value.AsArray() : null;
+        CellValue Element(int r, int c)
+        {
+            if (array is null)
+                return value;
+            var rows = array.GetLength(0);
+            var columns = array.GetLength(1);
+            var row = rows == 1 ? 0 : r;
+            var column = columns == 1 ? 0 : c;
+            return row < rows && column < columns ? array[row, column] : CellValue.Error(ErrorKind.NA);
+        }
+
+        var store = key.Sheet.Store;
+        data.SpillArea = area;
+        var written = 0;
+        for (var r = 0; r < area.Rows; r++)
+        {
+            for (var c = 0; c < area.Columns; c++)
+            {
+                if (r == 0 && c == 0)
+                    continue;
+                if (++written % 4096 == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                // A formula inside the area can only come from a malformed file; it is left alone.
+                if (store.Get(area.FirstRow + r, area.FirstColumn + c) is { Formula: not null })
+                    continue;
+                var member = store.GetOrCreate(area.FirstRow + r, area.FirstColumn + c);
+                member.Value = SpilledValue(Element(r, c));
+                member.SpillAnchor = key;
+            }
+        }
+
+        return SpilledValue(Element(0, 0));
+    }
+
     private static CellValue SpilledValue(CellValue value) => value.Kind switch
     {
         CellValueKind.Empty or CellValueKind.Missing => CellValue.Number(0),
@@ -322,7 +424,7 @@ internal sealed class Calculation(Workbook workbook)
         _ => value,
     };
 
-    private static void ClearSpill(CellKey key, CellData data)
+    private void ClearSpill(CellKey key, CellData data)
     {
         if (data.SpillArea is not { } area)
             return;
@@ -335,28 +437,30 @@ internal sealed class Calculation(Workbook workbook)
                 owned.Add(cell);
         }
 
-        foreach (var cell in owned)
-            store.Remove(cell.Row, cell.Column);
+        // Right to left: a row keeps its columns in a list, and removing from its end is cheap.
+        for (var i = owned.Count - 1; i >= 0; i--)
+            store.Remove(owned[i].Row, owned[i].Column);
         data.SpillArea = null;
+        _spillCells -= area.CellCount;
     }
 
-    private static CellValue[,] Snapshot(Worksheet sheet, Area area)
+    // Only stored cells: an area read from a file can claim far more cells than exist.
+    private static List<(int Row, int Column, CellValue Value)> Snapshot(Worksheet sheet, Area area)
     {
-        var values = new CellValue[area.Rows, area.Columns];
+        var values = new List<(int, int, CellValue)>();
         foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
-            values[cell.Row - area.FirstRow, cell.Column - area.FirstColumn] = cell.Data.Value;
+            values.Add((cell.Row, cell.Column, cell.Data.Value));
         return values;
     }
 
-    private static bool SameValues(CellValue[,] a, CellValue[,] b)
+    private static bool SameValues(List<(int Row, int Column, CellValue Value)> a, List<(int Row, int Column, CellValue Value)> b)
     {
-        for (var r = 0; r < a.GetLength(0); r++)
+        if (a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
         {
-            for (var c = 0; c < a.GetLength(1); c++)
-            {
-                if (!a[r, c].Equals(b[r, c]))
-                    return false;
-            }
+            if (a[i].Row != b[i].Row || a[i].Column != b[i].Column || !a[i].Value.Equals(b[i].Value))
+                return false;
         }
 
         return true;
@@ -431,8 +535,11 @@ internal sealed class Calculation(Workbook workbook)
     {
         try
         {
+            _spillRefusal = null;
             Commit(key, data, value, context.Dependencies!, context.UsedVolatile, cancellationToken);
-            SetDiagnostics(key, context.Diagnostics);
+            SetDiagnostics(key, _spillRefusal is { } refusal
+                ? [.. context.Diagnostics, new CalculationDiagnostic(DiagnosticKind.LimitExceeded, key.Sheet, key.Address.ToString(), refusal)]
+                : context.Diagnostics);
         }
         catch (OperationCanceledException)
         {
@@ -457,7 +564,9 @@ internal sealed class Calculation(Workbook workbook)
         Unwatch(key, data);
         if (oldSpill is not null)
             ClearSpill(key, data);
-        if (value.Kind == CellValueKind.Array)
+        if (data.FixedArray is { } fixedArea)
+            value = FillFixed(key, data, value, fixedArea, cancellationToken);
+        else if (value.Kind == CellValueKind.Array)
             value = Spill(key, data, value.AsArray(), cancellationToken);
 
         data.Value = value;

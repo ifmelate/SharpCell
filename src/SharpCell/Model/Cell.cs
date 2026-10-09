@@ -29,6 +29,7 @@ public sealed class Cell
     /// The constant, or the formula's value as of the last calculation. Setting a value removes
     /// the formula. Cells hold scalars only: Missing, arrays and lambdas cannot be stored.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The cell is part of an array formula other than its top-left cell.</exception>
     public CellValue Value
     {
         get => Worksheet.Store.Get(Row, Column)?.Value ?? CellValue.Empty;
@@ -37,6 +38,7 @@ public sealed class Cell
             if (value.Kind is CellValueKind.Missing or CellValueKind.Array or CellValueKind.Lambda)
                 throw new ArgumentException($"A cell cannot hold a {value.Kind} value.", nameof(value));
 
+            EnsureNotArrayMember();
             var key = Key;
             var calculation = Worksheet.Workbook.Calculation;
             calculation.BeforeChange(key, Worksheet.Store.Get(Row, Column));
@@ -53,6 +55,7 @@ public sealed class Cell
                 data.Formula = null;
                 data.IsDirty = false;
                 data.IsLegacy = false;
+                data.FixedArray = null;
 
                 // Typing into a spilled cell makes it the user's: it now blocks the spill.
                 data.SpillAnchor = null;
@@ -66,6 +69,7 @@ public sealed class Cell
     /// Formula text starting with '=' (added if missing), or null for no formula. The text is
     /// parsed on assignment; invalid text throws <see cref="FormulaParseException"/> and leaves the cell unchanged.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The cell is part of an array formula other than its top-left cell.</exception>
     public string? Formula
     {
         get => Worksheet.Store.Get(Row, Column)?.FormulaText;
@@ -78,6 +82,7 @@ public sealed class Cell
     /// </param>
     internal void SetFormula(string? value, bool legacy)
     {
+        EnsureNotArrayMember();
         var key = Key;
         var calculation = Worksheet.Workbook.Calculation;
         if (string.IsNullOrEmpty(value))
@@ -100,12 +105,20 @@ public sealed class Cell
         data.FormulaText = text;
         data.Formula = node;
         data.IsLegacy = legacy;
+        data.FixedArray = null;
         data.Value = CellValue.Empty;
         data.SpillAnchor = null;
         calculation.AfterChange(key, data);
     }
 
     private CellKey Key => new(Worksheet, Row, Column);
+
+    // As in Excel, an array formula is changed as a whole, from its top-left cell.
+    private void EnsureNotArrayMember()
+    {
+        if (Worksheet.Workbook.Calculation.FixedArrayAt(Worksheet, Row, Column) is { } anchor)
+            throw new InvalidOperationException($"{this} is part of the array formula at {anchor}; change the whole array there.");
+    }
 
     public override string ToString() => $"{Worksheet.Name}!{Address}";
 }

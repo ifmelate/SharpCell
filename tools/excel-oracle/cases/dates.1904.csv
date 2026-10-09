@@ -1,0 +1,8 @@
+sheet,cell,content,kind
+D,A1,"=DATE(1904,1,1)",
+D,A2,"=DATE(1904,1,2)",
+D,A3,"=DATE(2024,2,29)",
+D,A4,"=DAY(0)",
+D,A5,"=YEAR(0)",
+D,A6,"=DATE(1903,12,31)",
+D,A7,"=DATEVALUE(""2020-01-01"")",
