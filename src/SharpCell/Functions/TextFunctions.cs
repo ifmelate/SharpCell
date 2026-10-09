@@ -52,7 +52,11 @@ internal static class TextFunctions
         Add(registry, 1, 1, Value, "VALUE");
         Add(registry, 1, 3, NumberValue, "NUMBERVALUE");
         Add(registry, 1, 2, ValueToText, "VALUETOTEXT");
-        Add(registry, 2, 2, Text, "TEXT");
+        registry.Add(new FunctionInfo("TEXT", 2, 2, Values, Text)
+        {
+            Status = FunctionStatus.KnownDeviation,
+            Deviation = "Calendar and era codes (B1, B2, e, g, [DBNum]) are not interpreted, and month names and separators come from the workbook culture, not from [$-xxxx] locale tags.",
+        });
         Add(registry, 1, 3, Fixed, "FIXED");
         Add(registry, 1, 2, Dollar, "DOLLAR");
         Add(registry, 1, max, Concatenate, "CONCATENATE");
