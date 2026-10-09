@@ -57,7 +57,7 @@ internal static class LogicalFunctions
         if (value.Kind == CellValueKind.Array)
         {
             var fallback = Branch(call, 1, absent: CellValue.Number(0));
-            return ArrayMath.MapOutside(value, fallback, (v, f) => v.IsError ? f : v);
+            return ArrayMath.Map(value, fallback, (v, f) => v.IsError ? f : v);
         }
 
         return value.IsError ? BranchOperand(call, 1, CellValue.Number(0)) : value;
@@ -70,7 +70,7 @@ internal static class LogicalFunctions
         if (value.Kind == CellValueKind.Array)
         {
             var fallback = Branch(call, 1, absent: CellValue.Number(0));
-            return ArrayMath.MapOutside(value, fallback, (v, f) => IsNa(v) ? f : v);
+            return ArrayMath.Map(value, fallback, (v, f) => IsNa(v) ? f : v);
         }
 
         return IsNa(value) ? BranchOperand(call, 1, CellValue.Number(0)) : value;
