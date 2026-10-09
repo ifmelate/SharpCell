@@ -75,6 +75,17 @@ public class XlsxTableTests
     }
 
     [Fact]
+    public void Reads_a_single_cell_table_without_header_row()
+    {
+        var table = "<table xmlns=\"" + Main + "\" id=\"1\" name=\"One\" displayName=\"One\" ref=\"A2\" headerRowCount=\"0\">"
+            + "<tableColumns count=\"1\"><tableColumn id=\"1\" name=\"Column1\"/></tableColumns></table>";
+        var wb = Load(WithTable(Book(TableParts, formula: "One[Column1]*10"), table));
+        Assert.Equal("A2:A2", Assert.Single(wb.Tables).Range);
+        wb.Recalculate();
+        Assert.Equal(CellValue.Number(10), wb["S"]["C1"].Value);
+    }
+
+    [Fact]
     public void Reads_hidden_rows_including_rows_without_cells()
     {
         var s = Load(Book(""))["S"];

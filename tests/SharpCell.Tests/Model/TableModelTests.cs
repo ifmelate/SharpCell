@@ -100,8 +100,17 @@ public class TableModelTests
         Assert.Throws<ArgumentException>(() => _s.AddTable("Sales", range, header, totals));
     }
 
+    [Fact]
+    public void Single_cell_table_without_header_row()
+    {
+        var table = _s.AddTable("One", "G5", hasHeaderRow: false);
+        Assert.Equal("G5:G5", table.Range);
+        Assert.Equal(["Column1"], table.Columns);
+    }
+
     [Theory]
-    [InlineData("A1")]
+    [InlineData("A:A")]
+    [InlineData("1:1")]
     [InlineData("nonsense")]
     [InlineData("Other!A1:B2")]
     public void Range_must_be_an_area_on_the_sheet(string range)

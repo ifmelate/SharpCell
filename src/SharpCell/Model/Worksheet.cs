@@ -58,7 +58,8 @@ public sealed class Worksheet
     /// Changing a header cell later does not rename its column.
     /// </summary>
     /// <param name="name">The table name; tables and defined names share one set of names, ignoring case.</param>
-    /// <param name="range">An A1 range on this sheet, such as <c>A1:D10</c>, including the header and totals rows.</param>
+    /// <param name="range">An A1 range on this sheet, such as <c>A1:D10</c>, including the header and totals rows;
+    /// a single cell such as <c>A1</c> is a one-cell table without a header row.</param>
     /// <param name="hasHeaderRow">Whether the first row holds the column names.</param>
     /// <param name="hasTotalsRow">Whether the last row holds totals.</param>
     /// <exception cref="ArgumentException">The name is not valid or is taken, the range is not an area,
@@ -67,7 +68,8 @@ public sealed class Worksheet
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(range);
-        if (!ReferenceSyntax.TryParseA1Area(range, new CellAddress(1, 1), out var parsed) || parsed.Kind != AreaKind.Range)
+        // A single cell is a table of one data cell, without a header row.
+        if (!ReferenceSyntax.TryParseA1Area(range, new CellAddress(1, 1), out var parsed) || parsed.Kind is not (AreaKind.Range or AreaKind.Cell))
             throw new ArgumentException($"'{range}' is not a range such as A1:D10.", nameof(range));
         var area = Area.Resolve(parsed, new CellAddress(1, 1));
 

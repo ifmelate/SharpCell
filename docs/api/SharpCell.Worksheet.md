@@ -71,7 +71,7 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 **Parameters**
 
 - `name`: The table name; tables and defined names share one set of names, ignoring case.
-- `range`: An A1 range on this sheet, such as `A1:D10`, including the header and totals rows.
+- `range`: An A1 range on this sheet, such as `A1:D10`, including the header and totals rows; a single cell such as `A1` is a one-cell table without a header row.
 - `hasHeaderRow`: Whether the first row holds the column names.
 - `hasTotalsRow`: Whether the last row holds totals.
 

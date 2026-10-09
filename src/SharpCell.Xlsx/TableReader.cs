@@ -44,7 +44,7 @@ internal static class TableReader
 
         if (name is null || range is null)
             throw new InvalidDataException($"Table part '{part}' has no name or range.");
-        if (!ReferenceSyntax.TryParseA1Area(range, new CellAddress(1, 1), out var area) || area.Kind != AreaKind.Range)
+        if (!ReferenceSyntax.TryParseA1Area(range, new CellAddress(1, 1), out var area) || area.Kind is not (AreaKind.Range or AreaKind.Cell))
             throw new InvalidDataException($"Table range '{range}' in '{part}' is not valid.");
         return new TablePart(name, Area.Resolve(area, new CellAddress(1, 1)), header, totals, columns, filtered);
     }
