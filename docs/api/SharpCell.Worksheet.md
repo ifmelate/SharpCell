@@ -12,6 +12,15 @@ A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never se
 
 ## Properties
 
+<a id="filtermode"></a>
+### FilterMode
+
+```csharp
+public bool FilterMode { get; set; }
+```
+
+Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
 <a id="name"></a>
 ### Name
 
@@ -69,6 +78,32 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 **Exceptions**
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
+
+<a id="isrowhidden-int"></a>
+### IsRowHidden(int)
+
+```csharp
+public bool IsRowHidden(int row)
+```
+
+Whether a row is hidden.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setrowhidden-int-bool"></a>
+### SetRowHidden(int, bool)
+
+```csharp
+public void SetRowHidden(int row, bool hidden)
+```
+
+Hides or shows a row. SUBTOTAL with codes 101–111 and AGGREGATE with options 1, 3, 5 and 7 skip hidden rows; see [Worksheet.FilterMode](SharpCell.Worksheet.md#filtermode) for SUBTOTAL 1–11. Like any change, it shows at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
 
 <a id="tostring"></a>
 ### ToString()

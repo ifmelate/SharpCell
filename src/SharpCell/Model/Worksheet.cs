@@ -113,6 +113,46 @@ public sealed class Worksheet
         return text.Kind == CellValueKind.Text ? text.AsText() : "";
     }
 
+    private readonly HashSet<int> _hiddenRows = [];
+
+    /// <summary>Whether a row is hidden.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
+    public bool IsRowHidden(int row)
+    {
+        CheckRow(row);
+        return _hiddenRows.Contains(row);
+    }
+
+    /// <summary>
+    /// Hides or shows a row. SUBTOTAL with codes 101–111 and AGGREGATE with options 1, 3, 5 and 7
+    /// skip hidden rows; see <see cref="FilterMode"/> for SUBTOTAL 1–11. Like any change, it shows
+    /// at the next <see cref="Workbook.Recalculate"/>.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
+    public void SetRowHidden(int row, bool hidden)
+    {
+        CheckRow(row);
+        if (hidden)
+            _hiddenRows.Add(row);
+        else
+            _hiddenRows.Remove(row);
+    }
+
+    /// <summary>
+    /// Whether the sheet has a filter with criteria, like <c>Worksheet.FilterMode</c> in Excel. Excel
+    /// then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips
+    /// them as well; without a filter it counts them. AGGREGATE does not look at it.
+    /// </summary>
+    public bool FilterMode { get; set; }
+
+    internal bool IsHiddenRow(int row) => _hiddenRows.Count != 0 && _hiddenRows.Contains(row);
+
+    private static void CheckRow(int row)
+    {
+        if (row is < 1 or > CellAddress.MaxRow)
+            throw new ArgumentOutOfRangeException(nameof(row), row, "Row is outside the sheet.");
+    }
+
     /// <summary>The sheet name.</summary>
     public override string ToString() => Name;
 }
