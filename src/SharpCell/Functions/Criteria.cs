@@ -134,6 +134,9 @@ internal sealed class Criterion
             case OperandKind.Number when value.Kind == CellValueKind.Number:
                 order = value.AsNumber().CompareTo(_number);
                 break;
+            // "<=", ">" and the like with nothing after the operator match nothing, not even "".
+            case OperandKind.Text when _text.Length == 0:
+                return false;
             case OperandKind.Text when value.Kind == CellValueKind.Text:
                 order = string.Compare(value.AsText(), _text, _culture, CompareOptions.IgnoreCase);
                 break;

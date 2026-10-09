@@ -54,6 +54,8 @@ public class ConditionalFunctionTests
     [InlineData("=COUNTIF(A1:A6,\"true\")", 1)]
     [InlineData("=COUNTIF(A1:A10,\"\")", 4)]
     [InlineData("=COUNTIF(A1:A10,\"<>\")", 6)]
+    [InlineData("=COUNTIF(A1:A10,\"<=\")", 0)]
+    [InlineData("=COUNTIF(A1:A10,\">\")", 0)]
     [InlineData("=COUNTIF(A:A,\"<>apple\")", 1048575)]
     [InlineData("=COUNTIFS(A1:A6,\"a*\",B1:B6,\">1\")", 2)]
     [InlineData("=SUMIF(A1:A6,\"a*\",B1)", 6)]
