@@ -30,6 +30,7 @@ internal sealed class FunctionRegistry
         ReferenceFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         FinancialFunctions.Register(registry);
+        FinancialCashFlows.Register(registry);
         return registry;
     }
 }
