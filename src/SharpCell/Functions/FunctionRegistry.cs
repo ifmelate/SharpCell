@@ -31,6 +31,7 @@ internal sealed class FunctionRegistry
         ConditionalFunctions.Register(registry);
         TextFunctions.Register(registry);
         TextSplitFunctions.Register(registry);
+        TextRegexFunctions.Register(registry);
         return registry;
     }
 }
