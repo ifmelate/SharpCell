@@ -33,6 +33,9 @@ internal sealed class FunctionRegistry
         DateTimeFunctions.Register(registry);
         LambdaFunctions.Register(registry);
         ReferenceFunctions.Register(registry);
+        LookupFunctions.Register(registry);
+        ArrayShapeFunctions.Register(registry);
+        ArrayShapeSortFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         DatabaseFunctions.Register(registry);
         EngineeringFunctions.Register(registry);
