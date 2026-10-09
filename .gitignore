@@ -4,3 +4,4 @@ obj/
 .idea/
 *.user
 BenchmarkDotNet.Artifacts/
+.claude/worktrees/
