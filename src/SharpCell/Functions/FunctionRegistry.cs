@@ -50,6 +50,9 @@ internal sealed class FunctionRegistry
         DistributionFunctions.Register(registry);
         DistributionDiscreteFunctions.Register(registry);
         DistributionTestFunctions.Register(registry);
+        TextFunctions.Register(registry);
+        TextSplitFunctions.Register(registry);
+        TextRegexFunctions.Register(registry);
         return registry;
     }
 }
