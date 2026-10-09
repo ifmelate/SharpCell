@@ -32,8 +32,9 @@ internal sealed class CellData
     public bool LastAttemptVolatile;
 
     /// <summary>
-    /// A formula written by Excel before dynamic arrays (no array flag in the file): its result is
-    /// reduced by implicit intersection instead of spilling.
+    /// A formula written without the dynamic array flag (as Excel before dynamic arrays did): ranges
+    /// where one value is expected, and the result, are reduced by implicit intersection instead of
+    /// being calculated as arrays and spilled.
     /// </summary>
     public bool IsLegacy;
 

@@ -68,7 +68,7 @@ internal static class Evaluator
             case UnaryNode { Operator: UnaryOperator.Plus } u:
                 return Evaluate(u.Operand, context);
             case UnaryNode u:
-                var operand = ToValue(Evaluate(u.Operand, context), context);
+                var operand = ToValue(LegacyScalar(Evaluate(u.Operand, context), context), context);
                 return u.Operator == UnaryOperator.Negate
                     ? ArrayMath.Map(operand, v => Operators.Negate(v, context.Culture))
                     : ArrayMath.Map(operand, v => Operators.Percent(v, context.Culture));
@@ -154,8 +154,8 @@ internal static class Evaluator
                 return Operators.Union(left, right);
         }
 
-        var a = ToValue(left, context);
-        var b = ToValue(right, context);
+        var a = ToValue(LegacyScalar(left, context), context);
+        var b = ToValue(LegacyScalar(right, context), context);
         var culture = context.Culture;
         return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, last));
     }
@@ -164,6 +164,16 @@ internal static class Evaluator
     /// The @ operator. A range gives the cell in the formula's row (single column), column (single
     /// row) or both; no such cell is #VALUE!. An array gives its top-left element.
     /// </summary>
+    /// <summary>
+    /// In a formula from before dynamic arrays, a range where one value is expected (an operator's
+    /// operand, a scalar function argument) is reduced to the cell in the formula's row or column,
+    /// which Excel shows as <c>@A1:A3</c>. Array constants and array results stay arrays.
+    /// </summary>
+    public static Operand LegacyScalar(Operand operand, EvaluationContext context) =>
+        context.Legacy && operand.Reference is { } reference && !(reference.IsSingleArea && reference.Areas[0].Area.IsSingleCell)
+            ? ImplicitIntersection(operand, context)
+            : operand;
+
     public static Operand ImplicitIntersection(Operand operand, EvaluationContext context)
     {
         if (operand.Reference is not { } reference)

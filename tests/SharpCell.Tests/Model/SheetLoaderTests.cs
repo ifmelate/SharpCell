@@ -78,6 +78,59 @@ public class SheetLoaderTests
         Assert.Equal(CellValue.Empty, _s["B3"].Value);
     }
 
+    [Theory]
+    [InlineData("=A1:A3*10", 2, 20.0)]
+    [InlineData("=-A1:A3", 3, -3.0)]
+    [InlineData("=SUM(A1:A3*1)", 2, 2.0)]
+    [InlineData("=SUM(A1:A3)", 2, 6.0)]
+    [InlineData("=SUM({1,2,3}*2)", 2, 12.0)]
+    [InlineData("=ABS(A1:A3)", 3, 3.0)]
+    [InlineData("=ROWS(A1:A3)", 2, 3.0)]
+    [InlineData("=SUM(A1:A3*B1:B3)", 3, 90.0)]
+    public void Legacy_formula_intersects_ranges_where_one_value_is_expected(string formula, int row, double expected)
+    {
+        var loader = Loader();
+        for (var r = 1; r <= 3; r++)
+        {
+            loader.SetValue(r, 1, N(r));
+            loader.SetValue(r, 2, N(r * 10));
+        }
+
+        loader.SetFormula(row, 3, Parse(formula, row, 3), LoadedFormulaKind.Legacy, null, CellValue.Empty);
+        loader.Complete();
+        _wb.Recalculate();
+
+        Assert.Equal(N(expected), _s[row, 3].Value);
+    }
+
+    [Fact]
+    public void Legacy_formula_outside_the_rows_of_its_range_is_VALUE()
+    {
+        var loader = Loader();
+        loader.SetValue(1, 1, N(1));
+        loader.SetValue(2, 1, N(2));
+        loader.SetFormula(5, 3, Parse("=A1:A2*10", 5, 3), LoadedFormulaKind.Legacy, null, CellValue.Empty);
+        loader.SetFormula(5, 4, Parse("=IF(A1:A2>1,1,0)", 5, 4), LoadedFormulaKind.Legacy, null, CellValue.Empty);
+        loader.Complete();
+        _wb.Recalculate();
+
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _s["C5"].Value);
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _s["D5"].Value);
+    }
+
+    [Fact]
+    public void Dynamic_formula_keeps_ranges_as_arrays()
+    {
+        var loader = Loader();
+        loader.SetValue(1, 1, N(1));
+        loader.SetValue(2, 1, N(2));
+        loader.SetFormula(2, 3, Parse("=SUM(A1:A2*10)", 2, 3), LoadedFormulaKind.Dynamic, null, CellValue.Empty);
+        loader.Complete();
+        _wb.Recalculate();
+
+        Assert.Equal(N(30), _s["C2"].Value);
+    }
+
     [Fact]
     public void Loaded_dynamic_anchor_owns_its_cached_spill()
     {

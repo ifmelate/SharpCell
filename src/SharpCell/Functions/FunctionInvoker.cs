@@ -29,7 +29,7 @@ internal static class FunctionInvoker
                     call.Set(i, Evaluator.Evaluate(arguments[i], context));
                     break;
                 case ArgumentKind.Value:
-                    var value = Evaluator.ToValue(Evaluator.Evaluate(arguments[i], context), context);
+                    var value = Evaluator.ToValue(Evaluator.LegacyScalar(Evaluator.Evaluate(arguments[i], context), context), context);
                     call.Set(i, value);
                     if (value.Kind == CellValueKind.Array)
                         (lifted ??= []).Add(i);
