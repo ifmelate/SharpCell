@@ -262,14 +262,16 @@ internal static class MathFunctions
         return n == 0 ? CellValue.Number(1) : CellValue.Number(Choose(n + k - 1, k));
     }
 
-    // n choose k by the multiplicative formula over the smaller side; overflow gives infinity, which is #NUM!.
+    // n choose k by the multiplicative formula over the smaller side. Every partial result is a
+    // binomial coefficient, so it stays exact while it fits in 53 bits; it grows with each step,
+    // and overflow (infinity, which is #NUM!) ends the loop after at most about a thousand steps.
     private static double Choose(double n, double k)
     {
         k = Math.Min(k, n - k);
         var result = 1.0;
         for (var i = 1.0; i <= k && double.IsFinite(result); i++)
             result = result * (n - k + i) / i;
-        return Math.Round(result) is var rounded && Math.Abs(rounded - result) <= Math.Abs(result) * 1e-12 ? rounded : result;
+        return result;
     }
 
     private static Operand Multinomial(FunctionCall call)

@@ -14,6 +14,8 @@ internal static class MathSubtotalFunctions
 {
     private const int CancellationCheckInterval = 4096;
 
+    private const string HiddenRows = "Rows that Excel hides or filters out are included, because SharpCell does not model hidden rows.";
+
     // AGGREGATE's functions; SUBTOTAL uses the first eleven.
     private const int Average = 1;
     private const int Count = 2;
@@ -38,12 +40,19 @@ internal static class MathSubtotalFunctions
     public static void Register(FunctionRegistry registry)
     {
         var max = FunctionRegistry.MaxArguments;
-        registry.Add(new FunctionInfo("SUBTOTAL", 2, max, [ArgumentKind.Value, ArgumentKind.Any], Subtotal) { IsVolatile = true });
+        registry.Add(new FunctionInfo("SUBTOTAL", 2, max, [ArgumentKind.Value, ArgumentKind.Any], Subtotal)
+        {
+            IsVolatile = true,
+            Status = FunctionStatus.KnownDeviation,
+            Deviation = HiddenRows,
+        });
         // The array of the array form is calculated as an array even in formulas from before
         // dynamic arrays: AGGREGATE(14,6,A1:A9/(B1:B9="x"),1) never needed Ctrl+Shift+Enter.
         registry.Add(new FunctionInfo("AGGREGATE", 3, max, [ArgumentKind.Value, ArgumentKind.Value, ArgumentKind.ArrayContext, ArgumentKind.Any], Aggregate)
         {
             IsVolatile = true,
+            Status = FunctionStatus.KnownDeviation,
+            Deviation = HiddenRows,
         });
     }
 
