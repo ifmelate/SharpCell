@@ -24,6 +24,52 @@ public sealed class Workbook
         Calculation = new Calculation(this);
     }
 
+    private readonly List<Table> _tables = [];
+    private readonly Dictionary<string, Table> _tablesByName = new(StringComparer.Ordinal);
+
+    /// <summary>The tables of all sheets, in the order they were added.</summary>
+    public IReadOnlyList<Table> Tables => _tables;
+
+    /// <summary>Finds a table by name, ignoring case.</summary>
+    /// <returns>Whether the table exists.</returns>
+    public bool TryGetTable(string name, out Table? table)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return _tablesByName.TryGetValue(name.ToUpperInvariant(), out table);
+    }
+
+    /// <summary>The table that contains a cell, or null.</summary>
+    internal Table? TableAt(Worksheet sheet, int row, int column)
+    {
+        foreach (var table in _tables)
+        {
+            if (table.Worksheet == sheet && table.Area.Contains(row, column))
+                return table;
+        }
+
+        return null;
+    }
+
+    internal Table RegisterTable(Table table)
+    {
+        var upper = table.Name.ToUpperInvariant();
+        if (_tablesByName.ContainsKey(upper) || Names.ContainsInAnyScope(upper))
+            throw new ArgumentException($"The name '{table.Name}' is already used by a table or a defined name.", "name");
+        foreach (var other in _tables)
+        {
+            if (other.Worksheet == table.Worksheet && other.Area.TryIntersect(table.Area, out _))
+                throw new ArgumentException($"The range overlaps table '{other.Name}'.", "range");
+        }
+
+        _tables.Add(table);
+        _tablesByName[upper] = table;
+
+        // Formulas that named the table were #REF!; formulas inside it may use [Column] without a table name.
+        Calculation.InvalidateName(upper);
+        Calculation.InvalidateArea(table.Worksheet, table.Area);
+        return table;
+    }
+
     /// <summary>The sheets in order.</summary>
     public IReadOnlyList<Worksheet> Sheets => _sheets;
 
@@ -122,6 +168,8 @@ public sealed class Workbook
         ArgumentNullException.ThrowIfNull(formula);
         if (!IsValidName(name))
             throw new ArgumentException($"'{name}' is not a valid name.", nameof(name));
+        if (_tablesByName.ContainsKey(name.ToUpperInvariant()))
+            throw new ArgumentException($"A table named '{name}' exists; tables and defined names share one set of names.", nameof(name));
         if (scope is not null && scope.Workbook != this)
             throw new ArgumentException("The scope sheet belongs to another workbook.", nameof(scope));
 

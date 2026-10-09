@@ -23,6 +23,17 @@ internal sealed class NameTable
 
     public void Set(NameDefinition definition) => _names[(definition.Scope, definition.Name)] = definition;
 
+    public bool ContainsInAnyScope(string upperName)
+    {
+        foreach (var key in _names.Keys)
+        {
+            if (key.Name == upperName)
+                return true;
+        }
+
+        return false;
+    }
+
     public bool TryGet(string upperName, Worksheet? scope, out NameDefinition? definition) =>
         _names.TryGetValue((scope, upperName), out definition);
 }

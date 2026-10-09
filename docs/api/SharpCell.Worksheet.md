@@ -50,6 +50,26 @@ A cell by A1 address such as `B3` (no `$`, no range).
 
 ## Methods
 
+<a id="addtable-string-string-bool-bool"></a>
+### AddTable(string, string, bool, bool)
+
+```csharp
+public Table AddTable(string name, string range, bool hasHeaderRow = true, bool hasTotalsRow = false)
+```
+
+Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. Column names come from the header row as it is now: a cell's text, `ColumnN` for an empty cell (N counts from the table's first column) and a number added to a repeated name (`Units2`). Without a header row the columns are `Column1`, `Column2` and so on. Changing a header cell later does not rename its column.
+
+**Parameters**
+
+- `name`: The table name; tables and defined names share one set of names, ignoring case.
+- `range`: An A1 range on this sheet, such as `A1:D10`, including the header and totals rows.
+- `hasHeaderRow`: Whether the first row holds the column names.
+- `hasTotalsRow`: Whether the last row holds totals.
+
+**Exceptions**
+
+- `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
+
 <a id="tostring"></a>
 ### ToString()
 

@@ -140,6 +140,19 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
+    /// <summary>Marks the formulas inside an area out of date, with everything that reads them.</summary>
+    public void InvalidateArea(Worksheet sheet, Area area)
+    {
+        foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
+        {
+            if (cell.Data.Formula is null)
+                continue;
+            var key = new CellKey(sheet, cell.Row, cell.Column);
+            MarkDirty(key, cell.Data);
+            Invalidate(key);
+        }
+    }
+
     public void Recalculate(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

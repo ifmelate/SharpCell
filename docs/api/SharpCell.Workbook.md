@@ -59,6 +59,15 @@ public IReadOnlyList<Worksheet> Sheets { get; }
 
 The sheets in order.
 
+<a id="tables"></a>
+### Tables
+
+```csharp
+public IReadOnlyList<Table> Tables { get; }
+```
+
+The tables of all sheets, in the order they were added.
+
 <a id="item-string"></a>
 ### this[string]
 
@@ -137,3 +146,14 @@ public bool TryGetSheet(string name, out Worksheet? sheet)
 Finds a sheet by name, ignoring case.
 
 **Returns:** Whether the sheet exists.
+
+<a id="trygettable-string-table"></a>
+### TryGetTable(string, Table)
+
+```csharp
+public bool TryGetTable(string name, out Table? table)
+```
+
+Finds a table by name, ignoring case.
+
+**Returns:** Whether the table exists.
