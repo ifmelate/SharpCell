@@ -10,7 +10,9 @@ internal static class TableReferences
     {
         if (FindTable(reference.Table, context) is not { } table)
             return CellValue.Error(ErrorKind.Ref);
-        if (!TryRows(table, reference.Rows, context.Origin.Row, out var firstRow, out var lastRow, out var error))
+        // A formula that belongs to no cell (Workbook.Evaluate) has no row for #This Row.
+        var formulaRow = context.IsDetached ? 0 : context.Origin.Row;
+        if (!TryRows(table, reference.Rows, formulaRow, out var firstRow, out var lastRow, out var error))
             return CellValue.Error(error);
 
         var firstColumn = table.Area.FirstColumn;
@@ -29,11 +31,16 @@ internal static class TableReferences
     }
 
     // A named table is a dependency even while it does not exist: adding it recalculates the formula.
-    // Without a name it is the table holding the formula; adding a table invalidates the cells inside it.
+    // Without a name it is the table holding the formula, and a formula that belongs to no cell is in
+    // no table; adding a table invalidates the cells inside it.
     private static Table? FindTable(string? name, EvaluationContext context)
     {
         if (name is null)
-            return context.Sheet is { } sheet ? context.Workbook.TableAt(sheet, context.Origin.Row, context.Origin.Column) : null;
+        {
+            return context is { IsDetached: false, Sheet: { } sheet }
+                ? context.Workbook.TableAt(sheet, context.Origin.Row, context.Origin.Column)
+                : null;
+        }
 
         context.RecordName(name.ToUpperInvariant());
         return context.Workbook.TryGetTable(name, out var table) ? table : null;

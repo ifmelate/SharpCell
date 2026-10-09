@@ -199,7 +199,9 @@ public sealed class Workbook
     /// <summary>
     /// Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet.
     /// Out-of-date cells it reads are calculated first. References without a sheet are
-    /// <c>#REF!</c> when the workbook has no sheets.
+    /// <c>#REF!</c> when the workbook has no sheets. The formula is in no table and has no row of
+    /// its own: a table reference without a table name is <c>#REF!</c> and <c>[#This Row]</c> is
+    /// <c>#VALUE!</c>.
     /// </summary>
     public CellValue Evaluate(string formula) => Evaluate(formula, CancellationToken.None);
 

@@ -108,7 +108,7 @@ Defines or replaces a name. A name with a `scope` is visible only on that sheet.
 public CellValue Evaluate(string formula)
 ```
 
-Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet. Out-of-date cells it reads are calculated first. References without a sheet are `#REF!` when the workbook has no sheets.
+Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet. Out-of-date cells it reads are calculated first. References without a sheet are `#REF!` when the workbook has no sheets. The formula is in no table and has no row of its own: a table reference without a table name is `#REF!` and `[#This Row]` is `#VALUE!`.
 
 <a id="evaluate-string-cancellationtoken"></a>
 ### Evaluate(string, CancellationToken)
@@ -117,7 +117,7 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 public CellValue Evaluate(string formula, CancellationToken cancellationToken)
 ```
 
-Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet. Out-of-date cells it reads are calculated first. References without a sheet are `#REF!` when the workbook has no sheets.
+Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet. Out-of-date cells it reads are calculated first. References without a sheet are `#REF!` when the workbook has no sheets. The formula is in no table and has no row of its own: a table reference without a table name is `#REF!` and `[#This Row]` is `#VALUE!`.
 
 **Exceptions**
 

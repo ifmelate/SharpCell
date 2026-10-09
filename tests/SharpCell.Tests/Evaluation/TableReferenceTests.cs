@@ -163,6 +163,22 @@ public class TableReferenceTests
     }
 
     [Fact]
+    public void Evaluate_is_in_no_table_even_when_A1_is()
+    {
+        // A table without a header row has data in A1, where Evaluate otherwise places the formula.
+        var wb = new Workbook();
+        var s = wb.AddSheet("S");
+        s["A1"].Value = 1;
+        s["A2"].Value = 2;
+        s.AddTable("Bare", "A1:A2", hasHeaderRow: false);
+
+        Assert.Equal(N(3), wb.Evaluate("=SUM(Bare[Column1])"));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), wb.Evaluate("=Bare[@Column1]"));
+        Assert.Equal(CellValue.Error(ErrorKind.Ref), wb.Evaluate("=SUM([Column1])"));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), wb.Evaluate("=Bare[#This Row]"));
+    }
+
+    [Fact]
     public void Array_result_inside_a_table_is_SPILL()
     {
         // Q3 is empty, so only the table stops the spill; outside a table the same formula spills.
