@@ -96,24 +96,31 @@ internal static class SharedStrings
 }
 
 /// <summary>
-/// Cell metadata (<c>xl/metadata.xml</c>): a cell's <c>cm</c> attribute points at an entry that
-/// says whether its array formula is a dynamic array (spills) rather than a Ctrl+Shift+Enter one.
+/// Cell metadata (<c>xl/metadata.xml</c>). A cell's <c>cm</c> attribute points at an entry that
+/// says whether its array formula is a dynamic array (spills) rather than a Ctrl+Shift+Enter one;
+/// its <c>vm</c> attribute points at a rich value, which is how newer errors such as <c>#SPILL!</c>
+/// and <c>#CALC!</c> are saved (the cell itself says <c>#VALUE!</c>).
 /// </summary>
 internal sealed class CellMetadata
 {
     private const string DynamicArrayType = "XLDAPR";
+    private const string RichValueType = "XLRICHVALUE";
 
     private readonly List<bool> _dynamic = [];
+    private readonly List<int> _richValues = [];
+    private RichValues? _rich;
 
     /// <summary>Without a metadata part, any <c>cm</c> on an array formula is taken as dynamic.</summary>
-    public static CellMetadata? Read(Package package, string? part)
+    public static CellMetadata? Read(Package package, string? part, RichValues? rich)
     {
         if (part is null || !package.Exists(part))
             return null;
 
         var types = new List<string>();
         var futureDynamic = new List<bool>();
+        var futureRich = new List<int>();
         var cells = new List<(int Type, int Value)>();
+        var values = new List<(int Type, int Value)>();
         using var reader = package.OpenXml(part);
         string? section = null;
         string? futureName = null;
@@ -123,15 +130,16 @@ internal sealed class CellMetadata
         {
             if (reader.NodeType == XmlNodeType.EndElement)
             {
-                if (reader.LocalName is "futureMetadata" or "cellMetadata" or "metadataTypes")
+                if (reader.LocalName is "futureMetadata" or "cellMetadata" or "valueMetadata" or "metadataTypes")
                     section = null;
                 if (reader.LocalName == "bk")
                 {
                     // Every block is one entry, even one without a record, so indexes stay aligned.
-                    if (section == "cellMetadata" && inBlock && !blockHasEntry)
-                        cells.Add((0, 0));
+                    if (inBlock && !blockHasEntry)
+                        BlockList(section, cells, values)?.Add((0, 0));
                     inBlock = false;
                 }
+
                 continue;
             }
 
@@ -155,35 +163,126 @@ internal sealed class CellMetadata
                     blockHasEntry = false;
                     if (section == "futureMetadata" && futureName == DynamicArrayType)
                         futureDynamic.Add(false);
-                    if (section == "cellMetadata" && reader.IsEmptyElement)
-                        cells.Add((0, 0));
+                    if (section == "futureMetadata" && futureName == RichValueType)
+                        futureRich.Add(-1);
+                    if (reader.IsEmptyElement)
+                        BlockList(section, cells, values)?.Add((0, 0));
                     break;
                 case "dynamicArrayProperties" when section == "futureMetadata" && futureDynamic.Count > 0:
                     futureDynamic[^1] = IsTrue(reader.GetAttribute("fDynamic"));
                     break;
-                case "rc" when section == "cellMetadata" && inBlock && !blockHasEntry:
+                case "rvb" when section == "futureMetadata" && futureName == RichValueType && futureRich.Count > 0:
+                    futureRich[^1] = ParseInt(reader.GetAttribute("i"));
+                    break;
+                case "rc" when inBlock && !blockHasEntry && BlockList(section, cells, values) is { } list:
                     blockHasEntry = true;
-                    cells.Add((ParseInt(reader.GetAttribute("t")), ParseInt(reader.GetAttribute("v"))));
+                    list.Add((ParseInt(reader.GetAttribute("t")), ParseInt(reader.GetAttribute("v"))));
                     break;
             }
         }
 
-        var metadata = new CellMetadata();
-        foreach (var (type, value) in cells)
-        {
-            var isDynamic = type >= 1 && type <= types.Count && types[type - 1] == DynamicArrayType
-                && value >= 0 && value < futureDynamic.Count && futureDynamic[value];
-            metadata._dynamic.Add(isDynamic);
-        }
+        bool Is(int type, string name) => type >= 1 && type <= types.Count && types[type - 1] == name;
 
+        var metadata = new CellMetadata { _rich = rich };
+        foreach (var (type, value) in cells)
+            metadata._dynamic.Add(Is(type, DynamicArrayType) && value >= 0 && value < futureDynamic.Count && futureDynamic[value]);
+        foreach (var (type, value) in values)
+            metadata._richValues.Add(Is(type, RichValueType) && value >= 0 && value < futureRich.Count ? futureRich[value] : -1);
         return metadata;
     }
+
+    private static List<(int, int)>? BlockList(string? section, List<(int, int)> cells, List<(int, int)> values) => section switch
+    {
+        "cellMetadata" => cells,
+        "valueMetadata" => values,
+        _ => null,
+    };
 
     /// <param name="cm">The 1-based <c>cm</c> attribute of a cell.</param>
     public bool IsDynamicArray(int cm) => cm >= 1 && cm <= _dynamic.Count && _dynamic[cm - 1];
 
+    /// <summary>The error a cell's rich value stands for, from its 1-based <c>vm</c> attribute; null if it is not an error.</summary>
+    public ErrorKind? RichError(int vm) =>
+        vm >= 1 && vm <= _richValues.Count && _rich is not null ? _rich.Error(_richValues[vm - 1]) : null;
+
     public static bool IsTrue(string? value) => value is "1" or "true";
 
-    private static int ParseInt(string? value) =>
+    internal static int ParseInt(string? value) =>
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : -1;
+}
+
+/// <summary>
+/// Rich values (<c>xl/richData</c>). Only one kind matters for calculation: <c>_error</c>, whose
+/// <c>errorType</c> is the ERROR.TYPE code minus one (13 is <c>#CALC!</c>, 8 is <c>#SPILL!</c>).
+/// </summary>
+internal sealed class RichValues
+{
+    private readonly List<ErrorKind?> _errors = [];
+
+    public static RichValues? Read(Package package, string? valuesPart, string? structuresPart)
+    {
+        if (valuesPart is null || structuresPart is null || !package.Exists(valuesPart) || !package.Exists(structuresPart))
+            return null;
+
+        // For each structure: the position of its errorType key, or -1 if it is not an error.
+        var errorKeyAt = new List<int>();
+        using (var reader = package.OpenXml(structuresPart))
+        {
+            var key = 0;
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.Element)
+                    continue;
+                if (reader.LocalName == "s")
+                {
+                    errorKeyAt.Add(reader.GetAttribute("t") == "_error" ? -2 : -1);
+                    key = 0;
+                }
+                else if (reader.LocalName == "k" && errorKeyAt.Count > 0)
+                {
+                    if (errorKeyAt[^1] == -2 && reader.GetAttribute("n") == "errorType")
+                        errorKeyAt[^1] = key;
+                    key++;
+                }
+            }
+        }
+
+        var rich = new RichValues();
+        using (var reader = package.OpenXml(valuesPart))
+        {
+            reader.Read();
+            while (!reader.EOF)
+            {
+                if (reader.NodeType != XmlNodeType.Element || reader.LocalName != "rv")
+                {
+                    reader.Read();
+                    continue;
+                }
+
+                var structure = CellMetadata.ParseInt(reader.GetAttribute("s"));
+                var errorKey = structure >= 0 && structure < errorKeyAt.Count ? errorKeyAt[structure] : -1;
+                ErrorKind? error = null;
+                var position = 0;
+                using (var values = reader.ReadSubtree())
+                {
+                    while (values.Read())
+                    {
+                        if (values.NodeType != XmlNodeType.Element || values.LocalName != "v")
+                            continue;
+                        var text = values.ReadElementContentAsString();
+                        if (position++ == errorKey && int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var type)
+                            && Enum.IsDefined((ErrorKind)(type + 1)))
+                            error = (ErrorKind)(type + 1);
+                    }
+                }
+
+                rich._errors.Add(error);
+                reader.Read();
+            }
+        }
+
+        return rich;
+    }
+
+    public ErrorKind? Error(int index) => index >= 0 && index < _errors.Count ? _errors[index] : null;
 }

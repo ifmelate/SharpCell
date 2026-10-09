@@ -176,6 +176,26 @@ public class FunctionTests
     }
 
     [Fact]
+    public void An_element_wise_call_over_a_large_array_can_be_cancelled()
+    {
+        // The body cancels on its first call and never checks the token itself: the invoker's own
+        // loop over the elements must stop.
+        using var cancellation = new CancellationTokenSource();
+        var calls = 0;
+        var registry = new FunctionRegistry();
+        registry.Add(new FunctionInfo("TICK", 1, 1, [ArgumentKind.Value], call =>
+        {
+            if (++calls == 1)
+                cancellation.Cancel();
+            return call[0].Value;
+        }));
+        _wb.Functions = registry;
+
+        Assert.Throws<OperationCanceledException>(() => _wb.Evaluate("=TICK(A1:A100000)", cancellation.Token));
+        Assert.True(calls < 100000, $"all {calls} elements were visited after cancellation");
+    }
+
+    [Fact]
     public void Cancellation_is_not_swallowed()
     {
         var registry = new FunctionRegistry();
@@ -194,12 +214,18 @@ public class FunctionTests
     }
 
     [Fact]
-    public void Default_registry_lists_the_implemented_functions()
+    public void Default_registry_has_sound_metadata()
     {
-        string[] expected = ["ABS", "AND", "AVERAGE", "BYCOL", "BYROW", "CHOOSE", "COLUMNS", "COUNT", "COUNTA", "IF", "IFERROR",
-            "INDIRECT", "ISBLANK", "ISERROR", "ISOMITTED", "MAKEARRAY", "MAP", "MAX", "MIN", "NOT", "NOW", "OFFSET", "OR", "RAND",
-            "REDUCE", "ROWS", "SCAN", "SUM"];
-        Assert.Equal(expected, FunctionRegistry.Default.All.Select(f => f.Name).Order());
-        Assert.True(FunctionRegistry.Default.All.Single(f => f.Name == "NOW").IsVolatile);
+        // The full list is the compatibility report's job; this checks what every entry must satisfy.
+        var all = FunctionRegistry.Default.All.ToList();
+        Assert.Contains(all, f => f.Name == "SUM");
+        Assert.All(all, f =>
+        {
+            Assert.Equal(f.Name.ToUpperInvariant(), f.Name);
+            Assert.InRange(f.MinArguments, 0, f.MaxArguments);
+            Assert.InRange(f.MaxArguments, 0, FunctionRegistry.MaxArguments);
+            Assert.True(f.Status != FunctionStatus.KnownDeviation || !string.IsNullOrWhiteSpace(f.Deviation), $"{f.Name} needs a deviation text.");
+        });
+        Assert.True(all.Single(f => f.Name == "NOW").IsVolatile);
     }
 }

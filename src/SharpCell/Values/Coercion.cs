@@ -9,7 +9,12 @@ namespace SharpCell;
 /// </summary>
 internal static class Coercion
 {
-    public static CellValue ToNumber(CellValue value, CultureInfo culture)
+    /// <summary>
+    /// Text converts like a typed entry: numbers with the culture's separators, currency, percent
+    /// and parentheses (<see cref="NumberText"/>), then dates and times (<see cref="DateText"/>),
+    /// which need the date system.
+    /// </summary>
+    public static CellValue ToNumber(CellValue value, CultureInfo culture, DateSystem dateSystem)
     {
         switch (value.Kind)
         {
@@ -23,6 +28,7 @@ internal static class Coercion
                 return CellValue.Number(value.AsBoolean() ? 1 : 0);
             case CellValueKind.Text:
                 return NumberText.TryParse(value.AsText(), culture, out var number)
+                    || DateText.TryParse(value.AsText(), culture, dateSystem, out number)
                     ? CellValue.Number(number)
                     : CellValue.Error(ErrorKind.Value);
             default:

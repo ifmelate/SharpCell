@@ -21,9 +21,13 @@ internal static class ArrayMath
         return CellValue.Array(result);
     }
 
+    private static readonly CellValue NA = CellValue.Error(ErrorKind.NA);
+
     /// <summary>
     /// Combines two values. The result has the larger height and width; a single row or column is
-    /// repeated to fill it, and positions outside a smaller array become <c>#N/A</c>.
+    /// repeated to fill it, and a smaller array is padded with <c>#N/A</c> before combining, as in
+    /// Excel: <paramref name="f"/> sees the padding, so IFERROR can replace it and an error on the
+    /// other side still wins (<c>{#DIV/0!;2;3}+{1;2}</c> gives #DIV/0!, 4, #N/A).
     /// </summary>
     public static CellValue Map(CellValue left, CellValue right, Func<CellValue, CellValue, CellValue> f)
     {
@@ -41,37 +45,8 @@ internal static class ArrayMath
         {
             for (var c = 0; c < columns; c++)
             {
-                var x = At(a, r, c);
-                var y = At(b, r, c);
-                result[r, c] = x is { } xv && y is { } yv ? f(xv, yv) : CellValue.Error(ErrorKind.NA);
+                result[r, c] = f(At(a, r, c) ?? NA, At(b, r, c) ?? NA);
             }
-        }
-
-        return CellValue.Array(result);
-    }
-
-    /// <summary>
-    /// Like <see cref="Map(CellValue, CellValue, Func{CellValue, CellValue, CellValue})"/>, but a
-    /// position outside the smaller array is passed to <paramref name="f"/> as <c>#N/A</c>, so it
-    /// decides whether that matters (IFERROR needs the fallback only where the value is an error).
-    /// </summary>
-    public static CellValue MapOutside(CellValue left, CellValue right, Func<CellValue, CellValue, CellValue> f)
-    {
-        if (left.Kind != CellValueKind.Array && right.Kind != CellValueKind.Array)
-            return f(left, right);
-
-        var a = AsArray(left);
-        var b = AsArray(right);
-        var rows = Math.Max(a.GetLength(0), b.GetLength(0));
-        var columns = Math.Max(a.GetLength(1), b.GetLength(1));
-        if ((long)rows * columns > Evaluator.MaxArrayCells)
-            return CellValue.Error(ErrorKind.Num);
-        var na = CellValue.Error(ErrorKind.NA);
-        var result = new CellValue[rows, columns];
-        for (var r = 0; r < rows; r++)
-        {
-            for (var c = 0; c < columns; c++)
-                result[r, c] = f(At(a, r, c) ?? na, At(b, r, c) ?? na);
         }
 
         return CellValue.Array(result);
@@ -95,9 +70,7 @@ internal static class ArrayMath
         {
             for (var col = 0; col < columns; col++)
             {
-                result[r, col] = At(a, r, col) is { } x && At(b, r, col) is { } y && At(c, r, col) is { } z
-                    ? f(x, y, z)
-                    : CellValue.Error(ErrorKind.NA);
+                result[r, col] = f(At(a, r, col) ?? NA, At(b, r, col) ?? NA, At(c, r, col) ?? NA);
             }
         }
 

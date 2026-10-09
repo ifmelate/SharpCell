@@ -88,25 +88,18 @@ internal static class FunctionInvoker
         if ((long)rows * columns > Evaluator.MaxArrayCells)
             return CellValue.Error(ErrorKind.Num);
 
+        // The bodies of scalar functions do not check the token themselves, so the loop does.
+        var cancellation = call.Context.CancellationToken;
         var result = new CellValue[rows, columns];
         for (var r = 0; r < rows; r++)
         {
+            cancellation.ThrowIfCancellationRequested();
             for (var c = 0; c < columns; c++)
             {
-                var inRange = true;
-                for (var i = 0; i < lifted.Count && inRange; i++)
-                {
-                    if (TryAt(arrays[i], r, c, out var element))
-                        call.Set(lifted[i], element);
-                    else
-                        inRange = false;
-                }
-
-                if (!inRange)
-                {
-                    result[r, c] = CellValue.Error(ErrorKind.NA);
-                    continue;
-                }
+                // Like Excel, a smaller array is padded with #N/A and the function still runs, so an
+                // error in an earlier argument wins: LEFT(A1:A9,SEQUENCE(5)) keeps A6's #DIV/0!.
+                for (var i = 0; i < lifted.Count; i++)
+                    call.Set(lifted[i], TryAt(arrays[i], r, c, out var element) ? element : CellValue.Error(ErrorKind.NA));
 
                 var value = Evaluator.ToValue(Run(function, call), call.Context);
                 result[r, c] = value.Kind != CellValueKind.Array

@@ -70,8 +70,8 @@ internal static class Evaluator
             case UnaryNode u:
                 var operand = ToValue(LegacyScalar(Evaluate(u.Operand, context), context), context);
                 return u.Operator == UnaryOperator.Negate
-                    ? ArrayMath.Map(operand, v => Operators.Negate(v, context.Culture))
-                    : ArrayMath.Map(operand, v => Operators.Percent(v, context.Culture));
+                    ? ArrayMath.Map(operand, v => Operators.Negate(v, context.Culture, context.DateSystem))
+                    : ArrayMath.Map(operand, v => Operators.Percent(v, context.Culture, context.DateSystem));
             case BinaryNode b:
                 return EvaluateBinary(b, context, isRoot: false);
 
@@ -157,7 +157,8 @@ internal static class Evaluator
         var a = ToValue(LegacyScalar(left, context), context);
         var b = ToValue(LegacyScalar(right, context), context);
         var culture = context.Culture;
-        return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, last));
+        var dateSystem = context.DateSystem;
+        return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, dateSystem, last));
     }
 
     /// <summary>
@@ -210,8 +211,8 @@ internal static class Evaluator
         var anchor = sheet.Store.Get(area.FirstRow, area.FirstColumn);
         if (anchor is { IsDirty: true, Formula: not null })
             return context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
-        // An array formula (entered with Ctrl+Shift+Enter) does not spill, so it has no spill range.
-        if (anchor?.SpillArea is not { } spill || anchor.FixedArray is not null)
+        // An array formula (Ctrl+Shift+Enter) counts too: Excel gives A1# its whole fixed area.
+        if (anchor?.SpillArea is not { } spill)
             return CellValue.Error(ErrorKind.Ref);
 
         var result = new Reference(sheet, spill);

@@ -296,13 +296,16 @@ public class SheetLoaderTests
     }
 
     [Fact]
-    public void Spill_reference_to_an_array_formula_is_REF()
+    public void Spill_reference_to_an_array_formula_covers_its_area()
     {
-        LoadArray("={1,2}", new Area(1, 1, 1, 2));
+        // As the corpus shows (dynamic_arrays.xlsx: CONCAT(K1#) over a Ctrl+Shift+Enter K1:K3).
+        LoadArray("={1,2,3}", new Area(1, 1, 1, 3));
         _s["D1"].Formula = "=SUM(A1#)";
+        _s["E1"].Formula = "=ROWS(A1#)*10+COLUMNS(A1#)";
         _wb.Recalculate();
 
-        Assert.Equal(CellValue.Error(ErrorKind.Ref), _s["D1"].Value);
+        Assert.Equal(N(6), _s["D1"].Value);
+        Assert.Equal(N(13), _s["E1"].Value);
     }
 
     [Fact]

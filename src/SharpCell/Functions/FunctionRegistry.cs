@@ -23,11 +23,40 @@ internal sealed class FunctionRegistry
     {
         var registry = new FunctionRegistry();
         MathFunctions.Register(registry);
+        MathTrigFunctions.Register(registry);
+        MathRoundingFunctions.Register(registry);
+        MathTextFunctions.Register(registry);
+        MathArrayFunctions.Register(registry);
+        MathSubtotalFunctions.Register(registry);
         LogicalFunctions.Register(registry);
         InformationFunctions.Register(registry);
         DateTimeFunctions.Register(registry);
         LambdaFunctions.Register(registry);
         ReferenceFunctions.Register(registry);
+        LookupFunctions.Register(registry);
+        ArrayShapeFunctions.Register(registry);
+        ArrayShapeSortFunctions.Register(registry);
+        ConditionalFunctions.Register(registry);
+        DatabaseFunctions.Register(registry);
+        EngineeringFunctions.Register(registry);
+        EngineeringComplexFunctions.Register(registry);
+        EngineeringConvertFunction.Register(registry);
+        EngineeringBesselFunctions.Register(registry);
+        FinancialFunctions.Register(registry);
+        FinancialCashFlows.Register(registry);
+        FinancialDepreciation.Register(registry);
+        FinancialSecurities.Register(registry);
+        FinancialBonds.Register(registry);
+        DistributionFunctions.Register(registry);
+        DistributionDiscreteFunctions.Register(registry);
+        DistributionTestFunctions.Register(registry);
+        TextFunctions.Register(registry);
+        TextSplitFunctions.Register(registry);
+        TextRegexFunctions.Register(registry);
+        StatisticsFunctions.Register(registry);
+        StatisticsRankFunctions.Register(registry);
+        StatisticsConditionalFunctions.Register(registry);
+        StatisticsRegressionFunctions.Register(registry);
         return registry;
     }
 }

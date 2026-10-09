@@ -122,4 +122,29 @@ public class CorpusFindingsTests
             ? "=" + SharpCell.Parsing.FormulaPrinter.Print(SharpCell.Parsing.FormulaParser.Parse(f, new CellAddress(100, 26)), new CellAddress(100, 26))
             : null);
     }
+
+    [Fact]
+    public void A_smaller_array_is_padded_with_NA_and_an_error_in_the_other_argument_wins()
+    {
+        _s["A1"].Value = "abc";
+        _s["A2"].Formula = "=1/0";
+        _s["A3"].Value = "xyz";
+        _s["C1"].Formula = "=LEFT(A1:A3,{1;2})";
+        _s["E1"].Formula = "=A1:A3&{\"-\";\"+\"}";
+        _wb.Recalculate();
+
+        Assert.Equal([CellValue.Text("a"), CellValue.Error(ErrorKind.Div0), CellValue.Error(ErrorKind.NA)],
+            [_s["C1"].Value, _s["C2"].Value, _s["C3"].Value]);
+        Assert.Equal([CellValue.Text("abc-"), CellValue.Error(ErrorKind.Div0), CellValue.Error(ErrorKind.NA)],
+            [_s["E1"].Value, _s["E2"].Value, _s["E3"].Value]);
+    }
+
+    [Theory]
+    [InlineData("=SEQUENCE(0,0)", ErrorKind.Calc)]
+    [InlineData("=SEQUENCE(0.3)", ErrorKind.Calc)]
+    [InlineData("=SEQUENCE(-1)", ErrorKind.Value)]
+    public void Empty_sequence_is_CALC_and_a_negative_size_is_VALUE(string formula, ErrorKind expected)
+    {
+        Assert.Equal(CellValue.Error(expected), Eval(formula));
+    }
 }
