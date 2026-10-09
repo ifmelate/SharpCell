@@ -17,6 +17,7 @@ internal sealed class FunctionRegistry
     public void Add(FunctionInfo function) => _functions.Add(function.Name, function);
 
     /// <param name="upperName">Upper-case name without <c>_xlfn.</c> prefixes, as the parser produces.</param>
+    /// <param name="function">The function, or null when the name is unknown.</param>
     public bool TryGet(string upperName, out FunctionInfo? function) => _functions.TryGetValue(upperName, out function);
 
     private static FunctionRegistry CreateDefault()

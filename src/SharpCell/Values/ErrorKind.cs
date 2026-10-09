@@ -5,14 +5,23 @@ namespace SharpCell;
 /// <summary>Excel error values. Numeric values match the codes returned by <c>ERROR.TYPE</c>.</summary>
 public enum ErrorKind
 {
+    /// <summary><c>#NULL!</c>: the intersection of two ranges is empty.</summary>
     Null = 1,
+    /// <summary><c>#DIV/0!</c>: division by zero.</summary>
     Div0 = 2,
+    /// <summary><c>#VALUE!</c>: an argument has the wrong type.</summary>
     Value = 3,
+    /// <summary><c>#REF!</c>: a reference is not valid.</summary>
     Ref = 4,
+    /// <summary><c>#NAME?</c>: an unknown function or name.</summary>
     Name = 5,
+    /// <summary><c>#NUM!</c>: a number is out of range or a calculation does not converge.</summary>
     Num = 6,
+    /// <summary><c>#N/A</c>: a value is not available, such as a lookup that found nothing.</summary>
     NA = 7,
+    /// <summary><c>#SPILL!</c>: a dynamic array result cannot spill because cells are in the way.</summary>
     Spill = 9,
+    /// <summary><c>#CALC!</c>: the calculation cannot produce a result, such as an empty array.</summary>
     Calc = 14,
 }
 
@@ -32,6 +41,7 @@ public static class ErrorKinds
         (ErrorKind.Calc, "#CALC!"),
     ];
 
+    /// <summary>The literal text of the error, such as <c>#DIV/0!</c>.</summary>
     public static string ToText(this ErrorKind kind)
     {
         foreach (var (k, text) in Table)

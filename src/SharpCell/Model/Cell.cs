@@ -17,12 +17,16 @@ public sealed class Cell
         Column = column;
     }
 
+    /// <summary>The sheet the cell belongs to.</summary>
     public Worksheet Worksheet { get; }
 
+    /// <summary>The row number, from 1.</summary>
     public int Row { get; }
 
+    /// <summary>The column number, from 1 (A is 1).</summary>
     public int Column { get; }
 
+    /// <summary>The A1 address without the sheet name, such as <c>B2</c>.</summary>
     public string Address => new CellAddress(Row, Column).ToString();
 
     /// <summary>
@@ -80,6 +84,7 @@ public sealed class Cell
     /// The formula predates dynamic arrays (as marked in xlsx files): an array or range result is
     /// reduced to one value by implicit intersection instead of spilling.
     /// </param>
+    /// <param name="value">Formula text, or null to remove the formula.</param>
     internal void SetFormula(string? value, bool legacy)
     {
         EnsureNotArrayMember();
@@ -120,5 +125,6 @@ public sealed class Cell
             throw new InvalidOperationException($"{this} is part of the array formula at {anchor}; change the whole array there.");
     }
 
+    /// <summary>The address with the sheet name, such as <c>Sheet1!B2</c>.</summary>
     public override string ToString() => $"{Worksheet.Name}!{Address}";
 }

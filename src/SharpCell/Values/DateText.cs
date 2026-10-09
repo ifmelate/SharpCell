@@ -68,6 +68,10 @@ internal static class DateText
     }
 
     /// <param name="currentYear">The year of dates written without one; null rejects such text.</param>
+    /// <param name="text">The text.</param>
+    /// <param name="culture">Culture for month names and the order of day and month.</param>
+    /// <param name="dateSystem">Date system the serial number counts in.</param>
+    /// <param name="serial">The serial date and time when the text reads as one.</param>
     public static bool TryParse(string text, CultureInfo culture, DateSystem dateSystem, int? currentYear, out double serial)
     {
         serial = 0;

@@ -27,6 +27,11 @@ internal static class Operators
     /// Whether this is the formula's last operation. Like Excel, a last addition or subtraction whose
     /// operands cancel out up to floating-point noise gives exactly 0 (=0.3-0.2-0.1 is 0).
     /// </param>
+    /// <param name="op">The operator.</param>
+    /// <param name="left">The left operand, already reduced to a scalar.</param>
+    /// <param name="right">The right operand, already reduced to a scalar.</param>
+    /// <param name="culture">Culture for text-to-number conversion and text comparison.</param>
+    /// <param name="dateSystem">Date system for text that reads as a date.</param>
     public static CellValue Binary(BinaryOperator op, CellValue left, CellValue right, CultureInfo culture, DateSystem dateSystem, bool last)
     {
         switch (op)

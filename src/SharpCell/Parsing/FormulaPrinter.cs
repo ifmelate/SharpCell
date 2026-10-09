@@ -37,6 +37,8 @@ internal sealed class FormulaPrinter
     }
 
     /// <param name="origin">The cell the formula belongs to; relative references are printed from it.</param>
+    /// <param name="node">The formula tree.</param>
+    /// <param name="style">Whether references are written A1 or R1C1.</param>
     public static string Print(FormulaNode node, CellAddress origin, ReferenceStyle style = ReferenceStyle.A1)
     {
         ArgumentNullException.ThrowIfNull(node);

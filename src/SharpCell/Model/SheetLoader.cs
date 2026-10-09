@@ -46,6 +46,10 @@ internal sealed class SheetLoader(Worksheet sheet)
     /// budget (<see cref="Workbook.MaxSpillCells"/>). A dynamic formula whose stated spill area does
     /// not fit keeps the part the file actually has cells in, if that fits.
     /// </returns>
+    /// <param name="row">Row of the formula cell, from 1.</param>
+    /// <param name="column">Column of the formula cell, from 1.</param>
+    /// <param name="kind">Whether the formula is ordinary, a dynamic array or a legacy array formula.</param>
+    /// <param name="cached">The result the file saved, kept until the next recalculation.</param>
     public bool SetFormula(int row, int column, FormulaNode formula, LoadedFormulaKind kind, Area? area, CellValue cached)
     {
         var calculation = sheet.Workbook.Calculation;

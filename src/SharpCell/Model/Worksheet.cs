@@ -2,6 +2,10 @@ using System;
 
 namespace SharpCell;
 
+/// <summary>
+/// A sheet of a <see cref="SharpCell.Workbook"/>. Reading a cell that was never set costs nothing:
+/// a <see cref="Cell"/> is a handle, and storage is allocated only when a value or formula is set.
+/// </summary>
 public sealed class Worksheet
 {
     internal Worksheet(Workbook workbook, string name)
@@ -10,8 +14,10 @@ public sealed class Worksheet
         Name = name;
     }
 
+    /// <summary>The workbook the sheet belongs to.</summary>
     public Workbook Workbook { get; }
 
+    /// <summary>The sheet name.</summary>
     public string Name { get; }
 
     internal SheetStore Store { get; } = new();
@@ -41,5 +47,6 @@ public sealed class Worksheet
         }
     }
 
+    /// <summary>The sheet name.</summary>
     public override string ToString() => Name;
 }
