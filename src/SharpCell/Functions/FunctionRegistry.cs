@@ -31,6 +31,7 @@ internal sealed class FunctionRegistry
         ConditionalFunctions.Register(registry);
         DistributionFunctions.Register(registry);
         DistributionDiscreteFunctions.Register(registry);
+        DistributionTestFunctions.Register(registry);
         return registry;
     }
 }
