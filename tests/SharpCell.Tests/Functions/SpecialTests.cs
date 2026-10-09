@@ -296,6 +296,14 @@ public class SpecialTests
     }
 
     [Fact]
+    public void StudentTailKeepsPrecisionForManyDegreesOfFreedom()
+    {
+        // P(T < -2.727679958778845) with 1e7 degrees of freedom: I_x(a, b) with a huge, b = 1/2
+        // and x near 1, where the continued fraction alone loses about 1e-10.
+        AssertClose(0.003189078390824809, DistributionFunctions.StudentTail(-2.727679958778845, 1e7), 1e-12);
+    }
+
+    [Fact]
     public void ElementaryHelpersKeepPrecisionNearZero()
     {
         AssertClose(1e-10 - 5e-21, Special.Log1p(1e-10), 1e-15);

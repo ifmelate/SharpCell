@@ -739,7 +739,15 @@ internal static class Special
 
         var result = BetaPrefix(a, b, x, y) / a * BetaFraction(a, b, x, y);
         if (!upper)
+        {
+            // With x near 1 (a much larger than b) the fraction's terms cancel and lose about
+            // eps / y; going through the other side costs only eps / result, so use it when that
+            // is clearly smaller. Beyond its own mean the other fraction converges slowly, so only
+            // when the result is not small. This is Student's t with many degrees of freedom.
+            if (x > 0.5 && result > 1e-3 && y < 0.01 * result)
+                return 1 - BetaPrefix(b, a, y, x) / b * BetaFraction(b, a, y, x);
             return result;
+        }
         if (result <= 0.5)
             return 1 - result;
 
