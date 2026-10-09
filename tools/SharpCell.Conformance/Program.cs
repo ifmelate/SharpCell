@@ -51,18 +51,19 @@ internal static class Program
             }
         }
 
+        var overrides = CorpusOverrides.Load(corpus);
         var results = new List<FileResult>();
         foreach (var file in CorpusFiles(corpus))
         {
             if (only is not null && !file.Contains(only, StringComparison.OrdinalIgnoreCase))
                 continue;
-            var result = CorpusRunner.Run(Path.Combine(corpus, file), file, TimeSpan.FromMinutes(2));
+            var result = CorpusRunner.Run(Path.Combine(corpus, file), file, TimeSpan.FromMinutes(2), overrides);
             results.Add(result);
             if (details || only is not null)
                 Print(result, details);
         }
 
-        var report = new Report(results);
+        var report = new Report(results, overrides);
         Console.WriteLine($"{report.Passed} of {report.Cells} cells match Excel in {results.Count} files.");
         if (only is not null)
             return 0;

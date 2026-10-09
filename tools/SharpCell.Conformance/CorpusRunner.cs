@@ -7,9 +7,13 @@ using SharpCell.Xlsx;
 
 namespace SharpCell.Conformance;
 
-/// <summary>One compared cell: a formula cell or a cell filled by an array formula.</summary>
+/// <summary>
+/// One compared cell: a formula cell or a cell filled by an array formula. <see cref="Widened"/>
+/// marks a cell that matches only within a tolerance stated in <c>tests/corpus/overrides.json</c>.
+/// </summary>
 internal sealed record CellOutcome(
-    string Sheet, CellAddress Cell, string? Formula, CellValue Expected, CellValue Actual, bool Passed, IReadOnlyList<string> Functions)
+    string Sheet, CellAddress Cell, string? Formula, CellValue Expected, CellValue Actual, bool Passed, IReadOnlyList<string> Functions,
+    bool Widened = false)
 {
     public string Address => Cell.ToString();
 }
@@ -46,8 +50,9 @@ internal static class CorpusRunner
     private static readonly HashSet<string> RandomFunctions = new(StringComparer.Ordinal) { "RAND", "RANDBETWEEN", "RANDARRAY" };
     private static readonly HashSet<string> ClockFunctions = new(StringComparer.Ordinal) { "NOW", "TODAY" };
 
-    public static FileResult Run(string path, string name, TimeSpan timeout)
+    public static FileResult Run(string path, string name, TimeSpan timeout, CorpusOverrides? overrides = null)
     {
+        overrides ??= CorpusOverrides.Empty;
         Workbook workbook;
         try
         {
@@ -57,6 +62,10 @@ internal static class CorpusRunner
         {
             return new FileResult(name, [], 0, $"Load failed: {ex.GetType().Name}: {ex.Message}");
         }
+
+        // Excel calculated some files in another locale; a file does not record it.
+        if (overrides.CultureOf(name) is { } culture)
+            workbook.Culture = culture;
 
         var tolerance = DefaultTolerance;
         var clockFixed = false;
@@ -112,11 +121,19 @@ internal static class CorpusRunner
             var actual = key.Data?.Value ?? CellValue.Empty;
             var byKind = functions.Overlaps(RandomFunctions) || (!clockFixed && functions.Overlaps(ClockFunctions));
             var passed = byKind ? before.Kind == actual.Kind : Matches(before, actual, tolerance);
-            cells.Add(new CellOutcome(key.Sheet.Name, key.Address, formula, before, actual, passed, [.. functions]));
+            var widened = !passed && !byKind && overrides.For(name, key.Sheet.Name, key.Address) is { } rule
+                && MatchesWithin(before, actual, rule.Relative ?? tolerance, rule.Absolute ?? 0);
+            cells.Add(new CellOutcome(key.Sheet.Name, key.Address, formula, before, actual, passed || widened, [.. functions], widened));
         }
 
         return new FileResult(name, cells, skipped, null);
     }
+
+    // A stated tolerance: numbers within the relative one, or apart by no more than the absolute one.
+    private static bool MatchesWithin(CellValue expected, CellValue actual, double relative, double absolute) =>
+        Matches(expected, actual, relative)
+        || (expected.Kind == CellValueKind.Number && actual.Kind == CellValueKind.Number
+            && Math.Abs(expected.AsNumber() - actual.AsNumber()) <= absolute);
 
     public static bool Matches(CellValue expected, CellValue actual, double tolerance)
     {
