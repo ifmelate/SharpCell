@@ -47,6 +47,9 @@ internal sealed class FunctionRegistry
         FinancialDepreciation.Register(registry);
         FinancialSecurities.Register(registry);
         FinancialBonds.Register(registry);
+        DistributionFunctions.Register(registry);
+        DistributionDiscreteFunctions.Register(registry);
+        DistributionTestFunctions.Register(registry);
         return registry;
     }
 }
