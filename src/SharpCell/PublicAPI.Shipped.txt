@@ -4,6 +4,7 @@ override SharpCell.Cell.ToString() -> string!
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
 override SharpCell.CellValue.ToString() -> string!
+override SharpCell.Table.ToString() -> string!
 override SharpCell.Worksheet.ToString() -> string!
 SharpCell.CalculationDiagnostic
 SharpCell.CalculationDiagnostic.Address.get -> string?
@@ -63,6 +64,13 @@ SharpCell.FormulaParseException
 SharpCell.FormulaParseException.FormulaParseException(string! message, int position) -> void
 SharpCell.FormulaParseException.Position.get -> int
 SharpCell.LambdaValue
+SharpCell.Table
+SharpCell.Table.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+SharpCell.Table.HasHeaderRow.get -> bool
+SharpCell.Table.HasTotalsRow.get -> bool
+SharpCell.Table.Name.get -> string!
+SharpCell.Table.Range.get -> string!
+SharpCell.Table.Worksheet.get -> SharpCell.Worksheet!
 SharpCell.Workbook
 SharpCell.Workbook.AddSheet(string! name) -> SharpCell.Worksheet!
 SharpCell.Workbook.Culture.get -> System.Globalization.CultureInfo!
@@ -75,11 +83,18 @@ SharpCell.Workbook.Evaluate(string! formula) -> SharpCell.CellValue
 SharpCell.Workbook.Evaluate(string! formula, System.Threading.CancellationToken cancellationToken) -> SharpCell.CellValue
 SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
+SharpCell.Workbook.Tables.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Table!>!
 SharpCell.Workbook.this[string! name].get -> SharpCell.Worksheet!
 SharpCell.Workbook.TryGetSheet(string! name, out SharpCell.Worksheet? sheet) -> bool
+SharpCell.Workbook.TryGetTable(string! name, out SharpCell.Table? table) -> bool
 SharpCell.Workbook.Workbook() -> void
 SharpCell.Worksheet
+SharpCell.Worksheet.AddTable(string! name, string! range, bool hasHeaderRow = true, bool hasTotalsRow = false) -> SharpCell.Table!
+SharpCell.Worksheet.FilterMode.get -> bool
+SharpCell.Worksheet.FilterMode.set -> void
+SharpCell.Worksheet.IsRowHidden(int row) -> bool
 SharpCell.Worksheet.Name.get -> string!
+SharpCell.Worksheet.SetRowHidden(int row, bool hidden) -> void
 SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
 SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
 SharpCell.Worksheet.Workbook.get -> SharpCell.Workbook!

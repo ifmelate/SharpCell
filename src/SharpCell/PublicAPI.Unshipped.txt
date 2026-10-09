@@ -1,16 +1,1 @@
 #nullable enable
-override SharpCell.Table.ToString() -> string!
-SharpCell.Table
-SharpCell.Table.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
-SharpCell.Table.HasHeaderRow.get -> bool
-SharpCell.Table.HasTotalsRow.get -> bool
-SharpCell.Table.Name.get -> string!
-SharpCell.Table.Range.get -> string!
-SharpCell.Table.Worksheet.get -> SharpCell.Worksheet!
-SharpCell.Workbook.Tables.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Table!>!
-SharpCell.Workbook.TryGetTable(string! name, out SharpCell.Table? table) -> bool
-SharpCell.Worksheet.AddTable(string! name, string! range, bool hasHeaderRow = true, bool hasTotalsRow = false) -> SharpCell.Table!
-SharpCell.Worksheet.FilterMode.get -> bool
-SharpCell.Worksheet.FilterMode.set -> void
-SharpCell.Worksheet.IsRowHidden(int row) -> bool
-SharpCell.Worksheet.SetRowHidden(int row, bool hidden) -> void
