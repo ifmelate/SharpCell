@@ -225,7 +225,7 @@ internal sealed class FormulaParser
                 return new NameNode(token.Sheet, StripParameterPrefix(token.Text!));
             case TokenKind.StructuredReference:
                 Advance();
-                return new StructuredReferenceNode(token.Text!);
+                return new StructuredReferenceNode(token.Text!, StructuredReferenceSyntax.Parse(token.Text!, token.Start));
             case TokenKind.Function:
                 return ParseFunction();
             case TokenKind.OpenParen:
@@ -430,7 +430,10 @@ internal sealed class FormulaParser
             return null;
 
         var rest = name[6..];
-        return LexesAsSingle(rest, TokenKind.Name, rest.Length, expectedTokens: 2) ? new StructuredReferenceNode("[" + rest + "]") : null;
+        if (!LexesAsSingle(rest, TokenKind.Name, rest.Length, expectedTokens: 2))
+            return null;
+        var text = "[" + rest + "]";
+        return new StructuredReferenceNode(text, StructuredReferenceSyntax.Parse(text, 0));
     }
 
     // Files store LAMBDA/LET parameter names as "_xlpm.x".

@@ -85,10 +85,12 @@ internal sealed class NameNode(SheetPrefix? sheet, string name) : FormulaNode(1)
     public string Name { get; } = name;
 }
 
-/// <summary>A table reference such as <c>Table1[Col]</c>, kept as raw text; not evaluated in v0.1.</summary>
-internal sealed class StructuredReferenceNode(string text) : FormulaNode(1)
+/// <summary>A table reference such as <c>Table1[Col]</c>: the text as written and what it refers to.</summary>
+internal sealed class StructuredReferenceNode(string text, StructuredReference reference) : FormulaNode(1)
 {
     public string Text { get; } = text;
+
+    public StructuredReference Reference { get; } = reference;
 }
 
 /// <summary>
