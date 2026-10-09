@@ -99,7 +99,10 @@ internal static class WorkbookReader
         var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
             ? SharedStrings.Read(package, sharedStringsPart)
             : [];
-        var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target);
+        var rich = RichValues.Read(package,
+            FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
+            FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
+        var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
 
         foreach (var entry in byIndex)
         {

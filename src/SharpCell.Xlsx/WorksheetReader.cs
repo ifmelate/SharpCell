@@ -18,6 +18,7 @@ internal static class WorksheetReader
     {
         public string? Type;
         public int? Cm;
+        public int? Vm;
         public string? FormulaType;
         public string? FormulaText;
         public string? FormulaRef;
@@ -77,6 +78,8 @@ internal static class WorksheetReader
             if (sheet.Store.Get(row, column) is not null)
                 throw new InvalidDataException($"Cell {sheet.Name}!{origin} appears twice in '{part}'.");
             var cached = CachedValue(cell, sharedStrings, dateSystem, sheet, origin);
+            if (cached.IsError && cell.Vm is { } vm && metadata?.RichError(vm) is { } richError)
+                cached = CellValue.Error(richError);
             if (cell.FormulaType != "dataTable" && (cell.FormulaText is { Length: > 0 } || cell.FormulaType == "shared"))
                 LoadFormula(loader, cell, origin, cached, metadata, shared);
             else
@@ -155,6 +158,7 @@ internal static class WorksheetReader
         {
             Type = reader.GetAttribute("t"),
             Cm = int.TryParse(reader.GetAttribute("cm"), NumberStyles.None, CultureInfo.InvariantCulture, out var cm) ? cm : null,
+            Vm = int.TryParse(reader.GetAttribute("vm"), NumberStyles.None, CultureInfo.InvariantCulture, out var vm) ? vm : null,
         };
         if (reader.IsEmptyElement)
         {

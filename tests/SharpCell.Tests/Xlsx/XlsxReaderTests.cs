@@ -428,6 +428,27 @@ public class XlsxReaderTests
     }
 
     [Fact]
+    public void Newer_errors_saved_as_rich_values_are_read_back()
+    {
+        const string metadata = "<metadata xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:xlrd=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\">"
+            + "<metadataTypes count=\"1\"><metadataType name=\"XLRICHVALUE\"/></metadataTypes>"
+            + "<futureMetadata name=\"XLRICHVALUE\" count=\"2\"><bk><extLst><ext uri=\"{3e2802c4-a4d2-4d8b-9148-e3be6c30e623}\"><xlrd:rvb i=\"0\"/></ext></extLst></bk>"
+            + "<bk><extLst><ext uri=\"{3e2802c4-a4d2-4d8b-9148-e3be6c30e623}\"><xlrd:rvb i=\"1\"/></ext></extLst></bk></futureMetadata>"
+            + "<valueMetadata count=\"2\"><bk><rc t=\"1\" v=\"0\"/></bk><bk><rc t=\"1\" v=\"1\"/></bk></valueMetadata></metadata>";
+        var file = new TestXlsx { Metadata = metadata }
+            .Sheet("S", "<row r=\"1\"><c r=\"A1\" t=\"e\" vm=\"1\"><v>#VALUE!</v></c><c r=\"B1\" t=\"e\" vm=\"2\"><v>#VALUE!</v></c><c r=\"C1\" t=\"e\"><v>#VALUE!</v></c></row>")
+            .Part("xl/richData/rdrichvaluestructure.xml",
+                "<rvStructures xmlns=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\" count=\"1\"><s t=\"_error\"><k n=\"errorType\" t=\"i\"/><k n=\"subType\" t=\"i\"/></s></rvStructures>")
+            .Part("xl/richData/rdrichvalue.xml",
+                "<rvData xmlns=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\" count=\"2\"><rv s=\"0\"><v>13</v><v>0</v></rv><rv s=\"0\"><v>8</v><v>0</v></rv></rvData>");
+        var s = Load(file)["S"];
+
+        Assert.Equal(CellValue.Error(ErrorKind.Calc), s["A1"].Value);
+        Assert.Equal(CellValue.Error(ErrorKind.Spill), s["B1"].Value);
+        Assert.Equal(CellValue.Error(ErrorKind.Value), s["C1"].Value);
+    }
+
+    [Fact]
     public void Duplicate_sheet_names_are_invalid()
     {
         Assert.Throws<InvalidDataException>(() => Load(new TestXlsx().Sheet("S", "").Sheet("s", "")));
