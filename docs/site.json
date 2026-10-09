@@ -13,6 +13,7 @@
         { "path": "guides/formulas.md", "title": "Formulas and values", "description": "Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors." },
         { "path": "guides/recalculation.md", "title": "Recalculation", "description": "When values update, volatile functions, cancellation, diagnostics, threads, culture and dates." },
         { "path": "guides/xlsx.md", "title": "Reading .xlsx files", "description": "What the reader loads and skips, saved results, streams, unsupported formats." },
+        { "path": "guides/tables.md", "title": "Tables and hidden rows", "description": "Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE." },
         { "path": "guides/functions.md", "title": "Functions", "description": "Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions." },
         { "path": "guides/limits.md", "title": "What SharpCell does not do", "description": "Every known gap in one list." },
         { "path": "agents.md", "title": "For AI coding agents", "description": "llms.txt, llms-full.txt and rules to paste into an agent's instructions." }

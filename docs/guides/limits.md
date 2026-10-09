@@ -4,8 +4,8 @@ Every known gap in one list, so you can decide before you start.
 
 - **Writing files.** SharpCell reads .xlsx and keeps the workbook in memory; it does not save.
 - **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
-- **Structured references.** Table references such as `Table1[Col]` evaluate to `#NAME?`.
-- **Hidden rows.** Rows are never hidden or filtered, so `SUBTOTAL` and `AGGREGATE` include every row.
+- **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
+- **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation.** A circular reference gives 0 in its cells and a diagnostic.
 - **Display formats.** Cell number formats are not read. The `TEXT` function formats numbers itself.
 - **Localized function names.** Formulas use English names, as in the file format.

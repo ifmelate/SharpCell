@@ -232,4 +232,50 @@ public class GuideExamples
 
         Assert.Equal(new[] { 1810.0, 1810.0 }, totals.Order());
     }
+
+    [Fact]
+    public void Tables_and_structured_references()
+    {
+        // snippet: tables-add
+        var workbook = new Workbook();
+        Worksheet sheet = workbook.AddSheet("Sales");
+        sheet["A1"].Value = "Region";
+        sheet["B1"].Value = "Units";
+        sheet["A2"].Value = "North";
+        sheet["B2"].Value = 10;
+        sheet["A3"].Value = "South";
+        sheet["B3"].Value = 20;
+        sheet.AddTable("Sales", "A1:B3");
+
+        sheet["D1"].Formula = "=SUM(Sales[Units])";
+        sheet["C2"].Formula = "=Sales[@Units]*2";   // the table's row on the formula's own row
+        workbook.Recalculate();
+        // end-snippet
+
+        Assert.Equal(CellValue.Number(30), sheet["D1"].Value);
+        Assert.Equal(CellValue.Number(20), sheet["C2"].Value);
+    }
+
+    [Fact]
+    public void Hidden_rows()
+    {
+        var workbook = new Workbook();
+        Worksheet sheet = workbook.AddSheet("Sheet1");
+        sheet["A1"].Value = 1;
+        sheet["A2"].Value = 2;
+        sheet["A3"].Value = 4;
+
+        // snippet: tables-hidden-rows
+        sheet.SetRowHidden(2, true);
+        sheet["B1"].Formula = "=SUBTOTAL(9,A1:A3)";     // counts a row hidden by hand
+        sheet["B2"].Formula = "=SUBTOTAL(109,A1:A3)";   // skips it
+        workbook.Recalculate();                         // B1 is 7, B2 is 5
+
+        sheet.FilterMode = true;                        // as if a filter hid the row
+        workbook.Recalculate();                         // both are 5
+        // end-snippet
+
+        Assert.Equal(CellValue.Number(5), sheet["B1"].Value);
+        Assert.Equal(CellValue.Number(5), sheet["B2"].Value);
+    }
 }

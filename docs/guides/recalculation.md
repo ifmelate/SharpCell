@@ -58,7 +58,7 @@ foreach (CalculationDiagnostic diagnostic in workbook.Diagnostics)
 |---|---|---|
 | `CircularReference` | Cells reference each other in a loop. | 0 in every cell of the loop, as Excel without iterative calculation |
 | `FunctionFailure` | A function failed unexpectedly. This is a SharpCell bug worth reporting. | `#VALUE!` |
-| `UnsupportedFormula` | A formula uses something SharpCell cannot evaluate, such as a table reference or a link to another workbook. | `#NAME?` |
+| `UnsupportedFormula` | A formula uses something SharpCell cannot evaluate, such as a link to another workbook. | `#NAME?` |
 | `LimitExceeded` | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together. | An error |
 
 Diagnostics describe the current state: editing a cell or calculating it without the problem removes its entries.
