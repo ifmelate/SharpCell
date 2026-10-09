@@ -211,8 +211,8 @@ internal static class Evaluator
         var anchor = sheet.Store.Get(area.FirstRow, area.FirstColumn);
         if (anchor is { IsDirty: true, Formula: not null })
             return context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
-        // An array formula (entered with Ctrl+Shift+Enter) does not spill, so it has no spill range.
-        if (anchor?.SpillArea is not { } spill || anchor.FixedArray is not null)
+        // An array formula (Ctrl+Shift+Enter) counts too: Excel gives A1# its whole fixed area.
+        if (anchor?.SpillArea is not { } spill)
             return CellValue.Error(ErrorKind.Ref);
 
         var result = new Reference(sheet, spill);
