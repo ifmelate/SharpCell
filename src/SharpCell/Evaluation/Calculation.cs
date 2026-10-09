@@ -167,6 +167,9 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
+    /// <summary>A formula was put in place by a file loader: it is calculated by the next recalculation.</summary>
+    public void MarkLoaded(CellKey key, CellData data) => MarkDirty(key, data);
+
     private void MarkDirty(CellKey key, CellData data)
     {
         if (data.IsDirty)
@@ -315,6 +318,47 @@ internal sealed class Calculation(Workbook workbook)
         return SpilledValue(array[0, 0]);
     }
 
+    // An array formula fills exactly its area: a single value or a single row or column repeats,
+    // cells beyond a larger result are #N/A, and a result larger than the area is cut. The area
+    // is the formula's own, so nothing can block it.
+    private static CellValue FillFixed(CellKey key, CellData data, CellValue value, Area area, CancellationToken cancellationToken)
+    {
+        CellValue[,]? array = value.Kind == CellValueKind.Array ? value.AsArray() : null;
+        CellValue Element(int r, int c)
+        {
+            if (array is null)
+                return value;
+            var rows = array.GetLength(0);
+            var columns = array.GetLength(1);
+            var row = rows == 1 ? 0 : r;
+            var column = columns == 1 ? 0 : c;
+            return row < rows && column < columns ? array[row, column] : CellValue.Error(ErrorKind.NA);
+        }
+
+        var store = key.Sheet.Store;
+        data.SpillArea = area;
+        var written = 0;
+        for (var r = 0; r < area.Rows; r++)
+        {
+            for (var c = 0; c < area.Columns; c++)
+            {
+                if (r == 0 && c == 0)
+                    continue;
+                if (++written % 4096 == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                // A formula inside the area can only come from a malformed file; it is left alone.
+                if (store.Get(area.FirstRow + r, area.FirstColumn + c) is { Formula: not null })
+                    continue;
+                var member = store.GetOrCreate(area.FirstRow + r, area.FirstColumn + c);
+                member.Value = SpilledValue(Element(r, c));
+                member.SpillAnchor = key;
+            }
+        }
+
+        return SpilledValue(Element(0, 0));
+    }
+
     private static CellValue SpilledValue(CellValue value) => value.Kind switch
     {
         CellValueKind.Empty or CellValueKind.Missing => CellValue.Number(0),
@@ -457,7 +501,9 @@ internal sealed class Calculation(Workbook workbook)
         Unwatch(key, data);
         if (oldSpill is not null)
             ClearSpill(key, data);
-        if (value.Kind == CellValueKind.Array)
+        if (data.FixedArray is { } fixedArea)
+            value = FillFixed(key, data, value, fixedArea, cancellationToken);
+        else if (value.Kind == CellValueKind.Array)
             value = Spill(key, data, value.AsArray(), cancellationToken);
 
         data.Value = value;

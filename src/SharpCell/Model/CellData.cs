@@ -49,4 +49,11 @@ internal sealed class CellData
     /// filling the rectangle is not reading it.
     /// </summary>
     public Area? SpillWatch;
+
+    /// <summary>
+    /// For an array formula (Ctrl+Shift+Enter, read from a file): the fixed area its result fills.
+    /// The result is fitted to the area instead of spilling, so it is never <c>#SPILL!</c>; the
+    /// other cells of the area are its spilled cells and cannot be changed on their own.
+    /// </summary>
+    public Area? FixedArray;
 }

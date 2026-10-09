@@ -10,5 +10,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
     <AdditionalFiles Include="PublicAPI.Shipped.txt;PublicAPI.Unshipped.txt" />
     <InternalsVisibleTo Include="SharpCell.Tests" />
+    <InternalsVisibleTo Include="SharpCell.Xlsx" />
+    <InternalsVisibleTo Include="SharpCell.Conformance" />
   </ItemGroup>
 </Project>

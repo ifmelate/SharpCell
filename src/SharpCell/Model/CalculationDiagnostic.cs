@@ -7,6 +7,12 @@ public enum DiagnosticKind
 
     /// <summary>A function failed unexpectedly; the cell got <c>#VALUE!</c>.</summary>
     FunctionFailure,
+
+    /// <summary>
+    /// A formula read from a file uses something SharpCell cannot evaluate, such as a link to
+    /// another workbook; the cell got <c>#NAME?</c>.
+    /// </summary>
+    UnsupportedFormula,
 }
 
 /// <summary>Something calculation noticed that is not visible in cell values alone.</summary>

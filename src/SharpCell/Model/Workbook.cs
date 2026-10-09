@@ -119,6 +119,15 @@ public sealed class Workbook
         Calculation.InvalidateName(upper);
     }
 
+    /// <summary>Defines a name read from a file whose formula cannot be parsed: using it gives <c>#NAME?</c>.</summary>
+    internal void DefineUnsupportedName(string name, string formula, string reason, Worksheet? scope)
+    {
+        var text = formula.StartsWith('=') ? formula : "=" + formula;
+        var upper = name.ToUpperInvariant();
+        Names.Set(new NameDefinition(upper, text, new UnsupportedNode(text[1..], reason), scope));
+        Calculation.InvalidateName(upper);
+    }
+
     /// <summary>
     /// Calculates every formula that is out of date: those whose inputs changed since the last
     /// calculation and those using volatile functions (NOW, RAND).

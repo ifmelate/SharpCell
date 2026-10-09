@@ -88,6 +88,9 @@ internal static class Evaluator
             // Tables are not evaluated in v0.1.
             case StructuredReferenceNode:
                 return CellValue.Error(ErrorKind.Name);
+            case UnsupportedNode u:
+                context.Report(DiagnosticKind.UnsupportedFormula, u.Reason);
+                return CellValue.Error(ErrorKind.Name);
             default:
                 return CellValue.Error(ErrorKind.Calc);
         }
@@ -196,7 +199,8 @@ internal static class Evaluator
         var anchor = sheet.Store.Get(area.FirstRow, area.FirstColumn);
         if (anchor is { IsDirty: true, Formula: not null })
             return context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
-        if (anchor?.SpillArea is not { } spill)
+        // An array formula (entered with Ctrl+Shift+Enter) does not spill, so it has no spill range.
+        if (anchor?.SpillArea is not { } spill || anchor.FixedArray is not null)
             return CellValue.Error(ErrorKind.Ref);
 
         var result = new Reference(sheet, spill);
