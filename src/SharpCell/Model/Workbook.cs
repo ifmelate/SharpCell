@@ -27,6 +27,11 @@ public sealed class Workbook
     private readonly List<Table> _tables = [];
     private readonly Dictionary<string, Table> _tablesByName = new(StringComparer.Ordinal);
 
+    // Per sheet, the tables' areas keyed by their top-left cell: tables do not overlap, so a cell is
+    // in at most one.
+    private readonly Dictionary<Worksheet, RangeIndex> _tableAreas = [];
+    private readonly Dictionary<CellKey, Table> _tablesByCorner = [];
+
     /// <summary>The tables of all sheets, in the order they were added.</summary>
     public IReadOnlyList<Table> Tables => _tables;
 
@@ -41,13 +46,11 @@ public sealed class Workbook
     /// <summary>The table that contains a cell, or null.</summary>
     internal Table? TableAt(Worksheet sheet, int row, int column)
     {
-        foreach (var table in _tables)
-        {
-            if (table.Worksheet == sheet && table.Area.Contains(row, column))
-                return table;
-        }
-
-        return null;
+        if (!_tableAreas.TryGetValue(sheet, out var areas))
+            return null;
+        Table? found = null;
+        areas.Query(row, column, corner => found = _tablesByCorner[corner]);
+        return found;
     }
 
     internal Table RegisterTable(Table table)
@@ -55,12 +58,16 @@ public sealed class Workbook
         var upper = table.Name.ToUpperInvariant();
         if (_tablesByName.ContainsKey(upper) || Names.ContainsInAnyScope(upper))
             throw new ArgumentException($"The name '{table.Name}' is already used by a table or a defined name.", "name");
-        foreach (var other in _tables)
-        {
-            if (other.Worksheet == table.Worksheet && other.Area.TryIntersect(table.Area, out _))
-                throw new ArgumentException($"The range overlaps table '{other.Name}'.", "range");
-        }
+        if (!_tableAreas.TryGetValue(table.Worksheet, out var areas))
+            _tableAreas[table.Worksheet] = areas = new RangeIndex();
+        Table? overlapped = null;
+        areas.QueryOverlap(table.Area, corner => overlapped = _tablesByCorner[corner]);
+        if (overlapped is not null)
+            throw new ArgumentException($"The range overlaps table '{overlapped.Name}'.", "range");
 
+        var key = new CellKey(table.Worksheet, table.Area.FirstRow, table.Area.FirstColumn);
+        areas.Add(table.Area, key);
+        _tablesByCorner[key] = table;
         _tables.Add(table);
         _tablesByName[upper] = table;
 

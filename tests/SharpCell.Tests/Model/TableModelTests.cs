@@ -100,6 +100,41 @@ public class TableModelTests
         _wb.AddSheet("T").AddTable("Elsewhere", "A1:B3");
     }
 
+    [Fact]
+    public void Many_tables_each_resolve_their_own_unqualified_references()
+    {
+        // 300 two-row tables in a grid; each formula reads [@N] of the table it is in.
+        var wb = new Workbook();
+        var sheets = new[] { wb.AddSheet("P"), wb.AddSheet("Q") };
+        var n = 0;
+        foreach (var sheet in sheets)
+        {
+            for (var block = 0; block < 150; block++)
+            {
+                int row = 1 + block / 10 * 3, column = 1 + block % 10 * 3;
+                sheet[row, column].Value = "N";
+                sheet[row, column + 1].Value = "Twice";
+                sheet[row + 1, column].Value = ++n;
+                sheet[row + 1, column + 1].Formula = "=[@N]*2";
+                sheet.AddTable("Tab_" + n, $"{new CellAddress(row, column)}:{new CellAddress(row + 1, column + 1)}");
+            }
+        }
+
+        wb.Recalculate();
+        n = 0;
+        foreach (var sheet in sheets)
+        {
+            for (var block = 0; block < 150; block++)
+            {
+                int row = 1 + block / 10 * 3, column = 1 + block % 10 * 3;
+                Assert.Equal(CellValue.Number(2 * ++n), sheet[row + 1, column + 1].Value);
+            }
+        }
+
+        Assert.Throws<ArgumentException>(() => sheets[1].AddTable("Overlap", "AB43:AC44"));
+        sheets[1].AddTable("Beside", "AE1:AE2");
+    }
+
     [Theory]
     [InlineData("A1:B1", true, false)]
     [InlineData("A1:B2", true, true)]
