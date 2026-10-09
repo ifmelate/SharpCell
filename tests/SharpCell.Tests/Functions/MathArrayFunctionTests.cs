@@ -82,6 +82,8 @@ public class MathArrayFunctionTests
     [InlineData("=MMULT({1,2},{1;#DIV/0!})", ErrorKind.Div0)]
     [InlineData("=MMULT(,)", ErrorKind.Value)]
     [InlineData("=MDETERM({1,2})", ErrorKind.Value)]
+    [InlineData("=MDETERM(A:A)", ErrorKind.Value)]
+    [InlineData("=MMULT(A:A,A:A)", ErrorKind.Value)]
     [InlineData("=MDETERM({1,\"a\";1,2})", ErrorKind.Value)]
     [InlineData("=MINVERSE({1,2;2,4})", ErrorKind.Num)]
     [InlineData("=MINVERSE({1,2})", ErrorKind.Value)]

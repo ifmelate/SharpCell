@@ -33,6 +33,7 @@ public class MathTrigFunctionTests
     [InlineData("=CSCH(-10)", -9.079985971212217E-05)]
     [InlineData("=SECH(1E+300)", 0)]
     [InlineData("=ASINH(-10)", -2.99822295029797)]
+    [InlineData("=ASINH(1E+200)", 461.2101657793691)]
     [InlineData("=ACOSH(5)", 2.2924316695611777)]
     [InlineData("=ATANH(0.5)", 0.5493061443340549)]
     [InlineData("=ACOTH(-10)", -0.1003353477310756)]

@@ -121,13 +121,14 @@ internal static class MathArrayFunctions
 
     private static Operand MMult(FunctionCall call)
     {
-        if (!TryReadMatrix(call, 0, out var a, out var error) || !TryReadMatrix(call, 1, out var b, out error))
+        if (!TryShape(call, 0, out var rows, out var inner, out var error) || !TryShape(call, 1, out var height, out var columns, out error))
             return error;
-        int rows = a.GetLength(0), inner = a.GetLength(1), columns = b.GetLength(1);
-        if (inner != b.GetLength(0))
+        if (inner != height)
             return CellValue.Error(ErrorKind.Value);
         if ((long)rows * columns > Evaluator.MaxArrayCells)
             return CellValue.Error(ErrorKind.Num);
+        if (!TryReadMatrix(call, 0, out var a, out error) || !TryReadMatrix(call, 1, out var b, out error))
+            return error;
 
         var result = new CellValue[rows, columns];
         for (var r = 0; r < rows; r++)
@@ -148,10 +149,12 @@ internal static class MathArrayFunctions
     // The product of the pivots of an LU decomposition, negated for each row exchange.
     private static Operand MDeterm(FunctionCall call)
     {
-        if (!TryReadMatrix(call, 0, out var m, out var error))
+        if (!TryShape(call, 0, out var n, out var columns, out var error))
             return error;
-        if (m.GetLength(0) != m.GetLength(1))
+        if (n != columns)
             return CellValue.Error(ErrorKind.Value);
+        if (!TryReadMatrix(call, 0, out var m, out error))
+            return error;
         if (!Decompose(m, call.Context, out var rows, out var exchanges))
             return CellValue.Number(0);
 
@@ -165,11 +168,12 @@ internal static class MathArrayFunctions
     // rounding (its MINVERSE has the same tiny nonzero entries); a singular matrix is #NUM!.
     private static Operand MInverse(FunctionCall call)
     {
-        if (!TryReadMatrix(call, 0, out var m, out var error))
+        if (!TryShape(call, 0, out var n, out var columns, out var error))
             return error;
-        var n = m.GetLength(0);
-        if (n != m.GetLength(1))
+        if (n != columns)
             return CellValue.Error(ErrorKind.Value);
+        if (!TryReadMatrix(call, 0, out var m, out error))
+            return error;
         if (!Decompose(m, call.Context, out var rows, out _))
             return CellValue.Error(ErrorKind.Num);
 
@@ -242,6 +246,19 @@ internal static class MathArrayFunctions
             }
         }
 
+        return true;
+    }
+
+    // The shape of a matrix argument, known before any of its cells is read, so that a whole
+    // column given to MDETERM is refused without reading a million cells.
+    private static bool TryShape(FunctionCall call, int index, out int rows, out int columns, out CellValue error)
+    {
+        rows = columns = 0;
+        error = CellValue.Error(ErrorKind.Value);
+        if (call.IsMissing(index) || !ValueGrid.TryCreate(call[index], out var grid, out error))
+            return false;
+        rows = grid.Rows;
+        columns = grid.Columns;
         return true;
     }
 

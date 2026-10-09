@@ -88,9 +88,12 @@ internal static class MathTrigFunctions
         return (r, (int)((long)k & 3));
     }
 
-    // Excel computes ln(x + sqrt(x^2 + 1)) as written, which shows near 0: ASINH(1E-12) is 1.000088900581841E-12.
+    // Excel computes ln(x + sqrt(x^2 + 1)) as written, which shows near 0: ASINH(1E-12) is
+    // 1.000088900581841E-12. Far from 0 the exact function is used, where x^2 would overflow.
     private static CellValue Asinh(double x)
     {
+        if (Math.Abs(x) > 1e8)
+            return CellValue.Number(Math.Asinh(x));
         var magnitude = Math.Log(Math.Abs(x) + Math.Sqrt(x * x + 1));
         return CellValue.Number(x < 0 ? -magnitude : magnitude);
     }
