@@ -29,6 +29,8 @@ public class XlsxFuzzTests
         "ironcalc/calc_tests/defined_names.xlsx",
         "ironcalc/calc_tests/LOGICAL/IF_ARRAY.xlsx",
         "ironcalc/templates/invoice.xlsx",
+        "ironcalc/tables.xlsx",
+        "excel-web/filter-mode.xlsx",
     ];
 
     private static readonly string[] Snippets =
@@ -41,7 +43,10 @@ public class XlsxFuzzTests
         "<f>INDIRECT(\"A\"&amp;ROWS(A1:A9))</f>", "<f>OFFSET(A1,1048575,0)</f>",
         "<definedName name=\"X\">X</definedName>", "<definedName name=\"Y\" localSheetId=\"99\">1</definedName>",
         "<sheet name=\"S\" sheetId=\"9\" r:id=\"rId99\"/>", "<sheet name=\"[bad]\" sheetId=\"9\" r:id=\"rId1\"/>",
-        "<workbookPr date1904=\"1\"/>", "<!DOCTYPE x>", "&amp;", "&#0;", "_x0000_", "<si><t>", "</si>", "ÿ", "<", ">", "\"",
+        "<workbookPr date1904=\"1\"/>", "<row hidden=\"1\">", "<row r=\"1048576\" hidden=\"1\"/><row hidden=\"1\"/>",
+        "<tablePart r:id=\"rId1\"/>", "<tablePart r:id=\"rId99\"/>", "<sheetPr filterMode=\"1\"/>",
+        "<autoFilter ref=\"A1:B2\"><filterColumn colId=\"0\"><filters/></filterColumn></autoFilter>",
+        "<tableColumn id=\"1\" name=\"X\"/>", " headerRowCount=\"0\"", " totalsRowCount=\"1\"", " ref=\"A1\"", "<!DOCTYPE x>", "&amp;", "&#0;", "_x0000_", "<si><t>", "</si>", "ÿ", "<", ">", "\"",
     ];
 
     public static TheoryData<string> SeedFiles() => [.. Seeds];

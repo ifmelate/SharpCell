@@ -51,7 +51,12 @@ internal static class WorksheetReader
                 row = reader.GetAttribute("r") is { } r ? ParseRow(r, part) : row + 1;
                 column = 0;
                 if (reader.GetAttribute("hidden") is "1" or "true")
+                {
+                    // A row without a number follows the previous one and may run past the sheet.
+                    if (row > CellAddress.MaxRow)
+                        throw new InvalidDataException($"A hidden row in '{part}' lies outside the sheet.");
                     sheet.SetRowHidden(row, true);
+                }
                 reader.Read();
                 continue;
             }

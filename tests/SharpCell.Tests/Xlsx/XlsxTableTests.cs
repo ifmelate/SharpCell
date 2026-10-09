@@ -130,6 +130,14 @@ public class XlsxTableTests
     }
 
     [Fact]
+    public void Hidden_row_past_the_last_row_is_invalid_data()
+    {
+        // The second row has no number, so it follows row 1048576 and lies outside the sheet.
+        var xlsx = new TestXlsx().RawSheet("S", "<sheetData><row r=\"1048576\"/><row hidden=\"1\"/></sheetData>");
+        Assert.Throws<InvalidDataException>(() => Load(xlsx));
+    }
+
+    [Fact]
     public void Missing_table_part_is_invalid_data()
     {
         Assert.Throws<InvalidDataException>(() => Load(Book(TableParts)));
