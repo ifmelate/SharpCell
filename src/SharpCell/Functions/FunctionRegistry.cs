@@ -30,6 +30,7 @@ internal sealed class FunctionRegistry
         ReferenceFunctions.Register(registry);
         LookupFunctions.Register(registry);
         ArrayShapeFunctions.Register(registry);
+        ArrayShapeSortFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         return registry;
     }
