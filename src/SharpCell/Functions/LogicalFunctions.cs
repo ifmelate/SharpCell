@@ -43,7 +43,7 @@ internal static class LogicalFunctions
         if (value.Kind == CellValueKind.Array)
         {
             var fallback = Branch(call, 1, absent: CellValue.Number(0));
-            return ArrayMath.Map(value, fallback, (v, f) => v.IsError ? f : v);
+            return ArrayMath.MapOutside(value, fallback, (v, f) => v.IsError ? f : v);
         }
 
         return value.IsError ? BranchOperand(call, 1, CellValue.Number(0)) : value;
@@ -78,7 +78,10 @@ internal static class LogicalFunctions
             if (value.Kind == CellValueKind.Empty || (value.Kind == CellValueKind.Text && source != ValueSource.Direct))
                 return true;
 
+            // Text typed into the call counts only if it reads as TRUE or FALSE; other text is skipped.
             var flag = Coercion.ToBoolean(value);
+            if (flag.IsError && value.Kind == CellValueKind.Text)
+                return true;
             if (flag.IsError)
             {
                 error = flag;

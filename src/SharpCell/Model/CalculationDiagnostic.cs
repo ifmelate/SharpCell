@@ -9,8 +9,8 @@ public enum DiagnosticKind
     FunctionFailure,
 
     /// <summary>
-    /// A formula read from a file uses something SharpCell cannot evaluate, such as a link to
-    /// another workbook; the cell got <c>#NAME?</c>.
+    /// A formula uses something SharpCell cannot evaluate, such as a table reference or (in a file)
+    /// a link to another workbook; the cell got <c>#NAME?</c>.
     /// </summary>
     UnsupportedFormula,
 }

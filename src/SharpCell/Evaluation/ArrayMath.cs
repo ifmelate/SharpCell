@@ -50,6 +50,33 @@ internal static class ArrayMath
         return CellValue.Array(result);
     }
 
+    /// <summary>
+    /// Like <see cref="Map(CellValue, CellValue, Func{CellValue, CellValue, CellValue})"/>, but a
+    /// position outside the smaller array is passed to <paramref name="f"/> as <c>#N/A</c>, so it
+    /// decides whether that matters (IFERROR needs the fallback only where the value is an error).
+    /// </summary>
+    public static CellValue MapOutside(CellValue left, CellValue right, Func<CellValue, CellValue, CellValue> f)
+    {
+        if (left.Kind != CellValueKind.Array && right.Kind != CellValueKind.Array)
+            return f(left, right);
+
+        var a = AsArray(left);
+        var b = AsArray(right);
+        var rows = Math.Max(a.GetLength(0), b.GetLength(0));
+        var columns = Math.Max(a.GetLength(1), b.GetLength(1));
+        if ((long)rows * columns > Evaluator.MaxArrayCells)
+            return CellValue.Error(ErrorKind.Num);
+        var na = CellValue.Error(ErrorKind.NA);
+        var result = new CellValue[rows, columns];
+        for (var r = 0; r < rows; r++)
+        {
+            for (var c = 0; c < columns; c++)
+                result[r, c] = f(At(a, r, c) ?? na, At(b, r, c) ?? na);
+        }
+
+        return CellValue.Array(result);
+    }
+
     /// <summary>Three-way element-wise combination with the same broadcasting rules.</summary>
     public static CellValue Map(CellValue first, CellValue second, CellValue third, Func<CellValue, CellValue, CellValue, CellValue> f)
     {

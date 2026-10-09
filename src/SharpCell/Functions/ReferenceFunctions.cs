@@ -17,7 +17,8 @@ internal static class ReferenceFunctions
     }
 
     // OFFSET(reference, rows, columns, [height], [width]): height and width default to the
-    // reference's size; a result outside the sheet or with a size below 1 is #REF!.
+    // reference's size. A negative size extends up or left from the moved corner; a size between 0
+    // and 1 counts as 1. A size of 0 or a result outside the sheet is #REF!.
     private static Operand Offset(FunctionCall call)
     {
         if (call[0].Reference is not { } reference)
@@ -28,16 +29,18 @@ internal static class ReferenceFunctions
         var (sheet, area) = reference.Areas[0];
         if (!TryGetInteger(call, 1, 0, out var rows, out var error)
             || !TryGetInteger(call, 2, 0, out var columns, out error)
-            || !TryGetInteger(call, 3, area.Rows, out var height, out error)
-            || !TryGetInteger(call, 4, area.Columns, out var width, out error))
+            || !TryGetInteger(call, 3, area.Rows, out var height, out error, isSize: true)
+            || !TryGetInteger(call, 4, area.Columns, out var width, out error, isSize: true))
             return error;
-        if (height < 1 || width < 1)
+        if (height == 0 || width == 0)
             return CellValue.Error(ErrorKind.Ref);
 
-        var firstRow = area.FirstRow + rows;
-        var firstColumn = area.FirstColumn + columns;
-        var lastRow = firstRow + height - 1;
-        var lastColumn = firstColumn + width - 1;
+        var row = area.FirstRow + rows;
+        var column = area.FirstColumn + columns;
+        var firstRow = height > 0 ? row : row + height + 1;
+        var firstColumn = width > 0 ? column : column + width + 1;
+        var lastRow = firstRow + Math.Abs(height) - 1;
+        var lastColumn = firstColumn + Math.Abs(width) - 1;
         if (firstRow < 1 || firstColumn < 1 || lastRow > CellAddress.MaxRow || lastColumn > CellAddress.MaxColumn)
             return CellValue.Error(ErrorKind.Ref);
 
@@ -55,8 +58,13 @@ internal static class ReferenceFunctions
         if (text.IsError)
             return text;
 
+        // An empty style argument, as in INDIRECT("R2C2",), is FALSE: R1C1.
         var style = ReferenceStyle.A1;
-        if (call.Count > 1 && !call.IsMissing(1))
+        if (call.Count > 1 && call.IsMissing(1))
+        {
+            style = ReferenceStyle.R1C1;
+        }
+        else if (call.Count > 1)
         {
             var a1 = Coercion.ToBoolean(call.Value(1));
             if (a1.IsError)
@@ -101,7 +109,7 @@ internal static class ReferenceFunctions
         _ => false,
     };
 
-    private static bool TryGetInteger(FunctionCall call, int index, long absent, out long value, out CellValue error)
+    private static bool TryGetInteger(FunctionCall call, int index, long absent, out long value, out CellValue error, bool isSize = false)
     {
         error = default;
         value = absent;
@@ -116,6 +124,8 @@ internal static class ReferenceFunctions
         }
 
         var truncated = Math.Truncate(number.AsNumber());
+        if (isSize && truncated == 0 && number.AsNumber() != 0)
+            truncated = Math.Sign(number.AsNumber());
         if (Math.Abs(truncated) > CellAddress.MaxRow * 2.0)
         {
             error = CellValue.Error(ErrorKind.Ref);

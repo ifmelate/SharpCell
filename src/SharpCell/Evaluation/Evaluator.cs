@@ -86,7 +86,8 @@ internal static class Evaluator
                 return ImplicitIntersection(Evaluate(i.Operand, context), context);
 
             // Tables are not evaluated in v0.1.
-            case StructuredReferenceNode:
+            case StructuredReferenceNode s:
+                context.Report(DiagnosticKind.UnsupportedFormula, $"Table references such as {s.Text} are not supported.");
                 return CellValue.Error(ErrorKind.Name);
             case UnsupportedNode u:
                 context.Report(DiagnosticKind.UnsupportedFormula, u.Reason);
