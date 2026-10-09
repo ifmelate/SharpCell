@@ -8,15 +8,11 @@ Install SharpCell, read an .xlsx file, recalculate it and read the results, step
 
 ## Install
 
-SharpCell is not on NuGet yet. Until the first release, clone the repository and add project references to `src/SharpCell` and `src/SharpCell.Xlsx`, as [the sample's project file](../samples/SharpCell.Sample/SharpCell.Sample.csproj) does.
-
-After the first release:
-
 ```bash
 dotnet add package SharpCell.Xlsx
 ```
 
-`SharpCell.Xlsx` brings `SharpCell` with it. Use `dotnet add package SharpCell` alone if you build workbooks in code and never read files.
+`SharpCell.Xlsx` brings `SharpCell` with it. Use `dotnet add package SharpCell` alone if you build workbooks in code and never read files. Versions before 1.0 may change the API between minor versions.
 
 ## The sample
 

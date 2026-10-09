@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://ifmelate.github.io/SharpCell/
+    about: Guides, API reference and what SharpCell does not do.

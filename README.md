@@ -1,9 +1,19 @@
 # SharpCell
 
-A free (MIT) Excel formula engine for .NET: parser, dependency graph, recalculation,
+[![NuGet](https://img.shields.io/nuget/v/SharpCell.Xlsx.svg)](https://www.nuget.org/packages/SharpCell.Xlsx)
+[![ci](https://github.com/ifmelate/SharpCell/actions/workflows/ci.yml/badge.svg)](https://github.com/ifmelate/SharpCell/actions/workflows/ci.yml)
+
+A free (MIT) Excel formula engine for .NET 8 and later: parser, dependency graph, recalculation,
 dynamic arrays, LET/LAMBDA. Correctness is checked against workbooks calculated by real Excel.
 
-Status: early development, nothing is published yet.
+Status: 0.x. The API may change between minor versions until 1.0.
+
+## Install
+
+```bash
+dotnet add package SharpCell.Xlsx   # reads .xlsx; brings SharpCell with it
+dotnet add package SharpCell        # the engine alone, for workbooks built in code
+```
 
 ## Usage
 
@@ -37,3 +47,10 @@ A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `
 - [Documentation site](https://ifmelate.github.io/SharpCell/): getting started, guides, API reference ([source](docs/index.md)).
 - [What matches Excel](docs/compatibility.md), also as [JSON](docs/compatibility.json).
 - [For AI coding agents](docs/agents.md): `llms.txt`, `llms-full.txt` and rules to paste into your agent's instructions.
+
+## Support
+
+SharpCell is maintained by one person in spare time, with no support obligations. A bug report
+needs a small .xlsx that shows the problem and the value Excel calculates; an issue without one
+is closed. A `Workbook` is not thread-safe: use one per thread; separate workbooks are independent.
+Security issues: see [SECURITY.md](SECURITY.md). Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md).
