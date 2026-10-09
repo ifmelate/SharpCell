@@ -40,7 +40,9 @@ internal static class NumberText
         if (!hasSign && TryTakeSign(ref s, out negative))
             hasSign = true;
 
-        var currency = format.CurrencySymbol.AsSpan();
+        // The invariant culture's generic sign is not what anyone types; workbooks without a culture
+        // behave like English Excel, where "$5" is 5.
+        var currency = (culture.Name.Length == 0 ? "$" : format.CurrencySymbol).AsSpan();
         if (currency.Length > 0 && s.StartsWith(currency, StringComparison.Ordinal))
         {
             s = s[currency.Length..].TrimStart();

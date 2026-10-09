@@ -63,7 +63,7 @@ internal static class MathFunctions
             if (value.Kind == CellValueKind.Number)
                 count++;
             else if (source == ValueSource.Direct && !value.IsError && value.Kind != CellValueKind.Empty
-                     && !Coercion.ToNumber(value, call.Context.Culture).IsError)
+                     && !Coercion.ToNumber(value, call.Context.Culture, call.Context.DateSystem).IsError)
                 count++;
             return true;
         });
@@ -84,7 +84,7 @@ internal static class MathFunctions
 
     private static Operand Abs(FunctionCall call)
     {
-        var number = Coercion.ToNumber(call.Value(0), call.Context.Culture);
+        var number = Coercion.ToNumber(call.Value(0), call.Context.Culture, call.Context.DateSystem);
         return number.IsError ? number : CellValue.Number(Math.Abs(number.AsNumber()));
     }
 }

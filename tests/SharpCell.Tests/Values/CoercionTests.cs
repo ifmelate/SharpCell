@@ -24,7 +24,7 @@ public class CoercionTests
     [InlineData("(5)", -5)]
     public void Text_to_number_en_US(string text, double expected)
     {
-        Assert.Equal(CellValue.Number(expected), Coercion.ToNumber(text, EnUs));
+        Assert.Equal(CellValue.Number(expected), Coercion.ToNumber(text, EnUs, DateSystem.Date1900));
     }
 
     [Theory]
@@ -41,7 +41,7 @@ public class CoercionTests
     [InlineData("1 2")]
     public void Unparsable_text_is_VALUE_error(string text)
     {
-        Assert.Equal(CellValue.Error(ErrorKind.Value), Coercion.ToNumber(text, EnUs));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), Coercion.ToNumber(text, EnUs, DateSystem.Date1900));
     }
 
     [Theory]
@@ -50,18 +50,18 @@ public class CoercionTests
     [InlineData("1 234,5", 1234.5)]
     public void Text_to_number_uses_workbook_culture(string text, double expected)
     {
-        Assert.Equal(CellValue.Number(expected), Coercion.ToNumber(text, RuRu));
+        Assert.Equal(CellValue.Number(expected), Coercion.ToNumber(text, RuRu, DateSystem.Date1900));
     }
 
     [Fact]
     public void Non_text_to_number()
     {
-        Assert.Equal(CellValue.Number(0), Coercion.ToNumber(CellValue.Empty, EnUs));
-        Assert.Equal(CellValue.Number(0), Coercion.ToNumber(CellValue.Missing, EnUs));
-        Assert.Equal(CellValue.Number(1), Coercion.ToNumber(true, EnUs));
-        Assert.Equal(CellValue.Number(0), Coercion.ToNumber(false, EnUs));
-        Assert.Equal(CellValue.Error(ErrorKind.NA), Coercion.ToNumber(CellValue.Error(ErrorKind.NA), EnUs));
-        Assert.Equal(CellValue.Error(ErrorKind.Value), Coercion.ToNumber(CellValue.Array(new CellValue[,] { { 1 } }), EnUs));
+        Assert.Equal(CellValue.Number(0), Coercion.ToNumber(CellValue.Empty, EnUs, DateSystem.Date1900));
+        Assert.Equal(CellValue.Number(0), Coercion.ToNumber(CellValue.Missing, EnUs, DateSystem.Date1900));
+        Assert.Equal(CellValue.Number(1), Coercion.ToNumber(true, EnUs, DateSystem.Date1900));
+        Assert.Equal(CellValue.Number(0), Coercion.ToNumber(false, EnUs, DateSystem.Date1900));
+        Assert.Equal(CellValue.Error(ErrorKind.NA), Coercion.ToNumber(CellValue.Error(ErrorKind.NA), EnUs, DateSystem.Date1900));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), Coercion.ToNumber(CellValue.Array(new CellValue[,] { { 1 } }), EnUs, DateSystem.Date1900));
     }
 
     [Theory]
@@ -111,5 +111,15 @@ public class CoercionTests
         Assert.Equal(CellValue.Error(ErrorKind.Value), Coercion.ToBoolean("yes"));
         Assert.Equal(CellValue.Error(ErrorKind.Value), Coercion.ToBoolean("1"));
         Assert.Equal(CellValue.Error(ErrorKind.Div0), Coercion.ToBoolean(CellValue.Error(ErrorKind.Div0)));
+    }
+
+    [Theory]
+    [InlineData("$5", 5.0)]
+    [InlineData("-$5", -5.0)]
+    [InlineData("($1,000.50)", -1000.5)]
+    [InlineData("5%", 0.05)]
+    public void Invariant_culture_reads_text_like_English_Excel(string text, double expected)
+    {
+        Assert.Equal(CellValue.Number(expected), Coercion.ToNumber(text, CultureInfo.InvariantCulture, DateSystem.Date1900));
     }
 }

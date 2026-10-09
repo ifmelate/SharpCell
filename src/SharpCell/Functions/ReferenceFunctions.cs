@@ -116,7 +116,7 @@ internal static class ReferenceFunctions
         if (index >= call.Count || call.IsMissing(index))
             return true;
 
-        var number = Coercion.ToNumber(call.Value(index), call.Context.Culture);
+        var number = Coercion.ToNumber(call.Value(index), call.Context.Culture, call.Context.DateSystem);
         if (number.IsError)
         {
             error = number;

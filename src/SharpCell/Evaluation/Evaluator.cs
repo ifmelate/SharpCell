@@ -70,8 +70,8 @@ internal static class Evaluator
             case UnaryNode u:
                 var operand = ToValue(LegacyScalar(Evaluate(u.Operand, context), context), context);
                 return u.Operator == UnaryOperator.Negate
-                    ? ArrayMath.Map(operand, v => Operators.Negate(v, context.Culture))
-                    : ArrayMath.Map(operand, v => Operators.Percent(v, context.Culture));
+                    ? ArrayMath.Map(operand, v => Operators.Negate(v, context.Culture, context.DateSystem))
+                    : ArrayMath.Map(operand, v => Operators.Percent(v, context.Culture, context.DateSystem));
             case BinaryNode b:
                 return EvaluateBinary(b, context, isRoot: false);
 
@@ -157,7 +157,8 @@ internal static class Evaluator
         var a = ToValue(LegacyScalar(left, context), context);
         var b = ToValue(LegacyScalar(right, context), context);
         var culture = context.Culture;
-        return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, last));
+        var dateSystem = context.DateSystem;
+        return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, dateSystem, last));
     }
 
     /// <summary>

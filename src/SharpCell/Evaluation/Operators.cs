@@ -11,15 +11,15 @@ internal static class Operators
     /// <summary>Excel's limit on text length; longer results are <c>#VALUE!</c>.</summary>
     public const int MaxTextLength = 32_767;
 
-    public static CellValue Negate(CellValue value, CultureInfo culture)
+    public static CellValue Negate(CellValue value, CultureInfo culture, DateSystem dateSystem)
     {
-        var number = Coercion.ToNumber(value, culture);
+        var number = Coercion.ToNumber(value, culture, dateSystem);
         return number.IsError ? number : CellValue.Number(-number.AsNumber());
     }
 
-    public static CellValue Percent(CellValue value, CultureInfo culture)
+    public static CellValue Percent(CellValue value, CultureInfo culture, DateSystem dateSystem)
     {
-        var number = Coercion.ToNumber(value, culture);
+        var number = Coercion.ToNumber(value, culture, dateSystem);
         return number.IsError ? number : CellValue.Number(number.AsNumber() / 100);
     }
 
@@ -27,7 +27,7 @@ internal static class Operators
     /// Whether this is the formula's last operation. Like Excel, a last addition or subtraction whose
     /// operands cancel out up to floating-point noise gives exactly 0 (=0.3-0.2-0.1 is 0).
     /// </param>
-    public static CellValue Binary(BinaryOperator op, CellValue left, CellValue right, CultureInfo culture, bool last)
+    public static CellValue Binary(BinaryOperator op, CellValue left, CellValue right, CultureInfo culture, DateSystem dateSystem, bool last)
     {
         switch (op)
         {
@@ -50,10 +50,10 @@ internal static class Operators
                 return Compare(op, left, right, culture);
         }
 
-        var x = Coercion.ToNumber(left, culture);
+        var x = Coercion.ToNumber(left, culture, dateSystem);
         if (x.IsError)
             return x;
-        var y = Coercion.ToNumber(right, culture);
+        var y = Coercion.ToNumber(right, culture, dateSystem);
         if (y.IsError)
             return y;
 

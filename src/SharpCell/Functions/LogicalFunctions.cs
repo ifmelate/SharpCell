@@ -51,7 +51,7 @@ internal static class LogicalFunctions
 
     private static Operand Choose(FunctionCall call)
     {
-        var index = Coercion.ToNumber(call.Value(0), call.Context.Culture);
+        var index = Coercion.ToNumber(call.Value(0), call.Context.Culture, call.Context.DateSystem);
         if (index.IsError)
             return index;
 

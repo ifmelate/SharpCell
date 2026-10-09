@@ -21,6 +21,8 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
 
     public CultureInfo Culture => Workbook.Culture;
 
+    public DateSystem DateSystem => Workbook.DateSystem;
+
     public CancellationToken CancellationToken { get; init; }
 
     /// <summary>Set when a volatile function ran, so the cell is recalculated every time.</summary>

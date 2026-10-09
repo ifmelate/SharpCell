@@ -187,8 +187,8 @@ internal static class LambdaFunctions
         if (lambda.Parameters.Length != 2)
             return CellValue.Error(ErrorKind.Value);
 
-        var rowsValue = Coercion.ToNumber(call.Value(0), call.Context.Culture);
-        var columnsValue = Coercion.ToNumber(call.Value(1), call.Context.Culture);
+        var rowsValue = Coercion.ToNumber(call.Value(0), call.Context.Culture, call.Context.DateSystem);
+        var columnsValue = Coercion.ToNumber(call.Value(1), call.Context.Culture, call.Context.DateSystem);
         if (call.MetPendingInput)
             return EvaluationContext.PendingPlaceholder;
         if (rowsValue.IsError)

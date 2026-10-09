@@ -101,7 +101,7 @@ internal static class Aggregation
             if (source != ValueSource.Direct || value.Kind == CellValueKind.Empty)
                 return true;
 
-            var number = Coercion.ToNumber(value, call.Context.Culture);
+            var number = Coercion.ToNumber(value, call.Context.Culture, call.Context.DateSystem);
             if (number.IsError)
             {
                 error = number;
