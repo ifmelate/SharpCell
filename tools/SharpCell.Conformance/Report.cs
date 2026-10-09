@@ -20,8 +20,9 @@ internal sealed class Report
     // Parsed as calls but handled by the evaluator itself rather than the function registry.
     private static readonly HashSet<string> SpecialForms = new(StringComparer.Ordinal) { "LET", "LAMBDA" };
 
-    public Report(IReadOnlyList<FileResult> files)
+    public Report(IReadOnlyList<FileResult> files, CorpusOverrides? overrides = null)
     {
+        Overrides = overrides ?? CorpusOverrides.Empty;
         Files = [.. files.OrderBy(f => f.File, StringComparer.Ordinal)];
         var cases = new Dictionary<string, (int Cases, int Passed)>(StringComparer.Ordinal);
         foreach (var file in Files)
@@ -49,6 +50,11 @@ internal sealed class Report
     }
 
     public IReadOnlyList<FileResult> Files { get; }
+
+    public CorpusOverrides Overrides { get; }
+
+    /// <summary>Matching cells that match only within a tolerance stated in the overrides file.</summary>
+    public int Widened => Files.Sum(f => f.Cells.Count(c => c.Widened));
 
     public IReadOnlyList<FunctionStats> Functions { get; }
 
@@ -78,6 +84,7 @@ internal sealed class Report
             json.WriteStartObject();
             json.WriteNumber("cells", Cells);
             json.WriteNumber("passed", Passed);
+            json.WriteNumber("widened", Widened);
             json.WriteStartArray("files");
             foreach (var file in Files)
             {
@@ -86,6 +93,7 @@ internal sealed class Report
                 json.WriteNumber("cells", file.Cells.Count);
                 json.WriteNumber("passed", file.Passed);
                 json.WriteNumber("skipped", file.Skipped);
+                json.WriteNumber("widened", file.Cells.Count(c => c.Widened));
                 if (file.Error is not null)
                     json.WriteString("error", file.Error);
 
@@ -133,8 +141,12 @@ internal sealed class Report
         md.Append("(workbooks calculated by Microsoft Excel). Each formula result, and each cell an array formula ");
         md.Append("fills, is recalculated by SharpCell and compared with the value Excel saved: numbers within a ");
         md.Append("relative tolerance of 1e-9 (or the file's own, see `tests/corpus/ironcalc/SOURCE.md`), errors by ");
-        md.Append("kind, text exactly. Random functions are compared by result type only.\n\n");
-        md.Append(CultureInfo.InvariantCulture, $"**{Passed} of {Cells} cells match Excel ({Percent(Passed, Cells)}).**\n\n");
+        md.Append("kind, text exactly. Random functions are compared by result type only. Exceptions are stated, with ");
+        md.Append("their reasons, at the end.\n\n");
+        md.Append(CultureInfo.InvariantCulture, $"**{Passed} of {Cells} cells match Excel ({Headline(Passed, Cells)}).**");
+        if (Widened > 0)
+            md.Append(CultureInfo.InvariantCulture, $" {Widened} of them match within a tolerance stated below, where Excel's own result is only as accurate as its solver.");
+        md.Append("\n\n");
 
         var implemented = Functions.Count(f => f.Status == "implemented");
         md.Append("## Functions\n\n");
@@ -156,8 +168,32 @@ internal sealed class Report
                 $"| {Escape(file.File)} | {file.Cells.Count} | {file.Passed} | {Percent(file.Passed, file.Cells.Count)} | {Escape(file.Error ?? "")} |\n");
         }
 
+        if (Overrides.Entries.Count > 0)
+        {
+            md.Append("\n## Stated exceptions\n\n");
+            md.Append(CultureInfo.InvariantCulture, $"From `tests/corpus/{CorpusOverrides.FileName}`: the locale Excel calculated a file in, which a file does not record, ");
+            md.Append("and wider tolerances for cells where Excel's result is only as accurate as its solver.\n\n");
+            md.Append("| File | Cells | Rule | Reason |\n|---|---|---|---|\n");
+            foreach (var entry in Overrides.Entries)
+            {
+                var rule = entry.Culture is { } culture
+                    ? $"culture {culture}"
+                    : string.Join(", ", new[]
+                    {
+                        entry.Absolute is { } a ? "absolute " + a.ToString("g", CultureInfo.InvariantCulture) : null,
+                        entry.Relative is { } r ? "relative " + r.ToString("g", CultureInfo.InvariantCulture) : null,
+                    }.Where(p => p is not null));
+                md.Append(CultureInfo.InvariantCulture,
+                    $"| {Escape(entry.File)} | {Escape(entry.Cells.Count == 0 ? "all" : string.Join(", ", entry.Cells))} | {rule} | {Escape(entry.Reason)} |\n");
+            }
+        }
+
         return md.ToString();
     }
+
+    // Rounded down to a thousandth, so a corpus with failing cells never reads 100%.
+    private static string Headline(int part, int whole) =>
+        whole == 0 ? "–" : (Math.Floor(100_000.0 * part / whole) / 1000).ToString("0.000", CultureInfo.InvariantCulture) + "%";
 
     private static string Percent(int part, int whole) =>
         whole == 0 ? "–" : (100.0 * part / whole).ToString("0.0", CultureInfo.InvariantCulture) + "%";

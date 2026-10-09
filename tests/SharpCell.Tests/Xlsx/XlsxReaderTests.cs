@@ -449,6 +449,25 @@ public class XlsxReaderTests
     }
 
     [Fact]
+    public void Rich_error_with_errorType_after_other_keys_is_read()
+    {
+        // Excel writes a blocked spill as a structure whose keys are colOffset, errorType,
+        // rwOffset, subType (ironcalc ISREF.xlsx); errorType is not the first value.
+        const string metadata = "<metadata xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:xlrd=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\">"
+            + "<metadataTypes count=\"1\"><metadataType name=\"XLRICHVALUE\"/></metadataTypes>"
+            + "<futureMetadata name=\"XLRICHVALUE\" count=\"1\"><bk><extLst><ext uri=\"{3e2802c4-a4d2-4d8b-9148-e3be6c30e623}\"><xlrd:rvb i=\"0\"/></ext></extLst></bk></futureMetadata>"
+            + "<valueMetadata count=\"1\"><bk><rc t=\"1\" v=\"0\"/></bk></valueMetadata></metadata>";
+        var file = new TestXlsx { Metadata = metadata }
+            .Sheet("S", "<row r=\"1\"><c r=\"A1\" t=\"e\" vm=\"1\"><v>#VALUE!</v></c></row>")
+            .Part("xl/richData/rdrichvaluestructure.xml",
+                "<rvStructures xmlns=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\" count=\"1\"><s t=\"_error\"><k n=\"colOffset\" t=\"i\"/><k n=\"errorType\" t=\"i\"/><k n=\"rwOffset\" t=\"i\"/><k n=\"subType\" t=\"i\"/></s></rvStructures>")
+            .Part("xl/richData/rdrichvalue.xml",
+                "<rvData xmlns=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\" count=\"1\"><rv s=\"0\"><v>2</v><v>8</v><v>0</v><v>1</v></rv></rvData>");
+
+        Assert.Equal(CellValue.Error(ErrorKind.Spill), Load(file)["S"]["A1"].Value);
+    }
+
+    [Fact]
     public void Duplicate_sheet_names_are_invalid()
     {
         Assert.Throws<InvalidDataException>(() => Load(new TestXlsx().Sheet("S", "").Sheet("s", "")));
@@ -475,5 +494,17 @@ public class ExternalReferenceDetectionTests
     public void Recognises_links_to_other_workbooks(string formula, bool expected)
     {
         Assert.Equal(expected, FormulaText.ReferencesOtherWorkbook(formula));
+    }
+
+    [Fact]
+    public void Zip_directory_that_runs_past_the_end_is_invalid_data()
+    {
+        // Found by XlsxFuzzTests: one byte raises the extra field length of the first central
+        // directory record past the end of the file. .NET 8 reports that as an IOException; the
+        // reader promises InvalidDataException for a damaged file.
+        var bytes = File.ReadAllBytes(CorpusFiles.PathOf("ironcalc/DynamicArrays.xlsx"));
+        Assert.Equal(0x00, bytes[10767]);
+        bytes[10767] = 0x2B;
+        Assert.Throws<InvalidDataException>(() => XlsxReader.Load(new MemoryStream(bytes)));
     }
 }

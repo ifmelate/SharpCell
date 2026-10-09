@@ -40,4 +40,8 @@ Some files carry a `METADATA` sheet, following IronCalc's test runner:
 - a row with `NOW` in column A holds, in column B, the `NOW()` value Excel saved; the clock is set
   to it so date and time functions can be compared exactly.
 
+`../overrides.json` states, with a reason for each, the locale Excel calculated a file in (a file
+does not record it) and wider tolerances for cells where Excel's own result is only as accurate as
+its solver. The compatibility report lists them and counts those cells apart.
+
 These files are untrusted input: they are only parsed, never opened in Excel.

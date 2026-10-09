@@ -33,7 +33,7 @@ public class CorpusConformanceTests
     [MemberData(nameof(Files))]
     public void Cells_that_matched_Excel_still_do(string file)
     {
-        var result = CorpusRunner.Run(CorpusFiles.PathOf(file), file, TimeSpan.FromMinutes(2));
+        var result = CorpusRunner.Run(CorpusFiles.PathOf(file), file, TimeSpan.FromMinutes(2), CorpusOverrides.Load(CorpusFiles.Root));
         Assert.Null(result.Error);
         if (!Baseline.TryGetValue(file, out var recorded))
             return;

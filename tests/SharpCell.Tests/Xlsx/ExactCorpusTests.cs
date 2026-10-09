@@ -19,7 +19,7 @@ public class ExactCorpusTests
     [MemberData(nameof(Files))]
     public void Every_cell_matches_Excel(string file)
     {
-        var result = CorpusRunner.Run(CorpusFiles.PathOf(file), file, TimeSpan.FromMinutes(2));
+        var result = CorpusRunner.Run(CorpusFiles.PathOf(file), file, TimeSpan.FromMinutes(2), CorpusOverrides.Load(CorpusFiles.Root));
         Assert.Null(result.Error);
         Assert.NotEmpty(result.Cells);
         var failing = result.Cells.Where(c => !c.Passed)

@@ -265,10 +265,16 @@ internal sealed class RichValues
                 var position = 0;
                 using (var values = reader.ReadSubtree())
                 {
-                    while (values.Read())
+                    // ReadElementContentAsString moves past the element, onto the next one: no Read after it.
+                    values.Read();
+                    while (!values.EOF)
                     {
                         if (values.NodeType != XmlNodeType.Element || values.LocalName != "v")
+                        {
+                            values.Read();
                             continue;
+                        }
+
                         var text = values.ReadElementContentAsString();
                         if (position++ == errorKey && int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var type)
                             && Enum.IsDefined((ErrorKind)(type + 1)))
