@@ -53,6 +53,10 @@ internal sealed class FunctionRegistry
         TextFunctions.Register(registry);
         TextSplitFunctions.Register(registry);
         TextRegexFunctions.Register(registry);
+        StatisticsFunctions.Register(registry);
+        StatisticsRankFunctions.Register(registry);
+        StatisticsConditionalFunctions.Register(registry);
+        StatisticsRegressionFunctions.Register(registry);
         return registry;
     }
 }
