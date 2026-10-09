@@ -44,6 +44,16 @@ public class CSharpSignatureTests
     }
 
     [Fact]
+    public void Signatures_can_be_written_from_several_threads_at_once()
+    {
+        var members = ApiReference.DocumentedAssemblies().SelectMany(a => a.GetExportedTypes()).SelectMany(ApiReference.MembersOf).ToArray();
+        // Parallel first: a shared cache inside the writer fails while it is being filled, not after.
+        var actual = new string[members.Length];
+        Parallel.For(0, members.Length, new ParallelOptions { MaxDegreeOfParallelism = 8 }, i => actual[i] = CSharpSignature.Of(members[i]));
+        Assert.Equal(members.Select(CSharpSignature.Of), actual);
+    }
+
+    [Fact]
     public void Headings_and_anchors_tell_overloads_apart()
     {
         var evaluate = typeof(Workbook).GetMethod("Evaluate", [typeof(string)])!;

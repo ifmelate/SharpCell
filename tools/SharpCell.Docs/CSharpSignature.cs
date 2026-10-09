@@ -11,7 +11,8 @@ namespace SharpCell.Docs;
 /// <summary>How a type or member is declared, written as C#.</summary>
 internal static class CSharpSignature
 {
-    private static readonly NullabilityInfoContext Nullability = new();
+    // NullabilityInfoContext caches into a plain Dictionary and is not thread-safe; tests run in parallel.
+    private static NullabilityInfoContext Nullability => new();
 
     private static readonly Dictionary<Type, string> Keywords = new()
     {
