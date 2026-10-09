@@ -1,6 +1,6 @@
 {
   "cells": 76017,
-  "passed": 75761,
+  "passed": 75765,
   "files": [
     {
       "file": "ironcalc/DynamicArrays.xlsx",
@@ -1341,14 +1341,12 @@
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SEQUENCE.xlsx",
       "cells": 70,
-      "passed": 68,
+      "passed": 70,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "A1:A10 A23:A25 C1:C2 C6:C8 C11:C12 C16 C18 C23 D6:D8 D11:D12 D23 E6:E8 E11:E12 E16 E18 E23 F6:F8 F11:F12 F23 G16:G20 G23 H2:H3 H23 I2:I3 I7:I11 I14 I23 J14 J23 K14 K23 L14 L23 M14 M23 N23"
       },
-      "failingCells": {
-        "Sheet1": "C16 E18"
-      }
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SERIESSUM.xlsx",
@@ -2027,15 +2025,13 @@
     {
       "file": "ironcalc/calc_tests/TEXT/MID_LEFT_RIGHT_arrays.xlsx",
       "cells": 201,
-      "passed": 199,
+      "passed": 201,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "A6:A8 A40:A42 B17:B20 B27:B30 B41 C1:C3 C6:C7 C9:C10 C17:C20 C27:C30 D1:D7 D9:D10 E17:E20 F1:F10 G1:G13 G17:G23 G27:G35 I1:I11 J1:J13 K1:K12",
         "Sheet2": "A12:A19 B6 C1:C7 C17:C25 D12:D14 E1:E8 E12:E14 E17:E23 F12:F14 F17:F23 G1:G7 G12:G14 H1:H7 H12:H14 I1:I7"
       },
-      "failingCells": {
-        "Sheet1": "G32 G34"
-      }
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/MINUS_MINUS.xlsx",
@@ -4103,7 +4099,7 @@
       "name": "LEFT",
       "status": "implemented",
       "cases": 94,
-      "passed": 92
+      "passed": 94
     },
     {
       "name": "LEFTB",
@@ -4898,7 +4894,7 @@
       "name": "SEQUENCE",
       "status": "implemented",
       "cases": 690,
-      "passed": 686
+      "passed": 690
     },
     {
       "name": "SERIESSUM",
