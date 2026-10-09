@@ -115,6 +115,15 @@ internal static class WorksheetReader
         if (cell.FormulaType == "array")
         {
             var area = ParseArea(cell.FormulaRef, origin);
+
+            // An array formula fills its whole area on every calculation; no real one comes near this.
+            if (!dynamic && area.CellCount > Evaluator.MaxArrayCells)
+            {
+                loader.SetUnsupportedFormula(origin.Row, origin.Column, formula.Text,
+                    $"The array formula covers {area.CellCount} cells, more than {Evaluator.MaxArrayCells}.", cached);
+                return;
+            }
+
             loader.SetFormula(origin.Row, origin.Column, formula.Node,
                 dynamic ? LoadedFormulaKind.Dynamic : LoadedFormulaKind.Array, area, cached);
         }
@@ -225,19 +234,21 @@ internal static class WorksheetReader
         }
     }
 
-    private static Area? ParseArea(string? reference, CellAddress origin)
+    // The area of an array formula starts at its own cell; anything else is taken as just that cell.
+    private static Area ParseArea(string? reference, CellAddress origin)
     {
+        var single = Area.Cell(origin.Row, origin.Column);
         if (reference is null)
-            return Area.Cell(origin.Row, origin.Column);
+            return single;
 
         var colon = reference.IndexOf(':');
-        if (colon < 0)
-            return CellAddress.TryParse(reference, out var single) ? Area.Cell(single.Row, single.Column) : Area.Cell(origin.Row, origin.Column);
-        if (!CellAddress.TryParse(reference.AsSpan(0, colon), out var first) || !CellAddress.TryParse(reference.AsSpan(colon + 1), out var last))
-            return Area.Cell(origin.Row, origin.Column);
+        var firstText = colon < 0 ? reference.AsSpan() : reference.AsSpan(0, colon);
+        var lastText = colon < 0 ? reference.AsSpan() : reference.AsSpan(colon + 1);
+        if (!CellAddress.TryParse(firstText, out var first) || !CellAddress.TryParse(lastText, out var last)
+            || first.Row != origin.Row || first.Column != origin.Column || last.Row < first.Row || last.Column < first.Column)
+            return single;
 
-        return new Area(Math.Min(first.Row, last.Row), Math.Min(first.Column, last.Column),
-            Math.Max(first.Row, last.Row), Math.Max(first.Column, last.Column));
+        return new Area(first.Row, first.Column, last.Row, last.Column);
     }
 
     private static int ParseRow(string text, string part)

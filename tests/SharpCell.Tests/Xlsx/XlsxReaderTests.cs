@@ -352,6 +352,47 @@ public class XlsxReaderTests
     }
 
     [Fact]
+    public void Huge_array_formula_area_does_not_fill_the_sheet()
+    {
+        var file = new TestXlsx().Sheet("S", "<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"A1:XFD1048576\">1</f><v>1</v></c></row>");
+        var wb = Load(file);
+        RecalculateWithin(wb, TimeSpan.FromSeconds(10));
+
+        Assert.True(wb["S"].Store.Count < 10);
+    }
+
+    [Fact]
+    public void Huge_cached_spill_area_recalculates_without_allocating_it()
+    {
+        var file = new TestXlsx().Sheet("S",
+            "<row r=\"1\"><c r=\"A1\" cm=\"1\"><f t=\"array\" ref=\"A1:XFD1048576\">{1;2}</f><v>1</v></c></row><row r=\"2\"><c r=\"A2\"><v>2</v></c></row>");
+        var wb = Load(file);
+        RecalculateWithin(wb, TimeSpan.FromSeconds(10));
+
+        Assert.Equal([N(1), N(2)], [wb["S"]["A1"].Value, wb["S"]["A2"].Value]);
+    }
+
+    [Theory]
+    [InlineData("B2:C3")]
+    [InlineData("C3:A1")]
+    [InlineData("nonsense")]
+    public void Array_area_that_does_not_start_at_its_formula_is_one_cell(string reference)
+    {
+        var file = new TestXlsx().Sheet("S", $"<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"{reference}\">{{1,2}}</f><v>1</v></c></row>");
+        var wb = Load(file);
+        wb.Recalculate();
+
+        Assert.Equal(N(1), wb["S"]["A1"].Value);
+        Assert.Equal(1, wb["S"].Store.Count);
+    }
+
+    private static void RecalculateWithin(Workbook workbook, TimeSpan limit)
+    {
+        using var timeout = new System.Threading.CancellationTokenSource(limit);
+        workbook.Recalculate(timeout.Token);
+    }
+
+    [Fact]
     public void Duplicate_sheet_names_are_invalid()
     {
         Assert.Throws<InvalidDataException>(() => Load(new TestXlsx().Sheet("S", "").Sheet("s", "")));

@@ -384,23 +384,23 @@ internal sealed class Calculation(Workbook workbook)
         data.SpillArea = null;
     }
 
-    private static CellValue[,] Snapshot(Worksheet sheet, Area area)
+    // Only stored cells: an area read from a file can claim far more cells than exist.
+    private static List<(int Row, int Column, CellValue Value)> Snapshot(Worksheet sheet, Area area)
     {
-        var values = new CellValue[area.Rows, area.Columns];
+        var values = new List<(int, int, CellValue)>();
         foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
-            values[cell.Row - area.FirstRow, cell.Column - area.FirstColumn] = cell.Data.Value;
+            values.Add((cell.Row, cell.Column, cell.Data.Value));
         return values;
     }
 
-    private static bool SameValues(CellValue[,] a, CellValue[,] b)
+    private static bool SameValues(List<(int Row, int Column, CellValue Value)> a, List<(int Row, int Column, CellValue Value)> b)
     {
-        for (var r = 0; r < a.GetLength(0); r++)
+        if (a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
         {
-            for (var c = 0; c < a.GetLength(1); c++)
-            {
-                if (!a[r, c].Equals(b[r, c]))
-                    return false;
-            }
+            if (a[i].Row != b[i].Row || a[i].Column != b[i].Column || !a[i].Value.Equals(b[i].Value))
+                return false;
         }
 
         return true;
