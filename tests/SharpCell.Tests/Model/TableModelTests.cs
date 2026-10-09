@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using SharpCell.Evaluation;
 
 namespace SharpCell.Tests.Model;
 
@@ -35,6 +37,18 @@ public class TableModelTests
         var table = _s.AddTable("Bare", "G1:H2", hasHeaderRow: false, hasTotalsRow: true);
         Assert.Equal(["Column1", "Column2"], table.Columns);
         Assert.True(table.HasTotalsRow);
+    }
+
+    [Fact]
+    public void Columns_cannot_be_changed_from_outside()
+    {
+        var table = _s.AddTable("Sales", "A1:B3");
+        Assert.Throws<NotSupportedException>(() => ((IList<string>)table.Columns)[0] = "Changed");
+
+        var names = new List<string> { "X" };
+        var other = _s.AddTable("Other", new Area(10, 1, 11, 1), hasHeaderRow: true, hasTotalsRow: false, names);
+        names[0] = "Changed";
+        Assert.Equal(["X"], other.Columns);
     }
 
     [Fact]

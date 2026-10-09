@@ -20,9 +20,10 @@ public sealed class Table
         Area = area;
         HasHeaderRow = hasHeaderRow;
         HasTotalsRow = hasTotalsRow;
-        Columns = columns;
-        for (var i = 0; i < columns.Count; i++)
-            _columnIndex[columns[i]] = i;
+        // A copy the caller cannot change, nor anyone casting the list back to an array.
+        Columns = Array.AsReadOnly([.. columns]);
+        for (var i = 0; i < Columns.Count; i++)
+            _columnIndex[Columns[i]] = i;
     }
 
     /// <summary>The name formulas use, such as <c>Sales</c> in <c>Sales[Units]</c>.</summary>
