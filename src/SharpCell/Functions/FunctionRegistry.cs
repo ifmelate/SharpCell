@@ -26,6 +26,7 @@ internal sealed class FunctionRegistry
         MathTrigFunctions.Register(registry);
         MathRoundingFunctions.Register(registry);
         MathTextFunctions.Register(registry);
+        MathArrayFunctions.Register(registry);
         LogicalFunctions.Register(registry);
         InformationFunctions.Register(registry);
         DateTimeFunctions.Register(registry);
