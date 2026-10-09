@@ -1,0 +1,26 @@
+{
+  "title": "SharpCell",
+  "summary": "A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA. Results are checked against workbooks calculated by Microsoft Excel.",
+  "details": "Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.",
+  "baseUrl": "",
+  "sections": [
+    {
+      "title": "Docs",
+      "pages": [
+        { "path": "index.md", "title": "Overview", "description": "What SharpCell is, its packages and a first example." },
+        { "path": "getting-started.md", "title": "Getting started", "description": "Install, read an .xlsx file, recalculate, read values; walks through the console sample." },
+        { "path": "guides/formulas.md", "title": "Formulas and values", "description": "Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors." },
+        { "path": "guides/recalculation.md", "title": "Recalculation", "description": "When values update, volatile functions, cancellation, diagnostics, threads, culture and dates." },
+        { "path": "guides/xlsx.md", "title": "Reading .xlsx files", "description": "What the reader loads and skips, saved results, streams, unsupported formats." },
+        { "path": "guides/functions.md", "title": "Functions", "description": "Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions." },
+        { "path": "guides/limits.md", "title": "What SharpCell does not do", "description": "Every known gap in one list." },
+        { "path": "agents.md", "title": "For AI coding agents", "description": "llms.txt, llms-full.txt and rules to paste into an agent's instructions." }
+      ]
+    }
+  ],
+  "optional": [
+    { "path": "compatibility.md", "title": "Compatibility report", "description": "Every function's status and how many Excel-calculated cells it matches." },
+    { "path": "compatibility.json", "title": "Compatibility data", "description": "The same report as JSON, for tools." },
+    { "path": "llms-full.txt", "title": "Full documentation", "description": "All guides and the API reference in one file." }
+  ]
+}

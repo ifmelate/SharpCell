@@ -19,6 +19,17 @@ internal static class Generator
 
         var api = ApiReference.Generate(ApiReference.DocumentedAssemblies());
         files.AddRange(api.Files);
+
+        var config = SiteConfig.Load(layout.Full("docs/site.json"));
+        var generated = files.ToDictionary(f => f.Path, f => f.Content, StringComparer.Ordinal);
+        string Read(string docsPath)
+        {
+            var path = "docs/" + docsPath;
+            return generated.TryGetValue(path, out var content) ? content : File.ReadAllText(layout.Full(path));
+        }
+
+        files.Add(new GeneratedFile("docs/llms.txt", LlmsText.Index(config, api.Pages)));
+        files.Add(new GeneratedFile("docs/llms-full.txt", LlmsText.Full(config, api.Pages, Read)));
         return files;
     }
 

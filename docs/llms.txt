@@ -1,0 +1,38 @@
+# SharpCell
+
+> A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA. Results are checked against workbooks calculated by Microsoft Excel.
+
+Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.
+
+## Docs
+
+- [Overview](index.md): What SharpCell is, its packages and a first example.
+- [Getting started](getting-started.md): Install, read an .xlsx file, recalculate, read values; walks through the console sample.
+- [Formulas and values](guides/formulas.md): Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors.
+- [Recalculation](guides/recalculation.md): When values update, volatile functions, cancellation, diagnostics, threads, culture and dates.
+- [Reading .xlsx files](guides/xlsx.md): What the reader loads and skips, saved results, streams, unsupported formats.
+- [Functions](guides/functions.md): Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions.
+- [What SharpCell does not do](guides/limits.md): Every known gap in one list.
+- [For AI coding agents](agents.md): llms.txt, llms-full.txt and rules to paste into an agent's instructions.
+
+## API reference
+
+- [CalculationDiagnostic](api/SharpCell.CalculationDiagnostic.md): Something calculation noticed that is not visible in cell values alone.
+- [Cell](api/SharpCell.Cell.md): A handle to one cell position.
+- [CellValue](api/SharpCell.CellValue.md): A value produced by a cell or a formula.
+- [CellValueKind](api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
+- [DateSystem](api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
+- [DiagnosticKind](api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
+- [ErrorKind](api/SharpCell.ErrorKind.md): Excel error values.
+- [ErrorKinds](api/SharpCell.ErrorKinds.md): Conversion between ErrorKind and its literal text (`#DIV/0!`).
+- [FormulaParseException](api/SharpCell.FormulaParseException.md): Thrown when formula text cannot be parsed.
+- [LambdaValue](api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
+- [Workbook](api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
+- [Worksheet](api/SharpCell.Worksheet.md): A sheet of a Workbook.
+- [XlsxReader](api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and the date system.
+
+## Optional
+
+- [Compatibility report](compatibility.md): Every function's status and how many Excel-calculated cells it matches.
+- [Compatibility data](compatibility.json): The same report as JSON, for tools.
+- [Full documentation](llms-full.txt): All guides and the API reference in one file.

@@ -1,0 +1,1415 @@
+# SharpCell
+
+> A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA. Results are checked against workbooks calculated by Microsoft Excel.
+
+Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.
+
+---
+
+<!-- page: index.md -->
+
+# SharpCell
+
+SharpCell is a free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA.
+
+## Correctness
+
+Results are compared with workbooks calculated by Microsoft Excel. The [compatibility report](compatibility.md) lists every function, its status and how many Excel-calculated cells it matches.
+
+## Packages
+
+| Package | What it does |
+|---|---|
+| `SharpCell` | The engine: parser, values, recalculation and functions. No dependencies. |
+| `SharpCell.Xlsx` | Reads .xlsx files into a SharpCell workbook. |
+
+SharpCell is not on NuGet yet. Until the first release, reference the projects from source.
+
+## A first example
+
+```csharp snippet=build-in-code
+var workbook = new Workbook();
+Worksheet sheet = workbook.AddSheet("Sheet1");
+sheet["A1"].Value = 2;
+sheet["A2"].Formula = "=A1*3";
+workbook.Recalculate();
+CellValue result = sheet["A2"].Value;   // 6
+```
+
+## Next
+
+- [Getting started](getting-started.md): install, read a file, recalculate, read values.
+- [Formulas and values](guides/formulas.md): syntax, references, dynamic arrays, names and LAMBDA.
+- [Recalculation](guides/recalculation.md): when values update, cancellation, diagnostics, threads.
+- [Reading .xlsx files](guides/xlsx.md): what the reader loads and what it skips.
+- [Functions](guides/functions.md): function status, criteria, dates.
+- [What SharpCell does not do](guides/limits.md): every known gap.
+- [API reference](api/index.md): every public type and member.
+- [For AI coding agents](agents.md): llms.txt and rules for your agent.
+
+---
+
+<!-- page: getting-started.md -->
+
+# Getting started
+
+Install SharpCell, read an .xlsx file, recalculate it and read the results, step by step through the console sample.
+
+## Requirements
+
+.NET 8 or .NET 10.
+
+## Install
+
+```bash
+dotnet add package SharpCell.Xlsx
+```
+
+`SharpCell.Xlsx` brings `SharpCell` with it. Use `dotnet add package SharpCell` alone if you build workbooks in code and never read files.
+
+Until the first release, clone the repository and add project references, as [the sample's project file](../samples/SharpCell.Sample/SharpCell.Sample.csproj) does.
+
+## The sample
+
+[samples/SharpCell.Sample](../samples/SharpCell.Sample/README.md) is a console app built around `budget.xlsx`, one sheet named `Budget`:
+
+| Cell | Content |
+|---|---|
+| A2:B5 | Rent 1200, Food 450, Transport 120, Internet 40 (monthly) |
+| C2:C5 | Yearly amounts, `=B2*12` and so on |
+| B6 | `=SUM(B2:B5)`, the monthly total |
+| F1 | Income, 3000 |
+| F2 | `=F1-B6`, what is left |
+
+### Namespaces
+
+```csharp snippet=sample-usings
+using SharpCell;
+using SharpCell.Xlsx;
+```
+
+### Load and recalculate
+
+`XlsxReader.Load` reads sheets, values and formulas. Cells with formulas start out holding the results Excel saved in the file, if any. `Recalculate` calculates every formula with SharpCell and replaces those results.
+
+```csharp snippet=sample-load
+// Read the workbook: sheets, values, formulas and any results Excel saved with them.
+Workbook workbook = XlsxReader.Load(path);
+Worksheet budget = workbook["Budget"];
+
+// Calculate every formula now instead of relying on saved results.
+workbook.Recalculate();
+```
+
+### Read values
+
+A cell's `Value` is a `CellValue`. Check its `Kind` before calling `AsNumber`, `AsText` or another `As` method: each one throws `InvalidOperationException` when the value is of another kind. Excel errors such as `#DIV/0!` are values of kind `Error`, not exceptions.
+
+```csharp snippet=sample-read
+CellValue total = budget["B6"].Value;   // =SUM(B2:B5)
+output.WriteLine($"Total per month: {Format(total)}");
+output.WriteLine($"Left after expenses: {Format(budget["F2"].Value)}");
+```
+
+The sample formats values with this helper:
+
+```csharp snippet=sample-format
+// A CellValue can be a number, text, logical, error, array or empty; check Kind before As*.
+private static string Format(CellValue value) => value.Kind switch
+{
+    CellValueKind.Number => value.AsNumber().ToString(CultureInfo.InvariantCulture),
+    CellValueKind.Error => value.AsError().ToText(),   // "#DIV/0!", "#N/A", ...
+    _ => value.ToString(),
+};
+```
+
+### Change an input
+
+Assigning a value does not update the formulas that depend on it. Call `Recalculate` after a batch of changes: it calculates only the cells that are out of date.
+
+```csharp snippet=sample-change
+// Change an input. Dependent formulas are updated by the next Recalculate, not before.
+budget["B2"].Value = 1350;
+workbook.Recalculate();
+output.WriteLine("After rent change to 1350:");
+output.WriteLine($"Total per month: {Format(budget["B6"].Value)}");
+output.WriteLine($"Left after expenses: {Format(budget["F2"].Value)}");
+```
+
+### Formulas without a cell
+
+`Workbook.Evaluate` calculates a formula that lives in no cell. It can read the workbook's sheets. A formula that returns several values gives a `CellValue` of kind `Array`; its text form is `{1;2;3}`.
+
+```csharp snippet=sample-evaluate
+// Evaluate formulas that live in no cell. They can read the workbook's sheets.
+CellValue food = workbook.Evaluate("=XLOOKUP(\"Food\", Budget!A2:A5, Budget!B2:B5)");
+CellValue average = workbook.Evaluate("=LET(items, Budget!B2:B5, SUM(items) / COUNT(items))");
+CellValue sequence = workbook.Evaluate("=SEQUENCE(3)");   // a dynamic array: {1;2;3}
+output.WriteLine($"Food per month: {Format(food)}");
+output.WriteLine($"Average expense: {Format(average)}");
+output.WriteLine($"Sequence: {sequence}");
+```
+
+## Run it
+
+```bash
+dotnet run --project samples/SharpCell.Sample -f net10.0
+```
+
+```text
+Total per month: 1810
+Left after expenses: 1190
+After rent change to 1350:
+Total per month: 1960
+Left after expenses: 1040
+Food per month: 450
+Average expense: 490
+Sequence: {1;2;3}
+```
+
+## Next
+
+- [Formulas and values](guides/formulas.md)
+- [Recalculation](guides/recalculation.md)
+- [Reading .xlsx files](guides/xlsx.md)
+
+---
+
+<!-- page: guides/formulas.md -->
+
+# Formulas and values
+
+How to write formulas, what a cell value can be, and how dynamic arrays, names and LAMBDA work.
+
+## Syntax
+
+Write formulas the way Excel stores them in a file: English function names, a comma between arguments and a dot as the decimal separator. The leading `=` is optional; `Cell.Formula` adds it if missing. Localized function names such as `СУММ` or `SOMME` are not recognized.
+
+References:
+
+| Form | Meaning |
+|---|---|
+| `A1`, `$A$1` | A cell, relative or absolute |
+| `A1:C3`, `A:A`, `1:1` | A range, whole columns, whole rows |
+| `'Sheet name'!A1` | A cell on another sheet |
+| `Sheet1:Sheet3!A1` | The same cell on a run of sheets |
+| `TaxRate` | A defined name |
+| `C1#` | The whole range a dynamic array in C1 spilled into |
+| `@A1:A9` | Implicit intersection: the cell of the range in the formula's row or column |
+
+## Build a workbook in code
+
+```csharp snippet=build-in-code
+var workbook = new Workbook();
+Worksheet sheet = workbook.AddSheet("Sheet1");
+sheet["A1"].Value = 2;
+sheet["A2"].Formula = "=A1*3";
+workbook.Recalculate();
+CellValue result = sheet["A2"].Value;   // 6
+```
+
+## Reading values
+
+A `CellValue` is one of: `Number`, `Text`, `Boolean`, `Error`, `Array`, `Empty`, `Missing` or `Lambda`. Dates and times are numbers: serial days since the workbook's date system epoch. Errors such as `#DIV/0!` are values, not exceptions.
+
+```csharp snippet=read-values
+static string Describe(CellValue value) => value.Kind switch
+{
+    CellValueKind.Number => value.AsNumber().ToString(CultureInfo.InvariantCulture),
+    CellValueKind.Text => value.AsText(),
+    CellValueKind.Boolean => value.AsBoolean() ? "TRUE" : "FALSE",
+    CellValueKind.Error => value.AsError().ToText(),   // "#DIV/0!", "#N/A", ...
+    CellValueKind.Array => $"array of {value.AsArray().GetLength(0)} x {value.AsArray().GetLength(1)}",
+    CellValueKind.Empty => "(empty)",
+    _ => value.ToString(),
+};
+```
+
+The `As` methods throw `InvalidOperationException` when the value is of another kind. Every member is listed in the [CellValue reference](../api/SharpCell.CellValue.md).
+
+## Dynamic arrays
+
+A formula that returns several values spills into the cells below and to the right. The spilled cells hold values but no formula: their `Formula` is `null`.
+
+```csharp snippet=spill
+sheet["C1"].Formula = "=SEQUENCE(3)";   // spills into C1:C3
+sheet["D1"].Formula = "=SUM(C1#)";      // C1# is the whole spilled range
+workbook.Recalculate();
+// sheet["C3"].Value is 3 and sheet["D1"].Value is 6
+```
+
+When a cell in the way holds something, the anchor shows `#SPILL!` and the other cells stay as they are:
+
+```csharp snippet=spill-blocked
+sheet["C2"].Value = "in the way";
+workbook.Recalculate();
+// sheet["C1"].Value is #SPILL!; clear C2 and recalculate to spill again
+```
+
+## Names and LAMBDA
+
+`DefineName` gives a formula a name. A name whose formula is a `LAMBDA` can be called like a function.
+
+```csharp snippet=names-lambda
+workbook.DefineName("TaxRate", "=0.2");
+workbook.DefineName("WithTax", "=LAMBDA(amount, amount * (1 + TaxRate))");
+CellValue gross = workbook.Evaluate("=WithTax(100)");   // 120
+```
+
+## Formulas outside cells
+
+```csharp snippet=evaluate
+CellValue sum = workbook.Evaluate("=SUM(1, 2, 3)");   // 6, no sheet needed
+```
+
+## Errors in formula text
+
+Text that is not a valid formula throws `FormulaParseException`, which says where parsing stopped. The cell is left unchanged.
+
+```csharp snippet=parse-error
+string? problem = null;
+try
+{
+    sheet["A1"].Formula = "=SUM(1,";
+}
+catch (FormulaParseException e)
+{
+    problem = $"at position {e.Position}: {e.Message}";
+}
+```
+
+A formula read from a file that SharpCell cannot handle does not throw. Once calculated, it is `#NAME?` and listed in `Workbook.Diagnostics` as `UnsupportedFormula`. See [Reading .xlsx files](xlsx.md).
+
+---
+
+<!-- page: guides/recalculation.md -->
+
+# Recalculation
+
+When cell values update, what is recalculated, and how to cancel, inspect problems, use threads and set the culture.
+
+## Values update on Recalculate
+
+```csharp snippet=recalculate-stale
+sheet["A1"].Value = 5;
+// sheet["A2"].Value is still 6: formulas are updated by Recalculate, not on assignment
+workbook.Recalculate();
+// sheet["A2"].Value is now 15
+```
+
+`Workbook.Recalculate` calculates the formulas that are out of date: those whose inputs changed since the last calculation, everything that depends on them, and formulas that use a volatile function. It does not recalculate the rest.
+
+Volatile functions are recalculated on every `Recalculate`:
+
+- `AGGREGATE`, `SUBTOTAL`
+- `INDIRECT`, `OFFSET`
+- `NOW`, `TODAY`
+- `RAND`, `RANDARRAY`, `RANDBETWEEN`
+
+`Workbook.Evaluate` calculates the out-of-date cells its formula reads before evaluating it.
+
+## Cancellation
+
+```csharp snippet=cancel
+using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+try
+{
+    workbook.Recalculate(timeout.Token);
+}
+catch (OperationCanceledException)
+{
+    // The workbook stays usable: the next Recalculate finishes the work.
+    cancelled = true;
+}
+```
+
+Cells finished before the cancellation keep their new values. The rest stay out of date and are calculated by the next `Recalculate`.
+
+## Diagnostics
+
+Problems that do not show in the values alone are listed in `Workbook.Diagnostics`:
+
+```csharp snippet=diagnostics
+sheet["F1"].Formula = "=G1";
+sheet["G1"].Formula = "=F1";
+workbook.Recalculate();
+foreach (CalculationDiagnostic diagnostic in workbook.Diagnostics)
+{
+    // CircularReference at Sheet1!F1: Circular reference: Sheet1!F1 -> Sheet1!G1 -> Sheet1!F1
+    lines.Add($"{diagnostic.Kind} at {diagnostic.Sheet?.Name}!{diagnostic.Address}: {diagnostic.Message}");
+}
+```
+
+| Kind | What happened | What the cell gets |
+|---|---|---|
+| `CircularReference` | Cells reference each other in a loop. | 0 in every cell of the loop, as Excel without iterative calculation |
+| `FunctionFailure` | A function failed unexpectedly. This is a SharpCell bug worth reporting. | `#VALUE!` |
+| `UnsupportedFormula` | A formula uses something SharpCell cannot evaluate, such as a table reference or a link to another workbook. | `#NAME?` |
+| `LimitExceeded` | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together. | An error |
+
+Diagnostics describe the current state: editing a cell or calculating it without the problem removes its entries.
+
+## Threads
+
+```csharp snippet=threads
+// A Workbook is not thread-safe. Separate workbooks are independent and can run in parallel.
+Parallel.ForEach(paths, path =>
+{
+    Workbook workbook = XlsxReader.Load(path);
+    workbook.Recalculate();
+    totals.Add(workbook["Budget"]["B6"].Value.AsNumber());
+});
+```
+
+## Culture and dates
+
+```csharp snippet=culture
+var german = new Workbook { Culture = CultureInfo.GetCultureInfo("de-DE") };
+CellValue number = german.Evaluate("=VALUE(\"1,5\")");   // 1.5
+```
+
+`Workbook.Culture` controls text-to-number conversion, number-to-text conversion and text ordering. It defaults to the invariant culture, which behaves like English Excel. The process culture is never read.
+
+`Workbook.DateSystem` says whether serial dates count from 1900 or from 1904; the .xlsx reader sets it from the file. In the 1900 system, serial number 60 is the non-existent 29 February 1900, as in Excel.
+
+---
+
+<!-- page: guides/xlsx.md -->
+
+# Reading .xlsx files
+
+What `XlsxReader` loads, what it skips, and how saved results and streams behave.
+
+## What is read
+
+- Sheets, including hidden ones, in workbook order.
+- Constants: numbers, text, logical values and errors.
+- Formulas: ordinary, shared, legacy array formulas (Ctrl+Shift+Enter) and dynamic arrays.
+- The results Excel saved with each formula.
+- Defined names, workbook-wide and sheet-scoped.
+- The date system, 1900 or 1904.
+
+## What is not read
+
+Styles and number formats, charts, pivot tables, comments and macros are skipped.
+
+| File | Result |
+|---|---|
+| .xls, .xlsm, .xlsb, encrypted files | `NotSupportedException` |
+| A damaged or non-xlsx file | `InvalidDataException` |
+
+## Saved results
+
+After `Load`, a cell with a formula holds the result Excel saved in the file. A file written by another program may have no saved results; those cells are empty. `Workbook.Recalculate` calculates every formula with SharpCell and replaces the saved results.
+
+A formula SharpCell cannot parse, such as a link to another workbook, does not fail the load. Once calculated, it is `#NAME?` and listed in `Workbook.Diagnostics` as `UnsupportedFormula`.
+
+A legacy array formula covers a fixed range. Setting the value or formula of one of its cells other than the top-left one throws `InvalidOperationException`; change the whole array at its top-left cell.
+
+## Streams
+
+```csharp snippet=load-stream
+using Stream stream = File.OpenRead(path);
+Workbook workbook = XlsxReader.Load(stream);   // the stream is left open
+```
+
+The stream does not have to be seekable; a stream that is not is copied into memory first.
+
+## Writing
+
+SharpCell does not write files.
+
+---
+
+<!-- page: guides/functions.md -->
+
+# Functions
+
+Which functions exist, how criteria are written, and how dates and regular expressions behave.
+
+## Function status
+
+The [compatibility report](../compatibility.md) lists every function with one of three statuses, and the same data is in [compatibility.json](../compatibility.json):
+
+| Status | Meaning |
+|---|---|
+| `implemented` | Matches Excel on the reference workbooks. |
+| `known deviation` | Implemented, with a described difference from Excel. |
+| `not implemented` | The function name evaluates to `#NAME?`. |
+
+A function that does not appear in the report evaluates to `#NAME?` as well.
+
+## Criteria
+
+`COUNTIF`, `SUMIF`, `AVERAGEIF`, the `*IFS` functions, the `D` database functions and `MATCH` take criteria written as in Excel:
+
+| Criterion | Matches |
+|---|---|
+| `5` or `"=5"` | The number 5 and the text `"5"` |
+| `">5"`, `"<=5"`, `"<>5"` | Numbers compared with 5. `<` and `>` compare only values of the same type. |
+| `"<>"` | Any non-empty cell; the text `""` counts as non-empty |
+| `""` | Empty cells and the text `""` |
+| `"app*"`, `"?pple"` | Text with wildcards: `*` any run of characters, `?` one character |
+| `"~*"` | A literal `*`; `~` escapes `*`, `?` and `~` |
+| `TRUE`, `"true"` | Logical values only |
+
+Wildcards apply to text only. In the `D` functions, a plain text criterion matches text that starts with it, as in Excel.
+
+## Dates and times
+
+Dates and times are numbers: serial days, with the time of day as the fraction. Text that looks like a date or time, such as `"2024-01-10"` or `"12:00"`, is converted to a number when arithmetic or a function needs one, using `Workbook.Culture`. Two-digit years 00–29 mean 2000–2029.
+
+## Regular expressions
+
+`REGEXTEST`, `REGEXEXTRACT`, `REGEXREPLACE` and match mode 3 of `XLOOKUP` and `XMATCH` use .NET regular expressions, not PCRE2 as Excel does. Most patterns behave the same. `\d` and `\w` also match non-ASCII digits and letters, and PCRE-only syntax such as possessive quantifiers is not available.
+
+---
+
+<!-- page: guides/limits.md -->
+
+# What SharpCell does not do
+
+Every known gap in one list, so you can decide before you start.
+
+- **Writing files.** SharpCell reads .xlsx and keeps the workbook in memory; it does not save.
+- **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
+- **Structured references.** Table references such as `Table1[Col]` evaluate to `#NAME?`.
+- **Hidden rows.** Rows are never hidden or filtered, so `SUBTOTAL` and `AGGREGATE` include every row.
+- **Iterative calculation.** A circular reference gives 0 in its cells and a diagnostic.
+- **Display formats.** Cell number formats are not read. The `TEXT` function formats numbers itself.
+- **Localized function names.** Formulas use English names, as in the file format.
+- **Links to other workbooks.** They evaluate to `#NAME?`.
+- **Cube, real-time data and web functions.** `CUBE*`, `RTD` and `WEBSERVICE` are not available.
+- **Concurrent use.** One `Workbook` must not be used from several threads at once. Separate workbooks are independent.
+
+Each function's status, and every function that differs from Excel in a described way, is in the [compatibility report](../compatibility.md).
+
+---
+
+<!-- page: agents.md -->
+
+# Using SharpCell from an AI coding agent
+
+How to give Claude Code, Cursor, Copilot or another coding agent accurate knowledge of SharpCell.
+
+## Point the agent at llms.txt
+
+The documentation is published as plain Markdown next to the HTML. Give your agent one of these:
+
+- [llms.txt](llms.txt): a short index of every page with one line each.
+- [llms-full.txt](llms-full.txt): the guides and the API reference in one file, for agents that read a whole document.
+- Any page with `.md` instead of `.html` in its address, such as [the API reference](api/index.md).
+
+## Add the rules to your project
+
+Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/sharpcell.mdc` or `.github/copilot-instructions.md`.
+
+```markdown
+## SharpCell (Excel formula engine)
+
+- Packages: `SharpCell` (engine) and `SharpCell.Xlsx` (reads .xlsx). Namespaces `SharpCell`, `SharpCell.Xlsx`.
+- Load: `Workbook workbook = XlsxReader.Load(path);` Build in code: `new Workbook()`, `AddSheet`, `sheet["A1"].Value`, `sheet["A2"].Formula = "=A1*3"`.
+- Call `workbook.Recalculate()` after changing values or formulas. Values do not update on assignment.
+- `workbook.Evaluate("=SUM(1,2)")` evaluates a formula that lives in no cell.
+- A `CellValue` has a `Kind`: Number, Text, Boolean, Error, Array, Empty, Missing, Lambda. Check `Kind` before `AsNumber()`, `AsText()` and the other `As` methods; they throw on the wrong kind.
+- Excel errors such as #DIV/0! are values (`Kind == Error`), not exceptions. A formula that cannot be parsed throws `FormulaParseException`.
+- Formulas use Excel's file syntax: English function names, commas between arguments, dot decimals; the leading `=` is optional.
+- Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
+- A `Workbook` is not thread-safe; use one per thread.
+- Not supported: writing files, .xls/.xlsm/.xlsb, structured references (Table1[Col]), iterative calculation, localized function names.
+- Before relying on a function, check its status in compatibility.json: https://<docs-site>/compatibility.json
+- Docs for agents: https://<docs-site>/llms.txt
+```
+
+Replace `<docs-site>` with the address of this site.
+
+## Check a function before using it
+
+`compatibility.json` lists every function with its status and how many Excel-calculated cells it matched:
+
+```bash
+curl -s https://<docs-site>/compatibility.json | jq '.functions[] | select(.name == "XLOOKUP")'
+```
+
+```json
+{"name": "XLOOKUP", "status": "known deviation", "deviation": "Match mode 3 (regular expressions) uses .NET regular expressions, whose syntax differs from Excel's PCRE2 in details.", "cases": 437, "passed": 437}
+```
+
+A function with status `not implemented` evaluates to `#NAME?`.
+
+---
+
+<!-- page: api/SharpCell.CalculationDiagnostic.md -->
+
+# CalculationDiagnostic
+
+```csharp
+public sealed class CalculationDiagnostic
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Something calculation noticed that is not visible in cell values alone.
+
+## Constructors
+
+<a id="ctor-diagnostickind-worksheet-string-string"></a>
+### CalculationDiagnostic(DiagnosticKind, Worksheet, string, string)
+
+```csharp
+public CalculationDiagnostic(DiagnosticKind kind, Worksheet? sheet, string? address, string message)
+```
+
+Something calculation noticed that is not visible in cell values alone.
+
+## Properties
+
+<a id="address"></a>
+### Address
+
+```csharp
+public string? Address { get; }
+```
+
+A1 address of the affected cell; null for [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string).
+
+<a id="kind"></a>
+### Kind
+
+```csharp
+public DiagnosticKind Kind { get; }
+```
+
+What happened.
+
+<a id="message"></a>
+### Message
+
+```csharp
+public string Message { get; }
+```
+
+A description for people, such as the cells that form a circular reference.
+
+<a id="sheet"></a>
+### Sheet
+
+```csharp
+public Worksheet? Sheet { get; }
+```
+
+Sheet of the affected cell; null for [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string).
+
+## Methods
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The kind, the cell if there is one, and the message on one line.
+
+---
+
+<!-- page: api/SharpCell.Cell.md -->
+
+# Cell
+
+```csharp
+public sealed class Cell
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A handle to one cell position. Creating a handle does not create the cell; storage is allocated only when a value or formula is set.
+
+## Properties
+
+<a id="address"></a>
+### Address
+
+```csharp
+public string Address { get; }
+```
+
+The A1 address without the sheet name, such as `B2`.
+
+<a id="column"></a>
+### Column
+
+```csharp
+public int Column { get; }
+```
+
+The column number, from 1 (A is 1).
+
+<a id="formula"></a>
+### Formula
+
+```csharp
+public string? Formula { get; set; }
+```
+
+Formula text starting with '=' (added if missing), or null for no formula. The text is parsed on assignment; invalid text throws [FormulaParseException](SharpCell.FormulaParseException.md) and leaves the cell unchanged.
+
+**Exceptions**
+
+- `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
+
+<a id="row"></a>
+### Row
+
+```csharp
+public int Row { get; }
+```
+
+The row number, from 1.
+
+<a id="value"></a>
+### Value
+
+```csharp
+public CellValue Value { get; set; }
+```
+
+The cell's [CellValue](SharpCell.CellValue.md): a constant, or the formula's result as of the last calculation (values do not change until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken)). Setting a value removes the formula. Cells hold scalars only: Missing, arrays and lambdas cannot be stored.
+
+**Exceptions**
+
+- `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
+
+<a id="worksheet"></a>
+### Worksheet
+
+```csharp
+public Worksheet Worksheet { get; }
+```
+
+The sheet the cell belongs to.
+
+## Methods
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The address with the sheet name, such as `Sheet1!B2`.
+
+---
+
+<!-- page: api/SharpCell.CellValue.md -->
+
+# CellValue
+
+```csharp
+public readonly struct CellValue
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A value produced by a cell or a formula. `default` is [CellValue.Empty](SharpCell.CellValue.md#empty). Equality is identity (same kind, same payload, ordinal text), not Excel's `=`.
+
+## Properties
+
+<a id="empty"></a>
+### Empty
+
+```csharp
+public static CellValue Empty { get; }
+```
+
+An empty cell.
+
+<a id="false"></a>
+### False
+
+```csharp
+public static CellValue False { get; }
+```
+
+The logical value FALSE.
+
+<a id="iserror"></a>
+### IsError
+
+```csharp
+public bool IsError { get; }
+```
+
+Whether the value is an Excel error.
+
+<a id="kind"></a>
+### Kind
+
+```csharp
+public CellValueKind Kind { get; }
+```
+
+The kind of value; check it before calling one of the `As` methods.
+
+<a id="missing"></a>
+### Missing
+
+```csharp
+public static CellValue Missing { get; }
+```
+
+An omitted function argument, as in `IF(A1,,B1)`.
+
+<a id="true"></a>
+### True
+
+```csharp
+public static CellValue True { get; }
+```
+
+The logical value TRUE.
+
+## Methods
+
+<a id="array-cellvalue"></a>
+### Array(CellValue[,])
+
+```csharp
+public static CellValue Array(CellValue[,] values)
+```
+
+A rectangular array. The array is taken by reference and must not be mutated afterwards. Excel has no empty arrays, so both dimensions must be at least 1.
+
+<a id="asarray"></a>
+### AsArray()
+
+```csharp
+public CellValue[,] AsArray()
+```
+
+The array, rows first. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Array](SharpCell.CellValueKind.md#array).
+
+<a id="asboolean"></a>
+### AsBoolean()
+
+```csharp
+public bool AsBoolean()
+```
+
+The logical value. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Boolean](SharpCell.CellValueKind.md#boolean).
+
+<a id="aserror"></a>
+### AsError()
+
+```csharp
+public ErrorKind AsError()
+```
+
+The error. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Error](SharpCell.CellValueKind.md#error).
+
+<a id="aslambda"></a>
+### AsLambda()
+
+```csharp
+public LambdaValue AsLambda()
+```
+
+The function value. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Lambda](SharpCell.CellValueKind.md#lambda).
+
+<a id="asnumber"></a>
+### AsNumber()
+
+```csharp
+public double AsNumber()
+```
+
+The number. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Number](SharpCell.CellValueKind.md#number).
+
+<a id="astext"></a>
+### AsText()
+
+```csharp
+public string AsText()
+```
+
+The text. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Text](SharpCell.CellValueKind.md#text).
+
+<a id="boolean-bool"></a>
+### Boolean(bool)
+
+```csharp
+public static CellValue Boolean(bool value)
+```
+
+A logical value.
+
+<a id="equals-cellvalue"></a>
+### Equals(CellValue)
+
+```csharp
+public bool Equals(CellValue other)
+```
+
+Whether both values have the same kind and content; arrays are compared element by element. This is not Excel's `=`, which ignores case.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is a [CellValue](SharpCell.CellValue.md) equal to this one.
+
+<a id="error-errorkind"></a>
+### Error(ErrorKind)
+
+```csharp
+public static CellValue Error(ErrorKind kind)
+```
+
+An error value.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [CellValue.Equals](SharpCell.CellValue.md#equals-cellvalue).
+
+<a id="lambda-lambdavalue"></a>
+### Lambda(LambdaValue)
+
+```csharp
+public static CellValue Lambda(LambdaValue value)
+```
+
+A function value.
+
+<a id="number-double"></a>
+### Number(double)
+
+```csharp
+public static CellValue Number(double value)
+```
+
+A number. Excel has neither NaN, infinities nor negative zero: non-finite input becomes `#NUM!` and `-0` becomes `0`.
+
+<a id="text-string"></a>
+### Text(string)
+
+```csharp
+public static CellValue Text(string value)
+```
+
+A text value.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+Formats the value the way it would be written as a formula literal.
+
+## Operators
+
+<a id="op-implicit-bool"></a>
+### implicit operator CellValue(bool)
+
+```csharp
+public static implicit operator CellValue(bool value)
+```
+
+A logical value, so `cell.Value = true` works.
+
+<a id="op-implicit-double"></a>
+### implicit operator CellValue(double)
+
+```csharp
+public static implicit operator CellValue(double value)
+```
+
+A number, so `cell.Value = 42` works.
+
+<a id="op-implicit-string"></a>
+### implicit operator CellValue(string)
+
+```csharp
+public static implicit operator CellValue(string value)
+```
+
+A text value, so `cell.Value = "text"` works.
+
+<a id="op-inequality-cellvalue-cellvalue"></a>
+### operator !=(CellValue, CellValue)
+
+```csharp
+public static bool operator !=(CellValue left, CellValue right)
+```
+
+Whether the values differ, as [CellValue.Equals](SharpCell.CellValue.md#equals-cellvalue).
+
+<a id="op-equality-cellvalue-cellvalue"></a>
+### operator ==(CellValue, CellValue)
+
+```csharp
+public static bool operator ==(CellValue left, CellValue right)
+```
+
+Whether the values are equal, as [CellValue.Equals](SharpCell.CellValue.md#equals-cellvalue).
+
+---
+
+<!-- page: api/SharpCell.CellValueKind.md -->
+
+# CellValueKind
+
+```csharp
+public enum CellValueKind
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The kind of value a [CellValue](SharpCell.CellValue.md) holds.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| `Empty` | 0 | An empty cell. Reads as 0, "" or FALSE depending on what the formula expects. |
+| `Missing` | 1 | An argument left out of a function call, as in `IF(A1,,B1)`. |
+| `Number` | 2 | A number. Dates and times are numbers too: serial days since the workbook's date system epoch. |
+| `Text` | 3 | Text. |
+| `Boolean` | 4 | TRUE or FALSE. |
+| `Error` | 5 | An Excel error value such as `#DIV/0!`; errors are values, not exceptions. |
+| `Array` | 6 | A rectangular array, the result of a dynamic array formula or an array constant. |
+| `Lambda` | 7 | A function value created by `LAMBDA`. |
+
+---
+
+<!-- page: api/SharpCell.DateSystem.md -->
+
+# DateSystem
+
+```csharp
+public enum DateSystem
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The workbook's date system: which day serial number 0 or 1 stands for.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| `Date1900` | 0 | Serial 1 is 1900-01-01 and the non-existent 1900-02-29 is serial 60, as in Excel for Windows. |
+| `Date1904` | 1 | Serial 0 is 1904-01-01, as in old Excel for Mac. |
+
+---
+
+<!-- page: api/SharpCell.DiagnosticKind.md -->
+
+# DiagnosticKind
+
+```csharp
+public enum DiagnosticKind
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| `CircularReference` | 0 | Cells reference each other in a loop; every cell in the loop got 0. |
+| `FunctionFailure` | 1 | A function failed unexpectedly; the cell got `#VALUE!`. |
+| `UnsupportedFormula` | 2 | A formula uses something SharpCell cannot evaluate, such as a table reference or (in a file) a link to another workbook; the cell got `#NAME?`. |
+| `LimitExceeded` | 3 | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together; the cell got an error. |
+
+---
+
+<!-- page: api/SharpCell.ErrorKind.md -->
+
+# ErrorKind
+
+```csharp
+public enum ErrorKind
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Excel error values. Numeric values match the codes returned by `ERROR.TYPE`.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| `Null` | 1 | `#NULL!`: the intersection of two ranges is empty. |
+| `Div0` | 2 | `#DIV/0!`: division by zero. |
+| `Value` | 3 | `#VALUE!`: an argument has the wrong type. |
+| `Ref` | 4 | `#REF!`: a reference is not valid. |
+| `Name` | 5 | `#NAME?`: an unknown function or name. |
+| `Num` | 6 | `#NUM!`: a number is out of range or a calculation does not converge. |
+| `NA` | 7 | `#N/A`: a value is not available, such as a lookup that found nothing. |
+| `Spill` | 9 | `#SPILL!`: a dynamic array result cannot spill because cells are in the way. |
+| `Calc` | 14 | `#CALC!`: the calculation cannot produce a result, such as an empty array. |
+
+---
+
+<!-- page: api/SharpCell.ErrorKinds.md -->
+
+# ErrorKinds
+
+```csharp
+public static class ErrorKinds
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Conversion between [ErrorKind](SharpCell.ErrorKind.md) and its literal text (`#DIV/0!`).
+
+## Methods
+
+<a id="totext-errorkind"></a>
+### ToText(ErrorKind)
+
+```csharp
+public static string ToText(this ErrorKind kind)
+```
+
+The literal text of the error, such as `#DIV/0!`.
+
+<a id="tryparse-readonlyspan-char-errorkind"></a>
+### TryParse(ReadOnlySpan<char>, ErrorKind)
+
+```csharp
+public static bool TryParse(ReadOnlySpan<char> text, out ErrorKind kind)
+```
+
+Parses an error literal, ignoring case. The whole span must be the literal.
+
+---
+
+<!-- page: api/SharpCell.FormulaParseException.md -->
+
+# FormulaParseException
+
+```csharp
+public sealed class FormulaParseException : Exception
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Thrown when formula text cannot be parsed. This is the only exception the parser throws.
+
+## Constructors
+
+<a id="ctor-string-int"></a>
+### FormulaParseException(string, int)
+
+```csharp
+public FormulaParseException(string message, int position)
+```
+
+Creates the exception for a formula that cannot be parsed.
+
+**Parameters**
+
+- `message`: What is wrong.
+- `position`: The zero-based character position where parsing failed.
+
+## Properties
+
+<a id="position"></a>
+### Position
+
+```csharp
+public int Position { get; }
+```
+
+Zero-based index in the formula text where the problem was found.
+
+---
+
+<!-- page: api/SharpCell.LambdaValue.md -->
+
+# LambdaValue
+
+```csharp
+public abstract class LambdaValue
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A function value produced by `LAMBDA`. Instances are created only by the engine.
+
+---
+
+<!-- page: api/SharpCell.Workbook.md -->
+
+# Workbook
+
+```csharp
+public sealed class Workbook
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A workbook: sheets, defined names and calculation settings. Not thread-safe; separate workbooks can be used from different threads.
+
+## Constructors
+
+<a id="ctor"></a>
+### Workbook()
+
+```csharp
+public Workbook()
+```
+
+An empty workbook with no sheets, the invariant culture and the 1900 date system.
+
+## Properties
+
+<a id="culture"></a>
+### Culture
+
+```csharp
+public CultureInfo Culture { get; set; }
+```
+
+Culture for text-to-number conversion, number-to-text conversion and text ordering. The process culture is never used. Defaults to the invariant culture.
+
+<a id="datesystem"></a>
+### DateSystem
+
+```csharp
+public DateSystem DateSystem { get; set; }
+```
+
+Whether serial dates count from 1900 or from 1904, as set in the file.
+
+<a id="diagnostics"></a>
+### Diagnostics
+
+```csharp
+public IReadOnlyList<CalculationDiagnostic> Diagnostics { get; }
+```
+
+Current calculation problems: circular references and failing functions. An entry of a cell disappears when the cell is edited or calculated without the problem; entries from [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) last until the next call of it.
+
+<a id="sheets"></a>
+### Sheets
+
+```csharp
+public IReadOnlyList<Worksheet> Sheets { get; }
+```
+
+The sheets in order.
+
+<a id="item-string"></a>
+### this[string]
+
+```csharp
+public Worksheet this[string name] { get; }
+```
+
+Gets a sheet by name, ignoring case.
+
+## Methods
+
+<a id="addsheet-string"></a>
+### AddSheet(string)
+
+```csharp
+public Worksheet AddSheet(string name)
+```
+
+Adds a sheet at the end.
+
+**Exceptions**
+
+- `ArgumentException`: The name is not a valid sheet name, or a sheet with that name exists.
+
+<a id="definename-string-string-worksheet"></a>
+### DefineName(string, string, Worksheet)
+
+```csharp
+public void DefineName(string name, string formula, Worksheet? scope = null)
+```
+
+Defines or replaces a name. A name with a `scope` is visible only on that sheet.
+
+<a id="evaluate-string"></a>
+### Evaluate(string)
+
+```csharp
+public CellValue Evaluate(string formula)
+```
+
+Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet. Out-of-date cells it reads are calculated first. References without a sheet are `#REF!` when the workbook has no sheets.
+
+<a id="evaluate-string-cancellationtoken"></a>
+### Evaluate(string, CancellationToken)
+
+```csharp
+public CellValue Evaluate(string formula, CancellationToken cancellationToken)
+```
+
+Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet. Out-of-date cells it reads are calculated first. References without a sheet are `#REF!` when the workbook has no sheets.
+
+**Exceptions**
+
+- `OperationCanceledException`: The token was cancelled.
+
+<a id="recalculate-cancellationtoken"></a>
+### Recalculate(CancellationToken)
+
+```csharp
+public void Recalculate(CancellationToken cancellationToken = default)
+```
+
+Calculates every formula that is out of date: those whose inputs changed since the last calculation and those using volatile functions (NOW, RAND).
+
+**Exceptions**
+
+- `OperationCanceledException`: The token was cancelled; finished cells keep their new values.
+
+<a id="trygetsheet-string-worksheet"></a>
+### TryGetSheet(string, Worksheet)
+
+```csharp
+public bool TryGetSheet(string name, out Worksheet? sheet)
+```
+
+Finds a sheet by name, ignoring case.
+
+**Returns:** Whether the sheet exists.
+
+---
+
+<!-- page: api/SharpCell.Worksheet.md -->
+
+# Worksheet
+
+```csharp
+public sealed class Worksheet
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never set costs nothing: a [Cell](SharpCell.Cell.md) is a handle, and storage is allocated only when a value or formula is set.
+
+## Properties
+
+<a id="name"></a>
+### Name
+
+```csharp
+public string Name { get; }
+```
+
+The sheet name.
+
+<a id="workbook"></a>
+### Workbook
+
+```csharp
+public Workbook Workbook { get; }
+```
+
+The workbook the sheet belongs to.
+
+<a id="item-int-int"></a>
+### this[int, int]
+
+```csharp
+public Cell this[int row, int column] { get; }
+```
+
+A cell by 1-based row and column.
+
+<a id="item-string"></a>
+### this[string]
+
+```csharp
+public Cell this[string address] { get; }
+```
+
+A cell by A1 address such as `B3` (no `$`, no range).
+
+## Methods
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The sheet name.
+
+---
+
+<!-- page: api/SharpCell.Xlsx.XlsxReader.md -->
+
+# XlsxReader
+
+```csharp
+public static class XlsxReader
+```
+
+Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
+
+Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and the date system. Styles, charts, pivot tables and macros are not read.
+
+Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
+
+## Methods
+
+<a id="load-stream"></a>
+### Load(Stream)
+
+```csharp
+public static Workbook Load(Stream stream)
+```
+
+Reads a workbook from a stream, which is left open.
+
+**Parameters**
+
+- `stream`: The .xlsx content; it need not be seekable.
+
+**Returns:** The workbook, with the results Excel saved until it is recalculated.
+
+**Exceptions**
+
+- `InvalidDataException`: The file is not a well-formed .xlsx workbook.
+- `NotSupportedException`: The file is .xls, .xlsm, .xlsb or encrypted.
+
+<a id="load-string"></a>
+### Load(string)
+
+```csharp
+public static Workbook Load(string path)
+```
+
+Reads a workbook from a file.
+
+**Parameters**
+
+- `path`: Path of the .xlsx file.
+
+**Returns:** The workbook, with the results Excel saved until it is recalculated.
+
+**Exceptions**
+
+- `InvalidDataException`: The file is not a well-formed .xlsx workbook.
+- `NotSupportedException`: The file is .xls, .xlsm, .xlsb or encrypted.
