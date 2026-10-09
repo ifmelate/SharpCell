@@ -46,6 +46,18 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// <summary>What a read of a dirty cell returns; any value would do, the evaluation is discarded.</summary>
     public static CellValue PendingPlaceholder => CellValue.Error(ErrorKind.NA);
 
+    /// <summary>LET names and LAMBDA parameters in effect; null outside any LET or LAMBDA.</summary>
+    public Scope? Scope { get; set; }
+
+    /// <summary>Lambda calls currently in progress.</summary>
+    public int LambdaDepth { get; set; }
+
+    /// <summary>Lambda calls made by this evaluation, for periodic cancellation checks.</summary>
+    public long LambdaCalls { get; set; }
+
+    /// <summary>The formula predates dynamic arrays; see <see cref="CellData.IsLegacy"/>.</summary>
+    public bool Legacy { get; init; }
+
     /// <summary>A formula evaluated through <see cref="Workbook.Evaluate"/>, not in a cell.</summary>
     public bool IsDetached { get; init; }
 
@@ -80,15 +92,30 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
         if (data is null)
             return CellValue.Empty;
         if (data.IsDirty && data.Formula is not null)
-        {
-            var key = new CellKey(sheet, row, column);
-            if (_pendingSet.Add(key))
-                Pending.Add(key);
+            return Wait(new CellKey(sheet, row, column));
 
-            return PendingPlaceholder;
-        }
+        // A spilled value is only as current as its anchor.
+        if (data.SpillAnchor is { } anchor && anchor.Data is { IsDirty: true, Formula: not null })
+            return Wait(anchor);
 
         return data.Value;
+    }
+
+    /// <summary>
+    /// Reads of dirty cells so far, repeats included. Code that must not act on a stand-in value
+    /// compares this before and after: a second read of the same dirty cell counts too.
+    /// </summary>
+    public int PendingReads { get; private set; }
+
+    /// <summary>Counts as a read of a dirty cell; used when a cached value was computed from one.</summary>
+    public void SignalPending() => PendingReads++;
+
+    private CellValue Wait(CellKey key)
+    {
+        PendingReads++;
+        if (_pendingSet.Add(key))
+            Pending.Add(key);
+        return PendingPlaceholder;
     }
 
     public bool TryEnterName(NameDefinition name)

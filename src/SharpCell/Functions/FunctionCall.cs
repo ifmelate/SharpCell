@@ -16,11 +16,11 @@ internal sealed class FunctionCall
         Context = context;
         _nodes = nodes;
         _arguments = new Operand?[nodes.Count];
-        _pendingAtStart = context.Pending.Count;
+        _pendingAtStart = context.PendingReads;
     }
 
     /// <summary>Whether this call has read a dirty cell; its result will be discarded.</summary>
-    public bool MetPendingInput => Context.Pending.Count > _pendingAtStart;
+    public bool MetPendingInput => Context.PendingReads > _pendingAtStart;
 
     public EvaluationContext Context { get; }
 

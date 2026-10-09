@@ -8,6 +8,7 @@ internal static class InformationFunctions
     {
         registry.Add(new FunctionInfo("ISBLANK", 1, 1, [ArgumentKind.Value], call => CellValue.Boolean(call.Value(0).Kind == CellValueKind.Empty)));
         registry.Add(new FunctionInfo("ISERROR", 1, 1, [ArgumentKind.Value], call => CellValue.Boolean(call.Value(0).IsError)));
+        registry.Add(new FunctionInfo("ISOMITTED", 1, 1, [ArgumentKind.Any], call => CellValue.Boolean(call[0] is { IsReference: false, Value.Kind: CellValueKind.Missing })));
         registry.Add(new FunctionInfo("ROWS", 1, 1, [ArgumentKind.Any], call => Dimension(call, rows: true)));
         registry.Add(new FunctionInfo("COLUMNS", 1, 1, [ArgumentKind.Any], call => Dimension(call, rows: false)));
     }

@@ -30,4 +30,23 @@ internal sealed class CellData
 
     /// <summary>Whether the last (possibly unfinished) evaluation used a volatile function.</summary>
     public bool LastAttemptVolatile;
+
+    /// <summary>
+    /// A formula written by Excel before dynamic arrays (no array flag in the file): its result is
+    /// reduced by implicit intersection instead of spilling.
+    /// </summary>
+    public bool IsLegacy;
+
+    /// <summary>For a cell filled by another cell's array result: that anchor. Such a cell has no formula.</summary>
+    public CellKey? SpillAnchor;
+
+    /// <summary>For an anchor whose array result spilled: the area it covers, anchor included.</summary>
+    public Area? SpillArea;
+
+    /// <summary>
+    /// For a cell whose result is an array: the rectangle it wants to fill, spilled or not. Content
+    /// appearing or disappearing there makes it try again. Kept apart from <see cref="Registered"/>:
+    /// filling the rectangle is not reading it.
+    /// </summary>
+    public Area? SpillWatch;
 }

@@ -23,8 +23,17 @@ internal static class Evaluator
             node = p.Inner;
 
         var result = node is BinaryNode binary ? EvaluateBinary(binary, context, isRoot: true) : Evaluate(node, context);
+        if (context.Legacy)
+            result = ImplicitIntersection(result, context);
         var value = ToValue(result, context);
-        return value.Kind is CellValueKind.Empty or CellValueKind.Missing ? CellValue.Number(0) : value;
+        return value.Kind switch
+        {
+            CellValueKind.Empty or CellValueKind.Missing => CellValue.Number(0),
+
+            // A function value cannot be shown in a cell.
+            CellValueKind.Lambda => CellValue.Error(ErrorKind.Calc),
+            _ => value,
+        };
     }
 
     public static Operand Evaluate(FormulaNode node, EvaluationContext context)
@@ -67,9 +76,16 @@ internal static class Evaluator
                 return EvaluateBinary(b, context, isRoot: false);
 
             case FunctionNode f:
-                return FunctionInvoker.Invoke(f, context);
+                return EvaluateCall(f, context);
+            case CallNode c:
+                return Lambdas.Call(ToValue(Evaluate(c.Callee, context), context), c.Arguments, context);
 
-            // Tables are not evaluated in v0.1; spill, @ and lambda calls arrive in stage 3.
+            case SpillNode s:
+                return EvaluateSpill(s, context);
+            case ImplicitIntersectionNode i:
+                return ImplicitIntersection(Evaluate(i.Operand, context), context);
+
+            // Tables are not evaluated in v0.1.
             case StructuredReferenceNode:
                 return CellValue.Error(ErrorKind.Name);
             default:
@@ -140,6 +156,54 @@ internal static class Evaluator
         return ArrayMath.Map(a, b, (x, y) => Operators.Binary(op, x, y, culture, last));
     }
 
+    /// <summary>
+    /// The @ operator. A range gives the cell in the formula's row (single column), column (single
+    /// row) or both; no such cell is #VALUE!. An array gives its top-left element.
+    /// </summary>
+    public static Operand ImplicitIntersection(Operand operand, EvaluationContext context)
+    {
+        if (operand.Reference is not { } reference)
+        {
+            var value = operand.Value;
+            return value.Kind == CellValueKind.Array ? value.AsArray()[0, 0] : value;
+        }
+
+        if (!reference.IsSingleArea)
+            return CellValue.Error(ErrorKind.Value);
+
+        var (sheet, area) = reference.Areas[0];
+        if (area.IsSingleCell)
+            return operand;
+
+        var row = area.Rows == 1 ? area.FirstRow : context.Origin.Row;
+        var column = area.Columns == 1 ? area.FirstColumn : context.Origin.Column;
+        if (!area.Contains(row, column))
+            return CellValue.Error(ErrorKind.Value);
+
+        var cell = new Reference(sheet, Area.Cell(row, column));
+        context.RecordReference(cell);
+        return Operand.Of(cell);
+    }
+
+    // A1#: the area the array result of anchor A1 currently covers.
+    private static Operand EvaluateSpill(SpillNode node, EvaluationContext context)
+    {
+        var operand = Evaluate(node.Operand, context);
+        if (operand.Reference is not { IsSingleArea: true } reference || !reference.Areas[0].Area.IsSingleCell)
+            return operand.IsReference || !operand.Value.IsError ? CellValue.Error(ErrorKind.Ref) : operand;
+
+        var (sheet, area) = reference.Areas[0];
+        var anchor = sheet.Store.Get(area.FirstRow, area.FirstColumn);
+        if (anchor is { IsDirty: true, Formula: not null })
+            return context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
+        if (anchor?.SpillArea is not { } spill)
+            return CellValue.Error(ErrorKind.Ref);
+
+        var result = new Reference(sheet, spill);
+        context.RecordReference(result);
+        return Operand.Of(result);
+    }
+
     private static Operand EvaluateReference(ReferenceNode node, EvaluationContext context)
     {
         var result = ResolveReference(node, context);
@@ -184,7 +248,26 @@ internal static class Evaluator
         return -1;
     }
 
-    // Lookup order: the sheet's own names, then workbook names. Relative references inside a name
+    // A name followed by arguments: LET/LAMBDA syntax, a LET-bound function, a registry function,
+    // or a defined name holding a LAMBDA, in that order.
+    private static Operand EvaluateCall(FunctionNode node, EvaluationContext context)
+    {
+        if (Lambdas.TryEvaluateSpecialForm(node, context, out var special))
+            return special;
+
+        if (context.Scope is { } scope && scope.TryFind(node.Name, out var binding))
+            return Lambdas.Call(ToValue(Lambdas.Read(binding!, context), context), node.Arguments, context);
+
+        if (context.Workbook.Functions.TryGet(node.Name, out _))
+            return FunctionInvoker.Invoke(node, context);
+
+        var name = EvaluateName(new NameNode(null, node.Name), context);
+        if (!name.IsReference && name.Value.Kind == CellValueKind.Error && name.Value.AsError() == ErrorKind.Name)
+            return name;
+        return Lambdas.Call(ToValue(name, context), node.Arguments, context);
+    }
+
+    // Lookup order: LET names and LAMBDA parameters, the sheet's own names, then workbook names. Relative references inside a name
     // were parsed at A1 and move with the cell that uses the name.
     private static Operand EvaluateName(NameNode node, EvaluationContext context)
     {
@@ -194,6 +277,9 @@ internal static class Evaluator
             return CellValue.Error(ErrorKind.Ref);
 
         var upper = node.Name.ToUpperInvariant();
+        if (node.Sheet is null && context.Scope is { } local && local.TryFind(upper, out var binding))
+            return Lambdas.Read(binding!, context);
+
         context.RecordName(upper);
         if (!(scope is not null && workbook.Names.TryGet(upper, scope, out var definition))
             && !workbook.Names.TryGet(upper, null, out definition))
@@ -201,12 +287,18 @@ internal static class Evaluator
 
         if (!context.TryEnterName(definition!))
             return CellValue.Error(ErrorKind.Ref);
+
+        // A defined name is evaluated on its own terms: the caller's LET names and LAMBDA
+        // parameters are not visible to it (lambdas it creates capture no caller scope).
+        var callerScope = context.Scope;
+        context.Scope = null;
         try
         {
             return Evaluate(definition!.Formula, context);
         }
         finally
         {
+            context.Scope = callerScope;
             context.LeaveName();
         }
     }

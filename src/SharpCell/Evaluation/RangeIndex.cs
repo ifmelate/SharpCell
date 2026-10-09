@@ -50,6 +50,38 @@ internal sealed class RangeIndex
         }
     }
 
+    /// <summary>Formulas reading a range that overlaps <paramref name="area"/>.</summary>
+    public void QueryOverlap(Area area, Action<CellKey> visit)
+    {
+        if (_added.Count + _removed.Count > 32 + _sorted.Length / 4)
+            Rebuild();
+
+        QueryOverlap(0, _sorted.Length, area, visit);
+        foreach (var (registered, cell) in _added)
+        {
+            if (registered.TryIntersect(area, out _))
+                visit(cell);
+        }
+    }
+
+    private void QueryOverlap(int low, int high, Area area, Action<CellKey> visit)
+    {
+        while (low < high)
+        {
+            var mid = (low + high) >>> 1;
+            if (_maxLastRow[mid] < area.FirstRow)
+                return;
+
+            QueryOverlap(low, mid, area, visit);
+            var entry = _sorted[mid];
+            if (entry.Area.FirstRow > area.LastRow)
+                return;
+            if (entry.Area.TryIntersect(area, out _) && !_removed.Contains(entry))
+                visit(entry.Cell);
+            low = mid + 1;
+        }
+    }
+
     private void Query(int low, int high, int row, int column, Action<CellKey> visit)
     {
         // Recurses into the left half; the right half is a loop. Depth is the tree height, log n.

@@ -87,5 +87,39 @@ internal sealed class DependencyGraph
             index.Query(cell.Row, cell.Column, visit);
     }
 
+    /// <summary>Formulas reading any cell of the area.</summary>
+    public void ForEachReader(Worksheet sheet, Area area, Action<CellKey> visit)
+    {
+        // Either probe each cell of the area or scan the single-cell entries, whichever is smaller.
+        if (area.CellCount <= _cells.Count)
+        {
+            for (var row = area.FirstRow; row <= area.LastRow; row++)
+            {
+                for (var column = area.FirstColumn; column <= area.LastColumn; column++)
+                {
+                    if (_cells.TryGetValue(new CellKey(sheet, row, column), out var readers))
+                    {
+                        foreach (var reader in readers)
+                            visit(reader);
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach (var (cell, readers) in _cells)
+            {
+                if (cell.Sheet == sheet && area.Contains(cell.Row, cell.Column))
+                {
+                    foreach (var reader in readers)
+                        visit(reader);
+                }
+            }
+        }
+
+        if (_ranges.TryGetValue(sheet, out var index))
+            index.QueryOverlap(area, visit);
+    }
+
     public CellKey[] UsersOf(string upperName) => _names.TryGetValue(upperName, out var users) ? [.. users] : [];
 }

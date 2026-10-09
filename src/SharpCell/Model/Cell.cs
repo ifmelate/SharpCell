@@ -52,6 +52,10 @@ public sealed class Cell
                 data.FormulaText = null;
                 data.Formula = null;
                 data.IsDirty = false;
+                data.IsLegacy = false;
+
+                // Typing into a spilled cell makes it the user's: it now blocks the spill.
+                data.SpillAnchor = null;
             }
 
             calculation.AfterChange(key, data);
@@ -65,32 +69,40 @@ public sealed class Cell
     public string? Formula
     {
         get => Worksheet.Store.Get(Row, Column)?.FormulaText;
-        set
-        {
-            var key = Key;
-            var calculation = Worksheet.Workbook.Calculation;
-            if (string.IsNullOrEmpty(value))
-            {
-                var existing = Worksheet.Store.Get(Row, Column);
-                if (existing?.FormulaText is not null)
-                {
-                    calculation.BeforeChange(key, existing);
-                    Worksheet.Store.Remove(Row, Column);
-                    calculation.AfterChange(key, null);
-                }
+        set => SetFormula(value, legacy: false);
+    }
 
-                return;
+    /// <param name="legacy">
+    /// The formula predates dynamic arrays (as marked in xlsx files): an array or range result is
+    /// reduced to one value by implicit intersection instead of spilling.
+    /// </param>
+    internal void SetFormula(string? value, bool legacy)
+    {
+        var key = Key;
+        var calculation = Worksheet.Workbook.Calculation;
+        if (string.IsNullOrEmpty(value))
+        {
+            var existing = Worksheet.Store.Get(Row, Column);
+            if (existing?.FormulaText is not null)
+            {
+                calculation.BeforeChange(key, existing);
+                Worksheet.Store.Remove(Row, Column);
+                calculation.AfterChange(key, null);
             }
 
-            var text = value.StartsWith('=') ? value : "=" + value;
-            var node = FormulaParser.Parse(text, new CellAddress(Row, Column));
-            calculation.BeforeChange(key, Worksheet.Store.Get(Row, Column));
-            var data = Worksheet.Store.GetOrCreate(Row, Column);
-            data.FormulaText = text;
-            data.Formula = node;
-            data.Value = CellValue.Empty;
-            calculation.AfterChange(key, data);
+            return;
         }
+
+        var text = value.StartsWith('=') ? value : "=" + value;
+        var node = FormulaParser.Parse(text, new CellAddress(Row, Column));
+        calculation.BeforeChange(key, Worksheet.Store.Get(Row, Column));
+        var data = Worksheet.Store.GetOrCreate(Row, Column);
+        data.FormulaText = text;
+        data.Formula = node;
+        data.IsLegacy = legacy;
+        data.Value = CellValue.Empty;
+        data.SpillAnchor = null;
+        calculation.AfterChange(key, data);
     }
 
     private CellKey Key => new(Worksheet, Row, Column);

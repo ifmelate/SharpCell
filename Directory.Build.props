@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
-    <Authors>ifmelate</Authors>
-    <Copyright>Copyright (c) 2026 ifmelate</Copyright>
+    <Authors>Mark Shvabenlandt</Authors>
+    <Copyright>Copyright (c) 2026 Mark Shvabenlandt (ifmelate)</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>
