@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/SharpCell.Conformance/SharpCell.Conformance.csproj" />
+    <Project Path="tools/SharpCell.Docs/SharpCell.Docs.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SharpCell.Tests/SharpCell.Tests.csproj" />
