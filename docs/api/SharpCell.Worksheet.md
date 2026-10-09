@@ -66,7 +66,7 @@ A cell by A1 address such as `B3` (no `$`, no range).
 public Table AddTable(string name, string range, bool hasHeaderRow = true, bool hasTotalsRow = false)
 ```
 
-Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. Column names come from the header row as it is now: a cell's text, `ColumnN` for an empty cell (N counts from the table's first column) and a number added to a repeated name (`Units2`). Without a header row the columns are `Column1`, `Column2` and so on. Changing a header cell later does not rename its column.
+Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. Column names come from the header row as it is now: a cell's value as text (a formula's too), `ColumnN` for an empty cell or an error (N counts from the table's first column), and a number added to a repeated name (`Units2`). Without a header row the columns are `Column1`, `Column2` and so on. Changing a header cell later does not rename its column.
 
 **Parameters**
 

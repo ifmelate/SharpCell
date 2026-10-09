@@ -32,6 +32,15 @@ public class TableModelTests
     }
 
     [Fact]
+    public void Header_formula_names_its_column_by_its_value_even_before_recalculation()
+    {
+        _s["J1"].Formula = "=\"Unit\"&\"s\"";
+        _s["K1"].Formula = "=1/0";
+        var table = _s.AddTable("Calc", "J1:K2");
+        Assert.Equal(["Units", "Column2"], table.Columns);
+    }
+
+    [Fact]
     public void Table_without_header_row_has_numbered_columns()
     {
         var table = _s.AddTable("Bare", "G1:H2", hasHeaderRow: false, hasTotalsRow: true);

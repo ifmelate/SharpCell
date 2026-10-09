@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using SharpCell.Evaluation;
+using SharpCell.Parsing;
 
 namespace SharpCell;
 
@@ -52,9 +54,10 @@ public sealed class Worksheet
 
     /// <summary>
     /// Makes a range a table that formulas can refer to by name, as in <c>Sales[Units]</c>. Column
-    /// names come from the header row as it is now: a cell's text, <c>ColumnN</c> for an empty cell
-    /// (N counts from the table's first column) and a number added to a repeated name
-    /// (<c>Units2</c>). Without a header row the columns are <c>Column1</c>, <c>Column2</c> and so on.
+    /// names come from the header row as it is now: a cell's value as text (a formula's too),
+    /// <c>ColumnN</c> for an empty cell or an error (N counts from the table's first column), and a
+    /// number added to a repeated name (<c>Units2</c>). Without a header row the columns are
+    /// <c>Column1</c>, <c>Column2</c> and so on.
     /// Changing a header cell later does not rename its column.
     /// </summary>
     /// <param name="name">The table name; tables and defined names share one set of names, ignoring case.</param>
@@ -108,9 +111,16 @@ public sealed class Worksheet
         return Workbook.RegisterTable(new Table(this, name, area, hasHeaderRow, hasTotalsRow, columns));
     }
 
+    // Excel turns a header formula into text when it makes the table; the formula's value counts,
+    // calculated first when it is out of date.
     private string HeaderText(int row, int column)
     {
-        var value = Store.Get(row, column)?.Value ?? CellValue.Empty;
+        var data = Store.Get(row, column);
+        var value = data is { Formula: not null, IsDirty: true }
+            ? Workbook.Calculation.EvaluateDetached(
+                new ReferenceNode(null, AreaRef.Cell(new CellRef(AxisRef.Absolute(row), AxisRef.Absolute(column)))),
+                this, new CellAddress(row, column), CancellationToken.None)
+            : data?.Value ?? CellValue.Empty;
         var text = Coercion.ToText(value, Workbook.Culture);
         return text.Kind == CellValueKind.Text ? text.AsText() : "";
     }
