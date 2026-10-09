@@ -1,7 +1,40 @@
 {
-  "cells": 76017,
-  "passed": 75765,
+  "cells": 76082,
+  "passed": 76026,
   "files": [
+    {
+      "file": "excel-web/filter-mode.xlsx",
+      "cells": 13,
+      "passed": 13,
+      "skipped": 0,
+      "comparedCells": {
+        "ActiveSheetFilter": "D9 D40:D41",
+        "ActiveTableFilter": "D9 D40:D41 D43:D44",
+        "FilterHidesNothing": "D9 D40:D41",
+        "NoFilter": "D40:D41"
+      },
+      "failingCells": {}
+    },
+    {
+      "file": "excel-web/hidden-rows.xlsx",
+      "cells": 20,
+      "passed": 20,
+      "skipped": 0,
+      "comparedCells": {
+        "Spike": "D50:D53 D55:D58 D60:D63 D65:D68 D70:D73"
+      },
+      "failingCells": {}
+    },
+    {
+      "file": "excel-web/tables-spike.xlsx",
+      "cells": 32,
+      "passed": 32,
+      "skipped": 0,
+      "comparedCells": {
+        "Spike": "A8 F1:F2 F8:F12 I20:I43"
+      },
+      "failingCells": {}
+    },
     {
       "file": "ironcalc/DynamicArrays.xlsx",
       "cells": 43,
@@ -2455,7 +2488,7 @@
     {
       "file": "ironcalc/tables.xlsx",
       "cells": 212,
-      "passed": 16,
+      "passed": 212,
       "skipped": 0,
       "comparedCells": {
         "Escape": "B6 C6:C10 D6 E2:E6 E17",
@@ -2468,17 +2501,7 @@
         "WithHeaders": "A9 A23 B5 C5 C9 D5 E5 F2:F5 F14:F18 I3:I4 J3 L3",
         "filters": "A7 B7:B12 C7 C11:C12 D7"
       },
-      "failingCells": {
-        "Escape": "B6 C6 C8:C10 D6 E2:E6",
-        "Functions Filters": "D45:D54 E45 E48:E49 F2:F45",
-        "Functions Hidden": "D45:D47 D49 D53:D61 E45:E47 E51:E52 F2:F45 M8:M11 N8 O2:O8",
-        "Hidden": "B6:B9 B11 C6 D6 D13 H5 I5",
-        "No Headers": "B8 C8 D8 E8 E11 F3:F8",
-        "Sheet1": "A5:A8",
-        "Sheet2": "F4 H2",
-        "WithHeaders": "A9 B5 C5 C9 D5 E5 F2:F5 F14:F18 I3:I4 J3 L3",
-        "filters": "A7 B7:B8 B10:B11 C7 C12 D7"
-      }
+      "failingCells": {}
     },
     {
       "file": "ironcalc/templates/crossword.xlsx",
@@ -2622,10 +2645,9 @@
     },
     {
       "name": "AGGREGATE",
-      "status": "known deviation",
-      "deviation": "Rows that Excel hides or filters out are included, because SharpCell does not model hidden rows.",
-      "cases": 0,
-      "passed": 0
+      "status": "implemented",
+      "cases": 26,
+      "passed": 26
     },
     {
       "name": "AMORDEGRC",
@@ -3005,7 +3027,7 @@
       "name": "CONCAT",
       "status": "implemented",
       "cases": 569,
-      "passed": 568
+      "passed": 569
     },
     {
       "name": "CONCATENATE",
@@ -3071,13 +3093,13 @@
       "name": "COUNT",
       "status": "implemented",
       "cases": 36,
-      "passed": 34
+      "passed": 36
     },
     {
       "name": "COUNTA",
       "status": "implemented",
       "cases": 33,
-      "passed": 32
+      "passed": 33
     },
     {
       "name": "COUNTBLANK",
@@ -3936,7 +3958,7 @@
       "name": "INDIRECT",
       "status": "implemented",
       "cases": 187,
-      "passed": 186
+      "passed": 187
     },
     {
       "name": "INFO",
@@ -4519,7 +4541,7 @@
       "name": "OFFSET",
       "status": "implemented",
       "cases": 79,
-      "passed": 78
+      "passed": 79
     },
     {
       "name": "OR",
@@ -4906,7 +4928,7 @@
       "name": "SHEET",
       "status": "implemented",
       "cases": 15,
-      "passed": 11
+      "passed": 15
     },
     {
       "name": "SHEETS",
@@ -5042,16 +5064,15 @@
     },
     {
       "name": "SUBTOTAL",
-      "status": "known deviation",
-      "deviation": "Rows that Excel hides or filters out are included, because SharpCell does not model hidden rows.",
-      "cases": 74,
-      "passed": 4
+      "status": "implemented",
+      "cases": 103,
+      "passed": 103
     },
     {
       "name": "SUM",
       "status": "implemented",
-      "cases": 166,
-      "passed": 146
+      "cases": 168,
+      "passed": 168
     },
     {
       "name": "SUMIF",
