@@ -4,15 +4,24 @@ using System.Text;
 
 namespace SharpCell;
 
+/// <summary>The kind of value a <see cref="CellValue"/> holds.</summary>
 public enum CellValueKind
 {
+    /// <summary>An empty cell. Reads as 0, "" or FALSE depending on what the formula expects.</summary>
     Empty = 0,
+    /// <summary>An argument left out of a function call, as in <c>IF(A1,,B1)</c>.</summary>
     Missing,
+    /// <summary>A number. Dates and times are numbers too: serial days since the workbook's date system epoch.</summary>
     Number,
+    /// <summary>Text.</summary>
     Text,
+    /// <summary>TRUE or FALSE.</summary>
     Boolean,
+    /// <summary>An Excel error value such as <c>#DIV/0!</c>; errors are values, not exceptions.</summary>
     Error,
+    /// <summary>A rectangular array, the result of a dynamic array formula or an array constant.</summary>
     Array,
+    /// <summary>A function value created by <c>LAMBDA</c>.</summary>
     Lambda,
 }
 
@@ -33,6 +42,7 @@ public readonly struct CellValue : IEquatable<CellValue>
         _object = obj;
     }
 
+    /// <summary>The kind of value; check it before calling one of the <c>As</c> methods.</summary>
     public CellValueKind Kind { get; }
 
     /// <summary>An empty cell.</summary>
@@ -41,8 +51,10 @@ public readonly struct CellValue : IEquatable<CellValue>
     /// <summary>An omitted function argument, as in <c>IF(A1,,B1)</c>.</summary>
     public static CellValue Missing { get; } = new(CellValueKind.Missing, 0, null);
 
+    /// <summary>The logical value TRUE.</summary>
     public static CellValue True { get; } = new(CellValueKind.Boolean, 1, null);
 
+    /// <summary>The logical value FALSE.</summary>
     public static CellValue False { get; } = new(CellValueKind.Boolean, 0, null);
 
     /// <summary>
@@ -58,14 +70,17 @@ public readonly struct CellValue : IEquatable<CellValue>
         return new CellValue(CellValueKind.Number, value + 0.0, null);
     }
 
+    /// <summary>A text value.</summary>
     public static CellValue Text(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
         return new CellValue(CellValueKind.Text, 0, value);
     }
 
+    /// <summary>A logical value.</summary>
     public static CellValue Boolean(bool value) => value ? True : False;
 
+    /// <summary>An error value.</summary>
     public static CellValue Error(ErrorKind kind) => new(CellValueKind.Error, (int)kind, null);
 
     /// <summary>
@@ -81,32 +96,44 @@ public readonly struct CellValue : IEquatable<CellValue>
         return new CellValue(CellValueKind.Array, 0, values);
     }
 
+    /// <summary>A function value.</summary>
     public static CellValue Lambda(LambdaValue value)
     {
         ArgumentNullException.ThrowIfNull(value);
         return new CellValue(CellValueKind.Lambda, 0, value);
     }
 
+    /// <summary>Whether the value is an Excel error.</summary>
     public bool IsError => Kind == CellValueKind.Error;
 
+    /// <summary>The number. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Number"/>.</summary>
     public double AsNumber() => Kind == CellValueKind.Number ? _scalar : throw WrongKind(CellValueKind.Number);
 
+    /// <summary>The text. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Text"/>.</summary>
     public string AsText() => Kind == CellValueKind.Text ? (string)_object! : throw WrongKind(CellValueKind.Text);
 
+    /// <summary>The logical value. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Boolean"/>.</summary>
     public bool AsBoolean() => Kind == CellValueKind.Boolean ? _scalar != 0 : throw WrongKind(CellValueKind.Boolean);
 
+    /// <summary>The error. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Error"/>.</summary>
     public ErrorKind AsError() => Kind == CellValueKind.Error ? (ErrorKind)(int)_scalar : throw WrongKind(CellValueKind.Error);
 
+    /// <summary>The array, rows first. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Array"/>.</summary>
     public CellValue[,] AsArray() => Kind == CellValueKind.Array ? (CellValue[,])_object! : throw WrongKind(CellValueKind.Array);
 
+    /// <summary>The function value. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Lambda"/>.</summary>
     public LambdaValue AsLambda() => Kind == CellValueKind.Lambda ? (LambdaValue)_object! : throw WrongKind(CellValueKind.Lambda);
 
+    /// <summary>A number, so <c>cell.Value = 42</c> works.</summary>
     public static implicit operator CellValue(double value) => Number(value);
 
+    /// <summary>A text value, so <c>cell.Value = "text"</c> works.</summary>
     public static implicit operator CellValue(string value) => Text(value);
 
+    /// <summary>A logical value, so <c>cell.Value = true</c> works.</summary>
     public static implicit operator CellValue(bool value) => Boolean(value);
 
+    /// <summary>Whether both values have the same kind and content; arrays are compared element by element. This is not Excel's <c>=</c>, which ignores case.</summary>
     public bool Equals(CellValue other)
     {
         if (Kind != other.Kind)
@@ -122,8 +149,10 @@ public readonly struct CellValue : IEquatable<CellValue>
         };
     }
 
+    /// <summary>Whether <paramref name="obj"/> is a <see cref="CellValue"/> equal to this one.</summary>
     public override bool Equals(object? obj) => obj is CellValue other && Equals(other);
 
+    /// <summary>A hash code consistent with <see cref="Equals(CellValue)"/>.</summary>
     public override int GetHashCode()
     {
         switch (Kind)
@@ -148,8 +177,10 @@ public readonly struct CellValue : IEquatable<CellValue>
         }
     }
 
+    /// <summary>Whether the values are equal, as <see cref="Equals(CellValue)"/>.</summary>
     public static bool operator ==(CellValue left, CellValue right) => left.Equals(right);
 
+    /// <summary>Whether the values differ, as <see cref="Equals(CellValue)"/>.</summary>
     public static bool operator !=(CellValue left, CellValue right) => !left.Equals(right);
 
     /// <summary>Formats the value the way it would be written as a formula literal.</summary>

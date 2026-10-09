@@ -16,5 +16,7 @@
     <ProjectReference Include="../../src/SharpCell/SharpCell.csproj" />
     <ProjectReference Include="../../src/SharpCell.Xlsx/SharpCell.Xlsx.csproj" />
     <ProjectReference Include="../../tools/SharpCell.Conformance/SharpCell.Conformance.csproj" />
+    <ProjectReference Include="../../tools/SharpCell.Docs/SharpCell.Docs.csproj" />
+    <ProjectReference Include="../../samples/SharpCell.Sample/SharpCell.Sample.csproj" />
   </ItemGroup>
 </Project>

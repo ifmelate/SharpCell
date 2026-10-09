@@ -3,6 +3,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>SharpCell.Xlsx</RootNamespace>
     <Description>Reads .xlsx files into SharpCell workbooks: values, formulas, cached results, defined names.</Description>
   </PropertyGroup>

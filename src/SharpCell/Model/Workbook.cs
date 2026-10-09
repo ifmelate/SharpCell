@@ -18,11 +18,13 @@ public sealed class Workbook
     private CultureInfo _culture = CultureInfo.InvariantCulture;
     private DateSystem _dateSystem;
 
+    /// <summary>An empty workbook with no sheets, the invariant culture and the 1900 date system.</summary>
     public Workbook()
     {
         Calculation = new Calculation(this);
     }
 
+    /// <summary>The sheets in order.</summary>
     public IReadOnlyList<Worksheet> Sheets => _sheets;
 
     /// <summary>
@@ -39,6 +41,7 @@ public sealed class Workbook
         }
     }
 
+    /// <summary>Whether serial dates count from 1900 or from 1904, as set in the file.</summary>
     public DateSystem DateSystem
     {
         get => _dateSystem;
@@ -52,7 +55,7 @@ public sealed class Workbook
     /// <summary>
     /// Current calculation problems: circular references and failing functions. An entry of a cell
     /// disappears when the cell is edited or calculated without the problem; entries from
-    /// <see cref="Evaluate"/> last until the next call of it.
+    /// <see cref="Evaluate(string)"/> last until the next call of it.
     /// </summary>
     public IReadOnlyList<CalculationDiagnostic> Diagnostics => Calculation.Diagnostics;
 
@@ -79,6 +82,8 @@ public sealed class Workbook
     public Worksheet this[string name] =>
         TryGetSheet(name, out var sheet) ? sheet! : throw new KeyNotFoundException($"No sheet named '{name}'.");
 
+    /// <summary>Finds a sheet by name, ignoring case.</summary>
+    /// <returns>Whether the sheet exists.</returns>
     public bool TryGetSheet(string name, out Worksheet? sheet)
     {
         foreach (var candidate in _sheets)
@@ -94,6 +99,8 @@ public sealed class Workbook
         return false;
     }
 
+    /// <summary>Adds a sheet at the end.</summary>
+    /// <exception cref="ArgumentException">The name is not a valid sheet name, or a sheet with that name exists.</exception>
     public Worksheet AddSheet(string name)
     {
         ValidateSheetName(name);

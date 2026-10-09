@@ -3,6 +3,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>SharpCell</RootNamespace>
     <Description>Excel formula engine for .NET: parser, dependency graph, recalculation, dynamic arrays, LET/LAMBDA.</Description>
   </PropertyGroup>

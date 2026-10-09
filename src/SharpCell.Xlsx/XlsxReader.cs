@@ -18,6 +18,9 @@ namespace SharpCell.Xlsx;
 /// </summary>
 public static class XlsxReader
 {
+    /// <summary>Reads a workbook from a file.</summary>
+    /// <param name="path">Path of the .xlsx file.</param>
+    /// <returns>The workbook, with the results Excel saved until it is recalculated.</returns>
     /// <exception cref="InvalidDataException">The file is not a well-formed .xlsx workbook.</exception>
     /// <exception cref="NotSupportedException">The file is .xls, .xlsm, .xlsb or encrypted.</exception>
     public static Workbook Load(string path)
@@ -28,6 +31,7 @@ public static class XlsxReader
     }
 
     /// <summary>Reads a workbook from a stream, which is left open.</summary>
+    /// <param name="stream">The .xlsx content; it need not be seekable.</param>
     /// <inheritdoc cref="Load(string)"/>
     public static Workbook Load(Stream stream)
     {

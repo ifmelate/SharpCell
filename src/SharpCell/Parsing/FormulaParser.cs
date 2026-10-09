@@ -31,6 +31,8 @@ internal sealed class FormulaParser
 
     /// <summary>Parses formula text with an optional leading <c>=</c>.</summary>
     /// <param name="origin">The cell the formula belongs to; relative references are stored as offsets from it.</param>
+    /// <param name="text">The formula text.</param>
+    /// <param name="style">Whether references are written A1 or R1C1.</param>
     public static FormulaNode Parse(string text, CellAddress origin, ReferenceStyle style = ReferenceStyle.A1)
     {
         ArgumentNullException.ThrowIfNull(text);

@@ -1,0 +1,46 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+      - name: Test
+        run: dotnet test
+      - name: Docs are up to date
+        run: dotnet run --project tools/SharpCell.Docs -f net10.0 -- check
+      - name: Sample runs
+        run: dotnet run --project samples/SharpCell.Sample -f net10.0
+      - name: Build the site
+        run: dotnet run --project tools/SharpCell.Docs -f net10.0 -- site artifacts/site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: artifacts/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

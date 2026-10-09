@@ -556,6 +556,12 @@ internal sealed class Calculation(Workbook workbook)
     }
 
     /// <param name="quiet">Cells not to mark dirty again; the members of a loop being resolved.</param>
+    /// <param name="key">The cell.</param>
+    /// <param name="data">The cell's stored formula and state.</param>
+    /// <param name="value">The value the formula produced.</param>
+    /// <param name="dependencies">The cells and ranges the formula read, registered in the dependency graph.</param>
+    /// <param name="usedVolatile">Whether the formula called a volatile function, so it recalculates every time.</param>
+    /// <param name="cancellationToken">Cancels spilling a large result.</param>
     private void Commit(CellKey key, CellData data, CellValue value, Dependencies dependencies, bool usedVolatile,
         CancellationToken cancellationToken = default, IReadOnlySet<CellKey>? quiet = null)
     {
