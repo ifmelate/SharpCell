@@ -154,7 +154,7 @@ public sealed class Workbook
 
 
     // A name must read as a name in both reference styles: "A1", "R1C1", "R", "TRUE" are not names.
-    private static bool IsValidName(string name)
+    internal static bool IsValidName(string name)
     {
         if (name.Length is 0 or > 255)
             return false;

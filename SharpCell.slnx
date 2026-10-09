@@ -1,6 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/SharpCell/SharpCell.csproj" />
+    <Project Path="src/SharpCell.Xlsx/SharpCell.Xlsx.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/SharpCell.Conformance/SharpCell.Conformance.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SharpCell.Tests/SharpCell.Tests.csproj" />

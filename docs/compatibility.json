@@ -1,0 +1,3980 @@
+{
+  "cells": 76017,
+  "passed": 3814,
+  "files": [
+    {
+      "file": "ironcalc/DynamicArrays.xlsx",
+      "cells": 43,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATABASE/DAVERAGE.xlsx",
+      "cells": 4,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATABASE/DCOUNT_DCOUNTA_DGET_DPRODUCT.xlsx",
+      "cells": 212,
+      "passed": 27,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATABASE/DMIN_DMAX_DAVERAGE_DSUM.xlsx",
+      "cells": 175,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATABASE/DVAR_DVARP_DSTDEV_DSTDEVP.xlsx",
+      "cells": 175,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DATE.xlsx",
+      "cells": 64,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE.xlsx",
+      "cells": 73,
+      "passed": 14,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE_issue_1379.xlsx",
+      "cells": 4,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE_issue_1380.xlsx",
+      "cells": 1,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DATE_DAY_MONTH_YEAR.xlsx",
+      "cells": 68,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DAYS_DAYS360.xlsx",
+      "cells": 277,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/DAY_MONTH_YEAR.xlsx",
+      "cells": 115,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/EDATE.xlsx",
+      "cells": 83,
+      "passed": 4,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/EOMONTH.xlsx",
+      "cells": 105,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/NETWORKDAYS_NETWORKDAYS.INTL.xlsx",
+      "cells": 286,
+      "passed": 4,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/NOW_TODAY.xlsx",
+      "cells": 3,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/TIMEVALUE.xlsx",
+      "cells": 68,
+      "passed": 13,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/TIMEVALUE_issue_1402.xlsx",
+      "cells": 1,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/TIME_HOUR_MINUTE_SECOND.xlsx",
+      "cells": 252,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/WORKDAY_WORKDAY.INTL.xlsx",
+      "cells": 213,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/DATE_AND_TIME/YEARFRAC_DATEDIF.xlsx",
+      "cells": 197,
+      "passed": 14,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/BESSEL.xlsx",
+      "cells": 476,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/BITs.xlsx",
+      "cells": 164,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/COMPLEXs.xlsx",
+      "cells": 958,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/CONVERT.xlsx",
+      "cells": 509,
+      "passed": 152,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/ERFs.xlsx",
+      "cells": 96,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/GESTEP_DELTA.xlsx",
+      "cells": 63,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/ENGINEERING/NUMBER_SYSTEMS.xlsx",
+      "cells": 710,
+      "passed": 10,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/ACCRINT.xlsx",
+      "cells": 39,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/ACCRINTM.xlsx",
+      "cells": 17,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/ACCRINT_ACCRINTM.xlsx",
+      "cells": 51,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/ACCRINT_extended.xlsx",
+      "cells": 259,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/COUPDAYS.xlsx",
+      "cells": 225,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/CUMPRINC_CUMIPMT.xlsx",
+      "cells": 70,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/DB_DDB.xlsx",
+      "cells": 80,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/DISC.xlsx",
+      "cells": 19,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/FV.xlsx",
+      "cells": 47,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/FVSCHEDULE.xlsx",
+      "cells": 5,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/INTRATE.xlsx",
+      "cells": 10,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/IPMT_PPMT.xlsx",
+      "cells": 128,
+      "passed": 7,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/IRR.xlsx",
+      "cells": 132,
+      "passed": 10,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/ISPMT.xlsx",
+      "cells": 29,
+      "passed": 13,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/MIRR.xlsx",
+      "cells": 225,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/NOMINAL_EFFECT.xlsx",
+      "cells": 90,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/NPER.xlsx",
+      "cells": 45,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/NPV.xlsx",
+      "cells": 34,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/PDURATION.xlsx",
+      "cells": 20,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/PMT.xlsx",
+      "cells": 309,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/PRICE_YIELD.xlsx",
+      "cells": 352,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/PV.xlsx",
+      "cells": 45,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/RATE.xlsx",
+      "cells": 51,
+      "passed": 11,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/RRI.xlsx",
+      "cells": 22,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/SLN_SYD.xlsx",
+      "cells": 43,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/TBILLs.xlsx",
+      "cells": 273,
+      "passed": 151,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/XIRR.xlsx",
+      "cells": 42,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/XNPV.xlsx",
+      "cells": 24,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/FINANCIAL/accrint_cases.xlsx",
+      "cells": 400,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/CELL.xlsx",
+      "cells": 32,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/ERROR.TYPE.xlsx",
+      "cells": 16,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/FORMULATEXT.xlsx",
+      "cells": 27,
+      "passed": 4,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/ISOMITTED.xlsx",
+      "cells": 3,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/ISREF.xlsx",
+      "cells": 43,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/ISREF_ISFORMULA_ISODD_ISEVEN.xlsx",
+      "cells": 66,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/IS_INFORMATION.xlsx",
+      "cells": 106,
+      "passed": 27,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/N.xlsx",
+      "cells": 21,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/SHEET_SHEETS.xlsx",
+      "cells": 5,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/TYPE.xlsx",
+      "cells": 7,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/INFORMATION/error_broadcast.xlsx",
+      "cells": 230,
+      "passed": 107,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/AND_OR_XOR.xlsx",
+      "cells": 317,
+      "passed": 214,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/BYCOL_BYROW.xlsx",
+      "cells": 5,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/IFERROR.xlsx",
+      "cells": 48,
+      "passed": 44,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/IFNA.xlsx",
+      "cells": 11,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/IFS.xlsx",
+      "cells": 45,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/IF_ARRAY.xlsx",
+      "cells": 81,
+      "passed": 41,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/LAMBDA.xlsx",
+      "cells": 8,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/LET.xlsx",
+      "cells": 6,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/MAKEARRAY.xlsx",
+      "cells": 9,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/MAP_REDUCE.xlsx",
+      "cells": 7,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOGICAL/SCAN.xlsx",
+      "cells": 9,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/ADDRESS.xlsx",
+      "cells": 34,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/CHOOSE.xlsx",
+      "cells": 24,
+      "passed": 24,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/CHOOSECOLS_CHOOSEROWS.xlsx",
+      "cells": 62,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/DROP_TAKE.xlsx",
+      "cells": 35,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/EXPAND.xlsx",
+      "cells": 34,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/FILTER_ERRORS.xlsx",
+      "cells": 7,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/HSTACK_VSTACK.xlsx",
+      "cells": 36,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/HVLOOKUP.xlsx",
+      "cells": 103,
+      "passed": 13,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/INDEX.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/INDIRECT.xlsx",
+      "cells": 114,
+      "passed": 106,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/MATCH.xlsx",
+      "cells": 34,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/MATCH_LOOKUP_arrays.xlsx",
+      "cells": 23,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/ROW_COLUM.xlsx",
+      "cells": 196,
+      "passed": 69,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/SORT.xlsx",
+      "cells": 239,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/TOCOL.xlsx",
+      "cells": 75,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/TRANSPOSE.xlsx",
+      "cells": 24,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/TRIMRANGE.xlsx",
+      "cells": 18,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/WRAPCOLS_ROWS.xlsx",
+      "cells": 38,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/XLOOKUP.xlsx",
+      "cells": 439,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/XMATCH.xlsx",
+      "cells": 8,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ABS.xlsx",
+      "cells": 13,
+      "passed": 11,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ARABIC_ROMAN.xlsx",
+      "cells": 40427,
+      "passed": 8,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ATAN2_POWER.xlsx",
+      "cells": 61,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/BASE.xlsx",
+      "cells": 61,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/COMBIN_COMBINA.xlsx",
+      "cells": 76,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/DEGREES_RADIANS.xlsx",
+      "cells": 54,
+      "passed": 8,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/EVEN_ODD.xlsx",
+      "cells": 87,
+      "passed": 4,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/EXP_SIGN.xlsx",
+      "cells": 132,
+      "passed": 23,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/FACT_DOUBLEFACT.xlsx",
+      "cells": 14,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/FLOOR_CEILING.xlsx",
+      "cells": 11474,
+      "passed": 660,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/GCD_LCM.xlsx",
+      "cells": 351,
+      "passed": 121,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/LCM_GCD.xlsx",
+      "cells": 132,
+      "passed": 24,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/LOG_LOG10_LN.xlsx",
+      "cells": 93,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MAX_MIN.xlsx",
+      "cells": 55,
+      "passed": 45,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MIN_MAX_extras.xlsx",
+      "cells": 21,
+      "passed": 14,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MMULT.xlsx",
+      "cells": 194,
+      "passed": 20,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MOD_QUOTIENT.xlsx",
+      "cells": 93,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MROUND_TRUNC_INT.xlsx",
+      "cells": 249,
+      "passed": 58,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MULTINOMIAL.xlsx",
+      "cells": 13,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MUNIT_MDETERM_MINVERSE.xlsx",
+      "cells": 59,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/POWER.xlsx",
+      "cells": 51,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/PRODUCT.xlsx",
+      "cells": 35,
+      "passed": 7,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/PRODUCT_SUM.xlsx",
+      "cells": 77,
+      "passed": 40,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ROUND.xlsx",
+      "cells": 137,
+      "passed": 4,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SEQUENCE.xlsx",
+      "cells": 70,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SERIESSUM.xlsx",
+      "cells": 12,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SQRT_SQRTPI.xlsx",
+      "cells": 31,
+      "passed": 4,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIFS.xlsx",
+      "cells": 285,
+      "passed": 7,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIF_AVERAGE_IF.xlsx",
+      "cells": 50,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIF_array.xlsx",
+      "cells": 16,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMPRODUCT.xlsx",
+      "cells": 2,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMSQ.xlsx",
+      "cells": 60,
+      "passed": 13,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMX2MY2_SUMX2PY2_SUMXMY2.xlsx",
+      "cells": 5,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/TRIGONOMETRIC.xlsx",
+      "cells": 1187,
+      "passed": 111,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/AVEDEV.xlsx",
+      "cells": 1,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/AVERAGE.xlsx",
+      "cells": 52,
+      "passed": 29,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/BETADIST_BETAINV.xlsx",
+      "cells": 147,
+      "passed": 12,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/BETA_GAMMA.xlsx",
+      "cells": 48,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/BINOM.xlsx",
+      "cells": 268,
+      "passed": 30,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/CHISQ.xlsx",
+      "cells": 8,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/CHISQ_TEST.xlsx",
+      "cells": 1,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/CONFIDENCE.xlsx",
+      "cells": 115,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/CORREL_SLOPE_INTERCEPT_RSQ_STEYX.xlsx",
+      "cells": 5,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/COUNT.xlsx",
+      "cells": 61,
+      "passed": 49,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/COUNTIF.xlsx",
+      "cells": 531,
+      "passed": 16,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/COUNTIFS.xlsx",
+      "cells": 312,
+      "passed": 12,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/COVARIANCE.xlsx",
+      "cells": 74,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/DEVSQ.xlsx",
+      "cells": 1,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/EXPONDIST.xlsx",
+      "cells": 58,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/EXPON_DIST.xlsx",
+      "cells": 2,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/FISHER.xlsx",
+      "cells": 10,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/FISHER_FISHERINV.xlsx",
+      "cells": 83,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/FREQUENCY.xlsx",
+      "cells": 22,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/F_DIST.xlsx",
+      "cells": 8,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/F_TEST.xlsx",
+      "cells": 4,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/GAMMA.xlsx",
+      "cells": 167,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/GAMMALN_GAMMALNPRECISE.xlsx",
+      "cells": 91,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/GAUSS.xlsx",
+      "cells": 39,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/HYPERGEOM_DIST.xlsx",
+      "cells": 2,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/LINEST_LOGEST.xlsx",
+      "cells": 32,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/LOGNORM.xlsx",
+      "cells": 147,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/MEADIAN_KURT_SKEW_HARMEAN.xlsx",
+      "cells": 6,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/MINA_MAXA.xlsx",
+      "cells": 12,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/MIN_MAX.xlsx",
+      "cells": 14,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/MODE.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/NORM_DIST.xlsx",
+      "cells": 252,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/PEARSON.xlsx",
+      "cells": 1,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/PERCENTIL_QUARTIL.xlsx",
+      "cells": 68,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/PERMUT_PERMUTATIONA.xlsx",
+      "cells": 35,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/PHI.xlsx",
+      "cells": 7,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/POISSON.xlsx",
+      "cells": 63,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/PROB.xlsx",
+      "cells": 28,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/RANK_EQ_RANK_AVG.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/SMALL_LARGE.xlsx",
+      "cells": 26,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/STANDARIZE.xlsx",
+      "cells": 4,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/STDEV.xlsx",
+      "cells": 4,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/TREND_GROWTH.xlsx",
+      "cells": 36,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/TRIMMEAN.xlsx",
+      "cells": 19,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/T_DIST.xlsx",
+      "cells": 295,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/T_TEST.xlsx",
+      "cells": 9,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/VARIANCE.xlsx",
+      "cells": 6,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/WEIBULL_DIST.xlsx",
+      "cells": 2,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/STATISTICAL/Z_TEST.xlsx",
+      "cells": 4,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/ARRAYTOTEXT.xlsx",
+      "cells": 3,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/CHAR.xlsx",
+      "cells": 257,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/CONCAT.xlsx",
+      "cells": 29,
+      "passed": 11,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/CONCATENATE.xlsx",
+      "cells": 31,
+      "passed": 10,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/DOLLARs.xlsx",
+      "cells": 36,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/EXACT.xlsx",
+      "cells": 13,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/FIND_SEARCH.xlsx",
+      "cells": 62,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/MID_LEFT_RIGHT_arrays.xlsx",
+      "cells": 201,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/MINUS_MINUS.xlsx",
+      "cells": 73,
+      "passed": 57,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/PROPER.xlsx",
+      "cells": 11,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/REGEX.xlsx",
+      "cells": 7,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/REPT.xlsx",
+      "cells": 17,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/STRING_HANDLING.xlsx",
+      "cells": 147,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/SUBSTITUTE.xlsx",
+      "cells": 34,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/TEXT.xlsx",
+      "cells": 374,
+      "passed": 19,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/TEXTBEFORE_TEXTAFTER.xlsx",
+      "cells": 143,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/TEXTJOIN.xlsx",
+      "cells": 42,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/TEXTSPLIT.xlsx",
+      "cells": 72,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx",
+      "cells": 63,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/UNICODE.xlsx",
+      "cells": 24,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/TEXT/UPPER_LOWER.xlsx",
+      "cells": 56,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/arithmetic.xlsx",
+      "cells": 60,
+      "passed": 50,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/consume_string.xlsx",
+      "cells": 0,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/defined_names.xlsx",
+      "cells": 24,
+      "passed": 24,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/defined_names_for_unit_test.xlsx",
+      "cells": 3,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/escape_strings.xlsx",
+      "cells": 2,
+      "passed": 2,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/issue_341.xlsx",
+      "cells": 5,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/logical.xlsx",
+      "cells": 188,
+      "passed": 135,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/percentage.xlsx",
+      "cells": 6,
+      "passed": 6,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/quotes.xlsx",
+      "cells": 5,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/range_operator.xlsx",
+      "cells": 9,
+      "passed": 9,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/simple_arrays.xlsx",
+      "cells": 3,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/simple_functions.xlsx",
+      "cells": 199,
+      "passed": 116,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/calc_tests/spill_operator.xlsx",
+      "cells": 17,
+      "passed": 15,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/COS.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/DATE.xlsx",
+      "cells": 16,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/DAY.xlsx",
+      "cells": 30,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/ERF-PRECISE.xlsx",
+      "cells": 72,
+      "passed": 20,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/ERF.xlsx",
+      "cells": 84,
+      "passed": 24,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/ERFC-PRECISE.xlsx",
+      "cells": 72,
+      "passed": 20,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/ERFC.xlsx",
+      "cells": 72,
+      "passed": 20,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/FV.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/MONTH.xlsx",
+      "cells": 30,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/PV.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/SIN.xlsx",
+      "cells": 20,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/TAN.xlsx",
+      "cells": 32,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/docs/YEAR.xlsx",
+      "cells": 30,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/dynamic_arrays.xlsx",
+      "cells": 40,
+      "passed": 36,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/tables.xlsx",
+      "cells": 212,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/crossword.xlsx",
+      "cells": 3,
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/event_calendar.xlsx",
+      "cells": 979,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/gantt_project_tracker.xlsx",
+      "cells": 444,
+      "passed": 122,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/invoice.xlsx",
+      "cells": 27,
+      "passed": 10,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/travel_expenses_tracker.xlsx",
+      "cells": 42,
+      "passed": 1,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/weekly_timesheet.xlsx",
+      "cells": 109,
+      "passed": 3,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/wordle.xlsx",
+      "cells": 782,
+      "passed": 414,
+      "skipped": 0
+    },
+    {
+      "file": "ironcalc/templates/yearly_calendar.xlsx",
+      "cells": 602,
+      "passed": 1,
+      "skipped": 0
+    }
+  ],
+  "functions": [
+    {
+      "name": "ABS",
+      "status": "implemented",
+      "cases": 24,
+      "passed": 10
+    },
+    {
+      "name": "ACCRINT",
+      "status": "not implemented",
+      "cases": 587,
+      "passed": 0
+    },
+    {
+      "name": "ACCRINTM",
+      "status": "not implemented",
+      "cases": 17,
+      "passed": 0
+    },
+    {
+      "name": "ACOS",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "ACOSH",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "ACOT",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 1
+    },
+    {
+      "name": "ACOTH",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 1
+    },
+    {
+      "name": "ADDRESS",
+      "status": "not implemented",
+      "cases": 32,
+      "passed": 0
+    },
+    {
+      "name": "AND",
+      "status": "implemented",
+      "cases": 159,
+      "passed": 148
+    },
+    {
+      "name": "ARABIC",
+      "status": "not implemented",
+      "cases": 20041,
+      "passed": 1
+    },
+    {
+      "name": "ARRAYTOTEXT",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "ASIN",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "ASINH",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "ATAN",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "ATAN2",
+      "status": "not implemented",
+      "cases": 27,
+      "passed": 0
+    },
+    {
+      "name": "ATANH",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "AVEDEV",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "AVERAGE",
+      "status": "implemented",
+      "cases": 32,
+      "passed": 27
+    },
+    {
+      "name": "AVERAGEA",
+      "status": "not implemented",
+      "cases": 20,
+      "passed": 0
+    },
+    {
+      "name": "AVERAGEIF",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 0
+    },
+    {
+      "name": "AVERAGEIFS",
+      "status": "not implemented",
+      "cases": 50,
+      "passed": 0
+    },
+    {
+      "name": "BASE",
+      "status": "not implemented",
+      "cases": 40,
+      "passed": 0
+    },
+    {
+      "name": "BESSELI",
+      "status": "not implemented",
+      "cases": 118,
+      "passed": 0
+    },
+    {
+      "name": "BESSELJ",
+      "status": "not implemented",
+      "cases": 119,
+      "passed": 0
+    },
+    {
+      "name": "BESSELK",
+      "status": "not implemented",
+      "cases": 119,
+      "passed": 0
+    },
+    {
+      "name": "BESSELY",
+      "status": "not implemented",
+      "cases": 119,
+      "passed": 0
+    },
+    {
+      "name": "BETA.DIST",
+      "status": "not implemented",
+      "cases": 70,
+      "passed": 1
+    },
+    {
+      "name": "BETA.INV",
+      "status": "not implemented",
+      "cases": 72,
+      "passed": 1
+    },
+    {
+      "name": "BIN2DEC",
+      "status": "not implemented",
+      "cases": 63,
+      "passed": 0
+    },
+    {
+      "name": "BIN2HEX",
+      "status": "not implemented",
+      "cases": 60,
+      "passed": 0
+    },
+    {
+      "name": "BIN2OCT",
+      "status": "not implemented",
+      "cases": 91,
+      "passed": 0
+    },
+    {
+      "name": "BINOM.DIST",
+      "status": "not implemented",
+      "cases": 74,
+      "passed": 1
+    },
+    {
+      "name": "BINOM.DIST.RANGE",
+      "status": "not implemented",
+      "cases": 49,
+      "passed": 1
+    },
+    {
+      "name": "BINOM.INV",
+      "status": "not implemented",
+      "cases": 37,
+      "passed": 1
+    },
+    {
+      "name": "BITAND",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "BITLSHIFT",
+      "status": "not implemented",
+      "cases": 46,
+      "passed": 0
+    },
+    {
+      "name": "BITOR",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "BITRSHIFT",
+      "status": "not implemented",
+      "cases": 46,
+      "passed": 0
+    },
+    {
+      "name": "BITXOR",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "BYCOL",
+      "status": "implemented",
+      "cases": 3,
+      "passed": 3
+    },
+    {
+      "name": "BYROW",
+      "status": "implemented",
+      "cases": 2,
+      "passed": 2
+    },
+    {
+      "name": "CEILING",
+      "status": "not implemented",
+      "cases": 1504,
+      "passed": 67
+    },
+    {
+      "name": "CEILING.MATH",
+      "status": "not implemented",
+      "cases": 1926,
+      "passed": 68
+    },
+    {
+      "name": "CEILING.PRECISE",
+      "status": "not implemented",
+      "cases": 1462,
+      "passed": 66
+    },
+    {
+      "name": "CELL",
+      "status": "not implemented",
+      "cases": 27,
+      "passed": 0
+    },
+    {
+      "name": "CHAR",
+      "status": "not implemented",
+      "cases": 257,
+      "passed": 0
+    },
+    {
+      "name": "CHISQ.DIST",
+      "status": "not implemented",
+      "cases": 3,
+      "passed": 0
+    },
+    {
+      "name": "CHISQ.DIST.RT",
+      "status": "not implemented",
+      "cases": 3,
+      "passed": 0
+    },
+    {
+      "name": "CHISQ.INV",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "CHISQ.INV.RT",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "CHISQ.TEST",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "CHOOSE",
+      "status": "implemented",
+      "cases": 24,
+      "passed": 24
+    },
+    {
+      "name": "CHOOSECOLS",
+      "status": "not implemented",
+      "cases": 42,
+      "passed": 0
+    },
+    {
+      "name": "CHOOSEROWS",
+      "status": "not implemented",
+      "cases": 20,
+      "passed": 0
+    },
+    {
+      "name": "CLEAN",
+      "status": "not implemented",
+      "cases": 10,
+      "passed": 0
+    },
+    {
+      "name": "COLUMN",
+      "status": "not implemented",
+      "cases": 90,
+      "passed": 0
+    },
+    {
+      "name": "COLUMNS",
+      "status": "implemented",
+      "cases": 11,
+      "passed": 11
+    },
+    {
+      "name": "COMBIN",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "COMBINA",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "COMPLEX",
+      "status": "not implemented",
+      "cases": 26,
+      "passed": 0
+    },
+    {
+      "name": "CONCAT",
+      "status": "not implemented",
+      "cases": 569,
+      "passed": 0
+    },
+    {
+      "name": "CONCATENATE",
+      "status": "not implemented",
+      "cases": 12,
+      "passed": 0
+    },
+    {
+      "name": "CONFIDENCE.NORM",
+      "status": "not implemented",
+      "cases": 55,
+      "passed": 0
+    },
+    {
+      "name": "CONFIDENCE.T",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 0
+    },
+    {
+      "name": "CONVERT",
+      "status": "not implemented",
+      "cases": 357,
+      "passed": 0
+    },
+    {
+      "name": "CORREL",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "COS",
+      "status": "not implemented",
+      "cases": 67,
+      "passed": 1
+    },
+    {
+      "name": "COSH",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "COT",
+      "status": "not implemented",
+      "cases": 47,
+      "passed": 1
+    },
+    {
+      "name": "COTH",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 1
+    },
+    {
+      "name": "COUNT",
+      "status": "implemented",
+      "cases": 36,
+      "passed": 34
+    },
+    {
+      "name": "COUNTA",
+      "status": "implemented",
+      "cases": 33,
+      "passed": 28
+    },
+    {
+      "name": "COUNTBLANK",
+      "status": "not implemented",
+      "cases": 11,
+      "passed": 0
+    },
+    {
+      "name": "COUNTIF",
+      "status": "not implemented",
+      "cases": 544,
+      "passed": 0
+    },
+    {
+      "name": "COUNTIFS",
+      "status": "not implemented",
+      "cases": 280,
+      "passed": 0
+    },
+    {
+      "name": "COUPDAYBS",
+      "status": "not implemented",
+      "cases": 28,
+      "passed": 0
+    },
+    {
+      "name": "COUPDAYS",
+      "status": "not implemented",
+      "cases": 28,
+      "passed": 0
+    },
+    {
+      "name": "COUPDAYSNC",
+      "status": "not implemented",
+      "cases": 28,
+      "passed": 0
+    },
+    {
+      "name": "COUPNCD",
+      "status": "not implemented",
+      "cases": 28,
+      "passed": 0
+    },
+    {
+      "name": "COUPNUM",
+      "status": "not implemented",
+      "cases": 28,
+      "passed": 0
+    },
+    {
+      "name": "COUPPCD",
+      "status": "not implemented",
+      "cases": 28,
+      "passed": 0
+    },
+    {
+      "name": "COVARIANCE.P",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "COVARIANCE.S",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "CSC",
+      "status": "not implemented",
+      "cases": 47,
+      "passed": 1
+    },
+    {
+      "name": "CSCH",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 1
+    },
+    {
+      "name": "CUMIPMT",
+      "status": "not implemented",
+      "cases": 30,
+      "passed": 0
+    },
+    {
+      "name": "CUMPRINC",
+      "status": "not implemented",
+      "cases": 30,
+      "passed": 0
+    },
+    {
+      "name": "DATE",
+      "status": "not implemented",
+      "cases": 1761,
+      "passed": 0
+    },
+    {
+      "name": "DATEDIF",
+      "status": "not implemented",
+      "cases": 38,
+      "passed": 1
+    },
+    {
+      "name": "DATEVALUE",
+      "status": "not implemented",
+      "cases": 65,
+      "passed": 1
+    },
+    {
+      "name": "DAVERAGE",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 0
+    },
+    {
+      "name": "DAY",
+      "status": "not implemented",
+      "cases": 723,
+      "passed": 0
+    },
+    {
+      "name": "DAYS",
+      "status": "not implemented",
+      "cases": 76,
+      "passed": 0
+    },
+    {
+      "name": "DAYS360",
+      "status": "not implemented",
+      "cases": 100,
+      "passed": 0
+    },
+    {
+      "name": "DB",
+      "status": "not implemented",
+      "cases": 40,
+      "passed": 0
+    },
+    {
+      "name": "DCOUNT",
+      "status": "not implemented",
+      "cases": 48,
+      "passed": 0
+    },
+    {
+      "name": "DCOUNTA",
+      "status": "not implemented",
+      "cases": 48,
+      "passed": 0
+    },
+    {
+      "name": "DDB",
+      "status": "not implemented",
+      "cases": 40,
+      "passed": 0
+    },
+    {
+      "name": "DEC2BIN",
+      "status": "not implemented",
+      "cases": 66,
+      "passed": 2
+    },
+    {
+      "name": "DEC2HEX",
+      "status": "not implemented",
+      "cases": 33,
+      "passed": 0
+    },
+    {
+      "name": "DEC2OCT",
+      "status": "not implemented",
+      "cases": 64,
+      "passed": 2
+    },
+    {
+      "name": "DECIMAL",
+      "status": "not implemented",
+      "cases": 20,
+      "passed": 0
+    },
+    {
+      "name": "DEGREES",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "DELTA",
+      "status": "not implemented",
+      "cases": 30,
+      "passed": 0
+    },
+    {
+      "name": "DEVSQ",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "DGET",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "DISC",
+      "status": "not implemented",
+      "cases": 14,
+      "passed": 0
+    },
+    {
+      "name": "DMAX",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "DMIN",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "DOLLARDE",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "DOLLARFR",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "DPRODUCT",
+      "status": "not implemented",
+      "cases": 44,
+      "passed": 0
+    },
+    {
+      "name": "DROP",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "DSTDEV",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "DSTDEVP",
+      "status": "not implemented",
+      "cases": 40,
+      "passed": 0
+    },
+    {
+      "name": "DSUM",
+      "status": "not implemented",
+      "cases": 40,
+      "passed": 0
+    },
+    {
+      "name": "DVAR",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "DVARP",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "EDATE",
+      "status": "not implemented",
+      "cases": 60,
+      "passed": 0
+    },
+    {
+      "name": "EFFECT",
+      "status": "not implemented",
+      "cases": 44,
+      "passed": 0
+    },
+    {
+      "name": "EOMONTH",
+      "status": "not implemented",
+      "cases": 86,
+      "passed": 0
+    },
+    {
+      "name": "ERF",
+      "status": "not implemented",
+      "cases": 68,
+      "passed": 0
+    },
+    {
+      "name": "ERF.PRECISE",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 0
+    },
+    {
+      "name": "ERFC",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 0
+    },
+    {
+      "name": "ERFC.PRECISE",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 0
+    },
+    {
+      "name": "ERROR.TYPE",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "EVEN",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "EXACT",
+      "status": "not implemented",
+      "cases": 34,
+      "passed": 0
+    },
+    {
+      "name": "EXP",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 1
+    },
+    {
+      "name": "EXPAND",
+      "status": "not implemented",
+      "cases": 34,
+      "passed": 0
+    },
+    {
+      "name": "EXPON.DIST",
+      "status": "not implemented",
+      "cases": 57,
+      "passed": 0
+    },
+    {
+      "name": "F.DIST",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "F.DIST.RT",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "F.INV",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "F.INV.RT",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "F.TEST",
+      "status": "not implemented",
+      "cases": 4,
+      "passed": 0
+    },
+    {
+      "name": "FACT",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "FACTDOUBLE",
+      "status": "not implemented",
+      "cases": 7,
+      "passed": 0
+    },
+    {
+      "name": "FALSE",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "FILTER",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 2
+    },
+    {
+      "name": "FIND",
+      "status": "not implemented",
+      "cases": 64,
+      "passed": 30
+    },
+    {
+      "name": "FISHER",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "FISHERINV",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 0
+    },
+    {
+      "name": "FLOOR",
+      "status": "not implemented",
+      "cases": 1419,
+      "passed": 65
+    },
+    {
+      "name": "FLOOR.MATH",
+      "status": "not implemented",
+      "cases": 1966,
+      "passed": 66
+    },
+    {
+      "name": "FLOOR.PRECISE",
+      "status": "not implemented",
+      "cases": 1462,
+      "passed": 66
+    },
+    {
+      "name": "FORMULATEXT",
+      "status": "not implemented",
+      "cases": 223,
+      "passed": 0
+    },
+    {
+      "name": "FREQUENCY",
+      "status": "not implemented",
+      "cases": 21,
+      "passed": 0
+    },
+    {
+      "name": "FV",
+      "status": "not implemented",
+      "cases": 94,
+      "passed": 0
+    },
+    {
+      "name": "FVSCHEDULE",
+      "status": "not implemented",
+      "cases": 5,
+      "passed": 0
+    },
+    {
+      "name": "GAMMA",
+      "status": "not implemented",
+      "cases": 39,
+      "passed": 0
+    },
+    {
+      "name": "GAMMA.DIST",
+      "status": "not implemented",
+      "cases": 66,
+      "passed": 0
+    },
+    {
+      "name": "GAMMA.INV",
+      "status": "not implemented",
+      "cases": 74,
+      "passed": 0
+    },
+    {
+      "name": "GAMMALN",
+      "status": "not implemented",
+      "cases": 56,
+      "passed": 0
+    },
+    {
+      "name": "GAMMALN.PRECISE",
+      "status": "not implemented",
+      "cases": 56,
+      "passed": 0
+    },
+    {
+      "name": "GAUSS",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "GCD",
+      "status": "not implemented",
+      "cases": 163,
+      "passed": 3
+    },
+    {
+      "name": "GESTEP",
+      "status": "not implemented",
+      "cases": 30,
+      "passed": 0
+    },
+    {
+      "name": "GROWTH",
+      "status": "not implemented",
+      "cases": 19,
+      "passed": 0
+    },
+    {
+      "name": "HARMEAN",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "HELLO",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 1
+    },
+    {
+      "name": "HEX2BIN",
+      "status": "not implemented",
+      "cases": 64,
+      "passed": 2
+    },
+    {
+      "name": "HEX2DEC",
+      "status": "not implemented",
+      "cases": 66,
+      "passed": 1
+    },
+    {
+      "name": "HEX2OCT",
+      "status": "not implemented",
+      "cases": 64,
+      "passed": 2
+    },
+    {
+      "name": "HLOOKUP",
+      "status": "not implemented",
+      "cases": 58,
+      "passed": 0
+    },
+    {
+      "name": "HOUR",
+      "status": "not implemented",
+      "cases": 55,
+      "passed": 0
+    },
+    {
+      "name": "HSTACK",
+      "status": "not implemented",
+      "cases": 37,
+      "passed": 0
+    },
+    {
+      "name": "HYPGEOM.DIST",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "IF",
+      "status": "implemented",
+      "cases": 1420,
+      "passed": 408
+    },
+    {
+      "name": "IFERROR",
+      "status": "implemented",
+      "cases": 57,
+      "passed": 53
+    },
+    {
+      "name": "IFNA",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 1
+    },
+    {
+      "name": "IFS",
+      "status": "not implemented",
+      "cases": 49,
+      "passed": 0
+    },
+    {
+      "name": "IMABS",
+      "status": "not implemented",
+      "cases": 24,
+      "passed": 0
+    },
+    {
+      "name": "IMAGINARY",
+      "status": "not implemented",
+      "cases": 417,
+      "passed": 0
+    },
+    {
+      "name": "IMARGUMENT",
+      "status": "not implemented",
+      "cases": 24,
+      "passed": 0
+    },
+    {
+      "name": "IMCONJUGATE",
+      "status": "not implemented",
+      "cases": 24,
+      "passed": 0
+    },
+    {
+      "name": "IMCOS",
+      "status": "not implemented",
+      "cases": 48,
+      "passed": 0
+    },
+    {
+      "name": "IMCOSH",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMCOT",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMCSC",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMCSCH",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMDIV",
+      "status": "not implemented",
+      "cases": 10,
+      "passed": 0
+    },
+    {
+      "name": "IMEXP",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMLN",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMLOG10",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMLOG2",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMPRODUCT",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "IMREAL",
+      "status": "not implemented",
+      "cases": 417,
+      "passed": 0
+    },
+    {
+      "name": "IMSEC",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMSECH",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMSIN",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMSINH",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMSQRT",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "IMSUB",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "IMSUM",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "IMTAN",
+      "status": "not implemented",
+      "cases": 52,
+      "passed": 0
+    },
+    {
+      "name": "INDEX",
+      "status": "not implemented",
+      "cases": 39,
+      "passed": 0
+    },
+    {
+      "name": "INDIRECT",
+      "status": "implemented",
+      "cases": 187,
+      "passed": 87
+    },
+    {
+      "name": "INT",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 0
+    },
+    {
+      "name": "INTERCEPT",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "INTRATE",
+      "status": "not implemented",
+      "cases": 5,
+      "passed": 0
+    },
+    {
+      "name": "IPMT",
+      "status": "not implemented",
+      "cases": 60,
+      "passed": 0
+    },
+    {
+      "name": "IRR",
+      "status": "not implemented",
+      "cases": 91,
+      "passed": 0
+    },
+    {
+      "name": "ISBLANK",
+      "status": "implemented",
+      "cases": 15,
+      "passed": 15
+    },
+    {
+      "name": "ISERR",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "ISERROR",
+      "status": "implemented",
+      "cases": 22,
+      "passed": 22
+    },
+    {
+      "name": "ISEVEN",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "ISFORMULA",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "ISLOGICAL",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "ISNA",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "ISNONTEXT",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "ISNUMBER",
+      "status": "not implemented",
+      "cases": 58,
+      "passed": 30
+    },
+    {
+      "name": "ISO.CEILING",
+      "status": "not implemented",
+      "cases": 1462,
+      "passed": 66
+    },
+    {
+      "name": "ISODD",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "ISOMITTED",
+      "status": "implemented",
+      "cases": 3,
+      "passed": 3
+    },
+    {
+      "name": "ISOWEEKNUM",
+      "status": "not implemented",
+      "cases": 31,
+      "passed": 0
+    },
+    {
+      "name": "ISPMT",
+      "status": "not implemented",
+      "cases": 14,
+      "passed": 0
+    },
+    {
+      "name": "ISREF",
+      "status": "not implemented",
+      "cases": 43,
+      "passed": 0
+    },
+    {
+      "name": "ISTEXT",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "KURT",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "LAMBDA",
+      "status": "implemented",
+      "cases": 59,
+      "passed": 45
+    },
+    {
+      "name": "LARGE",
+      "status": "not implemented",
+      "cases": 15,
+      "passed": 0
+    },
+    {
+      "name": "LCM",
+      "status": "not implemented",
+      "cases": 163,
+      "passed": 3
+    },
+    {
+      "name": "LEFT",
+      "status": "not implemented",
+      "cases": 94,
+      "passed": 1
+    },
+    {
+      "name": "LEN",
+      "status": "not implemented",
+      "cases": 27,
+      "passed": 0
+    },
+    {
+      "name": "LET",
+      "status": "implemented",
+      "cases": 516,
+      "passed": 7
+    },
+    {
+      "name": "LINEST",
+      "status": "not implemented",
+      "cases": 16,
+      "passed": 0
+    },
+    {
+      "name": "LN",
+      "status": "not implemented",
+      "cases": 19,
+      "passed": 0
+    },
+    {
+      "name": "LOG",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 0
+    },
+    {
+      "name": "LOG10",
+      "status": "not implemented",
+      "cases": 20,
+      "passed": 0
+    },
+    {
+      "name": "LOGEST",
+      "status": "not implemented",
+      "cases": 16,
+      "passed": 0
+    },
+    {
+      "name": "LOGNORM.DIST",
+      "status": "not implemented",
+      "cases": 66,
+      "passed": 0
+    },
+    {
+      "name": "LOGNORM.INV",
+      "status": "not implemented",
+      "cases": 78,
+      "passed": 0
+    },
+    {
+      "name": "LOOKUP",
+      "status": "not implemented",
+      "cases": 22,
+      "passed": 0
+    },
+    {
+      "name": "LOWER",
+      "status": "not implemented",
+      "cases": 29,
+      "passed": 0
+    },
+    {
+      "name": "MAKEARRAY",
+      "status": "implemented",
+      "cases": 9,
+      "passed": 9
+    },
+    {
+      "name": "MAP",
+      "status": "implemented",
+      "cases": 6,
+      "passed": 6
+    },
+    {
+      "name": "MATCH",
+      "status": "not implemented",
+      "cases": 102,
+      "passed": 0
+    },
+    {
+      "name": "MAX",
+      "status": "implemented",
+      "cases": 86,
+      "passed": 59
+    },
+    {
+      "name": "MAXA",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "MAXIFS",
+      "status": "not implemented",
+      "cases": 50,
+      "passed": 0
+    },
+    {
+      "name": "MDETERM",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "MEDIAN",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "MID",
+      "status": "not implemented",
+      "cases": 98,
+      "passed": 60
+    },
+    {
+      "name": "MIN",
+      "status": "implemented",
+      "cases": 37,
+      "passed": 26
+    },
+    {
+      "name": "MINA",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "MINIFS",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 0
+    },
+    {
+      "name": "MINUTE",
+      "status": "not implemented",
+      "cases": 55,
+      "passed": 0
+    },
+    {
+      "name": "MINVERSE",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "MIRR",
+      "status": "not implemented",
+      "cases": 224,
+      "passed": 0
+    },
+    {
+      "name": "MMULT",
+      "status": "not implemented",
+      "cases": 154,
+      "passed": 0
+    },
+    {
+      "name": "MOD",
+      "status": "not implemented",
+      "cases": 44,
+      "passed": 0
+    },
+    {
+      "name": "MODE.MULT",
+      "status": "not implemented",
+      "cases": 12,
+      "passed": 0
+    },
+    {
+      "name": "MODE.SNGL",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "MONTH",
+      "status": "not implemented",
+      "cases": 573,
+      "passed": 0
+    },
+    {
+      "name": "MROUND",
+      "status": "not implemented",
+      "cases": 61,
+      "passed": 0
+    },
+    {
+      "name": "MULTINOMIAL",
+      "status": "not implemented",
+      "cases": 13,
+      "passed": 0
+    },
+    {
+      "name": "MUNIT",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "N",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "NA",
+      "status": "not implemented",
+      "cases": 244,
+      "passed": 8
+    },
+    {
+      "name": "NEGBINOM.DIST",
+      "status": "not implemented",
+      "cases": 78,
+      "passed": 1
+    },
+    {
+      "name": "NETWORKDAYS",
+      "status": "not implemented",
+      "cases": 76,
+      "passed": 0
+    },
+    {
+      "name": "NETWORKDAYS.INTL",
+      "status": "not implemented",
+      "cases": 104,
+      "passed": 0
+    },
+    {
+      "name": "NOMINAL",
+      "status": "not implemented",
+      "cases": 44,
+      "passed": 0
+    },
+    {
+      "name": "NORM.DIST",
+      "status": "not implemented",
+      "cases": 64,
+      "passed": 0
+    },
+    {
+      "name": "NORM.INV",
+      "status": "not implemented",
+      "cases": 76,
+      "passed": 0
+    },
+    {
+      "name": "NORM.S.DIST",
+      "status": "not implemented",
+      "cases": 46,
+      "passed": 0
+    },
+    {
+      "name": "NORM.S.INV",
+      "status": "not implemented",
+      "cases": 59,
+      "passed": 0
+    },
+    {
+      "name": "NOT",
+      "status": "implemented",
+      "cases": 7,
+      "passed": 6
+    },
+    {
+      "name": "NOW",
+      "status": "implemented",
+      "cases": 7,
+      "passed": 7
+    },
+    {
+      "name": "NPER",
+      "status": "not implemented",
+      "cases": 120,
+      "passed": 0
+    },
+    {
+      "name": "NPV",
+      "status": "not implemented",
+      "cases": 63,
+      "passed": 0
+    },
+    {
+      "name": "NUMBERVALUE",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "OCT2BIN",
+      "status": "not implemented",
+      "cases": 55,
+      "passed": 0
+    },
+    {
+      "name": "OCT2DEC",
+      "status": "not implemented",
+      "cases": 27,
+      "passed": 0
+    },
+    {
+      "name": "OCT2HEX",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 0
+    },
+    {
+      "name": "ODD",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "ODDFPRICE",
+      "status": "not implemented",
+      "cases": 43,
+      "passed": 0
+    },
+    {
+      "name": "ODDFYIELD",
+      "status": "not implemented",
+      "cases": 32,
+      "passed": 0
+    },
+    {
+      "name": "ODDLPRICE",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "ODDLYIELD",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "OFFSET",
+      "status": "implemented",
+      "cases": 79,
+      "passed": 47
+    },
+    {
+      "name": "OR",
+      "status": "implemented",
+      "cases": 120,
+      "passed": 119
+    },
+    {
+      "name": "PDURATION",
+      "status": "not implemented",
+      "cases": 17,
+      "passed": 0
+    },
+    {
+      "name": "PEARSON",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "PERCENTILE.EXC",
+      "status": "not implemented",
+      "cases": 16,
+      "passed": 0
+    },
+    {
+      "name": "PERCENTILE.INC",
+      "status": "not implemented",
+      "cases": 16,
+      "passed": 0
+    },
+    {
+      "name": "PERCENTRANK.EXC",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "PERCENTRANK.INC",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "PERMUT",
+      "status": "not implemented",
+      "cases": 17,
+      "passed": 0
+    },
+    {
+      "name": "PERMUTATIONA",
+      "status": "not implemented",
+      "cases": 17,
+      "passed": 0
+    },
+    {
+      "name": "PHI",
+      "status": "not implemented",
+      "cases": 7,
+      "passed": 0
+    },
+    {
+      "name": "PI",
+      "status": "not implemented",
+      "cases": 110,
+      "passed": 0
+    },
+    {
+      "name": "PMT",
+      "status": "not implemented",
+      "cases": 76,
+      "passed": 0
+    },
+    {
+      "name": "POISSON.DIST",
+      "status": "not implemented",
+      "cases": 60,
+      "passed": 0
+    },
+    {
+      "name": "POWER",
+      "status": "not implemented",
+      "cases": 83,
+      "passed": 0
+    },
+    {
+      "name": "PPMT",
+      "status": "not implemented",
+      "cases": 60,
+      "passed": 0
+    },
+    {
+      "name": "PRICE",
+      "status": "not implemented",
+      "cases": 15,
+      "passed": 0
+    },
+    {
+      "name": "PROB",
+      "status": "not implemented",
+      "cases": 27,
+      "passed": 0
+    },
+    {
+      "name": "PRODUCT",
+      "status": "not implemented",
+      "cases": 59,
+      "passed": 0
+    },
+    {
+      "name": "PROPER",
+      "status": "not implemented",
+      "cases": 24,
+      "passed": 0
+    },
+    {
+      "name": "PV",
+      "status": "not implemented",
+      "cases": 168,
+      "passed": 0
+    },
+    {
+      "name": "QUARTILE.EXC",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "QUARTILE.INC",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "QUOTIENT",
+      "status": "not implemented",
+      "cases": 43,
+      "passed": 0
+    },
+    {
+      "name": "RADIANS",
+      "status": "not implemented",
+      "cases": 23,
+      "passed": 0
+    },
+    {
+      "name": "RAND",
+      "status": "implemented",
+      "cases": 0,
+      "passed": 0
+    },
+    {
+      "name": "RANDARRAY",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "RANK.AVG",
+      "status": "not implemented",
+      "cases": 10,
+      "passed": 0
+    },
+    {
+      "name": "RANK.EQ",
+      "status": "not implemented",
+      "cases": 10,
+      "passed": 0
+    },
+    {
+      "name": "RATE",
+      "status": "not implemented",
+      "cases": 38,
+      "passed": 0
+    },
+    {
+      "name": "REDUCE",
+      "status": "implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "REGEXEXTRACT",
+      "status": "not implemented",
+      "cases": 3,
+      "passed": 0
+    },
+    {
+      "name": "REGEXREPLACE",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "REGEXTEST",
+      "status": "not implemented",
+      "cases": 662,
+      "passed": 294
+    },
+    {
+      "name": "REPLACE",
+      "status": "not implemented",
+      "cases": 42,
+      "passed": 0
+    },
+    {
+      "name": "REPT",
+      "status": "not implemented",
+      "cases": 41,
+      "passed": 0
+    },
+    {
+      "name": "RIGHT",
+      "status": "not implemented",
+      "cases": 67,
+      "passed": 0
+    },
+    {
+      "name": "ROMAN",
+      "status": "not implemented",
+      "cases": 20376,
+      "passed": 0
+    },
+    {
+      "name": "ROUND",
+      "status": "not implemented",
+      "cases": 46,
+      "passed": 0
+    },
+    {
+      "name": "ROUNDDOWN",
+      "status": "not implemented",
+      "cases": 44,
+      "passed": 0
+    },
+    {
+      "name": "ROUNDUP",
+      "status": "not implemented",
+      "cases": 44,
+      "passed": 0
+    },
+    {
+      "name": "ROW",
+      "status": "not implemented",
+      "cases": 67,
+      "passed": 0
+    },
+    {
+      "name": "ROWS",
+      "status": "implemented",
+      "cases": 11,
+      "passed": 11
+    },
+    {
+      "name": "RRI",
+      "status": "not implemented",
+      "cases": 11,
+      "passed": 0
+    },
+    {
+      "name": "RSQ",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SCAN",
+      "status": "implemented",
+      "cases": 9,
+      "passed": 6
+    },
+    {
+      "name": "SEARCH",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 0
+    },
+    {
+      "name": "SEC",
+      "status": "not implemented",
+      "cases": 47,
+      "passed": 1
+    },
+    {
+      "name": "SECH",
+      "status": "not implemented",
+      "cases": 54,
+      "passed": 1
+    },
+    {
+      "name": "SECOND",
+      "status": "not implemented",
+      "cases": 55,
+      "passed": 0
+    },
+    {
+      "name": "SEQUENCE",
+      "status": "not implemented",
+      "cases": 690,
+      "passed": 0
+    },
+    {
+      "name": "SERIESSUM",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "SHEET",
+      "status": "not implemented",
+      "cases": 15,
+      "passed": 1
+    },
+    {
+      "name": "SHEETS",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SIGN",
+      "status": "not implemented",
+      "cases": 53,
+      "passed": 1
+    },
+    {
+      "name": "SIN",
+      "status": "not implemented",
+      "cases": 72,
+      "passed": 1
+    },
+    {
+      "name": "SINH",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "SKEW",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SKEW.P",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SLN",
+      "status": "not implemented",
+      "cases": 21,
+      "passed": 0
+    },
+    {
+      "name": "SLOPE",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SMALL",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "SORT",
+      "status": "not implemented",
+      "cases": 179,
+      "passed": 0
+    },
+    {
+      "name": "SORTBY",
+      "status": "not implemented",
+      "cases": 34,
+      "passed": 0
+    },
+    {
+      "name": "SQRT",
+      "status": "not implemented",
+      "cases": 74,
+      "passed": 7
+    },
+    {
+      "name": "SQRTPI",
+      "status": "not implemented",
+      "cases": 12,
+      "passed": 0
+    },
+    {
+      "name": "STANDARDIZE",
+      "status": "not implemented",
+      "cases": 4,
+      "passed": 0
+    },
+    {
+      "name": "STDEV.P",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "STDEV.S",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "STDEVA",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "STDEVPA",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "STEYX",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SUBSTITUTE",
+      "status": "not implemented",
+      "cases": 36,
+      "passed": 0
+    },
+    {
+      "name": "SUBTOTAL",
+      "status": "not implemented",
+      "cases": 74,
+      "passed": 0
+    },
+    {
+      "name": "SUM",
+      "status": "implemented",
+      "cases": 166,
+      "passed": 120
+    },
+    {
+      "name": "SUMIF",
+      "status": "not implemented",
+      "cases": 87,
+      "passed": 1
+    },
+    {
+      "name": "SUMIFS",
+      "status": "not implemented",
+      "cases": 50,
+      "passed": 0
+    },
+    {
+      "name": "SUMM",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 2
+    },
+    {
+      "name": "SUMPRODUCT",
+      "status": "not implemented",
+      "cases": 37,
+      "passed": 0
+    },
+    {
+      "name": "SUMSQ",
+      "status": "not implemented",
+      "cases": 43,
+      "passed": 1
+    },
+    {
+      "name": "SUMX2MY2",
+      "status": "not implemented",
+      "cases": 3,
+      "passed": 0
+    },
+    {
+      "name": "SUMX2PY2",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SUMXMY2",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "SWITCH",
+      "status": "not implemented",
+      "cases": 23,
+      "passed": 0
+    },
+    {
+      "name": "SYD",
+      "status": "not implemented",
+      "cases": 21,
+      "passed": 0
+    },
+    {
+      "name": "T",
+      "status": "not implemented",
+      "cases": 14,
+      "passed": 0
+    },
+    {
+      "name": "T.DIST",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 0
+    },
+    {
+      "name": "T.DIST.2T",
+      "status": "not implemented",
+      "cases": 43,
+      "passed": 0
+    },
+    {
+      "name": "T.DIST.RT",
+      "status": "not implemented",
+      "cases": 49,
+      "passed": 0
+    },
+    {
+      "name": "T.INV",
+      "status": "not implemented",
+      "cases": 73,
+      "passed": 0
+    },
+    {
+      "name": "T.INV.2T",
+      "status": "not implemented",
+      "cases": 71,
+      "passed": 0
+    },
+    {
+      "name": "T.TEST",
+      "status": "not implemented",
+      "cases": 9,
+      "passed": 0
+    },
+    {
+      "name": "TAKE",
+      "status": "not implemented",
+      "cases": 16,
+      "passed": 0
+    },
+    {
+      "name": "TAN",
+      "status": "not implemented",
+      "cases": 62,
+      "passed": 1
+    },
+    {
+      "name": "TANH",
+      "status": "not implemented",
+      "cases": 51,
+      "passed": 1
+    },
+    {
+      "name": "TBILLEQ",
+      "status": "not implemented",
+      "cases": 29,
+      "passed": 0
+    },
+    {
+      "name": "TBILLPRICE",
+      "status": "not implemented",
+      "cases": 30,
+      "passed": 0
+    },
+    {
+      "name": "TBILLYIELD",
+      "status": "not implemented",
+      "cases": 30,
+      "passed": 0
+    },
+    {
+      "name": "TEXT",
+      "status": "not implemented",
+      "cases": 464,
+      "passed": 0
+    },
+    {
+      "name": "TEXTAFTER",
+      "status": "not implemented",
+      "cases": 71,
+      "passed": 0
+    },
+    {
+      "name": "TEXTBEFORE",
+      "status": "not implemented",
+      "cases": 70,
+      "passed": 0
+    },
+    {
+      "name": "TEXTJOIN",
+      "status": "not implemented",
+      "cases": 40,
+      "passed": 0
+    },
+    {
+      "name": "TEXTSPLIT",
+      "status": "not implemented",
+      "cases": 80,
+      "passed": 0
+    },
+    {
+      "name": "TIME",
+      "status": "not implemented",
+      "cases": 96,
+      "passed": 0
+    },
+    {
+      "name": "TIMEVALUE",
+      "status": "not implemented",
+      "cases": 58,
+      "passed": 1
+    },
+    {
+      "name": "TOCOL",
+      "status": "not implemented",
+      "cases": 74,
+      "passed": 0
+    },
+    {
+      "name": "TODAY",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "TRANSPOSE",
+      "status": "not implemented",
+      "cases": 24,
+      "passed": 0
+    },
+    {
+      "name": "TREND",
+      "status": "not implemented",
+      "cases": 17,
+      "passed": 0
+    },
+    {
+      "name": "TRIM",
+      "status": "not implemented",
+      "cases": 27,
+      "passed": 0
+    },
+    {
+      "name": "TRIMMEAN",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "TRIMRANGE",
+      "status": "not implemented",
+      "cases": 17,
+      "passed": 0
+    },
+    {
+      "name": "TRUE",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "TRUNC",
+      "status": "not implemented",
+      "cases": 61,
+      "passed": 0
+    },
+    {
+      "name": "TYPE",
+      "status": "not implemented",
+      "cases": 8,
+      "passed": 0
+    },
+    {
+      "name": "UNICODE",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "UNIQUE",
+      "status": "not implemented",
+      "cases": 34,
+      "passed": 0
+    },
+    {
+      "name": "UPPER",
+      "status": "not implemented",
+      "cases": 101,
+      "passed": 60
+    },
+    {
+      "name": "VALUE",
+      "status": "not implemented",
+      "cases": 34,
+      "passed": 0
+    },
+    {
+      "name": "VALUETOTEXT",
+      "status": "not implemented",
+      "cases": 14,
+      "passed": 0
+    },
+    {
+      "name": "VAR.P",
+      "status": "not implemented",
+      "cases": 11,
+      "passed": 6
+    },
+    {
+      "name": "VAR.S",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "VARA",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "VARPA",
+      "status": "not implemented",
+      "cases": 1,
+      "passed": 0
+    },
+    {
+      "name": "VLOOKUP",
+      "status": "not implemented",
+      "cases": 45,
+      "passed": 1
+    },
+    {
+      "name": "VSTACK",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "WEEKDAY",
+      "status": "not implemented",
+      "cases": 544,
+      "passed": 0
+    },
+    {
+      "name": "WEIBULL.DIST",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 0
+    },
+    {
+      "name": "WORKDAY",
+      "status": "not implemented",
+      "cases": 68,
+      "passed": 0
+    },
+    {
+      "name": "WORKDAY.INTL",
+      "status": "not implemented",
+      "cases": 93,
+      "passed": 0
+    },
+    {
+      "name": "WRAPCOLS",
+      "status": "not implemented",
+      "cases": 19,
+      "passed": 0
+    },
+    {
+      "name": "WRAPROWS",
+      "status": "not implemented",
+      "cases": 18,
+      "passed": 0
+    },
+    {
+      "name": "XIRR",
+      "status": "not implemented",
+      "cases": 31,
+      "passed": 0
+    },
+    {
+      "name": "XLOOKUP",
+      "status": "not implemented",
+      "cases": 437,
+      "passed": 0
+    },
+    {
+      "name": "XMATCH",
+      "status": "not implemented",
+      "cases": 6,
+      "passed": 0
+    },
+    {
+      "name": "XNPV",
+      "status": "not implemented",
+      "cases": 33,
+      "passed": 0
+    },
+    {
+      "name": "XOR",
+      "status": "not implemented",
+      "cases": 116,
+      "passed": 0
+    },
+    {
+      "name": "XYZ",
+      "status": "not implemented",
+      "cases": 2,
+      "passed": 2
+    },
+    {
+      "name": "YEAR",
+      "status": "not implemented",
+      "cases": 73,
+      "passed": 0
+    },
+    {
+      "name": "YEARFRAC",
+      "status": "not implemented",
+      "cases": 69,
+      "passed": 1
+    },
+    {
+      "name": "YIELD",
+      "status": "not implemented",
+      "cases": 15,
+      "passed": 0
+    },
+    {
+      "name": "Z.TEST",
+      "status": "not implemented",
+      "cases": 4,
+      "passed": 0
+    }
+  ]
+}

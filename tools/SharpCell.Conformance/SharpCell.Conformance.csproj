@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SharpCell.Conformance</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="SharpCell.Tests" />
+    <ProjectReference Include="../../src/SharpCell/SharpCell.csproj" />
+    <ProjectReference Include="../../src/SharpCell.Xlsx/SharpCell.Xlsx.csproj" />
+  </ItemGroup>
+</Project>
