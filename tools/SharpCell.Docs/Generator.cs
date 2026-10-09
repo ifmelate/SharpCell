@@ -16,6 +16,9 @@ internal static class Generator
         var files = new List<GeneratedFile>();
         foreach (var target in layout.SnippetTargets())
             files.Add(new GeneratedFile(target, Snippets.Apply(File.ReadAllText(layout.Full(target)), snippets, target)));
+
+        var api = ApiReference.Generate(ApiReference.DocumentedAssemblies());
+        files.AddRange(api.Files);
         return files;
     }
 

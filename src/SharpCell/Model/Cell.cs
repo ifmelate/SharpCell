@@ -30,7 +30,8 @@ public sealed class Cell
     public string Address => new CellAddress(Row, Column).ToString();
 
     /// <summary>
-    /// The constant, or the formula's value as of the last calculation. Setting a value removes
+    /// The cell's <see cref="CellValue"/>: a constant, or the formula's result as of the last
+    /// calculation (values do not change until <see cref="Workbook.Recalculate"/>). Setting a value removes
     /// the formula. Cells hold scalars only: Missing, arrays and lambdas cannot be stored.
     /// </summary>
     /// <exception cref="InvalidOperationException">The cell is part of an array formula other than its top-left cell.</exception>
