@@ -78,6 +78,47 @@ internal static class Aggregation
     }
 
     /// <summary>
+    /// Visits the values of one argument, as <see cref="ForEach"/> does for all of them: the cells of
+    /// a reference, the elements of an array, or the value itself (an omitted argument stays
+    /// <see cref="CellValueKind.Missing"/>). Used for list arguments such as WORKDAY's holidays.
+    /// </summary>
+    public static void ForEachIn(FunctionCall call, int index, Func<CellValue, ValueSource, bool> visit)
+    {
+        var context = call.Context;
+        var argument = call[index];
+        if (argument.Reference is { } reference)
+        {
+            var visited = 0;
+            var visiting = true;
+            foreach (var (sheet, area) in reference.Areas)
+            {
+                foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
+                {
+                    if (++visited % CancellationCheckInterval == 0)
+                        context.CancellationToken.ThrowIfCancellationRequested();
+                    var value = context.ReadCell(sheet, cell);
+                    if (visiting && !visit(value, ValueSource.Reference))
+                        visiting = false;
+                    if (!visiting && !call.MetPendingInput)
+                        return;
+                }
+            }
+        }
+        else if (argument.Value.Kind == CellValueKind.Array)
+        {
+            foreach (var element in argument.Value.AsArray())
+            {
+                if (!visit(element, ValueSource.Array))
+                    return;
+            }
+        }
+        else
+        {
+            visit(argument.Value, ValueSource.Direct);
+        }
+    }
+
+    /// <summary>
     /// Numbers for SUM, AVERAGE, MIN and MAX. Ranges and arrays contribute numbers only; direct
     /// arguments are coerced (text "2", TRUE). The first error wins.
     /// </summary>
