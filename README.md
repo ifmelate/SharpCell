@@ -34,6 +34,6 @@ A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `
 
 ## Documentation
 
-- [Documentation](docs/index.md): getting started, guides, API reference.
+- [Documentation site](https://ifmelate.github.io/SharpCell/): getting started, guides, API reference ([source](docs/index.md)).
 - [What matches Excel](docs/compatibility.md), also as [JSON](docs/compatibility.json).
 - [For AI coding agents](docs/agents.md): `llms.txt`, `llms-full.txt` and rules to paste into your agent's instructions.

@@ -27,18 +27,17 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread.
 - Not supported: writing files, .xls/.xlsm/.xlsb, structured references (Table1[Col]), iterative calculation, localized function names.
-- Before relying on a function, check its status in compatibility.json: https://<docs-site>/compatibility.json
-- Docs for agents: https://<docs-site>/llms.txt
+- Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
+- Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```
 
-Replace `<docs-site>` with the address of this site.
 
 ## Check a function before using it
 
 `compatibility.json` lists every function with its status and how many Excel-calculated cells it matched:
 
 ```bash
-curl -s https://<docs-site>/compatibility.json | jq '.functions[] | select(.name == "XLOOKUP")'
+curl -s https://ifmelate.github.io/SharpCell/compatibility.json | jq '.functions[] | select(.name == "XLOOKUP")'
 ```
 
 ```json
