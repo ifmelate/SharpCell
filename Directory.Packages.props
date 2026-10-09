@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Markdig" Version="1.4.0" />
+    <PackageVersion Include="MinVer" Version="8.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

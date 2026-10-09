@@ -1,4 +1,1 @@
 #nullable enable
-SharpCell.Xlsx.XlsxReader
-static SharpCell.Xlsx.XlsxReader.Load(string! path) -> SharpCell.Workbook!
-static SharpCell.Xlsx.XlsxReader.Load(System.IO.Stream! stream) -> SharpCell.Workbook!
