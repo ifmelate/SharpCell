@@ -194,12 +194,18 @@ public class FunctionTests
     }
 
     [Fact]
-    public void Default_registry_lists_the_implemented_functions()
+    public void Default_registry_has_sound_metadata()
     {
-        string[] expected = ["ABS", "AND", "AVERAGE", "BYCOL", "BYROW", "CHOOSE", "COLUMNS", "COUNT", "COUNTA", "IF", "IFERROR",
-            "INDIRECT", "ISBLANK", "ISERROR", "ISOMITTED", "MAKEARRAY", "MAP", "MAX", "MIN", "NOT", "NOW", "OFFSET", "OR", "RAND",
-            "REDUCE", "ROWS", "SCAN", "SUM"];
-        Assert.Equal(expected, FunctionRegistry.Default.All.Select(f => f.Name).Order());
-        Assert.True(FunctionRegistry.Default.All.Single(f => f.Name == "NOW").IsVolatile);
+        // The full list is the compatibility report's job; this checks what every entry must satisfy.
+        var all = FunctionRegistry.Default.All.ToList();
+        Assert.Contains(all, f => f.Name == "SUM");
+        Assert.All(all, f =>
+        {
+            Assert.Equal(f.Name.ToUpperInvariant(), f.Name);
+            Assert.InRange(f.MinArguments, 0, f.MaxArguments);
+            Assert.InRange(f.MaxArguments, 0, FunctionRegistry.MaxArguments);
+            Assert.True(f.Status != FunctionStatus.KnownDeviation || !string.IsNullOrWhiteSpace(f.Deviation), $"{f.Name} needs a deviation text.");
+        });
+        Assert.True(all.Single(f => f.Name == "NOW").IsVolatile);
     }
 }

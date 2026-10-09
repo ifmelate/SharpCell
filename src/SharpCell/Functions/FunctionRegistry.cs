@@ -28,6 +28,7 @@ internal sealed class FunctionRegistry
         DateTimeFunctions.Register(registry);
         LambdaFunctions.Register(registry);
         ReferenceFunctions.Register(registry);
+        ConditionalFunctions.Register(registry);
         return registry;
     }
 }

@@ -1,6 +1,6 @@
 {
   "cells": 76017,
-  "passed": 3814,
+  "passed": 4417,
   "files": [
     {
       "file": "ironcalc/DynamicArrays.xlsx",
@@ -1666,40 +1666,38 @@
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIFS.xlsx",
       "cells": 285,
-      "passed": 7,
+      "passed": 87,
       "skipped": 0,
       "comparedCells": {
         "Open": "A9:A11 D2:D20 E2:E20 F2:F20 G2:G20 H2:H20 I2:I20",
         "Sheet1": "A9:A11 A33 B30 C30 D2:D20 E2:E20 E25:E36 F2:F20 F25:F36 G2:G20 G25:G36 H2:H20 H25:H36 I2:I20"
       },
       "failingCells": {
-        "Open": "A9 D2:D20 E2:E20 F2:F20 G2:G20 H2:H20 I2:I20",
-        "Sheet1": "A9 D2:D20 E2:E20 E25:E36 F2:F20 F25:F36 G2:G20 G25:G36 H2:H20 H25:H36 I2:I20"
+        "Open": "A9 D4:D5 E4:E5 F2:F20 G2:G20 H2:H20 I2:I20",
+        "Sheet1": "A9 D4:D5 E4:E5 F2:F20 F25:F36 G2:G20 G25:G36 H2:H20 H25:H36 I2:I20"
       }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIF_AVERAGE_IF.xlsx",
       "cells": 50,
-      "passed": 3,
+      "passed": 30,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "B8:B9 D6 E2:E9 F2:F9 G2:G9 J2:J9 K2:K9 M2 M4 N2 O2 S4 T2:T3"
       },
       "failingCells": {
-        "Sheet1": "B9 D6 E2:E9 F2:F9 G2:G9 J2:J9 K2:K9 M2 N2 O2 T2:T3"
+        "Sheet1": "B9 D6 E2:E9 F6 J2:J9 M2"
       }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIF_array.xlsx",
       "cells": 16,
-      "passed": 0,
+      "passed": 16,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "G6:G9 G18:G20 G22:G24 G26 G28:G31 H31"
       },
-      "failingCells": {
-        "Sheet1": "G6:G9 G18:G20 G22:G24 G26 G28:G31 H31"
-      }
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMPRODUCT.xlsx",
@@ -1894,21 +1892,21 @@
     {
       "file": "ironcalc/calc_tests/STATISTICAL/COUNTIF.xlsx",
       "cells": 531,
-      "passed": 16,
+      "passed": 274,
       "skipped": 0,
       "comparedCells": {
         "Columns": "B3:B12 B20:B21 B27:B30 B35:B38 C3:C12 C20:C21 C26:C30 C35:C38 D3:D12 D20:D21 D27:D30 D35:D38 E3:E12 E20:E21 E26:E30 E35:E38 F3:F12 F20:F21 F27:F30 F35:F38 G3:G12 G19:G21 G25 G27:G30 G35:G38 H3:H12 H19:H21 H25 H27:H30 H35:H38 I3:I12 I20:I21 I35:I38 J3:J12 J20:J21 J35:J38 K3:K12 K20:K21 K35:K38 L1 L3:L12 L18 L20:L21 L35:L38 M3:M12 M18 M20:M21 N3:N12 O3:O12 P3:P12",
         "Rows": "C2:C8 D2:D8 E2:E8 G12 I2:I16 J2:J16 K2:K16 L2:L16 M2:M16 N2:N16 O2:O16 P2:P16 Q2:Q16 R2:R16 T12:T13 U7:U8 V2:V13 W2:W13 Y7:Y8 Z3 Z5 AA2:AA8 AB2:AB8 AC2:AC8 AD2:AD8 AI2:AI12 AJ2:AJ12 AK2:AK12 AL2:AL12"
       },
       "failingCells": {
-        "Columns": "B3:B12 B20:B21 B27:B30 B35:B38 C3:C12 C20:C21 C27:C30 C35:C38 D3:D12 D20:D21 D27:D30 D35:D38 E3:E12 E20:E21 E27:E30 E35:E38 F3:F12 F20:F21 F27:F30 F35:F38 G3:G12 G19:G21 G27:G30 G35:G38 H3:H12 H20:H21 H27:H30 H35:H38 I3:I12 I20:I21 I35:I38 J3:J12 J20:J21 J35:J38 K3:K12 K20:K21 K35:K38 L3:L12 L20:L21 L35:L38 M3:M12 M20:M21 N3:N12 O3:O12 P3:P12",
-        "Rows": "C2:C8 D2:D8 E2:E8 I2:I16 J2:J16 K2:K16 L2:L16 M2:M16 N2:N16 O2:O16 P2:P16 Q2:Q16 R2:R16 U7 V2:V13 W2:W13 AA2:AA8 AB2:AB8 AC2:AC8 AD2:AD8 AI2:AI12 AJ2:AJ12 AK2:AK12 AL2:AL12"
+        "Columns": "B3:B12 B28 B30 B36 B38 C3:C12 C28 C30 C36 C38 D4:D7 D9:D12 D28 D30 D36 D38 E3:E12 E28 E30 E36 E38 F3:F12 F28 F30 F36 F38 G3:G12 G19:G21 G28 G30 G36 G38 H3:H12 H28 H30 H36 H38 I7 I12 I36 I38 J7 J12 J36 J38 K7 K12 K36 K38 L7 L12 L36 L38 M7 M12 N7 N12 O7 O12 P7 P12",
+        "Rows": "D2:D5 E2:E8 I2:I3 I5:I8 J2:J8 K2:K8 L2:L8 M2:M16 N2:N3 N5:N8 O2:O8 P2:P8 Q2:Q8 R2:R16 U7 V7 W7 AB2:AB8 AD2:AD8 AJ2:AJ12 AL2:AL12"
       }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/COUNTIFS.xlsx",
       "cells": 312,
-      "passed": 12,
+      "passed": 206,
       "skipped": 0,
       "comparedCells": {
         "Columns1": "B4:B5 C4:C5 D4:D5 E4:E5 F4:F5 G1:G2 G4:G5 H4:H5 I4:I5 J4:J5 K4:K5 L4:L5 M4:M5 N5 O5 P5",
@@ -1917,10 +1915,8 @@
         "Rows2": "C2:C8 D2:D8 E2:E8 F2:F8 G2:G8 H2:H8 J12 L2:L16 M2:M16 N2:N16 O2:O16 P2:P16 R12:R13 S7:S8 T2:T13 V7:V8 W3 W5 X2:X8 Y2:Y8 AD2:AD12 AE2:AE12"
       },
       "failingCells": {
-        "Columns1": "B4:B5 C4:C5 D4:D5 E4:E5 F4:F5 G4:G5 H4:H5 I4:I5 J4:J5 K4:K5 L4:L5 M4:M5 N5 O5 P5",
-        "Columns2": "B3:B8 C3:C8 D3:D8 E3:E8 F3:F8 G3:G8 H3:H8",
-        "Rows1": "C2:C20 D2:D20 L2:L13 M2:M16",
-        "Rows2": "C2:C8 D2:D8 E2:E8 F2:F8 G2:G8 H2:H8 L2:L16 M2:M16 N2:N16 O2:O16 P2:P16 S7 T2:T13 X2:X8 Y2:Y8 AD2:AD12 AE2:AE12"
+        "Columns2": "B4:B5 B7:B8 C4:C5 C7:C8 D4:D5 D7:D8 E4:E5 E7:E8 F5 F8 G5 G8 H5 H8",
+        "Rows2": "D2:D5 E2:E8 G2:G5 H2:H8 L2:L3 L5:L8 M2:M8 N2:N8 O2:O8 P2:P16 S7 T7 Y2:Y8 AE2:AE12"
       }
     },
     {
@@ -2476,13 +2472,13 @@
     {
       "file": "ironcalc/calc_tests/TEXT/MINUS_MINUS.xlsx",
       "cells": 73,
-      "passed": 57,
+      "passed": 58,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "A9:A15 A19:A22 A24:A30 A33:A36 A44:A47 A50:A58 B26 C9:C14 C19 C33 C35 C37 C39:C41 C44 D27:D30 D33 D35 D37 D44 E1:E4 E33 E35 F27:F30 H27:H30 J27"
       },
       "failingCells": {
-        "Sheet1": "A12:A13 A24:A25 A58 C10 C12:C14 C39:C41 D27:D30"
+        "Sheet1": "A12:A13 A24:A25 A58 C12:C14 C39:C41 D27:D30"
       }
     },
     {
@@ -2640,7 +2636,7 @@
     {
       "file": "ironcalc/calc_tests/arithmetic.xlsx",
       "cells": 60,
-      "passed": 50,
+      "passed": 52,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "A4:A5 A10:A16 A20 B10:B13 B20 E2:E7 F2:F9 G2:G9 H2:H9 M4:M5 O4:O5",
@@ -2648,7 +2644,7 @@
       },
       "failingCells": {
         "Sheet1": "M4 O4",
-        "Sheet2": "A3:A4 A6 B1 D1 E1 G4 H4"
+        "Sheet2": "A3:A4 A6 B1 G4 H4"
       }
     },
     {
@@ -3048,13 +3044,13 @@
     {
       "file": "ironcalc/templates/travel_expenses_tracker.xlsx",
       "cells": 42,
-      "passed": 1,
+      "passed": 25,
       "skipped": 0,
       "comparedCells": {
         "Overview": "B39:B41 C21:C23 C27:C29 D21:D23 D27:D29 D33:D35 E8:E13 F8:F13 G8:G13 H8:H13"
       },
       "failingCells": {
-        "Overview": "B39:B41 C21:C23 C27:C29 D21:D23 D27:D29 D34:D35 E8:E13 F8:F13 G8:G13 H8:H13"
+        "Overview": "B39:B41 C21:C23 C27:C29 D21:D23 D27:D29 D34:D35"
       }
     },
     {
@@ -3075,7 +3071,7 @@
     {
       "file": "ironcalc/templates/wordle.xlsx",
       "cells": 782,
-      "passed": 414,
+      "passed": 415,
       "skipped": 0,
       "comparedCells": {
         "Engine": "A3:A8 B3:B8 C3:C8 D3:D8 E3:E8 G3:G8 H3:H8 I3:I8 J3:J8 K3:K8",
@@ -3083,7 +3079,7 @@
         "Words": "B2:B660 C2"
       },
       "failingCells": {
-        "Wordle": "F11 N2",
+        "Wordle": "N2",
         "Words": "B2:B366 C2"
       }
     },
@@ -3154,7 +3150,7 @@
       "name": "AND",
       "status": "implemented",
       "cases": 159,
-      "passed": 148
+      "passed": 149
     },
     {
       "name": "ARABIC",
@@ -3466,7 +3462,7 @@
       "name": "CONCAT",
       "status": "not implemented",
       "cases": 569,
-      "passed": 0
+      "passed": 180
     },
     {
       "name": "CONCATENATE",
@@ -3532,7 +3528,7 @@
       "name": "COUNTA",
       "status": "implemented",
       "cases": 33,
-      "passed": 28
+      "passed": 29
     },
     {
       "name": "COUNTBLANK",
@@ -3542,15 +3538,15 @@
     },
     {
       "name": "COUNTIF",
-      "status": "not implemented",
+      "status": "implemented",
       "cases": 544,
-      "passed": 0
+      "passed": 288
     },
     {
       "name": "COUNTIFS",
-      "status": "not implemented",
+      "status": "implemented",
       "cases": 280,
-      "passed": 0
+      "passed": 175
     },
     {
       "name": "COUPDAYBS",
@@ -4114,7 +4110,7 @@
       "name": "IF",
       "status": "implemented",
       "cases": 1420,
-      "passed": 408
+      "passed": 409
     },
     {
       "name": "IFERROR",
@@ -4534,7 +4530,7 @@
       "name": "MAX",
       "status": "implemented",
       "cases": 86,
-      "passed": 59
+      "passed": 65
     },
     {
       "name": "MAXA",
@@ -4570,7 +4566,7 @@
       "name": "MIN",
       "status": "implemented",
       "cases": 37,
-      "passed": 26
+      "passed": 32
     },
     {
       "name": "MINA",
@@ -4714,7 +4710,7 @@
       "name": "NOT",
       "status": "implemented",
       "cases": 7,
-      "passed": 6
+      "passed": 7
     },
     {
       "name": "NOW",
@@ -4798,7 +4794,7 @@
       "name": "OR",
       "status": "implemented",
       "cases": 120,
-      "passed": 119
+      "passed": 120
     },
     {
       "name": "PDURATION",
@@ -5236,19 +5232,19 @@
       "name": "SUM",
       "status": "implemented",
       "cases": 166,
-      "passed": 120
+      "passed": 121
     },
     {
       "name": "SUMIF",
-      "status": "not implemented",
+      "status": "implemented",
       "cases": 87,
-      "passed": 1
+      "passed": 76
     },
     {
       "name": "SUMIFS",
-      "status": "not implemented",
+      "status": "implemented",
       "cases": 50,
-      "passed": 0
+      "passed": 46
     },
     {
       "name": "SUMM",
@@ -5494,7 +5490,7 @@
       "name": "UPPER",
       "status": "not implemented",
       "cases": 101,
-      "passed": 60
+      "passed": 61
     },
     {
       "name": "VALUE",
