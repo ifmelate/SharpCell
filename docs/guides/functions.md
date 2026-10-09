@@ -16,7 +16,7 @@ A function that does not appear in the report evaluates to `#NAME?` as well.
 
 ## Criteria
 
-`COUNTIF`, `SUMIF`, `AVERAGEIF`, the `*IFS` functions, the `D` database functions and `MATCH` take criteria written as in Excel:
+`COUNTIF`, `SUMIF`, `AVERAGEIF`, the `*IFS` functions and the `D` database functions take criteria written as in Excel:
 
 | Criterion | Matches |
 |---|---|
@@ -29,6 +29,8 @@ A function that does not appear in the report evaluates to `#NAME?` as well.
 | `TRUE`, `"true"` | Logical values only |
 
 Wildcards apply to text only. In the `D` functions, a plain text criterion matches text that starts with it, as in Excel.
+
+`MATCH` (match type 0), `XMATCH` and `XLOOKUP` (match mode 2) accept the same wildcards but none of the operators: `MATCH(">5", A1:A9, 0)` looks for the text `">5"`.
 
 ## Dates and times
 
