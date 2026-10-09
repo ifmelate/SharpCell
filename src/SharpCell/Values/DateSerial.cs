@@ -93,6 +93,33 @@ internal static class DateSerial
         return serial >= 0 && serial <= MaxSerial(system);
     }
 
+    /// <summary>Days in a month by Excel's calendar: February 1900 has 29 days in the 1900 system.</summary>
+    public static int DaysInMonth(int year, int month, DateSystem system) =>
+        year == 1900 && month == 2 && system == DateSystem.Date1900 ? 29 : DateTime.DaysInMonth(year, month);
+
+    /// <summary>
+    /// The serial number of a calendar date that must exist as written (no carry-over, year as
+    /// written): what a typed date such as "2020-02-30" is checked against. False outside the calendar.
+    /// </summary>
+    public static bool TryFromCalendar(int year, int month, int day, DateSystem system, out double serial)
+    {
+        serial = 0;
+        if (year is < 1900 or > 9999 || month is < 1 or > 12 || day < 1 || day > DaysInMonth(year, month, system))
+            return false;
+        return TryFromDate(year, month, day, system, out serial);
+    }
+
+    /// <summary>
+    /// Day of the week of a serial number's whole part, Monday = 0 to Sunday = 6, by Excel's
+    /// calendar: in the 1900 system serial 1 (1900-01-01) is a Sunday, as Excel counts it, although
+    /// the real day was a Monday; from 1900-03-01 on the days are right.
+    /// </summary>
+    public static int MondayBasedWeekday(double serial, DateSystem system)
+    {
+        var days = (long)Math.Floor(serial) + (system == DateSystem.Date1904 ? 1462 : 0);
+        return (int)(((days + 5) % 7 + 7) % 7);
+    }
+
     /// <summary>Hour, minute and second of a serial number's fraction, rounded to the nearest second as Excel does.</summary>
     public static (int Hour, int Minute, int Second) TimeOfDay(double serial)
     {

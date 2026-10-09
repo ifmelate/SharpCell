@@ -97,4 +97,36 @@ public class DateSerialTests
             Assert.Equal(serial, back);
         }
     }
+
+    [Theory]
+    [InlineData(2020, 2, 30, false)]
+    [InlineData(2020, 2, 29, true)]
+    [InlineData(1900, 2, 29, true)]
+    [InlineData(1899, 12, 31, false)]
+    [InlineData(2020, 13, 1, false)]
+    [InlineData(2020, 1, 0, false)]
+    public void Calendar_dates_must_exist(int year, int month, int day, bool exists)
+    {
+        Assert.Equal(exists, DateSerial.TryFromCalendar(year, month, day, DateSystem.Date1900, out _));
+    }
+
+    [Fact]
+    public void February_1900_has_29_days_only_in_the_1900_system()
+    {
+        Assert.Equal(29, DateSerial.DaysInMonth(1900, 2, DateSystem.Date1900));
+        Assert.Equal(28, DateSerial.DaysInMonth(1900, 2, DateSystem.Date1904));
+        Assert.False(DateSerial.TryFromCalendar(1900, 2, 29, DateSystem.Date1904, out _));
+    }
+
+    [Theory]
+    [InlineData(1, DateSystem.Date1900, 6)]
+    [InlineData(2, DateSystem.Date1900, 0)]
+    [InlineData(0, DateSystem.Date1900, 5)]
+    [InlineData(61, DateSystem.Date1900, 3)]
+    [InlineData(43831.9, DateSystem.Date1900, 2)]
+    [InlineData(0, DateSystem.Date1904, 4)]
+    public void Weekdays_follow_the_serial(double serial, DateSystem system, int mondayBased)
+    {
+        Assert.Equal(mondayBased, DateSerial.MondayBasedWeekday(serial, system));
+    }
 }
