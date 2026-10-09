@@ -88,6 +88,14 @@ internal sealed class Report
                 json.WriteNumber("skipped", file.Skipped);
                 if (file.Error is not null)
                     json.WriteString("error", file.Error);
+
+                // Exactly which cells match, as whichever list is shorter, so the ratchet sees a cell
+                // that breaks even when another one in the same file gets fixed.
+                var passing = file.Passed * 2 <= file.Cells.Count;
+                json.WriteStartObject(passing ? "passingCells" : "failingCells");
+                foreach (var (sheet, cells) in CellSet.Encode(file.Cells.Where(c => c.Passed == passing).Select(c => (c.Sheet, c.Cell))))
+                    json.WriteString(sheet, cells);
+                json.WriteEndObject();
                 json.WriteEndObject();
             }
 

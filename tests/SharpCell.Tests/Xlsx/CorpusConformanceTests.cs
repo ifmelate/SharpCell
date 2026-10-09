@@ -1,19 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using SharpCell.Conformance;
 
 namespace SharpCell.Tests.Xlsx;
 
 /// <summary>
-/// A ratchet on the Excel corpus: no file may match Excel in fewer cells than the committed
-/// compatibility report says, and files that match fully must stay so. Improvements pass; run
-/// <c>dotnet run --project tools/SharpCell.Conformance</c> to record them in the report.
+/// A ratchet on the Excel corpus: every cell the committed compatibility report records as matching
+/// Excel must still match. Improvements pass; run <c>dotnet run --project tools/SharpCell.Conformance</c>
+/// to record them in the report.
 /// </summary>
 public class CorpusConformanceTests
 {
-    private static readonly Dictionary<string, (int Cells, int Passed)> Baseline = ReadBaseline();
+    private sealed record Recorded(int Cells, int Passed, HashSet<(string, CellAddress)> Listed, bool ListsPassing);
+
+    private static readonly Dictionary<string, Recorded> Baseline = ReadBaseline();
 
     public static TheoryData<string> Files() => [.. CorpusFiles.All];
 
@@ -27,33 +30,58 @@ public class CorpusConformanceTests
 
     [Theory]
     [MemberData(nameof(Files))]
-    public void File_matches_Excel_at_least_as_well_as_recorded(string file)
+    public void Cells_that_matched_Excel_still_do(string file)
     {
         var result = CorpusRunner.Run(CorpusFiles.PathOf(file), file, TimeSpan.FromMinutes(2));
         Assert.Null(result.Error);
         if (!Baseline.TryGetValue(file, out var recorded))
             return;
 
-        var failures = new List<string>();
-        foreach (var cell in result.Cells)
+        var outcomes = result.Cells.ToDictionary(c => (c.Sheet, c.Cell));
+        var broken = new List<string>();
+        if (recorded.ListsPassing)
         {
-            if (!cell.Passed && failures.Count < 20)
-                failures.Add($"{cell.Sheet}!{cell.Address} {cell.Formula ?? "(spilled)"}: Excel {cell.Expected}, SharpCell {cell.Actual}");
+            foreach (var cell in recorded.Listed)
+            {
+                if (!outcomes.TryGetValue(cell, out var outcome) || !outcome.Passed)
+                    broken.Add(Describe(cell, outcome));
+            }
+        }
+        else
+        {
+            foreach (var outcome in result.Cells)
+            {
+                if (!outcome.Passed && !recorded.Listed.Contains((outcome.Sheet, outcome.Cell)))
+                    broken.Add(Describe((outcome.Sheet, outcome.Cell), outcome));
+            }
+
+            // Every recorded cell must still be compared, or failures could hide in cells that vanished.
+            if (result.Cells.Count < recorded.Cells)
+                broken.Add($"{recorded.Cells - result.Cells.Count} fewer cells compared than recorded");
         }
 
-        Assert.True(result.Passed >= recorded.Passed,
-            $"{file}: {result.Passed} cells match Excel, the report records {recorded.Passed}. Mismatches:\n" + string.Join("\n", failures));
-        if (recorded.Passed == recorded.Cells)
-            Assert.True(result.Passed == result.Cells.Count, $"{file} matched Excel fully and no longer does:\n" + string.Join("\n", failures));
+        Assert.True(broken.Count == 0, $"{file}: cells that matched Excel no longer do:\n" + string.Join("\n", broken.Take(30)));
     }
 
-    private static Dictionary<string, (int, int)> ReadBaseline()
+    private static string Describe((string Sheet, CellAddress Cell) cell, CellOutcome? outcome) => outcome is null
+        ? $"{cell.Sheet}!{cell.Cell}: no longer compared"
+        : $"{cell.Sheet}!{cell.Cell} {outcome.Formula ?? "(spilled)"}: Excel {outcome.Expected}, SharpCell {outcome.Actual}";
+
+    private static Dictionary<string, Recorded> ReadBaseline()
     {
         var path = Path.Combine(CorpusFiles.Root, "..", "..", "docs", "compatibility.json");
-        var result = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
+        var result = new Dictionary<string, Recorded>(StringComparer.Ordinal);
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         foreach (var file in document.RootElement.GetProperty("files").EnumerateArray())
-            result[file.GetProperty("file").GetString()!] = (file.GetProperty("cells").GetInt32(), file.GetProperty("passed").GetInt32());
+        {
+            var listsPassing = file.TryGetProperty("passingCells", out var cells);
+            if (!listsPassing)
+                cells = file.GetProperty("failingCells");
+            var listed = CellSet.Decode(cells.EnumerateObject().Select(p => KeyValuePair.Create(p.Name, p.Value.GetString()!)));
+            result[file.GetProperty("file").GetString()!] =
+                new Recorded(file.GetProperty("cells").GetInt32(), file.GetProperty("passed").GetInt32(), listed, listsPassing);
+        }
+
         return result;
     }
 }

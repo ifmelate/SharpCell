@@ -9,7 +9,10 @@ namespace SharpCell.Conformance;
 
 /// <summary>One compared cell: a formula cell or a cell filled by an array formula.</summary>
 internal sealed record CellOutcome(
-    string Sheet, string Address, string? Formula, CellValue Expected, CellValue Actual, bool Passed, IReadOnlyList<string> Functions);
+    string Sheet, CellAddress Cell, string? Formula, CellValue Expected, CellValue Actual, bool Passed, IReadOnlyList<string> Functions)
+{
+    public string Address => Cell.ToString();
+}
 
 internal sealed record FileResult(string File, IReadOnlyList<CellOutcome> Cells, int Skipped, string? Error)
 {
@@ -72,7 +75,15 @@ internal static class CorpusRunner
             }
         }
 
+        // Cached values go before calculating, so a formula that is not recalculated cannot pass by
+        // being compared with itself.
         var expected = Snapshot(workbook);
+        foreach (var (key, _, _, _) in expected)
+        {
+            if (key.Data is { Formula: not null } data)
+                data.Value = CellValue.Empty;
+        }
+
         try
         {
             using var cancellation = new CancellationTokenSource(timeout);
@@ -101,7 +112,7 @@ internal static class CorpusRunner
             var actual = key.Data?.Value ?? CellValue.Empty;
             var byKind = functions.Overlaps(RandomFunctions) || (!clockFixed && functions.Overlaps(ClockFunctions));
             var passed = byKind ? before.Kind == actual.Kind : Matches(before, actual, tolerance);
-            cells.Add(new CellOutcome(key.Sheet.Name, key.Address.ToString(), formula, before, actual, passed, [.. functions]));
+            cells.Add(new CellOutcome(key.Sheet.Name, key.Address, formula, before, actual, passed, [.. functions]));
         }
 
         return new FileResult(name, cells, skipped, null);

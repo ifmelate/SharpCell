@@ -6,1435 +6,2027 @@
       "file": "ironcalc/DynamicArrays.xlsx",
       "cells": 43,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/DATABASE/DAVERAGE.xlsx",
       "cells": 4,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/DATABASE/DCOUNT_DCOUNTA_DGET_DPRODUCT.xlsx",
       "cells": 212,
       "passed": 27,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DCOUNT_DCOUNTA": "F12 L11 L19:L20 M1 M20 N10 P6:P7",
+        "DGET": "H20:H21 I21 J21 K11 L1 M10 O6:O7",
+        "DPRODUCT": "H20:H21 I21 J21 K11 L1 M10 O6:O7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATABASE/DMIN_DMAX_DAVERAGE_DSUM.xlsx",
       "cells": 175,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DMIN_DMAX_DAVERAGE_DSUM": "F12 K11 K19:K20 L1 L20 M10 O6:O7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATABASE/DVAR_DVARP_DSTDEV_DSTDEVP.xlsx",
       "cells": 175,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DVAR_DVARP_DSTDEV_DSTDEVP": "F12 K11 K19:K20 L1 L20 M10 O6:O7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DATE.xlsx",
       "cells": 64,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A55 B56"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE.xlsx",
       "cells": 73,
       "passed": 14,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DATEVALUE": "A15:A16 A19 A22:A27 A30:A31 A33 A35 B33"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE_issue_1379.xlsx",
       "cells": 4,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE_issue_1380.xlsx",
       "cells": 1,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DATE_DAY_MONTH_YEAR.xlsx",
       "cells": 68,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A7 J2"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DAYS_DAYS360.xlsx",
       "cells": 277,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A30:A31 A44 B30 B32"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/DAY_MONTH_YEAR.xlsx",
       "cells": 115,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/EDATE.xlsx",
       "cells": 83,
       "passed": 4,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A19 A41 B20 B42"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/EOMONTH.xlsx",
       "cells": 105,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A53 B54"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/NETWORKDAYS_NETWORKDAYS.INTL.xlsx",
       "cells": 286,
       "passed": 4,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A26:A27 B26 B28"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/NOW_TODAY.xlsx",
       "cells": 3,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "B2"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/TIMEVALUE.xlsx",
       "cells": 68,
       "passed": 13,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "TIMEVALUE": "A22:A29 A32:A33 A35 A37 B35"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/TIMEVALUE_issue_1402.xlsx",
       "cells": 1,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/TIME_HOUR_MINUTE_SECOND.xlsx",
       "cells": 252,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A18 B19 B21 C20:C21 E53 E55:E57"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/WORKDAY_WORKDAY.INTL.xlsx",
       "cells": 213,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A17:A18 A29 B17 B19 B30"
+      }
     },
     {
       "file": "ironcalc/calc_tests/DATE_AND_TIME/YEARFRAC_DATEDIF.xlsx",
       "cells": 197,
       "passed": 14,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "YEARFRAC_DATEDIF": "A20:A21 A24 A26:A27 A30 B20 B22 B27 B31 C24 D24 H14 L9"
+      }
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/BESSEL.xlsx",
       "cells": 476,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "All": "A21"
+      }
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/BITs.xlsx",
       "cells": 164,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A10:A11 A18 H10:H11 H18"
+      }
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/COMPLEXs.xlsx",
       "cells": 958,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A24 C10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/CONVERT.xlsx",
       "cells": 509,
       "passed": 152,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Area": "H2:H26",
+        "Energy": "I2:I14",
+        "Force": "I2:I6",
+        "Information": "I2:I3",
+        "Magtetism": "I2:I3",
+        "Power": "I2:I6",
+        "Pressure": "J2:J8",
+        "Speed": "I2:I8",
+        "Temperature": "I2:I9",
+        "Time": "I2:I9",
+        "Volume": "I2:I41",
+        "Weight": "F2:F16",
+        "distance": "I2:I16"
+      }
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/ERFs.xlsx",
       "cells": 96,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/GESTEP_DELTA.xlsx",
       "cells": 63,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A10:A12"
+      }
     },
     {
       "file": "ironcalc/calc_tests/ENGINEERING/NUMBER_SYSTEMS.xlsx",
       "cells": 710,
       "passed": 10,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Decimal": "A34 D25:D26 F25:F26",
+        "HEX": "C8 D8 E8 F8 G8"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/ACCRINT.xlsx",
       "cells": 39,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/ACCRINTM.xlsx",
       "cells": 17,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/ACCRINT_ACCRINTM.xlsx",
       "cells": 51,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/ACCRINT_extended.xlsx",
       "cells": 259,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/COUPDAYS.xlsx",
       "cells": 225,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/CUMPRINC_CUMIPMT.xlsx",
       "cells": 70,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B4:B10 E26 F26"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/DB_DDB.xlsx",
       "cells": 80,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/DISC.xlsx",
       "cells": 19,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B15:B19"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/FV.xlsx",
       "cells": 47,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D22"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/FVSCHEDULE.xlsx",
       "cells": 5,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/INTRATE.xlsx",
       "cells": 10,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D2:D6"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/IPMT_PPMT.xlsx",
       "cells": 128,
       "passed": 7,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "C4:C10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/IRR.xlsx",
       "cells": 132,
       "passed": 10,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Two Values": "D2:D11"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/ISPMT.xlsx",
       "cells": 29,
       "passed": 13,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "F2:F11 F13:F15"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/MIRR.xlsx",
       "cells": 225,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/NOMINAL_EFFECT.xlsx",
       "cells": 90,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/NPER.xlsx",
       "cells": 45,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D22"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/NPV.xlsx",
       "cells": 34,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A8 B9"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/PDURATION.xlsx",
       "cells": 20,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A18 B17 C17"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/PMT.xlsx",
       "cells": 309,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A37 B38 D22"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/PRICE_YIELD.xlsx",
       "cells": 352,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/PV.xlsx",
       "cells": 45,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D22"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/RATE.xlsx",
       "cells": 51,
       "passed": 11,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A2 A4:A8 A10 A12:A13 A18 C13"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/RRI.xlsx",
       "cells": 22,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/SLN_SYD.xlsx",
       "cells": 43,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/TBILLs.xlsx",
       "cells": 273,
       "passed": 151,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "A18 D2:D21 D23:D31 E18 G18 J18 L2:L18 L20:L21 L23:L31 N2:N31 O18 R2:R31"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/XIRR.xlsx",
       "cells": 42,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/XNPV.xlsx",
       "cells": 24,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/FINANCIAL/accrint_cases.xlsx",
       "cells": 400,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/CELL.xlsx",
       "cells": 32,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "CELL": "A2 A12 A28"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/ERROR.TYPE.xlsx",
       "cells": 16,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A2 A5"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/FORMULATEXT.xlsx",
       "cells": 27,
       "passed": 4,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A5:A6 A10:A11"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/ISOMITTED.xlsx",
       "cells": 3,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/ISREF.xlsx",
       "cells": 43,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/ISREF_ISFORMULA_ISODD_ISEVEN.xlsx",
       "cells": 66,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "ISREF_ISFORMULA": "A1 A3:A4"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/IS_INFORMATION.xlsx",
       "cells": 106,
       "passed": 27,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A12 E2:E14 G2:G14"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/N.xlsx",
       "cells": 21,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "N": "A18"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/SHEET_SHEETS.xlsx",
       "cells": 5,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/TYPE.xlsx",
       "cells": 7,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/error_broadcast.xlsx",
       "cells": 230,
       "passed": 107,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B6 E1 E3 E5:E6 E8:E9 E12:E18 E22:E25 E31:E40 E67:E71 E74:E78 E81:E82 E85:E86 F1 F3 F5:F6 F8:F9 F12:F18 F23 F31:F35 F37:F38 F40 F67 F70:F71 F74:F77 F81:F82 G1 G3 G5:G6 G8:G9 G12:G18 G22:G25 G31:G38 G40 G67 G70:G71 G74:G76 G81:G82"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/AND_OR_XOR.xlsx",
       "cells": 317,
       "passed": 214,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "AND XOR OR": "D1:D20 D22:D35 D37:D44 D46:D56 D58:D63 D65:D70 D72:D77 D79:D81 D83:D86 D88:D91 D93:D110 D112:D114"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/BYCOL_BYROW.xlsx",
       "cells": 5,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/IFERROR.xlsx",
       "cells": 48,
       "passed": 44,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "C8 C15 E19 E23"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/IFNA.xlsx",
       "cells": 11,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A4"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/IFS.xlsx",
       "cells": 45,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "F8 F10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/IF_ARRAY.xlsx",
       "cells": 81,
       "passed": 41,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "C1:C4 C8:C11 E1:E4 F1:F4 H1:H2 K1:K2",
+        "Sheet2": "A1:A3 B1:B3 F1:F2 H5:H6 I5:I6 K1:K2 K5:K6 L1:L2 L5:L6"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/LAMBDA.xlsx",
       "cells": 8,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "A2 F2"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/LET.xlsx",
       "cells": 6,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/MAKEARRAY.xlsx",
       "cells": 9,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/MAP_REDUCE.xlsx",
       "cells": 7,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "E1"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOGICAL/SCAN.xlsx",
       "cells": 9,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "E7 F7 G7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/ADDRESS.xlsx",
       "cells": 34,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/CHOOSE.xlsx",
       "cells": 24,
       "passed": 24,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/CHOOSECOLS_CHOOSEROWS.xlsx",
       "cells": 62,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/DROP_TAKE.xlsx",
       "cells": 35,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/EXPAND.xlsx",
       "cells": 34,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/FILTER_ERRORS.xlsx",
       "cells": 7,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/HSTACK_VSTACK.xlsx",
       "cells": 36,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D6"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/HVLOOKUP.xlsx",
       "cells": 103,
       "passed": 13,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "HLOOKUP": "M2:M4 M8",
+        "HLinear": "C6 D6 E6 F6 G6",
+        "VLOOKUP": "M2:M4 M8"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/INDEX.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/INDIRECT.xlsx",
       "cells": 114,
       "passed": 106,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "errors": "E5 L6",
+        "r1c1_reference_built_from_cells": "A3 B3 C3 L3:L5"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/MATCH.xlsx",
       "cells": 34,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B18"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/MATCH_LOOKUP_arrays.xlsx",
       "cells": 23,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/ROW_COLUM.xlsx",
       "cells": 196,
       "passed": 69,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "INDIRECT": "D2:D8",
+        "OFFSET": "B1 B10 D42:D48 F24:F26 H3 I12 J5 J9 J19 K36:K48 K50:K51 M9:M12 T8 U5",
+        "ROWS_COLUMNS": "A2:A8 B2:B8 E3:E6 F3:F6",
+        "ROW_COLUMN": "E5 J15"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/SORT.xlsx",
       "cells": 239,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A10 A16"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/TOCOL.xlsx",
       "cells": 75,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/TRANSPOSE.xlsx",
       "cells": 24,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/TRIMRANGE.xlsx",
       "cells": 18,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/WRAPCOLS_ROWS.xlsx",
       "cells": 38,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "G1"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/XLOOKUP.xlsx",
       "cells": 439,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "ReturnLarger": "D10",
+        "ReturnSmaller": "D10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/LOOKUP_AND_REFERENCE/XMATCH.xlsx",
       "cells": 8,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ABS.xlsx",
       "cells": 13,
       "passed": 11,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "A10 B10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ARABIC_ROMAN.xlsx",
       "cells": 40427,
       "passed": 8,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "ARABIC": "A17 A37 A41:A42 B17",
+        "ROMAN": "A32 A36:A37"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ATAN2_POWER.xlsx",
       "cells": 61,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A19 A21"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/BASE.xlsx",
       "cells": 61,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/COMBIN_COMBINA.xlsx",
       "cells": 76,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "COMBIN_COMBINA": "A21 A36"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/DEGREES_RADIANS.xlsx",
       "cells": 54,
       "passed": 8,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DEGREES_RADIANS": "A11 A18:A20 A34 A42:A44"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/EVEN_ODD.xlsx",
       "cells": 87,
       "passed": 4,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "EVEN_ODD": "A35 A39:A41"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/EXP_SIGN.xlsx",
       "cells": 132,
       "passed": 23,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "EXP_SIGN": "A17:A18 A20:A21 A23:A24 A26 A28:A31 A33:A34 A37:A38 A47 A50 A52:A55 B26 C26"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/FACT_DOUBLEFACT.xlsx",
       "cells": 14,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/FLOOR_CEILING.xlsx",
       "cells": 11474,
       "passed": 660,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "CEILING": "A17:A18 A20:A21 A23:A24 A26 A28:A30 A32:A33 A35:A36 A45 A64:A65 A67:A68 A70:A71 A73 A75:A77 A79:A80 A82:A83 A92 A111:A112 A114:A115 A117:A118 A120 A122:A124 A126:A127 A129:A130 A139 A189:A190 A192:A193 A195:A196 A198 A200:A202 A204:A205 A207:A208 A217 B26 B73 B120 B198 C26 C73 C120 C198 D26 D73 D120 D198 E26 E73 E120 E198 F26 F73 F120 F198 G26 G73 G120 G198 H26 H73 H120 H198 I26 I73 I120 I198 J26 J73 J120 J198 K26 K73 K120 K198 L26 L73 L120 L198 M26 M73 M120 M198 N26 N49 N73 N120 N174 N198 O26 O73 O120 O198 P2 P26 P73 P96 P120 P198 Q26 Q49 Q73 Q120 Q174 Q198 R26 R49 R73 R120 R174 R198 S2 S26 S49 S73 S96 S120 S174 S198 T2 T26 T73 T96 T120 T198 U2 U26 U49 U73 U96 U120 U174 U198 V26 V49 V73 V120 V174 V198 W2 W26 W49 W73 W96 W120 W174 W198 X2 X26 X73 X96 X120 X198 Y2 Y26 Y49:Y63 Y65:Y68 Y73 Y76 Y78:Y79 Y81:Y85 Y87:Y92 Y96 Y120 Y174:Y188 Y190:Y193 Y198 Y201 Y203:Y204 Y206:Y210 Y212:Y217 Z26 Z73 Z120 Z198 AA2:AA16 AA18:AA21 AA26 AA29 AA31:AA32 AA34:AA38 AA40:AA45 AA49 AA73 AA96:AA110 AA112:AA115 AA120 AA123 AA125:AA126 AA128:AA132 AA134:AA139 AA174 AA198 AB26 AB49 AB73 AB120 AB174 AB198 AC2 AC26 AC73 AC96 AC120 AC198 AD2 AD26 AD49 AD73 AD96 AD120 AD174 AD198 AE26 AE49 AE73 AE120 AE174 AE198 AF2 AF26 AF73 AF96 AF120 AF198 AG2 AG26 AG49 AG73 AG96 AG120 AG174 AG198 AH26 AH73 AH120 AH198 AI2 AI26 AI73 AI96 AI120 AI198 AJ26 AJ120 AK120",
+        "FLOOR": "A17:A18 A20:A21 A23:A24 A26 A28:A30 A32:A33 A35:A36 A45 A64:A65 A67:A68 A70:A71 A73 A75:A77 A79:A80 A82:A83 A92 A111:A112 A114:A115 A117:A118 A120 A122:A124 A126:A127 A129:A130 A139 B26 B73 B120 C26 C73 C120 D26 D73 D120 E26 E73 E120 F26 F73 F120 G26 G73 G120 H26 H73 H120 I26 I73 I120 J26 J73 J120 K26 K73 K120 L26 L73 L120 M26 M73 M120 N2 N26 N49 N73 N96 N120 O26 O73 O120 P26 P73 P120 Q2 Q26 Q49 Q73 Q96 Q120 R2 R26 R49 R73 R96 R120 S2 S26 S49 S73 S96 S120 T26 T73 T120 U2 U26 U49 U73 U96 U120 V2 V26 V49 V73 V96 V120 W2 W26 W49 W73 W96 W120 X26 X73 X120 Y2:Y16 Y18:Y21 Y26 Y29 Y31:Y32 Y34:Y38 Y40:Y45 Y49:Y63 Y65:Y68 Y73 Y76 Y78:Y79 Y81:Y85 Y87:Y92 Y96:Y110 Y112:Y115 Y120 Y123 Y125:Y126 Y128:Y132 Y134:Y139 Z26 Z73 Z120 AA2 AA26 AA49 AA73 AA96 AA120 AB2 AB26 AB49 AB73 AB96 AB120 AC26 AC73 AC120 AD2 AD26 AD49 AD73 AD96 AD120 AE2 AE26 AE49 AE73 AE96 AE120 AF26 AF73 AF120 AG2 AG26 AG49 AG73 AG96 AG120 AH26 AH73 AH120 AI73 AI120"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/GCD_LCM.xlsx",
       "cells": 351,
       "passed": 121,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A15 A24 A26 A28:A29 A31:A32 A36:A37 A39 A41 A43 A47:A48 A53 B15 B17 B25 B28 B36 B47 B53 D39 E39 G2:G12 G14:G29 G31:G32 G34 G36:G37 G39 G41:G48 G50:G53 H2:H12 H14:H49 H51:H53 I39 J39"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/LCM_GCD.xlsx",
       "cells": 132,
       "passed": 24,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "LCM_GCD": "A15 A24 A26 A28:A29 A31:A32 A36:A37 A39 A41 A43 A47:A48 A53 B15 B17 B25 B28 B36 B47 B53 D39 E39"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/LOG_LOG10_LN.xlsx",
       "cells": 93,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "LN": "A15 A17 B25",
+        "LOG": "A15 A17 F14",
+        "LOG10": "A15 A17 D3"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MAX_MIN.xlsx",
       "cells": 55,
       "passed": 45,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "H20 H25 H27 H38:H39 H41:H42 H48 H58:H59"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MIN_MAX_extras.xlsx",
       "cells": 21,
       "passed": 14,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "A9:A10 A12:A16"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MMULT.xlsx",
       "cells": 194,
       "passed": 20,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A22 A69 B40:B43 B52:B55 B66:B67 B69 C41 C43 C53 C55 C67 C69 D68"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MOD_QUOTIENT.xlsx",
       "cells": 93,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DATEVALUE": "A37 A41:A43 B42"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MROUND_TRUNC_INT.xlsx",
       "cells": 249,
       "passed": 58,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "INT": "A20:A21 A23:A25 A27:A28 A32:A33 A36 A38 A42:A43 A46",
+        "MROUND": "A21 A23 A25:A28 A31:A32 A37 A39 A45 A49 A59:A60 B22 B26 B37:B38 B40 B46 B50 B59",
+        "TRUNC": "A21 A23 A25:A28 A31:A32 A37 A39 A45 A49 A59:A60 B22 B26 B37:B38 B40 B46 B50 B59"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MULTINOMIAL.xlsx",
       "cells": 13,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/MUNIT_MDETERM_MINVERSE.xlsx",
       "cells": 59,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A21:A23 B21:B23 C21:C23"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/POWER.xlsx",
       "cells": 51,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "F9 G2 G4 G7:G8",
+        "errors_are_per_element": "D1"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/PRODUCT.xlsx",
       "cells": 35,
       "passed": 7,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "PRODUCT": "F2:F4 G2:G4 L1"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/PRODUCT_SUM.xlsx",
       "cells": 77,
       "passed": 40,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "B21:B57"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/ROUND.xlsx",
       "cells": 137,
       "passed": 4,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A18 A40:A41 B19"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SEQUENCE.xlsx",
       "cells": 70,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "H2"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SERIESSUM.xlsx",
       "cells": 12,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "D11:D12"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SQRT_SQRTPI.xlsx",
       "cells": 31,
       "passed": 4,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A10 A13 A15:A16"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIFS.xlsx",
       "cells": 285,
       "passed": 7,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Open": "A10:A11",
+        "Sheet1": "A10:A11 A33 B30 C30"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIF_AVERAGE_IF.xlsx",
       "cells": 50,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B8 M4 S4"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMIF_array.xlsx",
       "cells": 16,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMPRODUCT.xlsx",
       "cells": 2,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMSQ.xlsx",
       "cells": 60,
       "passed": 13,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "SUMSQ": "A36:A37 A39:A42 A45:A46 A48 A50 A52:A53 B48"
+      }
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/SUMX2MY2_SUMX2PY2_SUMXMY2.xlsx",
       "cells": 5,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/TRIGONOMETRIC.xlsx",
       "cells": 1187,
       "passed": 111,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "ACOT_ACOTH": "A24:A25 A27:A28 A30 A32 A34:A36 A38:A39 A42:A43 B32 C32",
+        "ASINH_ACOSH_ATANH": "A24:A25 A27:A28 A30 A32 A34:A36 A38:A39 A42:A43 B32 C32 D32",
+        "ASIN_ACOS_ATAN": "A24:A25 A27:A28 A30 A32 A34:A36 A38:A39 A42:A43 B32 C32 D32",
+        "COTH_CSCH_SECH": "A24:A25 A27:A28 A30 A32 A34:A36 A38:A39 A42:A43 B32 C32 D32",
+        "COT_CSC_SEC": "A23:A24 A26:A27 A29 A31 A33:A35 A37:A38 A41:A42 B31 C31 D31",
+        "SINH_COSH_TANH": "A24:A25 A27:A28 A30 A32 A34:A36 A38:A39 A42:A43 B32 C32 D32",
+        "SIN_COS_TAN": "A23:A24 A26:A27 A29 A31 A33:A35 A37:A38 A41:A42 B31 C31 D31"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/AVEDEV.xlsx",
       "cells": 1,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/AVERAGE.xlsx",
       "cells": 52,
       "passed": 29,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "B12 B17 B24 B28 C12 C17 C24 C28 D12 D17 D28 E2 E11:E12 E16:E17 E28 F12 F17 F28 M16",
+        "Sheet2": "B3 C3"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/BETADIST_BETAINV.xlsx",
       "cells": 147,
       "passed": 12,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A53 B54 B59 C55 D56 D59 E57 F58:F59 G59 H59 J27"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/BETA_GAMMA.xlsx",
       "cells": 48,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/BINOM.xlsx",
       "cells": 268,
       "passed": 30,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "BINOM.DIST": "A62 B63 B66 C64 D65:D66 E66",
+        "BINOM.DIST.RANGE": "A32 B33 B36 C34 D32:D36 E36",
+        "BINOM.INV": "A36 A39 B37 C38:C39 D39",
+        "NEGBINOM.DIST": "A66 B67 B70 C68 D69:D70 E70"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/CHISQ.xlsx",
       "cells": 8,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/CHISQ_TEST.xlsx",
       "cells": 1,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/CONFIDENCE.xlsx",
       "cells": 115,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "CONFIDENCE.NORM CONFIDENCE.T": "A50 C52"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/CORREL_SLOPE_INTERCEPT_RSQ_STEYX.xlsx",
       "cells": 5,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/COUNT.xlsx",
       "cells": 61,
       "passed": 49,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "B13 B18 C13 C18 D13 D18 E2 E13 E18 F13 F18 G18"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/COUNTIF.xlsx",
       "cells": 531,
       "passed": 16,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Columns": "C26 E26 G25 H19 H25 L1 L18 M18",
+        "Rows": "G12 T12:T13 U8 Y7:Y8 Z3 Z5"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/COUNTIFS.xlsx",
       "cells": 312,
       "passed": 12,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Columns1": "G1:G2",
+        "Rows1": "I7 J7",
+        "Rows2": "J12 R12:R13 S8 V7:V8 W3 W5"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/COVARIANCE.xlsx",
       "cells": 74,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "COVARIANCE.P COVARIANCE.S": "A70"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/DEVSQ.xlsx",
       "cells": 1,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/EXPONDIST.xlsx",
       "cells": 58,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "EXPON.DIST": "A32 C34"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/EXPON_DIST.xlsx",
       "cells": 2,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/FISHER.xlsx",
       "cells": 10,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/FISHER_FISHERINV.xlsx",
       "cells": 83,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "FISHER FISHERINV": "A24 A43"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/FREQUENCY.xlsx",
       "cells": 22,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "M7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/F_DIST.xlsx",
       "cells": 8,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/F_TEST.xlsx",
       "cells": 4,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/GAMMA.xlsx",
       "cells": 167,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "GAMMA": "A25",
+        "GAMMA.DIST GAMMA.INV": "A35 C37"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/GAMMALN_GAMMALNPRECISE.xlsx",
       "cells": 91,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "GAMMALN GAMMALN.PRECISE": "A34 A36"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/GAUSS.xlsx",
       "cells": 39,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "GAUSS": "A26 A28"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/HYPERGEOM_DIST.xlsx",
       "cells": 2,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/LINEST_LOGEST.xlsx",
       "cells": 32,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/LOGNORM.xlsx",
       "cells": 147,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "LOGNORM.DIST LOGNORM.INV": "A36 C38"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/MEADIAN_KURT_SKEW_HARMEAN.xlsx",
       "cells": 6,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "C2"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/MINA_MAXA.xlsx",
       "cells": 12,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "G11 J1 M1"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/MIN_MAX.xlsx",
       "cells": 14,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "H4 I2:I3 J2:J3"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/MODE.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/NORM_DIST.xlsx",
       "cells": 252,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "NORM.DIST NORM.INV": "A36 C38",
+        "NORM.S.DIST NORM.S.INV": "A27"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/PEARSON.xlsx",
       "cells": 1,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/PERCENTIL_QUARTIL.xlsx",
       "cells": 68,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/PERMUT_PERMUTATIONA.xlsx",
       "cells": 35,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A13"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/PHI.xlsx",
       "cells": 7,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/POISSON.xlsx",
       "cells": 63,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "POISSON.DIST": "A38 C40"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/PROB.xlsx",
       "cells": 28,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B7"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/RANK_EQ_RANK_AVG.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/SMALL_LARGE.xlsx",
       "cells": 26,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A13 K9"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/STANDARIZE.xlsx",
       "cells": 4,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/STDEV.xlsx",
       "cells": 4,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/TREND_GROWTH.xlsx",
       "cells": 36,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/TRIMMEAN.xlsx",
       "cells": 19,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "H10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/T_DIST.xlsx",
       "cells": 295,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "T.DIST T.INV T.DIST.RT": "A33 A72 C35",
+        "T.DIST.2T T.INV.2T": "A32 A68"
+      }
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/T_TEST.xlsx",
       "cells": 9,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/VARIANCE.xlsx",
       "cells": 6,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/WEIBULL_DIST.xlsx",
       "cells": 2,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/STATISTICAL/Z_TEST.xlsx",
       "cells": 4,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/ARRAYTOTEXT.xlsx",
       "cells": 3,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A4"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/CHAR.xlsx",
       "cells": 257,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/CONCAT.xlsx",
       "cells": 29,
       "passed": 11,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B2 B10 C9 D2:D9"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/CONCATENATE.xlsx",
       "cells": 31,
       "passed": 10,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "C6 G2:G10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/DOLLARs.xlsx",
       "cells": 36,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/EXACT.xlsx",
       "cells": 13,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A10 A12"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/FIND_SEARCH.xlsx",
       "cells": 62,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/MID_LEFT_RIGHT_arrays.xlsx",
       "cells": 201,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A6 A8",
+        "Sheet2": "B6"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/MINUS_MINUS.xlsx",
       "cells": 73,
       "passed": 57,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "A12:A13 A24:A25 A58 C10 C12:C14 C39:C41 D27:D30"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/PROPER.xlsx",
       "cells": 11,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/REGEX.xlsx",
       "cells": 7,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/REPT.xlsx",
       "cells": 17,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B13"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/STRING_HANDLING.xlsx",
       "cells": 147,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A7 A10 B23"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/SUBSTITUTE.xlsx",
       "cells": 34,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "B9 B15"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/TEXT.xlsx",
       "cells": 374,
       "passed": 19,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "DATES": "A3:A14 A25",
+        "NUMBERS": "A4 A7 B2 C2 K2 M2"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/TEXTBEFORE_TEXTAFTER.xlsx",
       "cells": 143,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "C18 F5"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/TEXTJOIN.xlsx",
       "cells": 42,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "C10"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/TEXTSPLIT.xlsx",
       "cells": 72,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx",
       "cells": 63,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A7 H13"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/UNICODE.xlsx",
       "cells": 24,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A7:A8 A15 A20:A21"
+      }
     },
     {
       "file": "ironcalc/calc_tests/TEXT/UPPER_LOWER.xlsx",
       "cells": 56,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/arithmetic.xlsx",
       "cells": 60,
       "passed": 50,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "M4 O4",
+        "Sheet2": "A3:A4 A6 B1 D1 E1 G4 H4"
+      }
     },
     {
       "file": "ironcalc/calc_tests/consume_string.xlsx",
       "cells": 0,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/defined_names.xlsx",
       "cells": 24,
       "passed": 24,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/defined_names_for_unit_test.xlsx",
       "cells": 3,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/escape_strings.xlsx",
       "cells": 2,
       "passed": 2,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/issue_341.xlsx",
       "cells": 5,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/logical.xlsx",
       "cells": 188,
       "passed": 135,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Compare": "A11 B11 C11 D11 E11 F11 G11 H11",
+        "Sheet1": "A14:A15 B2:B8 C2:C8 D2:D8 I2:I9 M2",
+        "XOR": "A2 A14 B2:B6 B14 C2:C3 C14 D14 E14"
+      }
     },
     {
       "file": "ironcalc/calc_tests/percentage.xlsx",
       "cells": 6,
       "passed": 6,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/quotes.xlsx",
       "cells": 5,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/range_operator.xlsx",
       "cells": 9,
       "passed": 9,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/simple_arrays.xlsx",
       "cells": 3,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/simple_functions.xlsx",
       "cells": 199,
       "passed": 116,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "INDEX": "A3 B3 E6 F6 G6 H6 I6 J6",
+        "LOOKUP": "D2:D16",
+        "MATCH": "A7:A8 A10:A11 B8:B9 L2:L10 M2:M10 M15:M20 P2:P10 R2:R10 S2:S10",
+        "SUM": "M1 M3:M4"
+      }
     },
     {
       "file": "ironcalc/calc_tests/spill_operator.xlsx",
       "cells": 17,
       "passed": 15,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "G2 M2"
+      }
     },
     {
       "file": "ironcalc/docs/COS.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/DATE.xlsx",
       "cells": 16,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/DAY.xlsx",
       "cells": 30,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/ERF-PRECISE.xlsx",
       "cells": 72,
       "passed": 20,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A3:A22"
+      }
     },
     {
       "file": "ironcalc/docs/ERF.xlsx",
       "cells": 84,
       "passed": 24,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A3:A22 A26 A28 B26 B28"
+      }
     },
     {
       "file": "ironcalc/docs/ERFC-PRECISE.xlsx",
       "cells": 72,
       "passed": 20,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A3:A22"
+      }
     },
     {
       "file": "ironcalc/docs/ERFC.xlsx",
       "cells": 72,
       "passed": 20,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Sheet1": "A3:A22"
+      }
     },
     {
       "file": "ironcalc/docs/FV.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/MONTH.xlsx",
       "cells": 30,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/PV.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/SIN.xlsx",
       "cells": 20,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/TAN.xlsx",
       "cells": 32,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/docs/YEAR.xlsx",
       "cells": 30,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/dynamic_arrays.xlsx",
       "cells": 40,
       "passed": 36,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Sheet1": "A12 C12 E12 M1"
+      }
     },
     {
       "file": "ironcalc/tables.xlsx",
       "cells": 212,
       "passed": 5,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Functions Filters": "D27",
+        "Sheet1": "A12",
+        "filters": "B9 B12 C11"
+      }
     },
     {
       "file": "ironcalc/templates/crossword.xlsx",
       "cells": 3,
       "passed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {}
     },
     {
       "file": "ironcalc/templates/event_calendar.xlsx",
       "cells": 979,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "METADATA": "B2"
+      }
     },
     {
       "file": "ironcalc/templates/gantt_project_tracker.xlsx",
       "cells": 444,
       "passed": 122,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "METADATA": "B2",
+        "Plan": "A1 A4:A23 B4:B23 C4:C23 D4:D23 F4:F23 H4:H23"
+      }
     },
     {
       "file": "ironcalc/templates/invoice.xlsx",
       "cells": 27,
       "passed": 10,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Invoice": "B9:B12 D32:D36",
+        "METADATA": "B2"
+      }
     },
     {
       "file": "ironcalc/templates/travel_expenses_tracker.xlsx",
       "cells": 42,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "Overview": "D33"
+      }
     },
     {
       "file": "ironcalc/templates/weekly_timesheet.xlsx",
       "cells": 109,
       "passed": 3,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "METADATA": "B2",
+        "Overview": "E14 F14"
+      }
     },
     {
       "file": "ironcalc/templates/wordle.xlsx",
       "cells": 782,
       "passed": 414,
-      "skipped": 0
+      "skipped": 0,
+      "failingCells": {
+        "Wordle": "F11 N2",
+        "Words": "B2:B366 C2"
+      }
     },
     {
       "file": "ironcalc/templates/yearly_calendar.xlsx",
       "cells": 602,
       "passed": 1,
-      "skipped": 0
+      "skipped": 0,
+      "passingCells": {
+        "METADATA": "B2"
+      }
     }
   ],
   "functions": [
