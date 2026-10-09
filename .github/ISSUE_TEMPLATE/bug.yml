@@ -1,0 +1,55 @@
+name: Bug
+description: SharpCell calculates a different result than Excel, fails to read a file, or crashes.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Attach the smallest .xlsx that shows the problem. **Do not attach confidential workbooks**; remove
+        everything not needed to reproduce. Check first whether the function is listed with a known deviation
+        in the [compatibility report](https://ifmelate.github.io/SharpCell/compatibility.html).
+  - type: textarea
+    id: workbook
+    attributes:
+      label: Workbook
+      description: Drag the .xlsx file here.
+    validations:
+      required: true
+  - type: input
+    id: cell
+    attributes:
+      label: Cell and formula
+      placeholder: Sheet1!B2  =XLOOKUP(A2, D:D, E:E)
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Value in Microsoft Excel
+    validations:
+      required: true
+  - type: input
+    id: actual
+    attributes:
+      label: Value in SharpCell
+    validations:
+      required: true
+  - type: input
+    id: excel
+    attributes:
+      label: Excel version and platform
+      placeholder: Microsoft 365, version 2409, Windows
+    validations:
+      required: true
+  - type: input
+    id: settings
+    attributes:
+      label: Date system and culture
+      placeholder: 1900, en-US
+  - type: input
+    id: version
+    attributes:
+      label: SharpCell version
+      placeholder: 0.1.0
+    validations:
+      required: true

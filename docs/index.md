@@ -13,7 +13,11 @@ Results are compared with workbooks calculated by Microsoft Excel. The [compatib
 | `SharpCell` | The engine: parser, values, recalculation and functions. No dependencies. |
 | `SharpCell.Xlsx` | Reads .xlsx files into a SharpCell workbook. |
 
-SharpCell is not on NuGet yet. Until the first release, reference the projects from source.
+Install from NuGet:
+
+```bash
+dotnet add package SharpCell.Xlsx
+```
 
 ## A first example
 

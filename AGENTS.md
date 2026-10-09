@@ -10,6 +10,7 @@ Instructions for AI agents and people changing this repository. To *use* SharpCe
 - `tools/SharpCell.Conformance` — runs the corpus and writes `docs/compatibility.{md,json}`.
 - `tools/SharpCell.Docs` — fills code snippets into Markdown, writes `docs/api`, `docs/llms*.txt`, renders the site.
 - `samples/SharpCell.Sample` — the console sample shown in the getting started guide.
+- `tests/SharpCell.AotSmoke` — published with NativeAOT in CI to prove the libraries trim and compile ahead of time.
 
 ## Commands
 
@@ -20,6 +21,10 @@ dotnet run --project tools/SharpCell.Conformance -f net10.0             # after 
 dotnet run --project tools/SharpCell.Docs -f net10.0 -- generate        # after changing docs, snippets or public API
 dotnet run --project tools/SharpCell.Docs -f net10.0 -- check
 ```
+
+## Releases
+
+The version comes from the git tag (MinVer). Pushing a tag `vX.Y.Z` on `main` runs `.github/workflows/release.yml`: test, pack, publish to nuget.org through Trusted Publishing, GitHub release. Before 1.0, a minor version may break the API; move `PublicAPI.Unshipped.txt` entries to `PublicAPI.Shipped.txt` when releasing.
 
 ## Rules
 
