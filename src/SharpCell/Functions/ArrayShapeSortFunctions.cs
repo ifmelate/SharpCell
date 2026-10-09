@@ -199,8 +199,9 @@ internal static class ArrayShapeSortFunctions
             }
         }
 
+        // if_empty is returned as a value, never as a reference: ISREF(FILTER(..., ..., A1)) is FALSE.
         if (kept.Count == 0)
-            return call.Has(2) ? call[2] : CellValue.Error(ErrorKind.Calc);
+            return call.Has(2) ? call.Value(2) : CellValue.Error(ErrorKind.Calc);
         return CellValue.Array(Pick(array, byColumns, kept));
     }
 

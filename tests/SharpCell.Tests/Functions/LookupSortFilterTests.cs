@@ -111,6 +111,15 @@ public class LookupSortFilterTests
     }
 
     [Fact]
+    public void FILTER_returns_if_empty_as_a_value()
+    {
+        var origin = new CellAddress(1, 8);
+        var result = Evaluator.Evaluate(FormulaParser.Parse("=FILTER(A1:A5,B1:B5>5,B1:B2)", origin), new EvaluationContext(_wb, _s, origin));
+        Assert.False(result.IsReference);
+        Assert.Equal(Literal("{3;1}"), result.Value);
+    }
+
+    [Fact]
     public void Array_inputs_are_array_parameters_in_legacy_formulas()
     {
         var loader = new SheetLoader(_s);
