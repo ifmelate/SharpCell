@@ -140,6 +140,19 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
+    /// <summary>Marks the formulas inside an area out of date, with everything that reads them.</summary>
+    public void InvalidateArea(Worksheet sheet, Area area)
+    {
+        foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
+        {
+            if (cell.Data.Formula is null)
+                continue;
+            var key = new CellKey(sheet, cell.Row, cell.Column);
+            MarkDirty(key, cell.Data);
+            Invalidate(key);
+        }
+    }
+
     public void Recalculate(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -332,6 +345,11 @@ internal sealed class Calculation(Workbook workbook)
         var columns = array.GetLength(1);
         var lastRow = (long)key.Row + rows - 1;
         var lastColumn = (long)key.Column + columns - 1;
+
+        // Excel does not spill inside a table: a formula there that returns several values is #SPILL!.
+        if ((rows > 1 || columns > 1) && workbook.TableAt(key.Sheet, key.Row, key.Column) is not null)
+            return CellValue.Error(ErrorKind.Spill);
+
         if (lastRow > CellAddress.MaxRow || lastColumn > CellAddress.MaxColumn)
             return CellValue.Error(ErrorKind.Spill);
 

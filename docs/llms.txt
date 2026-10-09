@@ -1,6 +1,6 @@
 # SharpCell
 
-> A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA. Results are checked against workbooks calculated by Microsoft Excel.
+> A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays, LET/LAMBDA and tables with structured references. Results are checked against workbooks calculated by Microsoft Excel.
 
 Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.
 
@@ -11,6 +11,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Formulas and values](https://ifmelate.github.io/SharpCell/guides/formulas.md): Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors.
 - [Recalculation](https://ifmelate.github.io/SharpCell/guides/recalculation.md): When values update, volatile functions, cancellation, diagnostics, threads, culture and dates.
 - [Reading .xlsx files](https://ifmelate.github.io/SharpCell/guides/xlsx.md): What the reader loads and skips, saved results, streams, unsupported formats.
+- [Tables and hidden rows](https://ifmelate.github.io/SharpCell/guides/tables.md): Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE.
 - [Functions](https://ifmelate.github.io/SharpCell/guides/functions.md): Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions.
 - [What SharpCell does not do](https://ifmelate.github.io/SharpCell/guides/limits.md): Every known gap in one list.
 - [For AI coding agents](https://ifmelate.github.io/SharpCell/agents.md): llms.txt, llms-full.txt and rules to paste into an agent's instructions.
@@ -27,9 +28,10 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [ErrorKinds](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKinds.md): Conversion between ErrorKind and its literal text (`#DIV/0!`).
 - [FormulaParseException](https://ifmelate.github.io/SharpCell/api/SharpCell.FormulaParseException.md): Thrown when formula text cannot be parsed.
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
+- [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.
-- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and the date system.
+- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system.
 
 ## Optional
 

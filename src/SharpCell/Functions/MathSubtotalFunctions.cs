@@ -7,14 +7,13 @@ namespace SharpCell.Functions;
 
 /// <summary>
 /// SUBTOTAL and AGGREGATE. Both skip cells whose formula is itself a SUBTOTAL or AGGREGATE, so
-/// totals of subtotals do not count twice. SharpCell has no hidden rows: the codes and options
-/// that ignore hidden rows behave like the ones that do not.
+/// totals of subtotals do not count twice, and skip hidden rows as Excel does: SUBTOTAL 101-111
+/// and AGGREGATE options 1, 3, 5, 7 skip every hidden row; SUBTOTAL 1-11 skips them only on a
+/// sheet in filter mode (<see cref="Worksheet.FilterMode"/>).
 /// </summary>
 internal static class MathSubtotalFunctions
 {
     private const int CancellationCheckInterval = 4096;
-
-    private const string HiddenRows = "Rows that Excel hides or filters out are included, because SharpCell does not model hidden rows.";
 
     // AGGREGATE's functions; SUBTOTAL uses the first eleven.
     private const int Average = 1;
@@ -37,22 +36,36 @@ internal static class MathSubtotalFunctions
     private const int PercentileExc = 18;
     private const int QuartileExc = 19;
 
+    // Which hidden rows a total skips.
+    private enum HiddenRows
+    {
+        Counted,
+        Skipped,
+
+        // SUBTOTAL 1-11: Excel counts rows hidden by hand but not rows a filter hid, and on a sheet
+        // with a filter every hidden row counts as filtered.
+        SkippedWhenFiltered,
+    }
+
+    private static bool Skips(HiddenRows hidden, Worksheet sheet, int row) => hidden switch
+    {
+        HiddenRows.Skipped => sheet.IsRowHidden(row),
+        HiddenRows.SkippedWhenFiltered => sheet.FilterMode && sheet.IsRowHidden(row),
+        _ => false,
+    };
+
     public static void Register(FunctionRegistry registry)
     {
         var max = FunctionRegistry.MaxArguments;
         registry.Add(new FunctionInfo("SUBTOTAL", 2, max, [ArgumentKind.Value, ArgumentKind.Any], Subtotal)
         {
             IsVolatile = true,
-            Status = FunctionStatus.KnownDeviation,
-            Deviation = HiddenRows,
         });
         // The array of the array form is calculated as an array even in formulas from before
         // dynamic arrays: AGGREGATE(14,6,A1:A9/(B1:B9="x"),1) never needed Ctrl+Shift+Enter.
         registry.Add(new FunctionInfo("AGGREGATE", 3, max, [ArgumentKind.Value, ArgumentKind.Value, ArgumentKind.ArrayContext, ArgumentKind.Any], Aggregate)
         {
             IsVolatile = true,
-            Status = FunctionStatus.KnownDeviation,
-            Deviation = HiddenRows,
         });
     }
 
@@ -66,7 +79,8 @@ internal static class MathSubtotalFunctions
         if (function < Average || function > VarP)
             return CellValue.Error(ErrorKind.Value);
 
-        return Calculate(call, (int)function, first: 1, ignoreErrors: false, ignoreNested: true, k: 0);
+        var hidden = code.AsNumber() > 100 ? HiddenRows.Skipped : HiddenRows.SkippedWhenFiltered;
+        return Calculate(call, (int)function, first: 1, ignoreErrors: false, ignoreNested: true, hidden, k: 0);
     }
 
     // AGGREGATE(function, options, ref, ...) for functions 1-13; AGGREGATE(function, options,
@@ -87,23 +101,24 @@ internal static class MathSubtotalFunctions
 
         var ignoreErrors = option is 2 or 3 or 6 or 7;
         var ignoreNested = option <= 3;
+        var hidden = option is 1 or 3 or 5 or 7 ? HiddenRows.Skipped : HiddenRows.Counted;
         if (function < Large)
-            return Calculate(call, function, first: 2, ignoreErrors, ignoreNested, k: 0);
+            return Calculate(call, function, first: 2, ignoreErrors, ignoreNested, hidden, k: 0);
 
         if (call.Count != 4 || call.IsMissing(3))
             return CellValue.Error(ErrorKind.Value);
         var k = call.Number(3);
         if (k.IsError)
             return k;
-        return Calculate(call, function, first: 2, ignoreErrors, ignoreNested, k.AsNumber(), last: 2);
+        return Calculate(call, function, first: 2, ignoreErrors, ignoreNested, hidden, k.AsNumber(), last: 2);
     }
 
-    private static CellValue Calculate(FunctionCall call, int function, int first, bool ignoreErrors, bool ignoreNested, double k, int last = int.MaxValue)
+    private static CellValue Calculate(FunctionCall call, int function, int first, bool ignoreErrors, bool ignoreNested, HiddenRows hidden, double k, int last = int.MaxValue)
     {
         var numbers = new List<double>();
         long count = 0;
         CellValue? error = null;
-        var failure = Visit(call, first, Math.Min(last, call.Count - 1), ignoreNested, function >= Large, value =>
+        var failure = Visit(call, first, Math.Min(last, call.Count - 1), ignoreNested, hidden, function >= Large, value =>
         {
             switch (function)
             {
@@ -142,7 +157,7 @@ internal static class MathSubtotalFunctions
     /// They must be references, or arrays where <paramref name="arrays"/> allows (AGGREGATE's
     /// array form); anything else is <c>#VALUE!</c>.
     /// </summary>
-    private static CellValue? Visit(FunctionCall call, int first, int last, bool ignoreNested, bool arrays, Func<CellValue, bool> visit)
+    private static CellValue? Visit(FunctionCall call, int first, int last, bool ignoreNested, HiddenRows hidden, bool arrays, Func<CellValue, bool> visit)
     {
         var context = call.Context;
         var visited = 0;
@@ -175,6 +190,8 @@ internal static class MathSubtotalFunctions
                 {
                     if (++visited % CancellationCheckInterval == 0)
                         context.CancellationToken.ThrowIfCancellationRequested();
+                    if (Skips(hidden, sheet, cell.Row))
+                        continue;
                     if (ignoreNested && cell.Data.Formula is { } formula && IsTotal(formula))
                         continue;
 

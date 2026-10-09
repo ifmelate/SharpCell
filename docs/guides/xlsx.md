@@ -9,6 +9,8 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Formulas: ordinary, shared, legacy array formulas (Ctrl+Shift+Enter) and dynamic arrays.
 - The results Excel saved with each formula.
 - Defined names, workbook-wide and sheet-scoped.
+- Tables, with their column names and header and totals rows.
+- Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 
 ## What is not read

@@ -24,6 +24,59 @@ public sealed class Workbook
         Calculation = new Calculation(this);
     }
 
+    private readonly List<Table> _tables = [];
+    private readonly Dictionary<string, Table> _tablesByName = new(StringComparer.Ordinal);
+
+    // Per sheet, the tables' areas keyed by their top-left cell: tables do not overlap, so a cell is
+    // in at most one.
+    private readonly Dictionary<Worksheet, RangeIndex> _tableAreas = [];
+    private readonly Dictionary<CellKey, Table> _tablesByCorner = [];
+
+    /// <summary>The tables of all sheets, in the order they were added.</summary>
+    public IReadOnlyList<Table> Tables => _tables;
+
+    /// <summary>Finds a table by name, ignoring case.</summary>
+    /// <returns>Whether the table exists.</returns>
+    public bool TryGetTable(string name, out Table? table)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return _tablesByName.TryGetValue(name.ToUpperInvariant(), out table);
+    }
+
+    /// <summary>The table that contains a cell, or null.</summary>
+    internal Table? TableAt(Worksheet sheet, int row, int column)
+    {
+        if (!_tableAreas.TryGetValue(sheet, out var areas))
+            return null;
+        Table? found = null;
+        areas.Query(row, column, corner => found = _tablesByCorner[corner]);
+        return found;
+    }
+
+    internal Table RegisterTable(Table table)
+    {
+        var upper = table.Name.ToUpperInvariant();
+        if (_tablesByName.ContainsKey(upper) || Names.ContainsInAnyScope(upper))
+            throw new ArgumentException($"The name '{table.Name}' is already used by a table or a defined name.", "name");
+        if (!_tableAreas.TryGetValue(table.Worksheet, out var areas))
+            _tableAreas[table.Worksheet] = areas = new RangeIndex();
+        Table? overlapped = null;
+        areas.QueryOverlap(table.Area, corner => overlapped = _tablesByCorner[corner]);
+        if (overlapped is not null)
+            throw new ArgumentException($"The range overlaps table '{overlapped.Name}'.", "range");
+
+        var key = new CellKey(table.Worksheet, table.Area.FirstRow, table.Area.FirstColumn);
+        areas.Add(table.Area, key);
+        _tablesByCorner[key] = table;
+        _tables.Add(table);
+        _tablesByName[upper] = table;
+
+        // Formulas that named the table were #REF!; formulas inside it may use [Column] without a table name.
+        Calculation.InvalidateName(upper);
+        Calculation.InvalidateArea(table.Worksheet, table.Area);
+        return table;
+    }
+
     /// <summary>The sheets in order.</summary>
     public IReadOnlyList<Worksheet> Sheets => _sheets;
 
@@ -122,6 +175,8 @@ public sealed class Workbook
         ArgumentNullException.ThrowIfNull(formula);
         if (!IsValidName(name))
             throw new ArgumentException($"'{name}' is not a valid name.", nameof(name));
+        if (_tablesByName.ContainsKey(name.ToUpperInvariant()))
+            throw new ArgumentException($"A table named '{name}' exists; tables and defined names share one set of names.", nameof(name));
         if (scope is not null && scope.Workbook != this)
             throw new ArgumentException("The scope sheet belongs to another workbook.", nameof(scope));
 
@@ -151,7 +206,9 @@ public sealed class Workbook
     /// <summary>
     /// Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet.
     /// Out-of-date cells it reads are calculated first. References without a sheet are
-    /// <c>#REF!</c> when the workbook has no sheets.
+    /// <c>#REF!</c> when the workbook has no sheets. The formula is in no table and has no row of
+    /// its own: a table reference without a table name is <c>#REF!</c> and <c>[#This Row]</c> is
+    /// <c>#VALUE!</c>.
     /// </summary>
     public CellValue Evaluate(string formula) => Evaluate(formula, CancellationToken.None);
 

@@ -26,7 +26,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Formulas use Excel's file syntax: English function names, commas between arguments, dot decimals; the leading `=` is optional.
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread.
-- Not supported: writing files, .xls/.xlsm/.xlsb, structured references (Table1[Col]), iterative calculation, localized function names.
+- Not supported: writing files, .xls/.xlsm/.xlsb, iterative calculation, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```

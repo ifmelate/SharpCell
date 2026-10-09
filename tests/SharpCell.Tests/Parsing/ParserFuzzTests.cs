@@ -27,7 +27,7 @@ public class ParserFuzzTests
         "A1", "$B$2", "A:A", "1:1", "$", "XFD1048576", "XFE1", "Sheet1!", "'My Sheet'!", "'", "!", "Sheet1:Sheet2!",
         "SUM(", "IF(", "LAMBDA(", "LET(", "_xlfn.", "_xlpm.x", "_xlfn.ANCHORARRAY(", "_xlfn.SINGLE(",
         "(", ")", "{", "}", ",", ";", "+", "-", "*", "/", "^", "&", "%", "=", "<>", "<=", ">=", "<", ">", "@", ":",
-        " ", "  ", "\n", "\t", " ", "Name", "Налог", "Table1[", "[", "]", "[@Col]", "[1]", "R[1]C", "RC", "R1C1",
+        " ", "  ", "\n", "\t", " ", "Name", "Налог", "Table1[", "[", "]", "[@Col]", "Sales[[#Headers],[#Data]]", "[@[Col A]]", "T['[x']]", "Sales[[A]:[B]]", "Sales[#This Row]", "[1]", "R[1]C", "RC", "R1C1",
         "€", "😀", "\0", "\uD800", "\uDFFF", "\\",
     ];
 

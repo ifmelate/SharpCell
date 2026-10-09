@@ -85,10 +85,8 @@ internal static class Evaluator
             case ImplicitIntersectionNode i:
                 return ImplicitIntersection(Evaluate(i.Operand, context), context);
 
-            // Tables are not evaluated in v0.1.
             case StructuredReferenceNode s:
-                context.Report(DiagnosticKind.UnsupportedFormula, $"Table references such as {s.Text} are not supported.");
-                return CellValue.Error(ErrorKind.Name);
+                return EvaluateStructured(s.Reference, context);
             case UnsupportedNode u:
                 context.Report(DiagnosticKind.UnsupportedFormula, u.Reason);
                 return CellValue.Error(ErrorKind.Name);
@@ -228,6 +226,14 @@ internal static class Evaluator
         return result;
     }
 
+    private static Operand EvaluateStructured(StructuredReference reference, EvaluationContext context)
+    {
+        var result = TableReferences.Resolve(reference, context);
+        if (result.Reference is { } resolved)
+            context.RecordReference(resolved);
+        return result;
+    }
+
     private static Operand ResolveReference(ReferenceNode node, EvaluationContext context)
     {
         var area = Area.Resolve(node.Area, context.Origin);
@@ -299,7 +305,12 @@ internal static class Evaluator
         context.RecordName(upper);
         if (!(scope is not null && workbook.Names.TryGet(upper, scope, out var definition))
             && !workbook.Names.TryGet(upper, null, out definition))
+        {
+            // A table name alone is its data rows: SUM(Sales) is SUM(Sales[]).
+            if (node.Sheet is null && workbook.TryGetTable(upper, out _))
+                return EvaluateStructured(new StructuredReference(node.Name, TableRows.Data, null, null), context);
             return CellValue.Error(ErrorKind.Name);
+        }
 
         if (!context.TryEnterName(definition!))
             return CellValue.Error(ErrorKind.Ref);

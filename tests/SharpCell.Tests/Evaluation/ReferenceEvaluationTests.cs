@@ -104,7 +104,6 @@ public class ReferenceEvaluationTests
     public void Unsupported_constructs_are_errors_not_exceptions()
     {
         Assert.Equal(Err(ErrorKind.Name), _wb.Evaluate("=NOSUCHFUNCTION(1)"));
-        Assert.Equal(Err(ErrorKind.Name), _wb.Evaluate("=Table1[Col]"));
     }
 
     [Fact]

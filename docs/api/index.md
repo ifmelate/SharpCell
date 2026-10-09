@@ -18,6 +18,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [ErrorKinds](SharpCell.ErrorKinds.md) | Conversion between [ErrorKind](SharpCell.ErrorKind.md) and its literal text (`#DIV/0!`). |
 | [FormulaParseException](SharpCell.FormulaParseException.md) | Thrown when formula text cannot be parsed. |
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
+| [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
 | [Workbook](SharpCell.Workbook.md) | A workbook: sheets, defined names and calculation settings. |
 | [Worksheet](SharpCell.Worksheet.md) | A sheet of a [Workbook](SharpCell.Workbook.md). |
 
@@ -25,4 +26,4 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 
 | Type | Summary |
 |---|---|
-| [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and the date system. |
+| [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system. |
