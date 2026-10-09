@@ -29,6 +29,7 @@ internal sealed class FunctionRegistry
         LambdaFunctions.Register(registry);
         ReferenceFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
+        DatabaseFunctions.Register(registry);
         return registry;
     }
 }
