@@ -176,6 +176,26 @@ public class FunctionTests
     }
 
     [Fact]
+    public void An_element_wise_call_over_a_large_array_can_be_cancelled()
+    {
+        // The body cancels on its first call and never checks the token itself: the invoker's own
+        // loop over the elements must stop.
+        using var cancellation = new CancellationTokenSource();
+        var calls = 0;
+        var registry = new FunctionRegistry();
+        registry.Add(new FunctionInfo("TICK", 1, 1, [ArgumentKind.Value], call =>
+        {
+            if (++calls == 1)
+                cancellation.Cancel();
+            return call[0].Value;
+        }));
+        _wb.Functions = registry;
+
+        Assert.Throws<OperationCanceledException>(() => _wb.Evaluate("=TICK(A1:A100000)", cancellation.Token));
+        Assert.True(calls < 100000, $"all {calls} elements were visited after cancellation");
+    }
+
+    [Fact]
     public void Cancellation_is_not_swallowed()
     {
         var registry = new FunctionRegistry();

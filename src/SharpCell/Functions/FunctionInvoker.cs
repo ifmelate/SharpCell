@@ -88,9 +88,12 @@ internal static class FunctionInvoker
         if ((long)rows * columns > Evaluator.MaxArrayCells)
             return CellValue.Error(ErrorKind.Num);
 
+        // The bodies of scalar functions do not check the token themselves, so the loop does.
+        var cancellation = call.Context.CancellationToken;
         var result = new CellValue[rows, columns];
         for (var r = 0; r < rows; r++)
         {
+            cancellation.ThrowIfCancellationRequested();
             for (var c = 0; c < columns; c++)
             {
                 // Like Excel, a smaller array is padded with #N/A and the function still runs, so an
