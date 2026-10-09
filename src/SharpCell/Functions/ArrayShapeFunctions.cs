@@ -270,20 +270,23 @@ internal static class ArrayShapeFunctions
             return error;
 
         var context = call.Context;
-        var kept = new List<(int Row, int Column, CellValue Value)>();
-        var visited = 0;
+        var kept = new List<CellValue>();
         if (skipBlanks)
         {
+            var cells = new List<(int Row, int Column, CellValue Value)>();
+            var visited = 0;
             foreach (var cell in table.Occupied(0, 0, table.Rows - 1, table.Columns - 1, context))
             {
                 if (++visited % CancellationCheckInterval == 0)
                     context.CancellationToken.ThrowIfCancellationRequested();
                 if (cell.Value.Kind != CellValueKind.Empty && !(skipErrors && cell.Value.IsError))
-                    kept.Add(cell);
+                    cells.Add(cell);
             }
 
             if (byColumn.AsBoolean())
-                kept.Sort((a, b) => a.Column != b.Column ? a.Column.CompareTo(b.Column) : a.Row.CompareTo(b.Row));
+                cells.Sort((a, b) => a.Column != b.Column ? a.Column.CompareTo(b.Column) : a.Row.CompareTo(b.Row));
+            foreach (var cell in cells)
+                kept.Add(cell.Value);
         }
         else
         {
@@ -297,9 +300,9 @@ internal static class ArrayShapeFunctions
             {
                 for (var j = 0; j < inner; j++)
                 {
-                    var (r, c) = byColumn.AsBoolean() ? (j, i) : (i, j);
-                    if (!(skipErrors && array[r, c].IsError))
-                        kept.Add((r, c, array[r, c]));
+                    var value = byColumn.AsBoolean() ? array[j, i] : array[i, j];
+                    if (!(skipErrors && value.IsError))
+                        kept.Add(value);
                 }
             }
         }
@@ -310,9 +313,9 @@ internal static class ArrayShapeFunctions
         for (var i = 0; i < kept.Count; i++)
         {
             if (column)
-                result[i, 0] = kept[i].Value;
+                result[i, 0] = kept[i];
             else
-                result[0, i] = kept[i].Value;
+                result[0, i] = kept[i];
         }
 
         return CellValue.Array(result);
