@@ -31,6 +31,10 @@ internal static class Program
                     if (differences.Count > 0)
                         Console.Error.WriteLine("The documentation is out of date; run the tool with 'generate'.");
                     return differences.Count == 0 ? 0 : 1;
+                case ["site", var output]:
+                    SiteBuilder.Build(layout, System.IO.Path.GetFullPath(output));
+                    Console.WriteLine($"Wrote the site to {output}.");
+                    return 0;
                 default:
                     Console.Error.WriteLine("Usage: SharpCell.Docs generate | check | site DIR");
                     return 2;

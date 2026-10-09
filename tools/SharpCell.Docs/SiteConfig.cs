@@ -12,7 +12,7 @@ internal sealed record SiteSection(string Title, IReadOnlyList<SitePage> Pages);
 
 /// <summary>docs/site.json: the site title, the order of the pages and their one-line descriptions.</summary>
 internal sealed record SiteConfig(string Title, string Summary, string Details, string BaseUrl,
-    IReadOnlyList<SiteSection> Sections, IReadOnlyList<SitePage> Optional)
+    IReadOnlyList<SiteSection> Sections, IReadOnlyList<SitePage> Optional, string? RepositoryUrl = null)
 {
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
