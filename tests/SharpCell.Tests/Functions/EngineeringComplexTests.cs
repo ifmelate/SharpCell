@@ -134,6 +134,15 @@ public class EngineeringComplexTests
         AssertClose(imaginary, Eval("=IMAGINARY(" + inner + ")"));
     }
 
+    [Fact]
+    public void Parts_use_the_workbook_decimal_separator()
+    {
+        _wb.Culture = new System.Globalization.CultureInfo("de-DE");
+        Assert.Equal(CellValue.Text("1,5+2i"), Eval("=COMPLEX(1.5,2)"));
+        Assert.Equal(CellValue.Number(2.5), Eval("=IMREAL(\"2,5-i\")"));
+        Assert.Equal(CellValue.Number(2.5), Eval("=IMREAL(\"2.5-i\")"));
+    }
+
     [Theory]
     [InlineData("=IMREAL(IMTAN(\"7-12.6i\"))", 2.25273756034272E-11)]
     [InlineData("=IMREAL(IMCOT(\"7-12.6i\"))", 2.25273756035673E-11)]
