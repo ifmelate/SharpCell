@@ -20,3 +20,14 @@ L,K4,"={1;2}",array:K4:L5
 L,K7,"={1,2;3,4}",array:K7:M9
 L,K11,"=7",array:K11:K12
 L,K14,"=SUM(A1:A3*B1:B3)",array:K14
+L,M1,0,
+L,M2,1,
+L,M3,0,
+L,N2,"=IF(M1:M3,""y"",""n"")",legacy
+L,O2,"=IFERROR(M1:M3,99)",legacy
+L,N5,"=IF(M1:M3,1,2)",legacy
+L,P2,"=SUMPRODUCT((A1:A3>1)*B1:B3)",legacy
+L,Q2,"=LOOKUP(2,1/(A1:A3<>""""),A1:A3)",legacy
+L,R2,"=INDEX(A1:A3*2,3)",legacy
+L,S2,"=SUM(A1:A3*B1:B3)",legacy
+L,T2,"=MATCH(2,A1:A3*1,0)",legacy

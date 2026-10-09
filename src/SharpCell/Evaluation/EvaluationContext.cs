@@ -55,8 +55,11 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// <summary>Lambda calls made by this evaluation, for periodic cancellation checks.</summary>
     public long LambdaCalls { get; set; }
 
-    /// <summary>The formula predates dynamic arrays; see <see cref="CellData.IsLegacy"/>.</summary>
-    public bool Legacy { get; init; }
+    /// <summary>
+    /// The formula predates dynamic arrays; see <see cref="CellData.IsLegacy"/>. Cleared while an
+    /// <see cref="Functions.ArgumentKind.ArrayContext"/> argument is evaluated.
+    /// </summary>
+    public bool Legacy { get; set; }
 
     /// <summary>A formula evaluated through <see cref="Workbook.Evaluate"/>, not in a cell.</summary>
     public bool IsDetached { get; init; }

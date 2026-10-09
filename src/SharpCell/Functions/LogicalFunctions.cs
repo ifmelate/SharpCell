@@ -7,8 +7,8 @@ internal static class LogicalFunctions
     public static void Register(FunctionRegistry registry)
     {
         var max = FunctionRegistry.MaxArguments;
-        registry.Add(new FunctionInfo("IF", 2, 3, [ArgumentKind.Any, ArgumentKind.Lazy], If));
-        registry.Add(new FunctionInfo("IFERROR", 2, 2, [ArgumentKind.Any, ArgumentKind.Lazy], IfError));
+        registry.Add(new FunctionInfo("IF", 2, 3, [ArgumentKind.ScalarAny, ArgumentKind.Lazy], If));
+        registry.Add(new FunctionInfo("IFERROR", 2, 2, [ArgumentKind.ScalarAny, ArgumentKind.Lazy], IfError));
         registry.Add(new FunctionInfo("CHOOSE", 2, max, [ArgumentKind.Value, ArgumentKind.Lazy], Choose));
         registry.Add(new FunctionInfo("AND", 1, max, [ArgumentKind.Any], call => Junction(call, isAnd: true)));
         registry.Add(new FunctionInfo("OR", 1, max, [ArgumentKind.Any], call => Junction(call, isAnd: false)));
