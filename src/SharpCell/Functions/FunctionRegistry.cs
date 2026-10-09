@@ -29,6 +29,7 @@ internal sealed class FunctionRegistry
         LambdaFunctions.Register(registry);
         ReferenceFunctions.Register(registry);
         LookupFunctions.Register(registry);
+        ArrayShapeFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         return registry;
     }
