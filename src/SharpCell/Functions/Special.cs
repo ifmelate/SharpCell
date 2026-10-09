@@ -496,6 +496,34 @@ internal static class Special
         return Math.Exp(-StirlingError(x) - Deviance(x, m)) / Math.Sqrt(2 * Math.PI * x);
     }
 
+    /// <summary>The density of Student's t distribution with n degrees of freedom (Loader's form, R's dt).</summary>
+    public static double StudentDensity(double x, double n)
+    {
+        var t = -Deviance(n / 2, (n + 1) / 2) + StirlingError((n + 1) / 2) - StirlingError(n / 2);
+        var x2n = x * x / n;
+        double logRoot, u;
+        var large = x2n > 1 / Epsilon;
+        if (large)
+        {
+            // log sqrt(1 + x^2/n) is log|x| - log sqrt(n) to working precision.
+            logRoot = Math.Log(Math.Abs(x)) - Math.Log(n) / 2;
+            u = n * logRoot;
+        }
+        else if (x2n > 0.2)
+        {
+            logRoot = Math.Log(1 + x2n) / 2;
+            u = n * logRoot;
+        }
+        else
+        {
+            logRoot = Log1p(x2n) / 2;
+            u = -Deviance(n / 2, (n + x * x) / 2) + x * x / 2;
+        }
+
+        var inverseRoot = large ? Math.Sqrt(n) / Math.Abs(x) : Math.Exp(-logRoot);
+        return Math.Exp(t - u) / SqrtTwoPi * inverseRoot;
+    }
+
     // ---------------------------------------------------------------------------------------
     // Regularized incomplete gamma function
 
