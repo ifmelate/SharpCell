@@ -30,6 +30,10 @@ internal sealed class FunctionRegistry
         ReferenceFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         DatabaseFunctions.Register(registry);
+        EngineeringFunctions.Register(registry);
+        EngineeringComplexFunctions.Register(registry);
+        EngineeringConvertFunction.Register(registry);
+        EngineeringBesselFunctions.Register(registry);
         return registry;
     }
 }
