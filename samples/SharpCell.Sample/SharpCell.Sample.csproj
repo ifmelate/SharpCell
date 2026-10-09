@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SharpCell.Sample</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--
+      In your own project, reference the packages instead:
+        dotnet add package SharpCell.Xlsx   (brings SharpCell with it)
+    -->
+    <ProjectReference Include="../../src/SharpCell/SharpCell.csproj" />
+    <ProjectReference Include="../../src/SharpCell.Xlsx/SharpCell.Xlsx.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="budget.xlsx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
