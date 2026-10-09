@@ -32,6 +32,7 @@ internal sealed class FunctionRegistry
         EngineeringFunctions.Register(registry);
         EngineeringComplexFunctions.Register(registry);
         EngineeringConvertFunction.Register(registry);
+        EngineeringBesselFunctions.Register(registry);
         return registry;
     }
 }
