@@ -23,6 +23,12 @@ internal sealed class XlsxLimits
 
     /// <summary>Uncompressed size of all parts read.</summary>
     public long MaxTotalBytes { get; init; } = 4L << 30;
+
+    /// <summary>
+    /// Cells covered by all array formulas (Ctrl+Shift+Enter) of a workbook together. Each one fills
+    /// its whole area on every calculation, so a tiny file could otherwise claim billions of cells.
+    /// </summary>
+    public long MaxArrayFormulaCells { get; init; } = 1L << 24;
 }
 
 /// <summary>
@@ -73,6 +79,8 @@ internal sealed class Package : IDisposable
             throw new InvalidDataException("The file is not an .xlsx workbook (not a zip package).", ex);
         }
     }
+
+    public XlsxLimits Limits => _limits;
 
     public bool Exists(string part) => _entries.ContainsKey(part);
 

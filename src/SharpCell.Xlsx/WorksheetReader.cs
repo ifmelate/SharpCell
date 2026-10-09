@@ -26,7 +26,8 @@ internal static class WorksheetReader
         public string? InlineText;
     }
 
-    public static void Read(Package package, string part, Worksheet sheet, IReadOnlyList<string> sharedStrings, CellMetadata? metadata)
+    public static void Read(Package package, string part, Worksheet sheet, IReadOnlyList<string> sharedStrings, CellMetadata? metadata,
+        ArrayBudget arrayBudget)
     {
         var loader = new SheetLoader(sheet);
         var shared = new Dictionary<string, SharedFormula>(StringComparer.Ordinal);
@@ -74,9 +75,11 @@ internal static class WorksheetReader
 
             var cell = ReadCell(reader);
             var origin = new CellAddress(row, column);
+            if (sheet.Store.Get(row, column) is not null)
+                throw new InvalidDataException($"Cell {sheet.Name}!{origin} appears twice in '{part}'.");
             var cached = CachedValue(cell, sharedStrings, dateSystem, sheet, origin);
             if (cell.FormulaType != "dataTable" && (cell.FormulaText is { Length: > 0 } || cell.FormulaType == "shared"))
-                LoadFormula(loader, cell, origin, cached, metadata, shared);
+                LoadFormula(loader, cell, origin, cached, metadata, shared, arrayBudget);
             else
                 loader.SetValue(row, column, cached);
         }
@@ -85,7 +88,7 @@ internal static class WorksheetReader
     }
 
     private static void LoadFormula(SheetLoader loader, CellXml cell, CellAddress origin, CellValue cached, CellMetadata? metadata,
-        Dictionary<string, SharedFormula> shared)
+        Dictionary<string, SharedFormula> shared, ArrayBudget arrayBudget)
     {
         SharedFormula formula;
         if (cell.FormulaType == "shared" && cell.SharedIndex is { } index)
@@ -116,11 +119,11 @@ internal static class WorksheetReader
         {
             var area = ParseArea(cell.FormulaRef, origin);
 
-            // An array formula fills its whole area on every calculation; no real one comes near this.
-            if (!dynamic && area.CellCount > Evaluator.MaxArrayCells)
+            // An array formula fills its whole area on every calculation; no real workbook comes near the budget.
+            if (!dynamic && !arrayBudget.TryTake(area.CellCount))
             {
                 loader.SetUnsupportedFormula(origin.Row, origin.Column, formula.Text,
-                    $"The array formula covers {area.CellCount} cells, more than {Evaluator.MaxArrayCells}.", cached);
+                    $"Array formulas of this workbook cover more than {arrayBudget.Limit} cells.", cached);
                 return;
             }
 

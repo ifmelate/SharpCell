@@ -12,8 +12,8 @@ namespace SharpCell.Xlsx;
 /// <para>
 /// Every formula is out of date after loading: <see cref="Cell.Value"/> shows the value cached in
 /// the file until <see cref="Workbook.Recalculate"/> calculates it. A formula SharpCell cannot
-/// parse (for example a link to another workbook) does not fail the load; it calculates to
-/// <c>#NAME?</c> and is listed in <see cref="Workbook.Diagnostics"/>.
+/// parse (for example a link to another workbook) does not fail the load; once calculated it is
+/// <c>#NAME?</c> and listed in <see cref="Workbook.Diagnostics"/>.
 /// </para>
 /// </summary>
 public static class XlsxReader
@@ -101,10 +101,11 @@ internal static class WorkbookReader
             : [];
         var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target);
 
+        var arrayBudget = new ArrayBudget(package.Limits.MaxArrayFormulaCells);
         foreach (var entry in byIndex)
         {
             if (entry is { } sheet)
-                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, sharedStrings, metadata);
+                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, sharedStrings, metadata, arrayBudget);
         }
 
         return workbook;
@@ -236,6 +237,22 @@ internal static class WorkbookReader
         }
 
         return first;
+    }
+}
+
+/// <summary>Cells array formulas may still cover; shared by all sheets of a workbook.</summary>
+internal sealed class ArrayBudget(long cells)
+{
+    public long Limit { get; } = cells;
+
+    public long Remaining { get; private set; } = cells;
+
+    public bool TryTake(long count)
+    {
+        if (count > Remaining)
+            return false;
+        Remaining -= count;
+        return true;
     }
 }
 

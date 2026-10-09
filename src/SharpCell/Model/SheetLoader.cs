@@ -24,7 +24,7 @@ internal enum LoadedFormulaKind
 /// </summary>
 internal sealed class SheetLoader(Worksheet sheet)
 {
-    private readonly List<(CellKey Anchor, Area Area)> _arrays = [];
+    private readonly List<(CellKey Anchor, Area Area, bool Fixed)> _arrays = [];
 
     public void SetValue(int row, int column, CellValue value)
     {
@@ -51,12 +51,12 @@ internal sealed class SheetLoader(Worksheet sheet)
         {
             data.FixedArray = covered;
             data.SpillArea = covered;
-            _arrays.Add((key, covered));
+            _arrays.Add((key, covered, true));
         }
         else if (!covered.IsSingleCell)
         {
             data.SpillArea = covered;
-            _arrays.Add((key, covered));
+            _arrays.Add((key, covered, false));
         }
     }
 
@@ -67,11 +67,27 @@ internal sealed class SheetLoader(Worksheet sheet)
         Add(row, column, formula, new UnsupportedNode(formula[1..], reason), cached);
     }
 
-    /// <summary>Cells inside an anchor's area become its spilled cells, so they do not block it.</summary>
+    /// <summary>
+    /// Cells inside an anchor's area become its spilled cells, so they do not block it. An array
+    /// formula owns its whole area at once, cells the file left out included, so no part of it can
+    /// be changed even before the first calculation; the caller bounds the size of such areas.
+    /// </summary>
     public void Complete()
     {
-        foreach (var (anchor, area) in _arrays)
+        foreach (var (anchor, area, isFixed) in _arrays)
         {
+            if (isFixed)
+            {
+                for (var row = area.FirstRow; row <= area.LastRow; row++)
+                {
+                    for (var column = area.FirstColumn; column <= area.LastColumn; column++)
+                    {
+                        if (row != anchor.Row || column != anchor.Column)
+                            sheet.Store.GetOrCreate(row, column);
+                    }
+                }
+            }
+
             foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
             {
                 if (cell.Data.Formula is null && cell.Data.SpillAnchor is null)

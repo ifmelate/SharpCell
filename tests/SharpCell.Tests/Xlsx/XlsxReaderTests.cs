@@ -393,6 +393,41 @@ public class XlsxReaderTests
     }
 
     [Fact]
+    public void Array_formulas_share_one_budget_across_the_workbook()
+    {
+        using var stream = new TestXlsx()
+            .Sheet("One", "<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"A1:A6\">1</f><v>1</v></c></row>")
+            .Sheet("Two", "<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"A1:A4\">2</f><v>2</v></c><c r=\"B1\"><f t=\"array\" ref=\"B1:B5\">3</f><v>3</v></c></row>")
+            .Build();
+        var wb = XlsxReader.Load(stream, new XlsxLimits { MaxArrayFormulaCells = 10 });
+        wb.Recalculate();
+
+        Assert.Equal([N(1), N(2)], [wb["One"]["A6"].Value, wb["Two"]["A4"].Value]);
+        Assert.Equal(CellValue.Error(ErrorKind.Name), wb["Two"]["B1"].Value);
+        Assert.Equal(CellValue.Empty, wb["Two"]["B2"].Value);
+        Assert.Contains("more than 10 cells", Assert.Single(wb.Diagnostics).Message);
+    }
+
+    [Fact]
+    public void Array_cells_missing_from_the_file_are_protected_before_calculation()
+    {
+        var file = new TestXlsx().Sheet("S", "<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"A1:A3\">{1;2;3}</f><v>1</v></c></row>");
+        var wb = Load(file);
+
+        Assert.Throws<InvalidOperationException>(() => wb["S"]["A3"].Value = 42);
+        wb.Recalculate();
+        Assert.Equal(N(3), wb["S"]["A3"].Value);
+    }
+
+    [Fact]
+    public void A_cell_listed_twice_is_invalid()
+    {
+        var file = new TestXlsx().Sheet("S", "<row r=\"1\"><c r=\"A1\"><f>1+1</f><v>2</v></c><c r=\"A1\"><v>5</v></c></row>");
+
+        Assert.Throws<InvalidDataException>(() => Load(file));
+    }
+
+    [Fact]
     public void Duplicate_sheet_names_are_invalid()
     {
         Assert.Throws<InvalidDataException>(() => Load(new TestXlsx().Sheet("S", "").Sheet("s", "")));
