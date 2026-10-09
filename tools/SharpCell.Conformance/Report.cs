@@ -89,13 +89,10 @@ internal sealed class Report
                 if (file.Error is not null)
                     json.WriteString("error", file.Error);
 
-                // Exactly which cells match, as whichever list is shorter, so the ratchet sees a cell
-                // that breaks even when another one in the same file gets fixed.
-                var passing = file.Passed * 2 <= file.Cells.Count;
-                json.WriteStartObject(passing ? "passingCells" : "failingCells");
-                foreach (var (sheet, cells) in CellSet.Encode(file.Cells.Where(c => c.Passed == passing).Select(c => (c.Sheet, c.Cell))))
-                    json.WriteString(sheet, cells);
-                json.WriteEndObject();
+                // Exactly which cells are compared and which of them differ, so the ratchet sees a
+                // cell that breaks even when another one in the same file gets fixed.
+                WriteCells(json, "comparedCells", file.Cells);
+                WriteCells(json, "failingCells", file.Cells.Where(c => !c.Passed));
                 json.WriteEndObject();
             }
 
@@ -118,6 +115,14 @@ internal sealed class Report
         }
 
         return Encoding.UTF8.GetString(stream.ToArray()).ReplaceLineEndings("\n") + "\n";
+    }
+
+    private static void WriteCells(Utf8JsonWriter json, string name, IEnumerable<CellOutcome> cells)
+    {
+        json.WriteStartObject(name);
+        foreach (var (sheet, list) in CellSet.Encode(cells.Select(c => (c.Sheet, c.Cell))))
+            json.WriteString(sheet, list);
+        json.WriteEndObject();
     }
 
     public string ToMarkdown()
