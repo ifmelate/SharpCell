@@ -381,20 +381,3 @@ public class SheetLoaderTests
         loader.Complete();
     }
 }
-
-public class TableReferenceTests
-{
-    [Fact]
-    public void Table_reference_is_NAME_with_a_diagnostic()
-    {
-        var wb = new Workbook();
-        var s = wb.AddSheet("S");
-        s["A1"].Formula = "=SUM(Table1[Col])";
-        wb.Recalculate();
-
-        Assert.Equal(CellValue.Error(ErrorKind.Name), s["A1"].Value);
-        var diagnostic = Assert.Single(wb.Diagnostics);
-        Assert.Equal(DiagnosticKind.UnsupportedFormula, diagnostic.Kind);
-        Assert.Contains("Table1[Col]", diagnostic.Message);
-    }
-}

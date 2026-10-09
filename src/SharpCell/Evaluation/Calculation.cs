@@ -345,6 +345,11 @@ internal sealed class Calculation(Workbook workbook)
         var columns = array.GetLength(1);
         var lastRow = (long)key.Row + rows - 1;
         var lastColumn = (long)key.Column + columns - 1;
+
+        // Excel does not spill inside a table: a formula there that returns several values is #SPILL!.
+        if ((rows > 1 || columns > 1) && workbook.TableAt(key.Sheet, key.Row, key.Column) is not null)
+            return CellValue.Error(ErrorKind.Spill);
+
         if (lastRow > CellAddress.MaxRow || lastColumn > CellAddress.MaxColumn)
             return CellValue.Error(ErrorKind.Spill);
 
