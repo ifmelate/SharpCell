@@ -30,6 +30,7 @@ internal sealed class FunctionRegistry
         ReferenceFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         DistributionFunctions.Register(registry);
+        DistributionDiscreteFunctions.Register(registry);
         return registry;
     }
 }
