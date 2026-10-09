@@ -21,7 +21,9 @@ sheet["C2"].Formula = "=Sales[@Units]*2";   // the table's row on the formula's 
 workbook.Recalculate();
 ```
 
-`AddTable` takes the column names from the header row as it is when the table is added. A table
+`AddTable` takes the column names from the header row as it is when the table is added; a header
+formula counts by its value, as Excel turns it into text. A single cell, such as `"A1"`, is a
+one-cell table without a header row. A table
 does not change afterwards: SharpCell does not resize or rename tables, and editing a header cell
 does not rename its column. Tables and defined names share one set of names.
 
@@ -41,6 +43,9 @@ does not rename its column. Tables and defined names share one set of names.
 Inside a name, an apostrophe escapes `[`, `]`, `#` and `'`: the column `[est] Q1` is
 `Sales['[est'] Q1]`. A missing table or column is `#REF!`. A formula inside a table that returns
 several values is `#SPILL!`, as in Excel.
+
+`Workbook.Evaluate` runs a formula that belongs to no cell, so it is in no table and has no row:
+there `[Units]` is `#REF!` and `Sales[@Units]` is `#VALUE!`, while `Sales[Units]` works.
 
 ## Tables from .xlsx files
 

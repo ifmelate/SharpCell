@@ -1,6 +1,6 @@
 {
   "title": "SharpCell",
-  "summary": "A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA. Results are checked against workbooks calculated by Microsoft Excel.",
+  "summary": "A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays, LET/LAMBDA and tables with structured references. Results are checked against workbooks calculated by Microsoft Excel.",
   "details": "Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.",
   "baseUrl": "https://ifmelate.github.io/SharpCell/",
   "repositoryUrl": "https://github.com/ifmelate/SharpCell",

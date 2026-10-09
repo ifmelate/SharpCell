@@ -4,7 +4,8 @@
 [![ci](https://github.com/ifmelate/SharpCell/actions/workflows/ci.yml/badge.svg)](https://github.com/ifmelate/SharpCell/actions/workflows/ci.yml)
 
 A free (MIT) Excel formula engine for .NET 8 and later: parser, dependency graph, recalculation,
-dynamic arrays, LET/LAMBDA. Correctness is checked against workbooks calculated by real Excel.
+dynamic arrays, LET/LAMBDA, tables with structured references (`Sales[Units]`) and hidden rows.
+Correctness is checked against workbooks calculated by real Excel.
 
 Status: 0.x. The API may change between minor versions until 1.0.
 
@@ -45,6 +46,7 @@ A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `
 ## Documentation
 
 - [Documentation site](https://ifmelate.github.io/SharpCell/): getting started, guides, API reference ([source](docs/index.md)).
+- [Tables and hidden rows](docs/guides/tables.md): structured references, tables from files and code, SUBTOTAL and filters.
 - [What matches Excel](docs/compatibility.md), also as [JSON](docs/compatibility.json).
 - [For AI coding agents](docs/agents.md): `llms.txt`, `llms-full.txt` and rules to paste into your agent's instructions.
 
