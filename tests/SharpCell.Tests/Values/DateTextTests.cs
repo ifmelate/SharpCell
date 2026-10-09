@@ -26,7 +26,7 @@ public class DateTextTests
     [InlineData("24:00", 1)]
     [InlineData("25:00", 25.0 / 24)]
     [InlineData("23:59:60", 1)]
-    [InlineData(" 4 : 35 ", 16500.0 / 86400)]
+    [InlineData("4 : 35", 16500.0 / 86400)]
     [InlineData("4:35:00.5", 16500.5 / 86400)]
     [InlineData("12:30.5", 750.5 / 86400)]
     public void Times(string text, double expected) => Assert.Equal(expected, Parse(text)!.Value, 12);
@@ -35,7 +35,6 @@ public class DateTextTests
     [InlineData("2020-01-01", 43831)]
     [InlineData("2020/1/1", 43831)]
     [InlineData("2026 - 01 - 01", 46023)]
-    [InlineData(" 2026-01-01 ", 46023)]
     [InlineData("1/2/2020", 43832)]
     [InlineData("1-2-2020", 43832)]
     [InlineData("1/1/29", 47119)]
@@ -154,5 +153,16 @@ public class DateTextTests
     public void Coercion_reads_dates_and_times(string text, double expected)
     {
         Assert.Equal(CellValue.Number(expected), Coercion.ToNumber(text, Invariant, DateSystem.Date1900));
+    }
+
+    [Theory]
+    [InlineData(" 2024-01-10 ")]
+    [InlineData(" 2024-01-10")]
+    [InlineData("2024-01-10 ")]
+    public void Spaces_around_a_date_are_not_read(string text)
+    {
+        // As the corpus shows: FLOOR(x, " 2024-01-10 ") is #VALUE! while FLOOR(x, " 10 ") reads 10
+        // and DATEVALUE(" 2024-01-10 ") trims (DateTimeFunctions does that before parsing).
+        Assert.False(DateText.TryParse(text, System.Globalization.CultureInfo.InvariantCulture, DateSystem.Date1900, out _));
     }
 }

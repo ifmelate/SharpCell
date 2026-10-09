@@ -55,8 +55,17 @@ internal static class DateText
 
     private readonly record struct Token(TokenKind Kind, int Start, int Length, char Separator);
 
-    public static bool TryParse(string text, CultureInfo culture, DateSystem dateSystem, out double serial) =>
-        TryParse(text, culture, dateSystem, currentYear: null, out serial);
+    /// <summary>
+    /// Text met by arithmetic or a function argument. Unlike a number, a date with spaces around it
+    /// is not read here (" 2024-01-10 " is #VALUE!); DATEVALUE and TIMEVALUE trim first.
+    /// </summary>
+    public static bool TryParse(string text, CultureInfo culture, DateSystem dateSystem, out double serial)
+    {
+        serial = 0;
+        if (text.Length == 0 || char.IsWhiteSpace(text[0]) || char.IsWhiteSpace(text[^1]))
+            return false;
+        return TryParse(text, culture, dateSystem, currentYear: null, out serial);
+    }
 
     /// <param name="currentYear">The year of dates written without one; null rejects such text.</param>
     public static bool TryParse(string text, CultureInfo culture, DateSystem dateSystem, int? currentYear, out double serial)
