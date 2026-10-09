@@ -395,7 +395,12 @@ internal static class MathArrayFunctions
         if (r.IsError || c.IsError)
             return false;
 
+        // A negative size is an invalid argument; a size of zero is an empty result (#CALC!), as in
+        // Excel: SEQUENCE(-1) is #VALUE!, SEQUENCE(0.3) is #CALC!.
         error = CellValue.Error(ErrorKind.Value);
+        if (r.AsNumber() < 0 || c.AsNumber() < 0)
+            return false;
+        error = CellValue.Error(ErrorKind.Calc);
         if (r.AsNumber() < 1 || c.AsNumber() < 1)
             return false;
         error = CellValue.Error(ErrorKind.Num);

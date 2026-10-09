@@ -89,7 +89,7 @@ public class MathArrayFunctionTests
     [InlineData("=MINVERSE({1,2})", ErrorKind.Value)]
     [InlineData("=MUNIT(0)", ErrorKind.Value)]
     [InlineData("=MUNIT(\"a\")", ErrorKind.Value)]
-    [InlineData("=SEQUENCE(0)", ErrorKind.Value)]
+    [InlineData("=SEQUENCE(0)", ErrorKind.Calc)]
     [InlineData("=SEQUENCE(-1,2)", ErrorKind.Value)]
     [InlineData("=SEQUENCE(100000,100000)", ErrorKind.Num)]
     [InlineData("=RANDARRAY(2,2,5,1)", ErrorKind.Value)]
