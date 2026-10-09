@@ -98,9 +98,11 @@ internal static class StatisticsRankFunctions
         double position;
         if (exclusive)
         {
-            position = k * (n + 1) - 1;
-            if (k <= 0 || k >= 1 || position < 0 || position > n - 1)
+            // k may sit exactly on 1/(n+1) or n/(n+1), give or take floating-point noise.
+            var rank = k * (n + 1);
+            if (k <= 0 || k >= 1 || NumberComparer.Compare(rank, 1) < 0 || NumberComparer.Compare(rank, n) > 0)
                 return CellValue.Error(ErrorKind.Num);
+            position = Math.Clamp(rank - 1, 0, n - 1);
         }
         else
         {
