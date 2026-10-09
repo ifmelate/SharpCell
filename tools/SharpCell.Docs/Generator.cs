@@ -42,7 +42,7 @@ internal static class Generator
             var path = layout.Full(file.Path);
             if (!File.Exists(path))
                 differences.Add($"{file.Path}: missing");
-            else if (File.ReadAllText(path) != file.Content)
+            else if (!SameText(File.ReadAllText(path), file.Content))
                 differences.Add($"{file.Path}: out of date");
         }
 
@@ -56,7 +56,7 @@ internal static class Generator
         foreach (var file in files)
         {
             var path = layout.Full(file.Path);
-            if (File.Exists(path) && File.ReadAllText(path) == file.Content)
+            if (File.Exists(path) && SameText(File.ReadAllText(path), file.Content))
                 continue;
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, file.Content);
@@ -65,6 +65,10 @@ internal static class Generator
         foreach (var stale in StaleApiFiles(layout, files))
             File.Delete(layout.Full(stale));
     }
+
+    // A clone with core.autocrlf checks generated files out with CRLF; that is not a difference.
+    private static bool SameText(string onDisk, string generated) =>
+        onDisk.ReplaceLineEndings("\n") == generated.ReplaceLineEndings("\n");
 
     private static IEnumerable<string> StaleApiFiles(RepositoryLayout layout, IReadOnlyList<GeneratedFile> files)
     {

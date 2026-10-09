@@ -17,6 +17,25 @@ public class DocsUpToDateTests
     }
 
     [Fact]
+    public void A_checkout_with_windows_line_endings_is_up_to_date()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "sharpcell-docs-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "docs"));
+            File.WriteAllText(Path.Combine(root, "docs", "llms.txt"), "# SharpCell\r\n\r\n> Summary.\r\n");
+            var layout = RepositoryLayout.At(root);
+
+            Assert.Empty(Generator.Differences(layout, [new GeneratedFile("docs/llms.txt", "# SharpCell\n\n> Summary.\n")]));
+            Assert.Equal(["docs/llms.txt: out of date"], Generator.Differences(layout, [new GeneratedFile("docs/llms.txt", "# SharpCell\n\n> Other.\n")]));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void A_hand_edit_or_a_stray_file_in_the_api_folder_is_reported()
     {
         var layout = Repository();
