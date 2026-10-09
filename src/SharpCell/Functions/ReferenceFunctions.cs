@@ -22,7 +22,11 @@ internal static class ReferenceFunctions
         registry.Add(new FunctionInfo("COLUMN", 0, 1, [ArgumentKind.Any], call => Position(call, rows: false)));
         registry.Add(new FunctionInfo("AREAS", 1, 1, [ArgumentKind.Any], Areas));
         registry.Add(new FunctionInfo("ADDRESS", 2, 5, [ArgumentKind.Value], Address));
-        registry.Add(new FunctionInfo("FORMULATEXT", 1, 1, [ArgumentKind.Any], FormulaText));
+        registry.Add(new FunctionInfo("FORMULATEXT", 1, 1, [ArgumentKind.Any], FormulaText)
+        {
+            Status = FunctionStatus.KnownDeviation,
+            Deviation = "Formulas read from xlsx files are shown in SharpCell's canonical form, without the spaces and line breaks the author typed.",
+        });
         registry.Add(new FunctionInfo("TRIMRANGE", 1, 3, [ArgumentKind.Any, ArgumentKind.Value], TrimRange));
     }
 
