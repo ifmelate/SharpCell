@@ -35,6 +35,7 @@ internal static class WorksheetReader
         using var reader = package.OpenXml(part);
         var row = 0;
         var column = 0;
+        var tableIds = new List<string>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -49,6 +50,30 @@ internal static class WorksheetReader
                 // Rows and cells may leave out their position; it then follows the previous one.
                 row = reader.GetAttribute("r") is { } r ? ParseRow(r, part) : row + 1;
                 column = 0;
+                if (reader.GetAttribute("hidden") is "1" or "true")
+                    sheet.SetRowHidden(row, true);
+                reader.Read();
+                continue;
+            }
+
+            if (reader.Depth == 1)
+            {
+                switch (reader.LocalName)
+                {
+                    case "sheetPr":
+                        if (reader.GetAttribute("filterMode") is "1" or "true")
+                            sheet.FilterMode = true;
+                        break;
+                    case "autoFilter":
+                        if (AutoFilter.HasCriteria(reader))
+                            sheet.FilterMode = true;
+                        break;
+                }
+            }
+
+            if (reader.LocalName == "tablePart")
+            {
+                tableIds.Add(WorkbookReader.RelationshipId(reader) ?? throw new InvalidDataException($"A table part of '{part}' has no relationship id."));
                 reader.Read();
                 continue;
             }
@@ -87,6 +112,29 @@ internal static class WorksheetReader
         }
 
         loader.Complete();
+        if (tableIds.Count > 0)
+            ReadTables(package, part, sheet, tableIds);
+    }
+
+    private static void ReadTables(Package package, string part, Worksheet sheet, List<string> ids)
+    {
+        var relationships = package.ReadRelationships(part);
+        foreach (var id in ids)
+        {
+            if (!relationships.TryGetValue(id, out var relationship) || !relationship.Is("table") || !package.Exists(relationship.Target))
+                throw new InvalidDataException($"Table part '{id}' of '{part}' is missing.");
+            var table = TableReader.Read(package, relationship.Target);
+            if (table.Filtered)
+                sheet.FilterMode = true;
+            try
+            {
+                sheet.AddTable(table.Name, table.Area, table.HasHeaderRow, table.HasTotalsRow, table.Columns);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException($"Table '{table.Name}' in '{relationship.Target}' is not valid: {ex.Message}", ex);
+            }
+        }
     }
 
     private static void LoadFormula(SheetLoader loader, CellXml cell, CellAddress origin, CellValue cached, CellMetadata? metadata,

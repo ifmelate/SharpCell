@@ -31,6 +31,13 @@ public sealed class TestXlsx
         return this;
     }
 
+    /// <summary>A worksheet with the given content inside &lt;worksheet&gt;, for elements other than sheetData.</summary>
+    public TestXlsx RawSheet(string name, string content)
+    {
+        _sheets.Add((name, $"<worksheet xmlns=\"{Main}\" xmlns:r=\"{Rel}\">{content}</worksheet>", "worksheet"));
+        return this;
+    }
+
     public TestXlsx ChartSheet(string name)
     {
         _sheets.Add((name, $"<chartsheet xmlns=\"{Main}\"/>", "chartsheet"));

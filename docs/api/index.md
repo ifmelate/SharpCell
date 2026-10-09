@@ -26,4 +26,4 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 
 | Type | Summary |
 |---|---|
-| [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and the date system. |
+| [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system. |

@@ -7,8 +7,9 @@ using System.Xml;
 namespace SharpCell.Xlsx;
 
 /// <summary>
-/// Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and
-/// the date system. Styles, charts, pivot tables and macros are not read.
+/// Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names,
+/// tables, hidden rows, whether a sheet is filtered, and the date system. Styles, charts, pivot
+/// tables and macros are not read.
 /// <para>
 /// Every formula is out of date after loading: <see cref="Cell.Value"/> shows the value cached in
 /// the file until <see cref="Workbook.Recalculate"/> calculates it. A formula SharpCell cannot
@@ -218,7 +219,7 @@ internal static class WorkbookReader
         }
     }
 
-    private static string? RelationshipId(XmlReader reader)
+    internal static string? RelationshipId(XmlReader reader)
     {
         if (!reader.MoveToFirstAttribute())
             return null;

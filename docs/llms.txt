@@ -30,7 +30,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.
-- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names and the date system.
+- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system.
 
 ## Optional
 
