@@ -1,6 +1,6 @@
 {
   "cells": 76082,
-  "passed": 76026,
+  "passed": 76027,
   "files": [
     {
       "file": "excel-web/filter-mode.xlsx",
@@ -702,14 +702,12 @@
     {
       "file": "ironcalc/calc_tests/INFORMATION/ISREF.xlsx",
       "cells": 43,
-      "passed": 42,
+      "passed": 43,
       "skipped": 0,
       "comparedCells": {
         "Sheet1": "A1:A26 D1:D7 D9 D11:D12 D14 D17:D18 D20 J17 K17 L17"
       },
-      "failingCells": {
-        "Sheet1": "D9"
-      }
+      "failingCells": {}
     },
     {
       "file": "ironcalc/calc_tests/INFORMATION/ISREF_ISFORMULA_ISODD_ISEVEN.xlsx",
@@ -3555,7 +3553,7 @@
       "name": "FILTER",
       "status": "implemented",
       "cases": 54,
-      "passed": 53
+      "passed": 54
     },
     {
       "name": "FIND",
