@@ -476,4 +476,16 @@ public class ExternalReferenceDetectionTests
     {
         Assert.Equal(expected, FormulaText.ReferencesOtherWorkbook(formula));
     }
+
+    [Fact]
+    public void Zip_directory_that_runs_past_the_end_is_invalid_data()
+    {
+        // Found by XlsxFuzzTests: one byte raises the extra field length of the first central
+        // directory record past the end of the file. .NET 8 reports that as an IOException; the
+        // reader promises InvalidDataException for a damaged file.
+        var bytes = File.ReadAllBytes(CorpusFiles.PathOf("ironcalc/DynamicArrays.xlsx"));
+        Assert.Equal(0x00, bytes[10767]);
+        bytes[10767] = 0x2B;
+        Assert.Throws<InvalidDataException>(() => XlsxReader.Load(new MemoryStream(bytes)));
+    }
 }

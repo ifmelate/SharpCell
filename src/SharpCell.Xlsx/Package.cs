@@ -78,6 +78,12 @@ internal sealed class Package : IDisposable
         {
             throw new InvalidDataException("The file is not an .xlsx workbook (not a zip package).", ex);
         }
+        catch (IOException ex)
+        {
+            // .NET 8 reports a zip directory that runs past the end of the file as an IOException
+            // (later versions as InvalidDataException). The original error stays as the inner one.
+            throw new InvalidDataException("The file is not an .xlsx workbook (its zip directory is damaged).", ex);
+        }
     }
 
     public XlsxLimits Limits => _limits;
