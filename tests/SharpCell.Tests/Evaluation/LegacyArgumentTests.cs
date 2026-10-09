@@ -62,6 +62,7 @@ public class LegacyArgumentTests
     {
         var registry = new FunctionRegistry();
         MathFunctions.Register(registry);
+        LogicalFunctions.Register(registry);
         registry.Add(new FunctionInfo("ARRAYSUM", 1, 1, [ArgumentKind.ArrayContext], call =>
         {
             var total = 0.0;
@@ -74,6 +75,10 @@ public class LegacyArgumentTests
 
         Assert.Equal(N(20), Legacy("=ARRAYSUM((A1:A3>0)*B1:B3)"));
         Assert.Equal(N(60), Legacy("=ARRAYSUM(B1:B3*1)", row: 3, column: 4));
+
+        // IF's condition is intersected even inside an array parameter, as SUMPRODUCT(IF(...)) was.
+        Assert.Equal(N(0), Legacy("=ARRAYSUM(IF(A1:A3>0,B1:B3,0))", row: 1, column: 7));
+        Assert.Equal(N(60), Legacy("=ARRAYSUM(IF(A1:A3>0,B1:B3,0))", row: 2, column: 7));
 
         // Outside the array context the same formula is intersected again.
         Assert.Equal(N(20), Legacy("=SUM(B1:B3*1)", row: 2, column: 5));
