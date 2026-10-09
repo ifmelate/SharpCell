@@ -132,7 +132,7 @@ public sealed class Worksheet
     public bool IsRowHidden(int row)
     {
         CheckRow(row);
-        return _hiddenRows.Contains(row);
+        return _hiddenRows.Count != 0 && _hiddenRows.Contains(row);
     }
 
     /// <summary>
@@ -156,8 +156,6 @@ public sealed class Worksheet
     /// them as well; without a filter it counts them. AGGREGATE does not look at it.
     /// </summary>
     public bool FilterMode { get; set; }
-
-    internal bool IsHiddenRow(int row) => _hiddenRows.Count != 0 && _hiddenRows.Contains(row);
 
     private static void CheckRow(int row)
     {

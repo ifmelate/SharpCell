@@ -49,8 +49,8 @@ internal static class MathSubtotalFunctions
 
     private static bool Skips(HiddenRows hidden, Worksheet sheet, int row) => hidden switch
     {
-        HiddenRows.Skipped => sheet.IsHiddenRow(row),
-        HiddenRows.SkippedWhenFiltered => sheet.FilterMode && sheet.IsHiddenRow(row),
+        HiddenRows.Skipped => sheet.IsRowHidden(row),
+        HiddenRows.SkippedWhenFiltered => sheet.FilterMode && sheet.IsRowHidden(row),
         _ => false,
     };
 
