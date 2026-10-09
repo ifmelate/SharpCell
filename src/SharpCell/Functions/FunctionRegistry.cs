@@ -31,6 +31,7 @@ internal sealed class FunctionRegistry
         ConditionalFunctions.Register(registry);
         EngineeringFunctions.Register(registry);
         EngineeringComplexFunctions.Register(registry);
+        EngineeringConvertFunction.Register(registry);
         return registry;
     }
 }
