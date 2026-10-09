@@ -39,6 +39,11 @@ internal sealed class FunctionRegistry
         EngineeringComplexFunctions.Register(registry);
         EngineeringConvertFunction.Register(registry);
         EngineeringBesselFunctions.Register(registry);
+        FinancialFunctions.Register(registry);
+        FinancialCashFlows.Register(registry);
+        FinancialDepreciation.Register(registry);
+        FinancialSecurities.Register(registry);
+        FinancialBonds.Register(registry);
         return registry;
     }
 }
