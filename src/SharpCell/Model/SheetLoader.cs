@@ -24,7 +24,10 @@ internal enum LoadedFormulaKind
 /// </summary>
 internal sealed class SheetLoader(Worksheet sheet)
 {
-    private readonly List<(CellKey Anchor, Area Area, bool Fixed)> _arrays = [];
+    private readonly List<(CellKey Anchor, Area Area)> _arrays = [];
+
+    // Dynamic formulas whose cached spill area did not fit the budget as the file states it.
+    private readonly List<(CellKey Anchor, Area Area)> _oversized = [];
 
     public void SetValue(int row, int column, CellValue value)
     {
@@ -38,26 +41,42 @@ internal sealed class SheetLoader(Worksheet sheet)
     /// For <see cref="LoadedFormulaKind.Dynamic"/>, the area the cached result spilled over; for
     /// <see cref="LoadedFormulaKind.Array"/>, the area of the array formula. Includes the cell itself.
     /// </param>
-    public void SetFormula(int row, int column, FormulaNode formula, LoadedFormulaKind kind, Area? area, CellValue cached)
+    /// <returns>
+    /// False, with nothing set, for an array formula whose area does not fit the workbook's spill
+    /// budget (<see cref="Workbook.MaxSpillCells"/>). A dynamic formula whose stated spill area does
+    /// not fit keeps the part the file actually has cells in, if that fits.
+    /// </returns>
+    public bool SetFormula(int row, int column, FormulaNode formula, LoadedFormulaKind kind, Area? area, CellValue cached)
     {
+        var calculation = sheet.Workbook.Calculation;
+        if (kind == LoadedFormulaKind.Array && area is { } fixedArea && !calculation.TryReserveLoadedArea(fixedArea))
+            return false;
+
         var origin = new CellAddress(row, column);
         var data = Add(row, column, "=" + FormulaPrinter.Print(formula, origin), formula, cached);
         data.IsLegacy = kind == LoadedFormulaKind.Legacy;
         if (kind == LoadedFormulaKind.Legacy || area is not { } covered)
-            return;
+            return true;
 
         var key = new CellKey(sheet, row, column);
         if (kind == LoadedFormulaKind.Array)
         {
             data.FixedArray = covered;
             data.SpillArea = covered;
-            _arrays.Add((key, covered, true));
+            calculation.RegisterFixedArray(key, covered);
+            _arrays.Add((key, covered));
+        }
+        else if (!covered.IsSingleCell && calculation.TryReserveLoadedArea(covered))
+        {
+            data.SpillArea = covered;
+            _arrays.Add((key, covered));
         }
         else if (!covered.IsSingleCell)
         {
-            data.SpillArea = covered;
-            _arrays.Add((key, covered, false));
+            _oversized.Add((key, covered));
         }
+
+        return true;
     }
 
     /// <summary>A formula that could not be parsed: it keeps its text and evaluates to <c>#NAME?</c>.</summary>
@@ -67,27 +86,29 @@ internal sealed class SheetLoader(Worksheet sheet)
         Add(row, column, formula, new UnsupportedNode(formula[1..], reason), cached);
     }
 
-    /// <summary>
-    /// Cells inside an anchor's area become its spilled cells, so they do not block it. An array
-    /// formula owns its whole area at once, cells the file left out included, so no part of it can
-    /// be changed even before the first calculation; the caller bounds the size of such areas.
-    /// </summary>
+    /// <summary>Cells inside an anchor's area become its spilled cells, so they do not block it.</summary>
     public void Complete()
     {
-        foreach (var (anchor, area, isFixed) in _arrays)
+        var calculation = sheet.Workbook.Calculation;
+        foreach (var (anchor, claimed) in _oversized)
         {
-            if (isFixed)
+            var used = Area.Cell(anchor.Row, anchor.Column);
+            foreach (var cell in sheet.Store.Enumerate(claimed.FirstRow, claimed.FirstColumn, claimed.LastRow, claimed.LastColumn))
             {
-                for (var row = area.FirstRow; row <= area.LastRow; row++)
-                {
-                    for (var column = area.FirstColumn; column <= area.LastColumn; column++)
-                    {
-                        if (row != anchor.Row || column != anchor.Column)
-                            sheet.Store.GetOrCreate(row, column);
-                    }
-                }
+                if (cell.Data.Formula is null)
+                    used = Area.Bounding(used, Area.Cell(cell.Row, cell.Column));
             }
 
+            if (!used.IsSingleCell && calculation.TryReserveLoadedArea(used) && anchor.Data is { } data)
+            {
+                data.SpillArea = used;
+                _arrays.Add((anchor, used));
+            }
+        }
+
+        _oversized.Clear();
+        foreach (var (anchor, area) in _arrays)
+        {
             foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
             {
                 if (cell.Data.Formula is null && cell.Data.SpillAnchor is null)

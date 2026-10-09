@@ -40,6 +40,7 @@ SharpCell.DateSystem.Date1904 = 1 -> SharpCell.DateSystem
 SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.CircularReference = 0 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.FunctionFailure = 1 -> SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.LimitExceeded = 3 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.UnsupportedFormula = 2 -> SharpCell.DiagnosticKind
 SharpCell.ErrorKind
 SharpCell.ErrorKind.Calc = 14 -> SharpCell.ErrorKind

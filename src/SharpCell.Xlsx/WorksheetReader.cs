@@ -26,8 +26,7 @@ internal static class WorksheetReader
         public string? InlineText;
     }
 
-    public static void Read(Package package, string part, Worksheet sheet, IReadOnlyList<string> sharedStrings, CellMetadata? metadata,
-        ArrayBudget arrayBudget)
+    public static void Read(Package package, string part, Worksheet sheet, IReadOnlyList<string> sharedStrings, CellMetadata? metadata)
     {
         var loader = new SheetLoader(sheet);
         var shared = new Dictionary<string, SharedFormula>(StringComparer.Ordinal);
@@ -79,7 +78,7 @@ internal static class WorksheetReader
                 throw new InvalidDataException($"Cell {sheet.Name}!{origin} appears twice in '{part}'.");
             var cached = CachedValue(cell, sharedStrings, dateSystem, sheet, origin);
             if (cell.FormulaType != "dataTable" && (cell.FormulaText is { Length: > 0 } || cell.FormulaType == "shared"))
-                LoadFormula(loader, cell, origin, cached, metadata, shared, arrayBudget);
+                LoadFormula(loader, cell, origin, cached, metadata, shared);
             else
                 loader.SetValue(row, column, cached);
         }
@@ -88,7 +87,7 @@ internal static class WorksheetReader
     }
 
     private static void LoadFormula(SheetLoader loader, CellXml cell, CellAddress origin, CellValue cached, CellMetadata? metadata,
-        Dictionary<string, SharedFormula> shared, ArrayBudget arrayBudget)
+        Dictionary<string, SharedFormula> shared)
     {
         SharedFormula formula;
         if (cell.FormulaType == "shared" && cell.SharedIndex is { } index)
@@ -119,16 +118,14 @@ internal static class WorksheetReader
         {
             var area = ParseArea(cell.FormulaRef, origin);
 
-            // An array formula fills its whole area on every calculation; no real workbook comes near the budget.
-            if (!dynamic && !arrayBudget.TryTake(area.CellCount))
+            // An array formula fills its whole area on every calculation, so its area counts against
+            // the workbook's spill budget; one that does not fit is not calculated.
+            if (!loader.SetFormula(origin.Row, origin.Column, formula.Node,
+                    dynamic ? LoadedFormulaKind.Dynamic : LoadedFormulaKind.Array, area, cached))
             {
                 loader.SetUnsupportedFormula(origin.Row, origin.Column, formula.Text,
-                    $"Array formulas of this workbook cover more than {arrayBudget.Limit} cells.", cached);
-                return;
+                    $"The array formula covers {area.CellCount} cells, more than this workbook's spill budget leaves.", cached);
             }
-
-            loader.SetFormula(origin.Row, origin.Column, formula.Node,
-                dynamic ? LoadedFormulaKind.Dynamic : LoadedFormulaKind.Array, area, cached);
         }
         else
         {

@@ -13,6 +13,12 @@ public enum DiagnosticKind
     /// a link to another workbook; the cell got <c>#NAME?</c>.
     /// </summary>
     UnsupportedFormula,
+
+    /// <summary>
+    /// A result was larger than a limit allows, such as the cells all spills of a workbook may
+    /// cover together; the cell got an error.
+    /// </summary>
+    LimitExceeded,
 }
 
 /// <summary>Something calculation noticed that is not visible in cell values alone.</summary>

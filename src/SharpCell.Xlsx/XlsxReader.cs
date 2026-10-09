@@ -65,7 +65,7 @@ internal static class WorkbookReader
         var (date1904, sheets, names) = ReadWorkbookPart(package, workbookPart);
         var relationships = package.ReadRelationships(workbookPart);
 
-        var workbook = new Workbook();
+        var workbook = new Workbook { MaxSpillCells = package.Limits.MaxSpillCells };
         if (date1904)
             workbook.DateSystem = DateSystem.Date1904;
 
@@ -101,11 +101,10 @@ internal static class WorkbookReader
             : [];
         var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target);
 
-        var arrayBudget = new ArrayBudget(package.Limits.MaxArrayFormulaCells);
         foreach (var entry in byIndex)
         {
             if (entry is { } sheet)
-                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, sharedStrings, metadata, arrayBudget);
+                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, sharedStrings, metadata);
         }
 
         return workbook;
@@ -237,22 +236,6 @@ internal static class WorkbookReader
         }
 
         return first;
-    }
-}
-
-/// <summary>Cells array formulas may still cover; shared by all sheets of a workbook.</summary>
-internal sealed class ArrayBudget(long cells)
-{
-    public long Limit { get; } = cells;
-
-    public long Remaining { get; private set; } = cells;
-
-    public bool TryTake(long count)
-    {
-        if (count > Remaining)
-            return false;
-        Remaining -= count;
-        return true;
     }
 }
 

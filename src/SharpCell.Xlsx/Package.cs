@@ -25,10 +25,10 @@ internal sealed class XlsxLimits
     public long MaxTotalBytes { get; init; } = 4L << 30;
 
     /// <summary>
-    /// Cells covered by all array formulas (Ctrl+Shift+Enter) of a workbook together. Each one fills
-    /// its whole area on every calculation, so a tiny file could otherwise claim billions of cells.
+    /// The loaded workbook's spill budget (<see cref="Workbook.MaxSpillCells"/>): cells all spills and
+    /// array formulas may cover together, so a tiny file cannot claim billions of cells.
     /// </summary>
-    public long MaxArrayFormulaCells { get; init; } = 1L << 24;
+    public long MaxSpillCells { get; init; } = 1L << 22;
 }
 
 /// <summary>

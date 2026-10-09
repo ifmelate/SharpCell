@@ -61,6 +61,9 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// </summary>
     public bool Legacy { get; set; }
 
+    /// <summary>The cell's formula predates dynamic arrays, whatever <see cref="Legacy"/> is at the moment.</summary>
+    public bool LegacyFormula { get; init; }
+
     /// <summary>A formula evaluated through <see cref="Workbook.Evaluate"/>, not in a cell.</summary>
     public bool IsDetached { get; init; }
 

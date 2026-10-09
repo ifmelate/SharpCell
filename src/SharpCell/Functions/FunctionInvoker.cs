@@ -29,7 +29,19 @@ internal static class FunctionInvoker
                     call.Set(i, Evaluator.Evaluate(arguments[i], context));
                     break;
                 case ArgumentKind.ScalarAny:
-                    call.Set(i, Evaluator.LegacyScalar(Evaluator.Evaluate(arguments[i], context), context));
+                    // Inside an array parameter, old Excel still intersected IF's condition: that
+                    // is why SUMPRODUCT(IF(...)) needed Ctrl+Shift+Enter.
+                    var outer = context.Legacy;
+                    context.Legacy = context.LegacyFormula;
+                    try
+                    {
+                        call.Set(i, Evaluator.LegacyScalar(Evaluator.Evaluate(arguments[i], context), context));
+                    }
+                    finally
+                    {
+                        context.Legacy = outer;
+                    }
+
                     break;
                 case ArgumentKind.ArrayContext:
                     var legacy = context.Legacy;

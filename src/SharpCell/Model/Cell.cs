@@ -116,7 +116,7 @@ public sealed class Cell
     // As in Excel, an array formula is changed as a whole, from its top-left cell.
     private void EnsureNotArrayMember()
     {
-        if (Worksheet.Store.Get(Row, Column)?.SpillAnchor is { } anchor && anchor.Data?.FixedArray is not null)
+        if (Worksheet.Workbook.Calculation.FixedArrayAt(Worksheet, Row, Column) is { } anchor)
             throw new InvalidOperationException($"{this} is part of the array formula at {anchor}; change the whole array there.");
     }
 

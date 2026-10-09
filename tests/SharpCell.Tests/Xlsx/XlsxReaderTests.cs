@@ -399,13 +399,13 @@ public class XlsxReaderTests
             .Sheet("One", "<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"A1:A6\">1</f><v>1</v></c></row>")
             .Sheet("Two", "<row r=\"1\"><c r=\"A1\"><f t=\"array\" ref=\"A1:A4\">2</f><v>2</v></c><c r=\"B1\"><f t=\"array\" ref=\"B1:B5\">3</f><v>3</v></c></row>")
             .Build();
-        var wb = XlsxReader.Load(stream, new XlsxLimits { MaxArrayFormulaCells = 10 });
+        var wb = XlsxReader.Load(stream, new XlsxLimits { MaxSpillCells = 10 });
         wb.Recalculate();
 
         Assert.Equal([N(1), N(2)], [wb["One"]["A6"].Value, wb["Two"]["A4"].Value]);
         Assert.Equal(CellValue.Error(ErrorKind.Name), wb["Two"]["B1"].Value);
         Assert.Equal(CellValue.Empty, wb["Two"]["B2"].Value);
-        Assert.Contains("more than 10 cells", Assert.Single(wb.Diagnostics).Message);
+        Assert.Contains("spill budget", Assert.Single(wb.Diagnostics).Message);
     }
 
     [Fact]

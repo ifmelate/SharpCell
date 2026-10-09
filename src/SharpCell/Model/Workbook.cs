@@ -65,6 +65,12 @@ public sealed class Workbook
     /// <summary>Clock for NOW and TODAY; replaced in tests.</summary>
     internal TimeProvider Clock { get; set; } = TimeProvider.System;
 
+    /// <summary>
+    /// Cells all spills and array formulas may cover together, anchors included; a result that would
+    /// go beyond is #SPILL!. Bounds the memory a small file can claim (about 400 bytes per cell).
+    /// </summary>
+    internal long MaxSpillCells { get; set; } = 1L << 22;
+
     /// <summary>Source for RAND and friends; replaced in tests.</summary>
     internal Random Random { get; set; } = Random.Shared;
 
