@@ -64,6 +64,7 @@ SharpCell.Workbook.DateSystem.set -> void
 SharpCell.Workbook.DefineName(string! name, string! formula, SharpCell.Worksheet? scope = null) -> void
 SharpCell.Workbook.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CalculationDiagnostic!>!
 SharpCell.Workbook.Evaluate(string! formula) -> SharpCell.CellValue
+SharpCell.Workbook.Evaluate(string! formula, System.Threading.CancellationToken cancellationToken) -> SharpCell.CellValue
 SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
 SharpCell.Workbook.TryGetSheet(string! name, out SharpCell.Worksheet? sheet) -> bool

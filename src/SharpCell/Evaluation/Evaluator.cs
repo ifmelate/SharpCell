@@ -287,12 +287,18 @@ internal static class Evaluator
 
         if (!context.TryEnterName(definition!))
             return CellValue.Error(ErrorKind.Ref);
+
+        // A defined name is evaluated on its own terms: the caller's LET names and LAMBDA
+        // parameters are not visible to it (lambdas it creates capture no caller scope).
+        var callerScope = context.Scope;
+        context.Scope = null;
         try
         {
             return Evaluate(definition!.Formula, context);
         }
         finally
         {
+            context.Scope = callerScope;
             context.LeaveName();
         }
     }

@@ -63,6 +63,8 @@ internal static class LambdaFunctions
                 }
 
                 result[r, c] = inRange ? Element(lambda, arguments, call, r * columns + c) : CellValue.Error(ErrorKind.NA);
+                if (call.MetPendingInput)
+                    return EvaluationContext.PendingPlaceholder;
             }
         }
 
@@ -92,6 +94,10 @@ internal static class LambdaFunctions
             {
                 CheckCancellation(call, index++);
                 accumulator = Evaluator.ToValue(Lambdas.Invoke(lambda, [accumulator, array[r, c]], call.Context), call.Context);
+
+                // A stand-in accumulator would steer the next step: stop at the first dirty read.
+                if (call.MetPendingInput)
+                    return EvaluationContext.PendingPlaceholder;
                 if (steps is not null)
                     steps[r, c] = Scalar(accumulator);
             }
@@ -162,6 +168,8 @@ internal static class LambdaFunctions
         for (var i = 0; i < lines.Length; i++)
         {
             var value = Element(lambda, [lines[i]], call, i);
+            if (call.MetPendingInput)
+                return EvaluationContext.PendingPlaceholder;
             if (rows)
                 result[i, 0] = value;
             else
@@ -199,7 +207,11 @@ internal static class LambdaFunctions
         for (var r = 0; r < rows; r++)
         {
             for (var c = 0; c < columns; c++)
+            {
                 result[r, c] = Element(lambda, [CellValue.Number(r + 1), CellValue.Number(c + 1)], call, (int)(r * columns + c));
+                if (call.MetPendingInput)
+                    return EvaluationContext.PendingPlaceholder;
+            }
         }
 
         return CellValue.Array(result);

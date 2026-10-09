@@ -23,6 +23,9 @@ internal sealed class Binding
 
     public bool Evaluating { get; set; }
 
+    /// <summary>The value was computed from a dirty cell: every later read must signal that again.</summary>
+    public bool MetPending { get; set; }
+
     public static Binding Lazy(FormulaNode node, Scope? scope) => new(null, node, scope);
 
     public static Binding Of(Operand value) => new(value, null, null);

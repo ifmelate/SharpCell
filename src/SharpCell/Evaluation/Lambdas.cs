@@ -10,6 +10,8 @@ internal static class Lambdas
     /// <summary>Nested lambda calls deeper than this give #NUM! (spec: recursion is allowed but bounded).</summary>
     public const int MaxCallDepth = 1024;
 
+    private const int CancellationCheckInterval = 1024;
+
     /// <summary>LET and LAMBDA are syntax, not registry functions; returns false for other names.</summary>
     public static bool TryEvaluateSpecialForm(FunctionNode node, EvaluationContext context, out Operand result)
     {
@@ -35,13 +37,13 @@ internal static class Lambdas
         if (callee.Kind != CellValueKind.Lambda || callee.AsLambda() is not Closure closure)
             return CellValue.Error(ErrorKind.Value);
 
-        var pendingBefore = context.Pending.Count;
+        var pendingBefore = context.PendingReads;
         var arguments = new Operand[argumentNodes.Count];
         for (var i = 0; i < arguments.Length; i++)
             arguments[i] = Evaluator.Evaluate(argumentNodes[i], context);
 
         // An argument met a dirty cell: the body could take a branch the real value would not.
-        if (context.Pending.Count > pendingBefore)
+        if (context.PendingReads > pendingBefore)
             return EvaluationContext.PendingPlaceholder;
 
         return Invoke(closure, arguments, context);
@@ -53,6 +55,10 @@ internal static class Lambdas
             return CellValue.Error(ErrorKind.Value);
         if (context.LambdaDepth >= MaxCallDepth)
             return CellValue.Error(ErrorKind.Num);
+
+        // Recursion makes evaluation time unbounded, so calls are where cancellation is checked.
+        if (++context.LambdaCalls % CancellationCheckInterval == 0)
+            context.CancellationToken.ThrowIfCancellationRequested();
 
         var scope = new Scope(closure.Captured);
         for (var i = 0; i < closure.Parameters.Length; i++)
@@ -76,17 +82,24 @@ internal static class Lambdas
     public static Operand Read(Binding binding, EvaluationContext context)
     {
         if (binding.Value is { } value)
+        {
+            if (binding.MetPending)
+                context.SignalPending();
             return value;
+        }
+
         if (binding.Evaluating)
             return CellValue.Error(ErrorKind.Name);
 
         var saved = context.Scope;
         context.Scope = binding.DefinitionScope;
         binding.Evaluating = true;
+        var pendingBefore = context.PendingReads;
         try
         {
             var result = Evaluator.Evaluate(binding.Node!, context);
             binding.Value = result;
+            binding.MetPending = context.PendingReads > pendingBefore;
             return result;
         }
         finally

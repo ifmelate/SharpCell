@@ -52,6 +52,9 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
     /// <summary>Lambda calls currently in progress.</summary>
     public int LambdaDepth { get; set; }
 
+    /// <summary>Lambda calls made by this evaluation, for periodic cancellation checks.</summary>
+    public long LambdaCalls { get; set; }
+
     /// <summary>The formula predates dynamic arrays; see <see cref="CellData.IsLegacy"/>.</summary>
     public bool Legacy { get; init; }
 
@@ -98,8 +101,18 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
         return data.Value;
     }
 
+    /// <summary>
+    /// Reads of dirty cells so far, repeats included. Code that must not act on a stand-in value
+    /// compares this before and after: a second read of the same dirty cell counts too.
+    /// </summary>
+    public int PendingReads { get; private set; }
+
+    /// <summary>Counts as a read of a dirty cell; used when a cached value was computed from one.</summary>
+    public void SignalPending() => PendingReads++;
+
     private CellValue Wait(CellKey key)
     {
+        PendingReads++;
         if (_pendingSet.Add(key))
             Pending.Add(key);
         return PendingPlaceholder;

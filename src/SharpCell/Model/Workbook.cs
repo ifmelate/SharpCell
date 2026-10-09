@@ -131,12 +131,16 @@ public sealed class Workbook
     /// Out-of-date cells it reads are calculated first. References without a sheet are
     /// <c>#REF!</c> when the workbook has no sheets.
     /// </summary>
-    public CellValue Evaluate(string formula)
+    public CellValue Evaluate(string formula) => Evaluate(formula, CancellationToken.None);
+
+    /// <inheritdoc cref="Evaluate(string)"/>
+    /// <exception cref="OperationCanceledException">The token was cancelled.</exception>
+    public CellValue Evaluate(string formula, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(formula);
         var origin = new CellAddress(1, 1);
         var node = FormulaParser.Parse(formula, origin);
-        return Calculation.EvaluateDetached(node, _sheets.Count > 0 ? _sheets[0] : null, origin);
+        return Calculation.EvaluateDetached(node, _sheets.Count > 0 ? _sheets[0] : null, origin, cancellationToken);
     }
 
 

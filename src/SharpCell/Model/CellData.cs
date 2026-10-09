@@ -42,4 +42,11 @@ internal sealed class CellData
 
     /// <summary>For an anchor whose array result spilled: the area it covers, anchor included.</summary>
     public Area? SpillArea;
+
+    /// <summary>
+    /// For a cell whose result is an array: the rectangle it wants to fill, spilled or not. Content
+    /// appearing or disappearing there makes it try again. Kept apart from <see cref="Registered"/>:
+    /// filling the rectangle is not reading it.
+    /// </summary>
+    public Area? SpillWatch;
 }
