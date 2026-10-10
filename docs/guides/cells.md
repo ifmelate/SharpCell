@@ -91,8 +91,7 @@ workbook's culture for separators and month names: dates come out as dates, perc
 | Empty | an empty string |
 
 Column width plays no part, so a long number is never cut to `####`. A format is no content: it
-does not block a spill and is not listed by `Cells`. Formats are not saved: `XlsxWriter` refuses a
-workbook whose formats changed.
+does not block a spill and is not listed by `Cells`. `XlsxWriter` saves formats with the cells.
 
 ## Styles
 
@@ -154,8 +153,40 @@ Freeze Panes keeps in place; `ShowGridlines` is whether Excel draws gridlines on
 `XlsxReader` takes them from the sheet's first view. A plain split that is not frozen reads as no
 frozen panes. None of them changes a result.
 
-Styles, sizes, merged cells, frozen panes and gridlines are not saved: `XlsxWriter` copies them
-from the file and refuses a workbook in which they changed.
+`XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
+the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
+
+## Inserting and deleting rows and columns
+
+```csharp snippet=insert-rows
+sheet.InsertRows(3);             // a new row 3; rows 3 and below move down
+sheet["A3"].Value = "Travel";
+sheet["B3"].Value = 300;
+workbook.Recalculate();          // B7 is =SUM(B2:B6) now and includes the new row
+
+sheet.DeleteColumns(5);          // column E goes; formulas that read it get #REF!
+```
+
+`InsertRows`, `DeleteRows`, `InsertColumns` and `DeleteColumns` work like Excel's commands. Cells,
+styles, number formats, row heights, column widths, hidden rows and columns, merged areas and
+tables move, and every reference to the moved cells follows them: in formulas of every sheet and
+in defined names. A range the new rows are inserted into grows (`SUM(B2:B5)` becomes `SUM(B2:B6)`),
+and so do merged areas and tables; inserting at a range's first row moves it instead. A range that
+loses some of its rows shrinks, a reference to a deleted cell becomes `#REF!`, and a table whose
+rows are all deleted is removed. Whole-column references such as `A:A` do not change when rows
+move. References through several sheets (`Sheet1:Sheet3!A1`) and text given to `INDIRECT` do not
+change either, as in Excel.
+
+Every formula is calculated again at the next `Workbook.Recalculate`. An edit that would push
+content past the last row or column, split an array formula (Ctrl+Shift+Enter), or remove a
+table's header or totals row without the whole table throws `InvalidOperationException` and changes
+nothing. Inserting or deleting columns inside a table throws `NotSupportedException`, and so does
+any edit of a sheet that has, or is named by, a formula SharpCell cannot read (such as a link to
+another workbook): its references could not follow. Formulas that name a table whose rows were all
+deleted get `#REF!`. Each edit goes through every formula of the workbook, so insert or delete many
+rows with one call (`InsertRows(5, 100)`) rather than one at a time. When the
+workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
+sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
 ## Defined names
 

@@ -83,6 +83,32 @@ internal sealed class SheetStore
         Count = source.Count;
     }
 
+    /// <summary>Moves every cell to where <paramref name="map"/> sends it; cells it sends nowhere are dropped.</summary>
+    public void Move(System.Func<int, int, CellAddress?> map)
+    {
+        var cells = new List<(int Row, int Column, CellData Data)>(Count);
+        foreach (var cell in Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            cells.Add((cell.Row, cell.Column, cell.Data));
+        _rows.Clear();
+        _rowNumbers.Clear();
+        Count = 0;
+        Version++;
+        foreach (var (row, column, data) in cells)
+        {
+            if (map(row, column) is not { } to)
+                continue;
+            if (!_rows.TryGetValue(to.Row, out var target))
+            {
+                target = new RowData();
+                _rows.Add(to.Row, target);
+                _rowNumbers.Add(to.Row);
+            }
+
+            target.Put(to.Column, data);
+            Count++;
+        }
+    }
+
     /// <summary>Existing cells inside the rectangle, row by row, columns ascending. Corners must be ordered.</summary>
     public IEnumerable<StoredCell> Enumerate(int firstRow, int firstColumn, int lastRow, int lastColumn)
     {
@@ -136,6 +162,19 @@ internal sealed class SheetStore
             _cells.Insert(~index, cell);
             created = true;
             return cell;
+        }
+
+        public void Put(int column, CellData data)
+        {
+            var index = _columns.BinarySearch(column);
+            if (index >= 0)
+            {
+                _cells[index] = data;
+                return;
+            }
+
+            _columns.Insert(~index, column);
+            _cells.Insert(~index, data);
         }
 
         public bool Remove(int column)

@@ -1,6 +1,7 @@
 # Reading .xlsx files
 
-What `XlsxReader` loads, what it skips, and how saved results and streams behave.
+What `XlsxReader` loads, what it skips, and how saved results and streams behave. It reads
+.xlsx files and macro-enabled .xlsm and .xltm files; macros are kept for saving and never run.
 
 ## What is read
 
@@ -24,7 +25,7 @@ Pattern and gradient fills, styles of whole rows and columns, conditional format
 
 | File | Result |
 |---|---|
-| .xls, .xlsm, .xlsb, encrypted files | `NotSupportedException` |
+| .xls, .xlsb, encrypted files | `NotSupportedException` |
 | A damaged or non-xlsx file | `InvalidDataException` |
 
 ## Saved results
@@ -46,4 +47,4 @@ The stream does not have to be seekable; a stream that is not is copied into mem
 
 ## Writing
 
-`XlsxWriter` saves new values into the file a workbook was read from; see [Saving .xlsx files](saving.md).
+`XlsxWriter` saves a workbook into the file it was read from, keeping what SharpCell does not read; see [Saving .xlsx files](saving.md).

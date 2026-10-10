@@ -11,6 +11,33 @@ namespace SharpCell.Xlsx;
 /// <summary>A cell style of <c>cellXfs</c>: its number format (null for General) and how it looks.</summary>
 internal sealed record CellXf(NumberFormat? Format, CellStyle Style);
 
+/// <summary>The four edges of a border as read.</summary>
+internal sealed record BorderEdges(CellBorder? Left, CellBorder? Right, CellBorder? Top, CellBorder? Bottom)
+{
+    public static readonly BorderEdges None = new(null, null, null, null);
+}
+
+/// <summary>
+/// The parts of <c>styles.xml</c> as read, by index: custom number formats, fonts, fills (the colour
+/// of a solid fill, and whether a fill is empty), borders and cell styles.
+/// </summary>
+internal sealed class StyleSheet
+{
+    public Dictionary<int, string> Custom { get; } = [];
+
+    public List<CellFont> Fonts { get; } = [];
+
+    /// <summary>The colour of a solid fill; null for any other fill.</summary>
+    public List<CellColor?> Fills { get; } = [];
+
+    /// <summary>Whether a fill is empty (patternType none); patterns other than solid also read as no colour.</summary>
+    public List<bool> EmptyFills { get; } = [];
+
+    public List<BorderEdges> Borders { get; } = [];
+
+    public List<CellXf> Xfs { get; } = [];
+}
+
 /// <summary>
 /// The cell styles of <c>xl/styles.xml</c>: a cell's <c>s</c> attribute is an index into
 /// <c>cellXfs</c>, whose <c>numFmtId</c> is a custom code from <c>numFmts</c> or one of Excel's
@@ -23,7 +50,7 @@ internal static class StylesReader
 {
     // Built-in formats as Excel shows them with an English (United States) locale. Ids 14 and 22
     // follow the locale's short date; OOXML lists them as mm-dd-yy, which Excel does not show.
-    private static readonly Dictionary<int, string> BuiltIn = new()
+    internal static readonly Dictionary<int, string> BuiltIn = new()
     {
         [1] = "0", [2] = "0.00", [3] = "#,##0", [4] = "#,##0.00", [9] = "0%", [10] = "0.00%",
         [11] = "0.00E+00", [12] = "# ?/?", [13] = "# ??/??", [14] = "m/d/yyyy", [15] = "d-mmm-yy",
@@ -48,7 +75,7 @@ internal static class StylesReader
         0x000000, 0xFFFFFF,
     ];
 
-    private static readonly Dictionary<string, CellBorderStyle> BorderStyles = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, CellBorderStyle> BorderStyles = new(StringComparer.Ordinal)
     {
         ["thin"] = CellBorderStyle.Thin, ["medium"] = CellBorderStyle.Medium, ["thick"] = CellBorderStyle.Thick,
         ["double"] = CellBorderStyle.Double, ["hair"] = CellBorderStyle.Hair, ["dotted"] = CellBorderStyle.Dotted,
@@ -57,7 +84,7 @@ internal static class StylesReader
         ["mediumDashDotDot"] = CellBorderStyle.MediumDashDotDot, ["slantDashDot"] = CellBorderStyle.SlantDashDot,
     };
 
-    private static readonly Dictionary<string, CellHorizontalAlignment> Horizontal = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, CellHorizontalAlignment> Horizontal = new(StringComparer.Ordinal)
     {
         ["general"] = CellHorizontalAlignment.General, ["left"] = CellHorizontalAlignment.Left,
         ["center"] = CellHorizontalAlignment.Center, ["right"] = CellHorizontalAlignment.Right,
@@ -65,13 +92,13 @@ internal static class StylesReader
         ["centerContinuous"] = CellHorizontalAlignment.CenterContinuous, ["distributed"] = CellHorizontalAlignment.Distributed,
     };
 
-    private static readonly Dictionary<string, CellVerticalAlignment> Vertical = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, CellVerticalAlignment> Vertical = new(StringComparer.Ordinal)
     {
         ["top"] = CellVerticalAlignment.Top, ["center"] = CellVerticalAlignment.Center, ["bottom"] = CellVerticalAlignment.Bottom,
         ["justify"] = CellVerticalAlignment.Justify, ["distributed"] = CellVerticalAlignment.Distributed,
     };
 
-    private static readonly Dictionary<string, CellUnderline> Underlines = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, CellUnderline> Underlines = new(StringComparer.Ordinal)
     {
         ["none"] = CellUnderline.None, ["single"] = CellUnderline.Single, ["double"] = CellUnderline.Double,
         ["singleAccounting"] = CellUnderline.SingleAccounting, ["doubleAccounting"] = CellUnderline.DoubleAccounting,
@@ -86,7 +113,7 @@ internal static class StylesReader
         try
         {
             using var reader = package.OpenXml(part);
-            return ReadStyles(XDocument.Load(reader).Root, theme);
+            return ReadStyleSheet(XDocument.Load(reader).Root, theme).Xfs;
         }
         catch (XmlException)
         {
@@ -94,13 +121,15 @@ internal static class StylesReader
         }
     }
 
-    private static List<CellXf> ReadStyles(XElement? root, CellColor[] theme)
+    /// <summary>Everything the styles part defines, by index; empty for a part without a root.</summary>
+    public static StyleSheet ReadStyleSheet(XElement? root, CellColor[] theme)
     {
+        var sheet = new StyleSheet();
         if (root is null)
-            return [];
+            return sheet;
 
         // Only numFmts defines codes: differential formats (dxfs) carry numFmt elements too.
-        var custom = new Dictionary<int, string>();
+        var custom = sheet.Custom;
         foreach (var numFmt in Items(root, "numFmts", "numFmt"))
         {
             if (Int(numFmt, "numFmtId") is { } id && numFmt.Attribute("formatCode")?.Value is { } code)
@@ -112,17 +141,22 @@ internal static class StylesReader
             : DefaultPalette.Select(CellColor.FromRgb).ToArray();
         var colors = new Colors(theme, palette);
 
-        var fonts = Items(root, "fonts", "font").Select(colors.Font).ToList();
+        var fonts = sheet.Fonts;
+        fonts.AddRange(Items(root, "fonts", "font").Select(colors.Font));
         var fills = Items(root, "fills", "fill").Select(colors.Fill).ToList();
-        var borders = Items(root, "borders", "border").Select(colors.Border).ToList();
+        sheet.Fills.AddRange(fills.Select(f => f.Color));
+        sheet.EmptyFills.AddRange(Items(root, "fills", "fill").Select(f =>
+            Child(f, "patternFill") is { } pattern && (pattern.Attribute("patternType")?.Value ?? "none") == "none"));
+        var borders = sheet.Borders;
+        borders.AddRange(Items(root, "borders", "border").Select(colors.Border));
 
-        var styles = new List<CellXf>();
+        var styles = sheet.Xfs;
         var shared = new Dictionary<CellStyle, CellStyle>();
         foreach (var xf in Items(root, "cellXfs", "xf"))
         {
             // An id the file does not have falls back to its first entry, the Normal style's.
             var font = At(fonts, Int(xf, "fontId") ?? 0) ?? At(fonts, 0) ?? CellFont.Default;
-            var border = At(borders, Int(xf, "borderId") ?? 0) ?? At(borders, 0) ?? Edges.None;
+            var border = At(borders, Int(xf, "borderId") ?? 0) ?? At(borders, 0) ?? BorderEdges.None;
             var style = CellStyle.Default with
             {
                 Font = font,
@@ -151,7 +185,7 @@ internal static class StylesReader
             styles.Add(new CellXf(Format(Int(xf, "numFmtId") ?? 0, custom), style));
         }
 
-        return styles;
+        return sheet;
     }
 
     /// <summary>An <c>RRGGBB</c> or <c>AARRGGBB</c> colour; the alpha is ignored, as Excel does.</summary>
@@ -252,11 +286,6 @@ internal static class StylesReader
 
     private sealed record FillColor(CellColor? Color);
 
-    private sealed record Edges(CellBorder? Left, CellBorder? Right, CellBorder? Top, CellBorder? Bottom)
-    {
-        public static readonly Edges None = new(null, null, null, null);
-    }
-
     /// <summary>Turns the colour elements of fonts, fills and borders into RGB.</summary>
     private sealed class Colors(CellColor[] theme, CellColor[] palette)
     {
@@ -284,7 +313,7 @@ internal static class StylesReader
                 ? new FillColor(Color(Child(pattern, "fgColor")))
                 : new FillColor(null);
 
-        public Edges Border(XElement border) => new(
+        public BorderEdges Border(XElement border) => new(
             Edge(Child(border, "left") ?? Child(border, "start")),
             Edge(Child(border, "right") ?? Child(border, "end")),
             Edge(Child(border, "top")),

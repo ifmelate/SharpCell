@@ -2,12 +2,12 @@
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves changed values into the file a workbook was read from (see [Saving .xlsx files](saving.md)). It cannot create a file from a workbook built in code, or save new formulas, sheets, names, tables or styles.
-- **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
-- **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures, conditional formats or data validation, or remove or rename sheets; a file's own are kept as they are.
+- **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
+- **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
-- **Writing formats.** Number formats are read and shape `Cell.Text`, but a changed format cannot be saved. Fonts, fills, borders, column widths and conditional formats are not read.
+- **Styles are partly read.** Fonts, solid fills, borders, alignment and number formats are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
 - **Localized function names.** Formulas use English names, as in the file format.
 - **Links to other workbooks.** They evaluate to `#NAME?`.
 - **Cube, real-time data and web functions.** `CUBE*`, `RTD` and `WEBSERVICE` are not available.

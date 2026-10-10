@@ -77,7 +77,7 @@ public class XlsxWriterApiTests
     [InlineData("A1", "0.00")]
     [InlineData("B1", "0.00")]
     [InlineData("C1", "General")]
-    public void A_changed_number_format_cannot_be_saved(string cell, string code)
+    public void A_changed_number_format_is_saved(string cell, string code)
     {
         var file = new TestXlsx
         {
@@ -88,9 +88,9 @@ public class XlsxWriterApiTests
         var unchanged = XlsxWriterTests.Save(workbook);
 
         workbook["S"][cell].NumberFormat = code;
-        var ex = Assert.Throws<NotSupportedException>(() => XlsxWriterTests.Save(workbook));
-        Assert.Contains($"S!{cell}", ex.Message);
-        Assert.Contains("format", ex.Message);
+        var saved = XlsxWriterTests.Reload(XlsxWriterTests.Save(workbook));
+
+        Assert.Equal(code, saved["S"][cell].NumberFormat);
         Assert.NotEmpty(unchanged);
     }
 

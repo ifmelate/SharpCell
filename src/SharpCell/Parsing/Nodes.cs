@@ -149,9 +149,15 @@ internal sealed class BinaryNode(BinaryOperator op, FormulaNode left, FormulaNod
 }
 
 /// <summary>A call by name. The name is upper-case with <c>_xlfn.</c>/<c>_xlws.</c> prefixes removed.</summary>
-internal sealed class FunctionNode(string name, IReadOnlyList<FormulaNode> arguments) : FormulaNode(MaxDepth(arguments) + 1)
+internal sealed class FunctionNode(string name, IReadOnlyList<FormulaNode> arguments, string filePrefix = "") : FormulaNode(MaxDepth(arguments) + 1)
 {
     public string Name { get; } = name;
+
+    /// <summary>
+    /// The <c>_xlfn.</c> (or <c>_xlfn._xlws.</c>) prefix the call had in a file, kept so that a
+    /// function newer than SharpCell's list is written back the way the file had it.
+    /// </summary>
+    public string FilePrefix { get; } = filePrefix;
 
     public IReadOnlyList<FormulaNode> Arguments { get; } = arguments;
 }

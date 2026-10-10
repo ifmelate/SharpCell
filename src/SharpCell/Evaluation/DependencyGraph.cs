@@ -25,6 +25,14 @@ internal sealed class DependencyGraph
         }
     }
 
+    /// <summary>Forgets every dependency, for a workbook whose cells moved.</summary>
+    public void Clear()
+    {
+        _cells.Clear();
+        _ranges.Clear();
+        _names.Clear();
+    }
+
     public void Register(CellKey reader, Dependencies dependencies)
     {
         foreach (var (sheet, area) in dependencies.Areas)

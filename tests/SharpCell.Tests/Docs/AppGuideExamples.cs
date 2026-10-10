@@ -144,6 +144,24 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Insert_and_delete_rows()
+    {
+        var (workbook, sheet) = Budget();
+
+        // snippet: insert-rows
+        sheet.InsertRows(3);             // a new row 3; rows 3 and below move down
+        sheet["A3"].Value = "Travel";
+        sheet["B3"].Value = 300;
+        workbook.Recalculate();          // B7 is =SUM(B2:B6) now and includes the new row
+
+        sheet.DeleteColumns(5);          // column E goes; formulas that read it get #REF!
+        // end-snippet
+
+        Assert.Equal("=SUM(B2:B6)", sheet["B7"].Formula);
+        Assert.Equal(2110, sheet["B7"].Value.AsNumber());
+    }
+
+    [Fact]
     public void Defined_names()
     {
         var workbook = new Workbook();

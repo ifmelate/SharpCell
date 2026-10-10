@@ -8,11 +8,11 @@ public static class XlsxReader
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines. Charts, pivot tables and macros are not read.
+Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines, from .xlsx and macro-enabled .xlsm files. Charts, pivot tables and macros are not read (a save keeps them; macros never run).
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 
-The workbook keeps the file's bytes in memory, so [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) can write new values into the same file.
+The workbook keeps the file's bytes in memory, so [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) can write changes into the same file.
 
 ## Methods
 
@@ -34,7 +34,7 @@ Reads a workbook from a stream, which is left open.
 **Exceptions**
 
 - `InvalidDataException`: The file is not a well-formed .xlsx workbook.
-- `NotSupportedException`: The file is .xls, .xlsm, .xlsb or encrypted.
+- `NotSupportedException`: The file is .xls, .xlsb or encrypted.
 
 <a id="load-string"></a>
 ### Load(string)
@@ -54,4 +54,4 @@ Reads a workbook from a file.
 **Exceptions**
 
 - `InvalidDataException`: The file is not a well-formed .xlsx workbook.
-- `NotSupportedException`: The file is .xls, .xlsm, .xlsb or encrypted.
+- `NotSupportedException`: The file is .xls, .xlsb or encrypted.

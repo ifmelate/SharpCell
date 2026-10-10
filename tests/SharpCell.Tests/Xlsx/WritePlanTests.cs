@@ -30,23 +30,15 @@ public class WritePlanTests
     }
 
     [Fact]
-    public void A_workbook_built_in_code_cannot_be_saved()
+    public void A_workbook_built_in_code_is_saved_into_the_template()
     {
         var workbook = new Workbook();
         workbook.AddSheet("S");
 
-        Assert.Throws<NotSupportedException>(() => WritePlan.Create(workbook, Default));
-    }
+        var plan = WritePlan.Create(workbook, Default);
 
-    [Theory]
-    [MemberData(nameof(XlsxSourceTests.Changes), MemberType = typeof(XlsxSourceTests))]
-    public void A_changed_structure_cannot_be_saved(string change)
-    {
-        var workbook = Calculated();
-        XlsxSourceTests.Change(workbook, change);
-        workbook.Recalculate();
-
-        Assert.Throws<NotSupportedException>(() => WritePlan.Create(workbook, Default));
+        Assert.Empty(plan.Source.Sheets);
+        Assert.Equal("xl/workbook.xml", plan.Source.WorkbookPart);
     }
 
     [Theory]
@@ -54,7 +46,7 @@ public class WritePlanTests
     [InlineData("removed")]
     [InlineData("replaced by a value")]
     [InlineData("added")]
-    public void A_formula_change_cannot_be_saved(string change)
+    public void A_formula_change_is_noted_for_its_sheet(string change)
     {
         var workbook = Calculated();
         var sheet = workbook["S"];
@@ -67,8 +59,20 @@ public class WritePlanTests
         }
 
         workbook.Recalculate();
-        var ex = Assert.Throws<NotSupportedException>(() => WritePlan.Create(workbook, Default));
-        Assert.Contains(change == "added" ? "S!B1" : "S!A2", ex.Message);
+        var plan = WritePlan.Create(workbook, Default);
+
+        Assert.True(plan.FormulasChangedIn(sheet));
+        Assert.True(plan.AnyFormulaChanged);
+    }
+
+    [Fact]
+    public void A_value_change_changes_no_formula()
+    {
+        var workbook = Calculated();
+        workbook["S"]["A1"].Value = 9;
+        workbook.Recalculate();
+
+        Assert.False(WritePlan.Create(workbook, Default).AnyFormulaChanged);
     }
 
     [Fact]

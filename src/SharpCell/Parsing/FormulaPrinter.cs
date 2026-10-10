@@ -30,10 +30,18 @@ internal sealed class FormulaPrinter
     private readonly CellAddress _origin;
     private readonly ReferenceStyle _style;
 
-    private FormulaPrinter(CellAddress origin, ReferenceStyle style)
+    // File syntax: newer functions get their _xlfn. prefixes, LET and LAMBDA names _xlpm., and
+    // operators files do not know become the functions they stand for.
+    private readonly bool _file;
+    private readonly Func<CellAddress, string?>? _tableAt;
+    private readonly List<string> _bound = [];
+
+    private FormulaPrinter(CellAddress origin, ReferenceStyle style, bool file = false, Func<CellAddress, string?>? tableAt = null)
     {
         _origin = origin;
         _style = style;
+        _file = file;
+        _tableAt = tableAt;
     }
 
     /// <param name="origin">The cell the formula belongs to; relative references are printed from it.</param>
@@ -43,6 +51,24 @@ internal sealed class FormulaPrinter
     {
         ArgumentNullException.ThrowIfNull(node);
         var printer = new FormulaPrinter(origin, style);
+        printer.Write(node, 0, unionAllowed: false);
+        return printer._sb.ToString();
+    }
+
+    /// <summary>
+    /// Prints a formula as .xlsx files store it (no leading <c>=</c>): calls of functions newer than
+    /// Excel 2007 with <c>_xlfn.</c>, LET and LAMBDA names with <c>_xlpm.</c> (optional parameters
+    /// <c>_xlop.</c>), <c>A1#</c> as <c>_xlfn.ANCHORARRAY(A1)</c>, <c>@</c> as <c>_xlfn.SINGLE</c>, and
+    /// table references without <c>@</c> and with their table's name.
+    /// </summary>
+    /// <param name="node">The formula tree.</param>
+    /// <param name="origin">The cell the formula belongs to.</param>
+    /// <param name="tableAt">The name of the table containing a cell, or null: a table reference without
+    /// a table name refers to the table of the formula's cell.</param>
+    public static string PrintForFile(FormulaNode node, CellAddress origin, Func<CellAddress, string?> tableAt)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        var printer = new FormulaPrinter(origin, ReferenceStyle.A1, file: true, tableAt);
         printer.Write(node, 0, unionAllowed: false);
         return printer._sb.ToString();
     }
@@ -60,7 +86,7 @@ internal sealed class FormulaPrinter
         WriteBare(node, unionAllowed);
     }
 
-    private static bool NeedsParentheses(FormulaNode node, int minPrecedence, bool unionAllowed) =>
+    private bool NeedsParentheses(FormulaNode node, int minPrecedence, bool unionAllowed) =>
         PrecedenceOf(node) < minPrecedence || (node is BinaryNode { Operator: BinaryOperator.Union } && !unionAllowed);
 
     private void WriteBare(FormulaNode node, bool unionAllowed)
@@ -91,9 +117,15 @@ internal sealed class FormulaPrinter
                 WriteSheet(r.Sheet);
                 _sb.Append(ErrorKind.Ref.ToText());
                 break;
+            case NameNode n when _file && n.Sheet is null && IsBound(n.Name):
+                _sb.Append("_xlpm.").Append(n.Name);
+                break;
             case NameNode n:
                 WriteSheet(n.Sheet);
                 _sb.Append(n.Name);
+                break;
+            case StructuredReferenceNode s when _file:
+                WriteStructuredForFile(s);
                 break;
             case StructuredReferenceNode s:
                 _sb.Append(s.Text);
@@ -112,7 +144,12 @@ internal sealed class FormulaPrinter
             case BinaryNode b:
                 WriteBinary(b, unionAllowed);
                 break;
+            case FunctionNode { Name: "LET" or "LAMBDA" } f when _file:
+                WriteBinding(f);
+                break;
             case FunctionNode f:
+                if (_file)
+                    _sb.Append(IsBound(f.Name) ? "_xlpm." : FutureFunctions.Prefix(f.Name) is { Length: > 0 } known ? known : f.FilePrefix);
                 _sb.Append(f.Name);
                 WriteArguments(f.Arguments);
                 break;
@@ -130,6 +167,16 @@ internal sealed class FormulaPrinter
                 break;
             case ArrayNode a:
                 WriteArray(a.Values);
+                break;
+            case SpillNode s when _file:
+                _sb.Append("_xlfn.ANCHORARRAY(");
+                Write(s.Operand, 0, unionAllowed: false);
+                _sb.Append(')');
+                break;
+            case ImplicitIntersectionNode i when _file:
+                _sb.Append("_xlfn.SINGLE(");
+                Write(i.Operand, 0, unionAllowed: false);
+                _sb.Append(')');
                 break;
             case SpillNode s:
                 Write(s.Operand, Primary, unionAllowed);
@@ -205,6 +252,103 @@ internal sealed class FormulaPrinter
         {
             return false;
         }
+    }
+
+    // LET(name, value, ..., calculation) and LAMBDA(parameter, ..., body): a LET name is bound
+    // from the argument after its value on, a LAMBDA parameter in the body.
+    private void WriteBinding(FunctionNode function)
+    {
+        var outer = _bound.Count;
+        var arguments = function.Arguments;
+        var isLet = function.Name == "LET";
+        string? pending = null;
+        _sb.Append("_xlfn.").Append(function.Name).Append('(');
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            if (i > 0)
+                _sb.Append(',');
+            var isName = i < arguments.Count - 1 && (!isLet || i % 2 == 0);
+            if (isName && arguments[i] is NameNode { Sheet: null } name)
+            {
+                _sb.Append("_xlpm.").Append(name.Name);
+                if (isLet)
+                    pending = name.Name;
+                else
+                    _bound.Add(name.Name);
+                continue;
+            }
+
+            if (isName && !isLet && arguments[i] is StructuredReferenceNode { Reference: { Table: null, Rows: TableRows.Data, FirstColumn: { } optional } } o
+                && o.Reference.LastColumn == optional)
+            {
+                _sb.Append("_xlop.").Append(optional);
+                _bound.Add(optional);
+                continue;
+            }
+
+            Write(arguments[i], 0, unionAllowed: false);
+            if (pending is not null)
+            {
+                _bound.Add(pending);
+                pending = null;
+            }
+        }
+
+        _sb.Append(')');
+        _bound.RemoveRange(outer, _bound.Count - outer);
+    }
+
+    private bool IsBound(string name) => _bound.Exists(bound => bound.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    // Files spell a table reference out: Sales[[#This Row],[Units]] for [@Units], with the table's
+    // name even inside the table.
+    private void WriteStructuredForFile(StructuredReferenceNode node)
+    {
+        var reference = node.Reference;
+        var table = reference.Table ?? _tableAt?.Invoke(_origin);
+        if (table is null || (reference.Table is not null && reference.Rows != TableRows.ThisRow))
+        {
+            _sb.Append(node.Text);
+            return;
+        }
+
+        if (reference.Rows != TableRows.ThisRow)
+        {
+            _sb.Append(table).Append(node.Text);
+            return;
+        }
+
+        _sb.Append(table).Append('[');
+        if (reference.FirstColumn is null)
+        {
+            _sb.Append("#This Row");
+        }
+        else
+        {
+            _sb.Append("[#This Row],");
+            WriteColumn(reference.FirstColumn);
+            if (reference.LastColumn is { } last && last != reference.FirstColumn)
+            {
+                _sb.Append(':');
+                WriteColumn(last);
+            }
+        }
+
+        _sb.Append(']');
+    }
+
+    // An apostrophe escapes the characters that would end or change a bracketed column name.
+    private void WriteColumn(string name)
+    {
+        _sb.Append('[');
+        foreach (var ch in name)
+        {
+            if (ch is '[' or ']' or '#' or '\'')
+                _sb.Append('\'');
+            _sb.Append(ch);
+        }
+
+        _sb.Append(']');
     }
 
     private void WriteArguments(IReadOnlyList<FormulaNode> arguments)
@@ -289,7 +433,7 @@ internal sealed class FormulaPrinter
             || name.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static int PrecedenceOf(FormulaNode node) => node switch
+    private int PrecedenceOf(FormulaNode node) => node switch
     {
         BinaryNode b => b.Operator switch
         {
@@ -307,7 +451,7 @@ internal sealed class FormulaPrinter
 
         // A negative literal prints with a leading '-' and reads back as a prefix operator.
         NumberNode { Value: < 0 } => Prefix,
-        ImplicitIntersectionNode => ImplicitIntersection,
+        ImplicitIntersectionNode => _file ? Primary : ImplicitIntersection,
         _ => Primary,
     };
 

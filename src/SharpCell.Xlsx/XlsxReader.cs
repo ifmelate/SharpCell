@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using SharpCell.Parsing;
 
 namespace SharpCell.Xlsx;
 
 /// <summary>
 /// Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names,
 /// tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles,
-/// column widths, row heights, merged cells, frozen panes and gridlines. Charts, pivot tables and
-/// macros are not read.
+/// column widths, row heights, merged cells, frozen panes and gridlines, from .xlsx and macro-enabled
+/// .xlsm files. Charts, pivot tables and macros are not read (a save keeps them; macros never run).
 /// <para>
 /// Every formula is out of date after loading: <see cref="Cell.Value"/> shows the value cached in
 /// the file until <see cref="Workbook.Recalculate"/> calculates it. A formula SharpCell cannot
@@ -18,7 +19,7 @@ namespace SharpCell.Xlsx;
 /// <c>#NAME?</c> and listed in <see cref="Workbook.Diagnostics"/>.
 /// </para>
 /// <para>
-/// The workbook keeps the file's bytes in memory, so <see cref="XlsxWriter"/> can write new values
+/// The workbook keeps the file's bytes in memory, so <see cref="XlsxWriter"/> can write changes
 /// into the same file.
 /// </para>
 /// </summary>
@@ -28,7 +29,7 @@ public static class XlsxReader
     /// <param name="path">Path of the .xlsx file.</param>
     /// <returns>The workbook, with the results Excel saved until it is recalculated.</returns>
     /// <exception cref="InvalidDataException">The file is not a well-formed .xlsx workbook.</exception>
-    /// <exception cref="NotSupportedException">The file is .xls, .xlsm, .xlsb or encrypted.</exception>
+    /// <exception cref="NotSupportedException">The file is .xls, .xlsb or encrypted.</exception>
     public static Workbook Load(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -51,7 +52,7 @@ public static class XlsxReader
         return Load(copy.ToArray(), limits);
     }
 
-    // The file stays in memory with the workbook: XlsxWriter writes new values into it.
+    // The file stays in memory with the workbook: XlsxWriter writes changes into it.
     internal static Workbook Load(byte[] bytes, XlsxLimits limits)
     {
         try
@@ -137,10 +138,9 @@ internal static class WorkbookReader
         var contentType = package.Exists("[Content_Types].xml") ? package.ContentType(workbookPart) : null;
         if (contentType is null)
             return;
-        if (contentType.Contains("macroEnabled", StringComparison.OrdinalIgnoreCase))
-            throw new NotSupportedException("The file is a macro-enabled workbook (.xlsm/.xltm); only .xlsx files can be read.");
+        // Macro-enabled workbooks (.xlsm, .xltm) are read like any other: macros are kept, never run.
         if (contentType.Contains("binary", StringComparison.OrdinalIgnoreCase))
-            throw new NotSupportedException("The file is a binary workbook (.xlsb); only .xlsx files can be read.");
+            throw new NotSupportedException("The file is a binary workbook (.xlsb); only .xlsx and .xlsm files can be read.");
     }
 
     private static (bool Date1904, IterationSettings Iteration, List<SheetEntry> Sheets, List<NameEntry> Names) ReadWorkbookPart(Package package, string part)
@@ -250,7 +250,9 @@ internal static class WorkbookReader
 
         try
         {
-            workbook.DefineName(name.Name, name.Formula, scope);
+            // As cell formulas are: without the prefixes files give newer functions.
+            var text = name.Formula.StartsWith('=') ? name.Formula : "=" + name.Formula;
+            workbook.DefineName(name.Name, "=" + FormulaPrinter.Print(FormulaParser.Parse(text, new CellAddress(1, 1)), new CellAddress(1, 1)), scope);
         }
         catch (FormulaParseException ex)
         {
