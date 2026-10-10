@@ -63,6 +63,9 @@ internal sealed class NumberFormat
         AmPm,
     }
 
+    /// <summary>The code as it was parsed.</summary>
+    public string FormatCode { get; private init; } = "";
+
     /// <summary>Parses a format code; false for codes Excel rejects (a digit placeholder among date codes, more than four sections).</summary>
     public static bool TryParse(string code, out NumberFormat? format)
     {
@@ -162,7 +165,7 @@ internal sealed class NumberFormat
             text = sections[0];
         }
 
-        return new NumberFormat([.. sections], text);
+        return new NumberFormat([.. sections], text) { FormatCode = code };
     }
 
     // Splits on ';' outside quotes, escapes and brackets. Null for an unterminated quote or bracket.

@@ -193,6 +193,32 @@ public sealed class Cell
         }
     }
 
+    /// <summary>
+    /// The number format Excel shows the cell with, as a format code such as <c>0.00</c>,
+    /// <c>#,##0</c> or <c>yyyy-mm-dd</c>; <c>General</c> when the cell has none. Formats are read
+    /// from .xlsx files and shape how the cell is shown; they play no part in calculation. An empty
+    /// cell can have a format, and a format alone does not make a cell hold something.
+    /// </summary>
+    /// <exception cref="ArgumentException">The code is not a number format.</exception>
+    public string NumberFormat
+    {
+        get => Worksheet.FormatAt(Row, Column)?.FormatCode ?? "General";
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            Worksheet.Workbook.ThrowIfInCustomFunction();
+            if (value.Length == 0 || value.Equals("General", StringComparison.OrdinalIgnoreCase))
+            {
+                Worksheet.SetFormat(Row, Column, null);
+                return;
+            }
+
+            if (!SharpCell.Functions.NumberFormat.TryParse(value, out var format))
+                throw new ArgumentException($"'{value}' is not a number format code.", nameof(value));
+            Worksheet.SetFormat(Row, Column, format);
+        }
+    }
+
     private CellKey Key => new(Worksheet, Row, Column);
 
     // As in Excel, an array formula is changed as a whole, from its top-left cell.

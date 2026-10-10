@@ -1,1 +1,3 @@
 #nullable enable
+SharpCell.Cell.NumberFormat.get -> string!
+SharpCell.Cell.NumberFormat.set -> void

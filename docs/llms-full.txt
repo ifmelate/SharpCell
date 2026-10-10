@@ -1096,6 +1096,19 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="numberformat"></a>
+### NumberFormat
+
+```csharp
+public string NumberFormat { get; set; }
+```
+
+The number format Excel shows the cell with, as a format code such as `0.00`, `#,##0` or `yyyy-mm-dd`; `General` when the cell has none. Formats are read from .xlsx files and shape how the cell is shown; they play no part in calculation. An empty cell can have a format, and a format alone does not make a cell hold something.
+
+**Exceptions**
+
+- `ArgumentException`: The code is not a number format.
+
 <a id="precedents"></a>
 ### Precedents
 
