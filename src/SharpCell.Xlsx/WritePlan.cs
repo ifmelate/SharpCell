@@ -43,7 +43,7 @@ internal sealed class WritePlan
         if (Structure.Of(workbook) != source.Structure)
             throw new NotSupportedException("Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed since the workbook was read; only cell values can be saved.");
         if (Presentation.Of(workbook) != source.Presentation)
-            throw new NotSupportedException("Column widths, hidden columns, row heights, merged cells or the default style changed since the workbook was read; XlsxWriter writes values, not styles.");
+            throw new NotSupportedException("Column widths, hidden columns, row heights, merged cells, frozen panes, gridlines or the default style changed since the workbook was read; XlsxWriter writes values, not styles.");
         foreach (var sheet in workbook.Sheets)
         {
             CheckFormulas(sheet, source.Sheets[sheet]);

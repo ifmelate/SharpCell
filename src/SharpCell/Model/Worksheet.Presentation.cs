@@ -5,7 +5,7 @@ using SharpCell.Evaluation;
 namespace SharpCell;
 
 // How the sheet looks rather than what it calculates: cell styles, column widths, row heights,
-// hidden columns and merged cells. None of it is cell content, and calculation never sees it.
+// hidden columns, merged cells, frozen panes and gridlines. None of it is cell content, and calculation never sees it.
 public sealed partial class Worksheet
 {
     private const double MaxColumnWidth = 255;
@@ -18,6 +18,51 @@ public sealed partial class Worksheet
     private readonly List<Area> _merged = [];
     private double? _defaultColumnWidth;
     private double? _defaultRowHeight;
+    private int _frozenRows;
+    private int _frozenColumns;
+    private bool _showGridlines = true;
+
+    /// <summary>
+    /// How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes
+    /// keeps them; 0 for none.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The count is negative or leaves no row to scroll.</exception>
+    public int FrozenRows
+    {
+        get => _frozenRows;
+        set
+        {
+            if (value is < 0 or >= CellAddress.MaxRow)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Frozen rows must leave at least one row to scroll.");
+            Workbook.ThrowIfInCustomFunction();
+            _frozenRows = value;
+        }
+    }
+
+    /// <summary>How many columns on the left stay in place while the rest scrolls; 0 for none.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The count is negative or leaves no column to scroll.</exception>
+    public int FrozenColumns
+    {
+        get => _frozenColumns;
+        set
+        {
+            if (value is < 0 or >= CellAddress.MaxColumn)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Frozen columns must leave at least one column to scroll.");
+            Workbook.ThrowIfInCustomFunction();
+            _frozenColumns = value;
+        }
+    }
+
+    /// <summary>Whether Excel draws gridlines between the sheet's cells; true unless turned off.</summary>
+    public bool ShowGridlines
+    {
+        get => _showGridlines;
+        set
+        {
+            Workbook.ThrowIfInCustomFunction();
+            _showGridlines = value;
+        }
+    }
 
     internal CellStyle? StyleAt(int row, int column) =>
         _styles.Count != 0 && _styles.TryGetValue(new CellAddress(row, column), out var style) ? style : null;
@@ -186,6 +231,9 @@ public sealed partial class Worksheet
         _merged.AddRange(source._merged);
         _defaultColumnWidth = source._defaultColumnWidth;
         _defaultRowHeight = source._defaultRowHeight;
+        _frozenRows = source._frozenRows;
+        _frozenColumns = source._frozenColumns;
+        _showGridlines = source._showGridlines;
     }
 
     private static double CheckSize(double size, double max, string parameter)
