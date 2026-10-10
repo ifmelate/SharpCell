@@ -9,7 +9,9 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Overview](https://ifmelate.github.io/SharpCell/index.md): What SharpCell is, its packages and a first example.
 - [Getting started](https://ifmelate.github.io/SharpCell/getting-started.md): Install, read an .xlsx file, recalculate, read values; walks through the console sample.
 - [Formulas and values](https://ifmelate.github.io/SharpCell/guides/formulas.md): Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors.
-- [Recalculation](https://ifmelate.github.io/SharpCell/guides/recalculation.md): When values update, volatile functions, cancellation, diagnostics, threads, culture and dates.
+- [Cells, ranges and dates](https://ifmelate.github.io/SharpCell/guides/cells.md): Going through non-empty cells, UsedRange, reading and writing blocks of values, dates as DateTime, defined names.
+- [Recalculation](https://ifmelate.github.io/SharpCell/guides/recalculation.md): When values update, changed cells, precedents and dependents, cancellation, diagnostics, threads, cloning templates, culture and dates.
+- [Custom functions](https://ifmelate.github.io/SharpCell/guides/custom-functions.md): Functions written in C# that formulas call by name: arguments, scalar parameters, volatile functions, failures.
 - [Reading .xlsx files](https://ifmelate.github.io/SharpCell/guides/xlsx.md): What the reader loads and skips, saved results, streams, unsupported formats.
 - [Saving .xlsx files](https://ifmelate.github.io/SharpCell/guides/saving.md): Writing recalculated values back into the file a workbook was read from: what is written, what is refused, KeepUncalculated.
 - [Tables and hidden rows](https://ifmelate.github.io/SharpCell/guides/tables.md): Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE.

@@ -34,7 +34,9 @@ CellValue result = sheet["A2"].Value;   // 6
 
 - [Getting started](getting-started.md): install, read a file, recalculate, read values.
 - [Formulas and values](guides/formulas.md): syntax, references, dynamic arrays, names and LAMBDA.
-- [Recalculation](guides/recalculation.md): when values update, cancellation, diagnostics, threads.
+- [Cells, ranges and dates](guides/cells.md): going through cells, blocks of values, dates, defined names.
+- [Recalculation](guides/recalculation.md): when values update, changed cells, precedents, threads, templates.
+- [Custom functions](guides/custom-functions.md): functions written in C# that formulas call.
 - [Reading .xlsx files](guides/xlsx.md): what the reader loads and what it skips.
 - [Saving .xlsx files](guides/saving.md): writing recalculated values back into a template.
 - [Functions](guides/functions.md): function status, criteria, dates.

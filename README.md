@@ -47,6 +47,8 @@ A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `
 
 - [Documentation site](https://ifmelate.github.io/SharpCell/): getting started, guides, API reference ([source](docs/index.md)).
 - [Tables and hidden rows](docs/guides/tables.md): structured references, tables from files and code, SUBTOTAL and filters.
+- [Custom functions](docs/guides/custom-functions.md): functions written in C# that formulas call, in place of VBA or add-ins.
+- [Recalculation](docs/guides/recalculation.md): changed cells, precedents and dependents, cloning a template per request.
 - [What matches Excel](docs/compatibility.md), also as [JSON](docs/compatibility.json).
 - [For AI coding agents](docs/agents.md): `llms.txt`, `llms-full.txt` and rules to paste into your agent's instructions.
 
