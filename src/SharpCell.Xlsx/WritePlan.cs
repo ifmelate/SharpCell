@@ -50,12 +50,10 @@ internal sealed class WritePlan
     {
         if (workbook.Source is not XlsxSource source)
             throw new NotSupportedException("Only a workbook read by XlsxReader can be saved: SharpCell writes new values into the file the workbook was read from.");
-        if (Structure.Of(workbook, withSheetState: false) != source.Structure)
-            throw new NotSupportedException("Sheets, defined names, tables, the date system or the iteration settings changed since the workbook was read; they cannot be saved yet.");
         var formulasChanged = new HashSet<Worksheet>();
         foreach (var sheet in workbook.Sheets)
         {
-            if (FormulasChanged(sheet, source.Sheets[sheet]))
+            if (FormulasChanged(sheet, source.SheetFor(sheet)))
                 formulasChanged.Add(sheet);
         }
         if (workbook.Calculation.HasDirty)

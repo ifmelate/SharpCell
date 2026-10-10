@@ -9,27 +9,25 @@ namespace SharpCell.Xlsx;
 
 /// <summary>
 /// What a workbook read from a file keeps for saving: the file itself and the state it was read in,
-/// so a save can write new values into the same file and refuse changes it cannot write.
+/// so a save can write into the same file only what changed.
 /// </summary>
 internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workbookPart,
-    IReadOnlyDictionary<Worksheet, SheetSource> sheets, string structure, string presentation, CellStyle defaultStyle) : IWorkbookSource
+    IReadOnlyDictionary<Worksheet, SheetSource> sheets, WorkbookLook look) : IWorkbookSource
 {
-    /// <summary>The workbook's default style as read: cells without a style of their own showed it.</summary>
-    public CellStyle DefaultStyle { get; } = defaultStyle;
-
     public byte[] Bytes { get; } = bytes;
 
     public XlsxLimits Limits { get; } = limits;
 
     public string WorkbookPart { get; } = workbookPart;
 
+    /// <summary>The sheets the file has, with their parts.</summary>
     public IReadOnlyDictionary<Worksheet, SheetSource> Sheets { get; } = sheets;
 
-    /// <summary>The workbook's structure as read, from <see cref="Xlsx.Structure.Of"/>.</summary>
-    public string Structure { get; } = structure;
+    /// <summary>Names, tables, settings and the default style as read.</summary>
+    public WorkbookLook Look { get; } = look;
 
-    /// <summary>The sheets' geometry as read, from <see cref="Xlsx.Presentation.Of"/>.</summary>
-    public string Presentation { get; } = presentation;
+    /// <summary>The sheet's record; a sheet added since the workbook was read has an empty one and no part.</summary>
+    public SheetSource SheetFor(Worksheet sheet) => Sheets.TryGetValue(sheet, out var source) ? source : SheetSource.New;
 
     /// <summary>The same file for a clone of the workbook: the bytes and the per-sheet records are shared.</summary>
     public IWorkbookSource CopyFor(Func<Worksheet, Worksheet> map)
@@ -37,7 +35,7 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
         var sheets = new Dictionary<Worksheet, SheetSource>(Sheets.Count);
         foreach (var (sheet, source) in Sheets)
             sheets.Add(map(sheet), source);
-        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Structure, Presentation, DefaultStyle);
+        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Look);
     }
 
     public static XlsxSource Capture(byte[] bytes, XlsxLimits limits, string workbookPart, Workbook workbook,
@@ -45,32 +43,74 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
     {
         var sheets = new Dictionary<Worksheet, SheetSource>();
         foreach (var (sheet, part) in parts)
-        {
-            var formulas = new Dictionary<CellAddress, LoadedFormula>();
-            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
-            {
-                if (cell.Data.FormulaText is { } text)
-                    formulas[new CellAddress(cell.Row, cell.Column)] = new LoadedFormula(text, cell.Data.IsLegacy, cell.Data.FixedArray);
-            }
-
-            var formats = new Dictionary<CellAddress, string>();
-            foreach (var (address, format) in sheet.Formats)
-                formats[address] = format.FormatCode;
-            sheets[sheet] = new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles), SheetLook.Of(sheet));
-        }
-
-        return new XlsxSource(bytes, limits, workbookPart, sheets, Xlsx.Structure.Of(workbook, withSheetState: false), Xlsx.Presentation.Of(workbook), workbook.DefaultStyle);
+            sheets[sheet] = SheetSource.Capture(sheet, part);
+        return new XlsxSource(bytes, limits, workbookPart, sheets, WorkbookLook.Of(workbook));
     }
 }
 
+/// <summary>A workbook's defined names, tables, settings and default style as read.</summary>
+internal sealed class WorkbookLook
+{
+    private WorkbookLook(Workbook workbook)
+    {
+        DefaultStyle = workbook.DefaultStyle;
+        DateSystem = workbook.DateSystem;
+        Iteration = workbook.Iteration;
+        foreach (var name in workbook.Names.All)
+            Names[Key(name)] = name.Text;
+        Tables = workbook.Tables.Select(t => t.Name.ToUpperInvariant()).ToHashSet(StringComparer.Ordinal);
+    }
+
+    public static WorkbookLook Of(Workbook workbook) => new(workbook);
+
+    /// <summary>Cells without a style of their own showed it.</summary>
+    public CellStyle DefaultStyle { get; }
+
+    public DateSystem DateSystem { get; }
+
+    public IterationSettings Iteration { get; }
+
+    /// <summary>Each defined name's formula text, by scope (the sheet's name, or "") and upper-case name.</summary>
+    public Dictionary<(string Scope, string Name), string> Names { get; } = [];
+
+    /// <summary>The tables' names in upper case.</summary>
+    public IReadOnlySet<string> Tables { get; }
+
+    public static (string Scope, string Name) Key(NameDefinition name) => (name.Scope?.Name ?? "", name.Name);
+
+    public bool NamesChanged(Workbook workbook) =>
+        workbook.Names.All.Count() != Names.Count
+        || workbook.Names.All.Any(name => !Names.TryGetValue(Key(name), out var text) || text != name.Text);
+}
+
 /// <summary>A worksheet's part in the file and its formulas as they were read.</summary>
-internal sealed class SheetSource(string part, IReadOnlyDictionary<CellAddress, LoadedFormula> formulas,
+internal sealed class SheetSource(string? part, IReadOnlyDictionary<CellAddress, LoadedFormula> formulas,
     IReadOnlyDictionary<CellAddress, string> formats, IReadOnlyDictionary<CellAddress, CellStyle> styles, SheetLook look)
 {
+    /// <summary>The record of a sheet the file does not have.</summary>
+    public static SheetSource New { get; } = new(null, new Dictionary<CellAddress, LoadedFormula>(),
+        new Dictionary<CellAddress, string>(), new Dictionary<CellAddress, CellStyle>(), SheetLook.Of(new Workbook().AddSheet("Sheet1")));
+
+    public static SheetSource Capture(Worksheet sheet, string part)
+    {
+        var formulas = new Dictionary<CellAddress, LoadedFormula>();
+        foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+        {
+            if (cell.Data.FormulaText is { } text)
+                formulas[new CellAddress(cell.Row, cell.Column)] = new LoadedFormula(text, cell.Data.IsLegacy, cell.Data.FixedArray);
+        }
+
+        var formats = new Dictionary<CellAddress, string>();
+        foreach (var (address, format) in sheet.Formats)
+            formats[address] = format.FormatCode;
+        return new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles), SheetLook.Of(sheet));
+    }
+
     /// <summary>The sheet's sizes, merges, panes and filter as read.</summary>
     public SheetLook Look { get; } = look;
 
-    public string Part { get; } = part;
+    /// <summary>The worksheet part; null for a sheet added since the workbook was read.</summary>
+    public string? Part { get; } = part;
 
     public IReadOnlyDictionary<CellAddress, LoadedFormula> Formulas { get; } = formulas;
 
@@ -84,26 +124,19 @@ internal sealed class SheetSource(string part, IReadOnlyDictionary<CellAddress, 
 /// <summary>A formula cell as read: the formula a save leaves in the file must still be this one.</summary>
 internal readonly record struct LoadedFormula(string Text, bool IsLegacy, Area? FixedArray);
 
-/// <summary>Everything about a workbook other than its cells that a save cannot write, as comparable text.</summary>
+/// <summary>Everything about a workbook other than its cells and their looks, as comparable text (for tests).</summary>
 internal static class Structure
 {
-    /// <param name="workbook">The workbook.</param>
-    /// <param name="withSheetState">Whether to include each sheet's filter mode and hidden rows.</param>
-    public static string Of(Workbook workbook, bool withSheetState = true)
+    public static string Of(Workbook workbook)
     {
         var text = new StringBuilder();
         text.Append("dates ").Append(workbook.DateSystem).Append('\n');
         text.Append("iteration ").Append(workbook.Iteration).Append('\n');
         foreach (var sheet in workbook.Sheets)
         {
-            text.Append("sheet ").Append(sheet.Name);
-            if (withSheetState)
-            {
-                text.Append(" filter ").Append(sheet.FilterMode).Append(" hidden");
-                foreach (var row in sheet.HiddenRows.Order())
-                    text.Append(' ').Append(row.ToString(CultureInfo.InvariantCulture));
-            }
-
+            text.Append("sheet ").Append(sheet.Name).Append(" filter ").Append(sheet.FilterMode).Append(" hidden");
+            foreach (var row in sheet.HiddenRows.Order())
+                text.Append(' ').Append(row.ToString(CultureInfo.InvariantCulture));
             text.Append('\n');
         }
 
@@ -122,7 +155,7 @@ internal static class Structure
     }
 }
 
-/// <summary>How the sheets look apart from cell styles, as comparable text: a save copies it from the file and cannot write changes.</summary>
+/// <summary>How the sheets look apart from cell styles, as comparable text (for tests).</summary>
 internal static class Presentation
 {
     public static string Of(Workbook workbook)

@@ -57,18 +57,29 @@ internal sealed class WorksheetWriter
     // The rectangle of the sheet's stored cells, or null for an empty sheet.
     private readonly Area? _used;
 
-    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved, CellMetadataWriter metadata, StylesWriter styles)
+    // Relationship ids of table parts added for new tables.
+    private readonly IReadOnlyList<string> _newTables;
+
+    // Header cells of new tables, written with their column's name.
+    private readonly IReadOnlyDictionary<CellAddress, string> _headers;
+
+    private WorksheetWriter(Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved, CellMetadataWriter metadata,
+        StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlyDictionary<CellAddress, string> headers)
     {
         _sheet = sheet;
         _plan = plan;
         _saved = saved;
         _metadata = metadata;
         _styles = styles;
-        _source = plan.Source.Sheets[sheet];
+        _source = source;
+        _newTables = newTables;
+        _headers = headers;
         _expandShared = plan.FormulasChangedIn(sheet);
-        _model = ModelCells(sheet).GetEnumerator();
+        _model = ModelCells(sheet, headers.Keys).GetEnumerator();
         _hasModel = _model.MoveNext();
-        foreach (var cell in ModelCells(sheet))
+        if (newTables.Count > 0)
+            _pending.Add("tableParts");
+        foreach (var cell in ModelCells(sheet, headers.Keys))
             _used = _used is { } area ? Area.Bounding(area, Area.Cell(cell.Row, cell.Column)) : Area.Cell(cell.Row, cell.Column);
 
         _look = _source.Look;
@@ -99,12 +110,20 @@ internal sealed class WorksheetWriter
     }
 
     /// <returns>The part written again, or null when no value in it changed.</returns>
-    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved,
-        CellMetadataWriter metadata, StylesWriter styles)
+    /// <param name="reader">The worksheet part as the file has it, or an empty one for a new sheet.</param>
+    /// <param name="sheet">The sheet.</param>
+    /// <param name="source">The sheet as read.</param>
+    /// <param name="plan">The save.</param>
+    /// <param name="saved">What the file's cells point into.</param>
+    /// <param name="metadata">Cell metadata to find or add entries in.</param>
+    /// <param name="styles">Cell styles to find or add entries in.</param>
+    /// <param name="newTables">Relationship ids of table parts to list.</param>
+    /// <param name="headers">Header cells of new tables, with their column names.</param>
+    public static byte[]? Write(XmlReader reader, Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved,
+        CellMetadataWriter metadata, StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlyDictionary<CellAddress, string> headers)
     {
-        var writer = new WorksheetWriter(sheet, plan, saved, metadata, styles);
+        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, headers);
         var output = new MemoryStream();
-        using (var reader = package.OpenXml(part))
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
             writer.Copy(reader, xml);
         return writer._changed ? output.ToArray() : null;
@@ -147,6 +166,7 @@ internal sealed class WorksheetWriter
                     case "sheetData":
                         SheetData(reader, writer);
                         break;
+                    case "tableParts" when _newTables.Count > 0:
                     case "sheetPr" when _filterChanged:
                     case "sheetViews" when _viewChanged:
                     case "sheetFormatPr" when _defaultsChanged:
@@ -194,8 +214,21 @@ internal sealed class WorksheetWriter
         "sheetViews" => SheetViews(source),
         "sheetFormatPr" => SheetFormat(source),
         "cols" => Columns(source),
+        "tableParts" => TableParts(source),
         _ => MergeCells(),
     };
+
+    private XElement TableParts(XElement? element)
+    {
+        XNamespace relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+        element ??= new XElement(_ns + "tableParts", new XAttribute(XNamespace.Xmlns + "r", relationships));
+        var existing = element.Elements(_ns + "tablePart").SelectMany(t => t.Attributes()).FirstOrDefault(a => a.Name.LocalName == "id" && a.Name.Namespace != XNamespace.None);
+        var r = existing?.Name.Namespace ?? relationships;
+        foreach (var id in _newTables)
+            element.Add(new XElement(_ns + "tablePart", new XAttribute(r + "id", id)));
+        element.SetAttributeValue("count", element.Elements(_ns + "tablePart").Count());
+        return element;
+    }
 
     private XElement SheetProperties(XElement? element)
     {
@@ -561,9 +594,16 @@ internal sealed class WorksheetWriter
 
     // The sheet's stored cells merged with the positions that have only a style or a number format,
     // in row and column order.
-    private static IEnumerable<ModelCell> ModelCells(Worksheet sheet)
+    private static IEnumerable<ModelCell> ModelCells(Worksheet sheet, IEnumerable<CellAddress> more)
     {
         var extras = new List<CellAddress>();
+        foreach (var address in more)
+        {
+            if (sheet.Store.Get(address.Row, address.Column) is null && sheet.StyleAt(address.Row, address.Column) is null
+                && sheet.FormatAt(address.Row, address.Column) is null)
+                extras.Add(address);
+        }
+
         foreach (var address in sheet.Styles.Keys)
         {
             if (sheet.Store.Get(address.Row, address.Column) is null)
@@ -601,9 +641,11 @@ internal sealed class WorksheetWriter
 
     private XElement? NewContent(ModelCell cell)
     {
+        var address = new CellAddress(cell.Row, cell.Column);
+        if (_headers.TryGetValue(address, out var header))
+            return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), CellValue.Text(header), isFormula: false, null);
         if (cell.Data is not { } data)
             return null;
-        var address = new CellAddress(cell.Row, cell.Column);
         if (data.FormulaText is not null)
             return WriteFormula(new XElement(_ns + "c", new XAttribute("r", address.ToString())), data, cell.Row, cell.Column);
 
@@ -618,7 +660,20 @@ internal sealed class WorksheetWriter
 
     // The source cell, the cell written again, or null when the cell goes away.
     private XElement? Cell(XElement source, int row, int column) =>
-        Styled(Content(source, row, column), StyleIndex(source), row, column);
+        Styled(_headers.TryGetValue(new CellAddress(row, column), out var header) ? HeaderCell(source, row, column, header) : Content(source, row, column),
+            StyleIndex(source), row, column);
+
+    // A new table's header cell holds its column's name as text.
+    private XElement HeaderCell(XElement source, int row, int column, string name)
+    {
+        if (source.Attribute("r") is null)
+            source.ReplaceAttributes(new XAttribute("r", new CellAddress(row, column).ToString()), source.Attributes().ToList());
+        if (_hasModel && _model.Current.Row == row && _model.Current.Column == column)
+            Advance();
+        source.Elements(_ns + "f").Remove();
+        source.Attribute("cm")?.Remove();
+        return Rewrite(source, CellValue.Text(name), isFormula: false, null);
+    }
 
     private static int? StyleIndex(XElement cell) =>
         int.TryParse((string?)cell.Attribute("s"), NumberStyles.None, CultureInfo.InvariantCulture, out var index) ? index : null;
@@ -649,7 +704,7 @@ internal sealed class WorksheetWriter
         var address = new CellAddress(row, column);
         var style = _sheet.StyleAt(row, column) ?? _sheet.Workbook.DefaultStyle;
         var code = _sheet.FormatAt(row, column)?.FormatCode ?? "General";
-        var loadedStyle = _source.Styles.TryGetValue(address, out var own) ? own : _plan.Source.DefaultStyle;
+        var loadedStyle = _source.Styles.TryGetValue(address, out var own) ? own : _plan.Source.Look.DefaultStyle;
         var loadedCode = _source.Formats.TryGetValue(address, out var format) ? format : "General";
         if (style == loadedStyle && code == loadedCode)
             return sourceStyle;

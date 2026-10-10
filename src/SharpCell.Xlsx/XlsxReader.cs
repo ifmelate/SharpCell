@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using SharpCell.Parsing;
 
 namespace SharpCell.Xlsx;
 
@@ -249,7 +250,9 @@ internal static class WorkbookReader
 
         try
         {
-            workbook.DefineName(name.Name, name.Formula, scope);
+            // As cell formulas are: without the prefixes files give newer functions.
+            var text = name.Formula.StartsWith('=') ? name.Formula : "=" + name.Formula;
+            workbook.DefineName(name.Name, "=" + FormulaPrinter.Print(FormulaParser.Parse(text, new CellAddress(1, 1)), new CellAddress(1, 1)), scope);
         }
         catch (FormulaParseException ex)
         {

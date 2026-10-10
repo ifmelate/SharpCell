@@ -27,11 +27,11 @@ public class IterationReaderTests
     }
 
     [Fact]
-    public void Changed_iteration_settings_cannot_be_saved()
+    public void Changed_iteration_settings_are_saved()
     {
         var workbook = XlsxWriterTests.Load(new TestXlsx().Sheet("S", "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>"));
         workbook.Iteration = new IterationSettings(Enabled: true);
         workbook.Recalculate();
-        Assert.Throws<NotSupportedException>(() => XlsxWriterTests.Save(workbook));
+        Assert.Equal(new IterationSettings(Enabled: true), XlsxWriterTests.Reload(XlsxWriterTests.Save(workbook)).Iteration);
     }
 }

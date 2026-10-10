@@ -39,17 +39,6 @@ public class WritePlanTests
     }
 
     [Theory]
-    [MemberData(nameof(XlsxSourceTests.UnsavedChanges), MemberType = typeof(XlsxSourceTests))]
-    public void A_changed_structure_cannot_be_saved(string change)
-    {
-        var workbook = Calculated();
-        XlsxSourceTests.Change(workbook, change);
-        workbook.Recalculate();
-
-        Assert.Throws<NotSupportedException>(() => WritePlan.Create(workbook, Default));
-    }
-
-    [Theory]
     [InlineData("changed")]
     [InlineData("removed")]
     [InlineData("replaced by a value")]
