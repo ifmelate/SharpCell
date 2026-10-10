@@ -35,6 +35,22 @@ internal sealed class WorksheetWriter
     private string _prefix = "";
     private CellAddress _previous;
 
+    // What changed apart from cells, against the sheet as read: those parts are written again.
+    private readonly SheetLook _look;
+    private readonly bool _columnsChanged;
+    private readonly bool _rowsChanged;
+    private readonly bool _mergesChanged;
+    private readonly bool _viewChanged;
+    private readonly bool _defaultsChanged;
+    private readonly bool _filterChanged;
+
+    // Elements to add where the schema puts them when the part has none.
+    private readonly List<string> _pending = [];
+
+    // Rows whose height or hidden flag changed, in order; those the file has no element for get one.
+    private readonly List<int> _changedRows = [];
+    private int _nextChangedRow;
+
     // Areas of kept dynamic arrays as the file states them: their spilled cells stay as saved.
     private readonly List<Area> _keptSpills = [];
 
@@ -54,6 +70,32 @@ internal sealed class WorksheetWriter
         _hasModel = _model.MoveNext();
         foreach (var cell in ModelCells(sheet))
             _used = _used is { } area ? Area.Bounding(area, Area.Cell(cell.Row, cell.Column)) : Area.Cell(cell.Row, cell.Column);
+
+        _look = _source.Look;
+        _columnsChanged = _look.ColumnsChanged(sheet);
+        _rowsChanged = _look.RowsChanged(sheet);
+        _mergesChanged = _look.MergesChanged(sheet);
+        _viewChanged = _look.ViewChanged(sheet);
+        _defaultsChanged = _look.DefaultsChanged(sheet);
+        _filterChanged = _look.FilterChanged(sheet);
+        if (_filterChanged && sheet.FilterMode)
+            _pending.Add("sheetPr");
+        if (_viewChanged)
+            _pending.Add("sheetViews");
+        if (_defaultsChanged)
+            _pending.Add("sheetFormatPr");
+        if (_columnsChanged)
+            _pending.Add("cols");
+        if (_mergesChanged)
+            _pending.Add("mergeCells");
+        if (_rowsChanged)
+        {
+            var rows = new SortedSet<int>(_look.RowHeights.Keys);
+            rows.UnionWith(_look.HiddenRows);
+            rows.UnionWith(sheet.RowHeights.Keys);
+            rows.UnionWith(sheet.HiddenRows);
+            _changedRows.AddRange(rows.Where(row => _look.RowChanged(sheet, row)));
+        }
     }
 
     /// <returns>The part written again, or null when no value in it changed.</returns>
@@ -75,24 +117,247 @@ internal sealed class WorksheetWriter
         {
             if (reader.NodeType == XmlNodeType.Element && reader.Depth == 0)
             {
+                _ns = reader.NamespaceURI;
+                _prefix = reader.Prefix;
                 var empty = reader.IsEmptyElement;
                 XmlParts.CopyStartTag(reader, writer);
                 if (empty)
+                {
+                    WritePending(int.MaxValue, writer);
                     writer.WriteEndElement();
+                }
             }
-            else if (reader.NodeType == XmlNodeType.Element && reader.Depth == 1 && reader.LocalName == "dimension")
+            else if (reader.NodeType == XmlNodeType.Element && reader.Depth == 1)
             {
-                Dimension((XElement)XNode.ReadFrom(reader)).WriteTo(writer);
+                var name = reader.LocalName;
+                var rank = reader.NamespaceURI == _ns.NamespaceName ? WorksheetParts.Rank(name) : -1;
+                if (rank >= 0)
+                    WritePending(rank, writer);
+                if (rank < 0)
+                {
+                    XmlParts.CopyNode(reader, writer);
+                    continue;
+                }
+
+                switch (name)
+                {
+                    case "dimension":
+                        Dimension((XElement)XNode.ReadFrom(reader)).WriteTo(writer);
+                        break;
+                    case "sheetData":
+                        SheetData(reader, writer);
+                        break;
+                    case "sheetPr" when _filterChanged:
+                    case "sheetViews" when _viewChanged:
+                    case "sheetFormatPr" when _defaultsChanged:
+                    case "cols" when _columnsChanged:
+                    case "mergeCells" when _mergesChanged:
+                        _pending.Remove(name);
+                        _changed = true;
+                        Build(name, (XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
+                        break;
+                    default:
+                        XmlParts.CopyNode(reader, writer);
+                        break;
+                }
             }
-            else if (reader.NodeType == XmlNodeType.Element && reader.Depth == 1 && reader.LocalName == "sheetData")
+            else if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == 0)
             {
-                SheetData(reader, writer);
+                WritePending(int.MaxValue, writer);
+                XmlParts.CopyNode(reader, writer);
             }
             else
             {
                 XmlParts.CopyNode(reader, writer);
             }
         }
+    }
+
+    // Adds the elements the part lacks that come before an element of this rank.
+    private void WritePending(int rank, XmlWriter writer)
+    {
+        foreach (var name in _pending.Where(name => WorksheetParts.Rank(name) < rank).ToList())
+        {
+            _pending.Remove(name);
+            if (Build(name, null) is { } element)
+            {
+                _changed = true;
+                element.WriteTo(writer);
+            }
+        }
+    }
+
+    // The element as the sheet now needs it, from the file's (or none); null when it has nothing to say.
+    private XElement? Build(string name, XElement? source) => name switch
+    {
+        "sheetPr" => SheetProperties(source),
+        "sheetViews" => SheetViews(source),
+        "sheetFormatPr" => SheetFormat(source),
+        "cols" => Columns(source),
+        _ => MergeCells(),
+    };
+
+    private XElement SheetProperties(XElement? element)
+    {
+        element ??= new XElement(_ns + "sheetPr");
+        element.SetAttributeValue("filterMode", _sheet.FilterMode ? "1" : null);
+        return element;
+    }
+
+    private XElement SheetViews(XElement? element)
+    {
+        element ??= new XElement(_ns + "sheetViews");
+        var view = element.Element(_ns + "sheetView");
+        if (view is null)
+        {
+            view = new XElement(_ns + "sheetView", new XAttribute("workbookViewId", 0));
+            element.AddFirst(view);
+        }
+
+        view.SetAttributeValue("showGridLines", _sheet.ShowGridlines ? null : "0");
+        if (!_look.PanesChanged(_sheet))
+            return element;
+
+        // Frozen panes replace any pane and the selections that belonged to its parts.
+        view.Elements(_ns + "pane").Remove();
+        view.Elements(_ns + "selection").Where(selection => selection.Attribute("pane") is not null).Remove();
+        int rows = _sheet.FrozenRows, columns = _sheet.FrozenColumns;
+        if (rows == 0 && columns == 0)
+            return element;
+        var active = rows > 0 && columns > 0 ? "bottomRight" : rows > 0 ? "bottomLeft" : "topRight";
+        var pane = new XElement(_ns + "pane",
+            columns > 0 ? new XAttribute("xSplit", columns) : null,
+            rows > 0 ? new XAttribute("ySplit", rows) : null,
+            new XAttribute("topLeftCell", new CellAddress(rows + 1, columns + 1).ToString()),
+            new XAttribute("activePane", active),
+            new XAttribute("state", "frozen"));
+        view.AddFirst(pane);
+        pane.AddAfterSelf(new XElement(_ns + "selection", new XAttribute("pane", active)));
+        return element;
+    }
+
+    private XElement SheetFormat(XElement? element)
+    {
+        element ??= new XElement(_ns + "sheetFormatPr");
+        element.SetAttributeValue("defaultColWidth", _sheet.DefaultColumnWidth is { } width ? WorksheetParts.Number(width) : null);
+        if (_sheet.DefaultRowHeight is { } height)
+        {
+            element.SetAttributeValue("defaultRowHeight", WorksheetParts.Number(height));
+            element.SetAttributeValue("customHeight", "1");
+        }
+        else if (element.Attribute("defaultRowHeight") is null)
+        {
+            element.SetAttributeValue("defaultRowHeight", "15");   // required by the schema; Excel's for Calibri 11
+        }
+
+        return element;
+    }
+
+    // The file's column ranges cut into single columns, the widths and hidden flags that changed
+    // applied, and joined again where neighbours agree; other attributes (styles) are kept.
+    private XElement? Columns(XElement? element)
+    {
+        var columns = new SortedDictionary<int, List<(string Name, string Value)>>();
+        foreach (var col in element?.Elements(_ns + "col") ?? [])
+        {
+            if (!int.TryParse((string?)col.Attribute("min"), NumberStyles.None, CultureInfo.InvariantCulture, out var min)
+                || !int.TryParse((string?)col.Attribute("max"), NumberStyles.None, CultureInfo.InvariantCulture, out var max)
+                || min < 1 || max > CellAddress.MaxColumn || min > max)
+                continue;
+            var attributes = col.Attributes().Where(a => a.Name.LocalName is not ("min" or "max")).Select(a => (a.Name.LocalName, a.Value)).ToList();
+            for (var column = min; column <= max; column++)
+                columns[column] = [.. attributes];
+        }
+
+        var touched = new SortedSet<int>(_look.ColumnWidths.Keys);
+        touched.UnionWith(_look.HiddenColumns);
+        touched.UnionWith(_sheet.ColumnWidths.Keys);
+        touched.UnionWith(_sheet.HiddenColumns);
+        foreach (var column in touched)
+        {
+            var width = _sheet.ColumnWidth(column);
+            var hidden = _sheet.IsColumnHidden(column);
+            if (!columns.TryGetValue(column, out var attributes))
+                columns[column] = attributes = [];
+            if (width != _look.LoadedWidth(column))
+            {
+                Set(attributes, "width", width is { } w ? WorksheetParts.Number(w) : null);
+                Set(attributes, "customWidth", width is null ? null : "1");
+            }
+
+            if (hidden != _look.HiddenColumns.Contains(column))
+                Set(attributes, "hidden", hidden ? "1" : null);
+            if (attributes.Count == 0)
+                columns.Remove(column);
+        }
+
+        if (columns.Count == 0)
+            return null;
+        var result = new XElement(_ns + "cols");
+        int? start = null, previous = null;
+        List<(string, string)>? run = null;
+        void Flush()
+        {
+            if (start is { } first)
+            {
+                result.Add(new XElement(_ns + "col", new XAttribute("min", first), new XAttribute("max", previous!.Value),
+                    run!.Select(a => new XAttribute(a.Item1, a.Item2))));
+            }
+        }
+
+        foreach (var (column, attributes) in columns)
+        {
+            if (start is null || previous != column - 1 || !run!.SequenceEqual(attributes))
+            {
+                Flush();
+                start = column;
+                run = attributes;
+            }
+
+            previous = column;
+        }
+
+        Flush();
+        return result;
+    }
+
+    private static void Set(List<(string Name, string Value)> attributes, string name, string? value)
+    {
+        var index = attributes.FindIndex(a => a.Name == name);
+        if (value is null)
+        {
+            if (index >= 0)
+                attributes.RemoveAt(index);
+        }
+        else if (index >= 0)
+        {
+            attributes[index] = (name, value);
+        }
+        else
+        {
+            attributes.Add((name, value));
+        }
+    }
+
+    private XElement? MergeCells()
+    {
+        var merged = _sheet.MergedAreaList;
+        return merged.Count == 0
+            ? null
+            : new XElement(_ns + "mergeCells", new XAttribute("count", merged.Count),
+                merged.Select(area => new XElement(_ns + "mergeCell", new XAttribute("ref", Format(area)))));
+    }
+
+    private void WriteRowAttributes(XmlWriter writer, int row)
+    {
+        if (_sheet.RowHeight(row) is { } height)
+        {
+            writer.WriteAttributeString("ht", WorksheetParts.Number(height));
+            writer.WriteAttributeString("customHeight", "1");
+        }
+
+        if (_sheet.IsRowHidden(row))
+            writer.WriteAttributeString("hidden", "1");
     }
 
     // Widened to the cells the sheet now has; never narrowed (a larger one is also valid).
@@ -129,8 +394,6 @@ internal sealed class WorksheetWriter
 
     private void SheetData(XmlReader reader, XmlWriter writer)
     {
-        _ns = reader.NamespaceURI;
-        _prefix = reader.Prefix;
         var depth = reader.Depth;
         var empty = reader.IsEmptyElement;
         XmlParts.CopyStartTag(reader, writer);
@@ -175,9 +438,35 @@ internal sealed class WorksheetWriter
         var depth = reader.Depth;
         var empty = reader.IsEmptyElement;
         var positioned = reader.GetAttribute("r") is not null;
-        XmlParts.CopyStartTag(reader, writer);
-        if (!positioned)
-            writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
+        while (_nextChangedRow < _changedRows.Count && _changedRows[_nextChangedRow] <= row)
+            _nextChangedRow++;
+        if (_rowsChanged && _look.RowChanged(_sheet, row))
+        {
+            // The row's height and hidden flag as the sheet has them now; its other attributes stay.
+            _changed = true;
+            writer.WriteStartElement(reader.Prefix, reader.LocalName, reader.NamespaceURI);
+            if (!positioned)
+                writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
+            if (reader.MoveToFirstAttribute())
+            {
+                do
+                {
+                    if (reader.LocalName is not ("ht" or "customHeight" or "hidden") || reader.NamespaceURI.Length != 0)
+                        writer.WriteAttributeString(reader.Prefix, reader.LocalName, reader.NamespaceURI, reader.Value);
+                }
+                while (reader.MoveToNextAttribute());
+                reader.MoveToElement();
+            }
+
+            WriteRowAttributes(writer, row);
+            reader.Read();
+        }
+        else
+        {
+            XmlParts.CopyStartTag(reader, writer);
+            if (!positioned)
+                writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
+        }
 
         var column = 0;
         if (!empty)
@@ -224,11 +513,17 @@ internal sealed class WorksheetWriter
         _previous = current;
     }
 
+    // Rows the file does not have: rows of new cells, and rows whose height or hidden flag changed.
     private void NewRowsBefore(int row, XmlWriter writer)
     {
-        while (_hasModel && _model.Current.Row < row)
+        while (true)
         {
-            var current = _model.Current.Row;
+            var cellRow = _hasModel ? _model.Current.Row : int.MaxValue;
+            var changedRow = _nextChangedRow < _changedRows.Count ? _changedRows[_nextChangedRow] : int.MaxValue;
+            var current = Math.Min(cellRow, changedRow);
+            if (current >= row || current == int.MaxValue)
+                return;
+
             var cells = new List<XElement>();
             while (_hasModel && _model.Current.Row == current)
             {
@@ -237,10 +532,16 @@ internal sealed class WorksheetWriter
                 Advance();
             }
 
-            if (cells.Count == 0)
+            var attributes = changedRow == current;
+            if (attributes)
+                _nextChangedRow++;
+            if (cells.Count == 0 && !attributes)
                 continue;
+            _changed = true;
             writer.WriteStartElement(_prefix, "row", _ns.NamespaceName);
             writer.WriteAttributeString("r", current.ToString(CultureInfo.InvariantCulture));
+            if (attributes)
+                WriteRowAttributes(writer, current);
             foreach (var cell in cells)
                 cell.WriteTo(writer);
             writer.WriteEndElement();

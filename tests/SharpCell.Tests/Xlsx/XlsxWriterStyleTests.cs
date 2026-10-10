@@ -34,31 +34,6 @@ public class XlsxWriterStyleTests
         Assert.Equal("C1:D1", Assert.Single(saved.MergedAreas).Address);
     }
 
-    public static TheoryData<string, Action<Worksheet>> Changes => new()
-    {
-        { "column", s => s.SetColumnWidth(2, 25) },
-        { "column", s => s.SetColumnHidden(3, true) },
-        { "row", s => s.SetRowHeight(1, null) },
-        { "row", s => s.DefaultRowHeight = 20 },
-        { "merge", s => s.Merge("A3:B3") },
-        { "merge", s => s.Unmerge("C1:D1") },
-        { "frozen", s => s.FrozenRows = 1 },
-        { "frozen", s => s.FrozenColumns = 2 },
-        { "gridlines", s => s.ShowGridlines = false },
-    };
-
-    [Theory]
-    [MemberData(nameof(Changes))]
-    public void A_changed_style_or_geometry_is_refused(string mentioned, Action<Worksheet> change)
-    {
-        var workbook = Load();
-
-        change(workbook["S"]);
-
-        var ex = Assert.Throws<NotSupportedException>(() => XlsxWriterTests.Save(workbook));
-        Assert.Contains(mentioned, ex.Message);
-    }
-
     [Fact]
     public void A_style_set_back_to_what_the_file_had_saves()
     {

@@ -56,17 +56,20 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
             var formats = new Dictionary<CellAddress, string>();
             foreach (var (address, format) in sheet.Formats)
                 formats[address] = format.FormatCode;
-            sheets[sheet] = new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles));
+            sheets[sheet] = new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles), SheetLook.Of(sheet));
         }
 
-        return new XlsxSource(bytes, limits, workbookPart, sheets, Xlsx.Structure.Of(workbook), Xlsx.Presentation.Of(workbook), workbook.DefaultStyle);
+        return new XlsxSource(bytes, limits, workbookPart, sheets, Xlsx.Structure.Of(workbook, withSheetState: false), Xlsx.Presentation.Of(workbook), workbook.DefaultStyle);
     }
 }
 
 /// <summary>A worksheet's part in the file and its formulas as they were read.</summary>
 internal sealed class SheetSource(string part, IReadOnlyDictionary<CellAddress, LoadedFormula> formulas,
-    IReadOnlyDictionary<CellAddress, string> formats, IReadOnlyDictionary<CellAddress, CellStyle> styles)
+    IReadOnlyDictionary<CellAddress, string> formats, IReadOnlyDictionary<CellAddress, CellStyle> styles, SheetLook look)
 {
+    /// <summary>The sheet's sizes, merges, panes and filter as read.</summary>
+    public SheetLook Look { get; } = look;
+
     public string Part { get; } = part;
 
     public IReadOnlyDictionary<CellAddress, LoadedFormula> Formulas { get; } = formulas;
@@ -84,16 +87,23 @@ internal readonly record struct LoadedFormula(string Text, bool IsLegacy, Area? 
 /// <summary>Everything about a workbook other than its cells that a save cannot write, as comparable text.</summary>
 internal static class Structure
 {
-    public static string Of(Workbook workbook)
+    /// <param name="workbook">The workbook.</param>
+    /// <param name="withSheetState">Whether to include each sheet's filter mode and hidden rows.</param>
+    public static string Of(Workbook workbook, bool withSheetState = true)
     {
         var text = new StringBuilder();
         text.Append("dates ").Append(workbook.DateSystem).Append('\n');
         text.Append("iteration ").Append(workbook.Iteration).Append('\n');
         foreach (var sheet in workbook.Sheets)
         {
-            text.Append("sheet ").Append(sheet.Name).Append(" filter ").Append(sheet.FilterMode).Append(" hidden");
-            foreach (var row in sheet.HiddenRows.Order())
-                text.Append(' ').Append(row.ToString(CultureInfo.InvariantCulture));
+            text.Append("sheet ").Append(sheet.Name);
+            if (withSheetState)
+            {
+                text.Append(" filter ").Append(sheet.FilterMode).Append(" hidden");
+                foreach (var row in sheet.HiddenRows.Order())
+                    text.Append(' ').Append(row.ToString(CultureInfo.InvariantCulture));
+            }
+
             text.Append('\n');
         }
 

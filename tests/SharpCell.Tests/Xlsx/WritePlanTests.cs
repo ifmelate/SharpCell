@@ -39,7 +39,7 @@ public class WritePlanTests
     }
 
     [Theory]
-    [MemberData(nameof(XlsxSourceTests.Changes), MemberType = typeof(XlsxSourceTests))]
+    [MemberData(nameof(XlsxSourceTests.UnsavedChanges), MemberType = typeof(XlsxSourceTests))]
     public void A_changed_structure_cannot_be_saved(string change)
     {
         var workbook = Calculated();

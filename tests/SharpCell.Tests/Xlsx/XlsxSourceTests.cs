@@ -55,6 +55,9 @@ public class XlsxSourceTests
     public static TheoryData<string> Changes() =>
         ["add sheet", "define name", "hide row", "filter", "date system", "add table"];
 
+    /// <summary>Changes a save cannot write yet.</summary>
+    public static TheoryData<string> UnsavedChanges() => ["add sheet", "define name", "date system", "add table"];
+
     internal static void Change(Workbook workbook, string change)
     {
         var sheet = workbook["S"];
