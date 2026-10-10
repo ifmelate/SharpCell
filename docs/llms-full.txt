@@ -895,7 +895,9 @@ Dates and times are numbers: serial days, with the time of day as the fraction. 
 
 `GROUPBY` and `PIVOTBY` summarize a table the way a pivot table does, and `PERCENTOF` gives a
 part of a total. The function argument is a function passed by name (`SUM`, `AVERAGE`,
-`PERCENTOF`), a `LAMBDA`, or several of them side by side with `HSTACK`:
+`PERCENTOF`), a `LAMBDA`, or several of them side by side with `HSTACK`. A function of two
+arguments, such as `PERCENTOF` or `LAMBDA(part, all, SUM(part)/SUM(all))`, also gets the values its
+group is a part of (in `PIVOTBY`, the ones `relative_to` picks):
 
 ```csharp snippet=groupby
 sheet["D1"].Formula = "=GROUPBY(A1:A3, B1:B3, SUM)";   // North 40, South 20, Total 60

@@ -38,7 +38,7 @@ internal static class Grouping
         if (!ReadSort(call, 5, fields.GetLength(1), outputColumns, out var sort))
             return Value();
 
-        var tree = Tree.Build(input.Fields, rows, input.FirstRow);
+        var tree = Tree.Build(input.Fields, rows, call.Context);
         var aggregates = new Aggregator(call.Context, input, functions);
         var lines = new List<CellValue[]>();
         var k = fields.GetLength(1);
@@ -143,8 +143,8 @@ internal static class Grouping
 
         var input = new Input(rowFields, columnFields, values, headers, rows) { Culture = call.Context.Culture };
         var aggregates = new Aggregator(call.Context, input, functions);
-        var rowTree = Tree.Build(rowFields, rows, input.FirstRow);
-        var columnTree = Tree.Build(columnFields, rows, input.FirstRow);
+        var rowTree = Tree.Build(rowFields, rows, call.Context);
+        var columnTree = Tree.Build(columnFields, rows, call.Context);
 
         var rowLines = Layout(rowTree, kr, rowDepth, rowSort, aggregates, input);
         var columnLines = Layout(columnTree, kc, columnDepth, columnSort, aggregates, input);
@@ -475,7 +475,7 @@ internal static class Grouping
     }
 
     /// <summary>A group: the rows whose fields share a key at each level up to this one.</summary>
-    private sealed class Node(CellValue key, Node? parent)
+    private sealed class Node(CellValue key, Node? parent, KeyComparer comparer)
     {
         public CellValue Key { get; } = key;
 
@@ -483,7 +483,22 @@ internal static class Grouping
 
         public List<int> Rows { get; } = [];
 
+        /// <summary>The groups below, in the order their keys were first met.</summary>
         public List<Node> Children { get; } = [];
+
+        private readonly Dictionary<CellValue, Node> _index = new(comparer);
+
+        public Node Child(CellValue key)
+        {
+            if (!_index.TryGetValue(key, out var child))
+            {
+                child = new Node(key, this, comparer);
+                _index.Add(key, child);
+                Children.Add(child);
+            }
+
+            return child;
+        }
 
         public CellValue[] Path()
         {
@@ -512,28 +527,23 @@ internal static class Grouping
 
     private static class Tree
     {
-        // Rows grouped level by level; a group keeps the first key it met (text compares ignoring case).
-        public static Node Build(CellValue[,] fields, List<int> rows, int firstRow)
+        // Rows grouped level by level; a group keeps the first key it met. Keys are equal as UNIQUE
+        // finds them: same type and value, text ignoring case in the workbook's culture.
+        public static Node Build(CellValue[,] fields, List<int> rows, EvaluationContext context)
         {
-            var root = new Node(CellValue.Empty, null);
+            var root = new Node(CellValue.Empty, null, new KeyComparer(context.Culture));
             var levels = fields.GetLength(1);
+            var visited = 0;
             foreach (var row in rows)
             {
+                if (++visited % CancellationCheckInterval == 0)
+                    context.CancellationToken.ThrowIfCancellationRequested();
                 root.Rows.Add(row);
                 var node = root;
                 for (var level = 0; level < levels; level++)
                 {
-                    var key = fields[row, level];
-                    var child = node.Children.Find(c => ArrayShapeSortFunctions.CompareForSort(c.Key, key, false, System.Globalization.CultureInfo.InvariantCulture) == 0
-                        && c.Key.Kind == key.Kind);
-                    if (child is null)
-                    {
-                        child = new Node(key, node);
-                        node.Children.Add(child);
-                    }
-
-                    child.Rows.Add(row);
-                    node = child;
+                    node = node.Child(fields[row, level]);
+                    node.Rows.Add(row);
                 }
             }
 
@@ -541,10 +551,35 @@ internal static class Grouping
         }
     }
 
+    private const int CancellationCheckInterval = 4096;
+
+    private sealed class KeyComparer(System.Globalization.CultureInfo culture) : IEqualityComparer<CellValue>
+    {
+        public bool Equals(CellValue a, CellValue b) => a.Kind == b.Kind && a.Kind switch
+        {
+            CellValueKind.Number => a.AsNumber() == b.AsNumber(),
+            CellValueKind.Text => TextComparer.AreEqual(a.AsText(), b.AsText(), culture),
+            CellValueKind.Boolean => a.AsBoolean() == b.AsBoolean(),
+            CellValueKind.Error => a.AsError() == b.AsError(),
+            _ => true,
+        };
+
+        public int GetHashCode(CellValue value) => value.Kind switch
+        {
+            CellValueKind.Number => HashCode.Combine(value.Kind, value.AsNumber()),
+            CellValueKind.Text => HashCode.Combine(value.Kind, StringComparer.Ordinal.GetHashCode(culture.TextInfo.ToUpper(value.AsText()))),
+            CellValueKind.Boolean => HashCode.Combine(value.Kind, value.AsBoolean()),
+            CellValueKind.Error => HashCode.Combine(value.Kind, value.AsError()),
+            _ => value.Kind.GetHashCode(),
+        };
+    }
+
     /// <summary>Calls the functions on groups of values, once per group, function and value column.</summary>
     private sealed class Aggregator(EvaluationContext context, Input input, List<LambdaValue> functions)
     {
-        private readonly Dictionary<(int, int, string, string), CellValue> _cache = [];
+        // By function, value column and the very lists of rows: a group's result is computed once,
+        // however often sorting asks for it.
+        private readonly Dictionary<(int, int, List<int>, List<int>), CellValue> _cache = [];
 
         public int Functions => functions.Count;
 
@@ -554,12 +589,16 @@ internal static class Grouping
 
         public CellValue Of(int function, int valueColumn, List<int> rows, List<int> all)
         {
-            var key = (function, valueColumn, string.Join(',', rows), string.Join(',', all));
+            var key = (function, valueColumn, rows, all);
             if (_cache.TryGetValue(key, out var cached))
                 return cached;
             var lambda = functions[function];
             var subset = Column(valueColumn, rows);
-            Operand[] arguments = lambda is BuiltInFunction { Name: "PERCENTOF" } ? [subset, Column(valueColumn, all)] : [subset];
+
+            // A function of two arguments (PERCENTOF, LAMBDA(part, all, ...)) also gets the values its
+            // group is a part of.
+            var two = Lambdas.Takes(lambda, 2, context) && !Lambdas.Takes(lambda, 1, context);
+            Operand[] arguments = two ? [subset, Column(valueColumn, all)] : [subset];
             CellValue result;
             if (!Lambdas.Takes(lambda, arguments.Length, context))
             {

@@ -120,4 +120,54 @@ public class GroupByFunctionTests
     {
         Assert.Equal(CellValue.Error(ErrorKind.Value), Sales().Evaluate(formula));
     }
+
+    private static Workbook Many(int rows, int groups)
+    {
+        var workbook = new Workbook();
+        var data = workbook.AddSheet("D");
+        for (var r = 1; r <= rows; r++)
+        {
+            data[r, 1].Value = "Key" + (r % groups);
+            data[r, 2].Value = r;
+        }
+
+        return workbook;
+    }
+
+    [Fact]
+    public void GROUPBY_handles_thousands_of_distinct_keys_quickly()
+    {
+        var workbook = Many(20_000, 5_000);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+
+        var result = workbook.Evaluate("=GROUPBY(D!A1:A20000,D!B1:B20000,SUM,0,1,-2)");
+
+        Assert.Equal(5_001, result.AsArray().GetLength(0));
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(3), $"took {clock.Elapsed}");
+    }
+
+    [Fact]
+    public void GROUPBY_stops_when_the_calculation_is_cancelled()
+    {
+        var workbook = Many(50_000, 10);
+        using var cancel = new CancellationTokenSource();
+        workbook.Functions.Add("CANCELNOW", args =>
+        {
+            cancel.Cancel();
+            return CellValue.Array(args[0].AsArray());
+        });
+
+        Assert.ThrowsAny<OperationCanceledException>(() =>
+            workbook.Evaluate("=GROUPBY(CANCELNOW(D!A1:A50000),D!B1:B50000,LAMBDA(x,1))", cancel.Token));
+    }
+
+    [Fact]
+    public void A_lambda_with_two_parameters_gets_the_values_its_group_is_a_part_of()
+    {
+        var workbook = Sales();
+        Assert.Equal(Grid(workbook, "=GROUPBY(D!A1:A6,D!C1:C6,PERCENTOF,0,0)"),
+            Grid(workbook, "=GROUPBY(D!A1:A6,D!C1:C6,LAMBDA(part,all,SUM(part)/SUM(all)),0,0)"));
+        Assert.Equal(Grid(workbook, "=PIVOTBY(D!A1:A6,D!B1:B6,D!C1:C6,PERCENTOF,0,1,1,1,1,,1)"),
+            Grid(workbook, "=PIVOTBY(D!A1:A6,D!B1:B6,D!C1:C6,LAMBDA(part,all,SUM(part)/SUM(all)),0,1,1,1,1,,1)"));
+    }
 }
