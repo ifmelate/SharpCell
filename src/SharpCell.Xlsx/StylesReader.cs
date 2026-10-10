@@ -26,30 +26,44 @@ internal static class StylesReader
 
     /// <summary>
     /// The format of each <c>cellXfs</c> entry, in order; null for General and for a code SharpCell
-    /// cannot read, so a file is never refused over a format.
+    /// cannot read, so a file is never refused over a format. A part that is not valid XML gives no
+    /// styles: every cell is General.
     /// </summary>
     public static List<NumberFormat?> Read(Package package, string part)
+    {
+        try
+        {
+            return ReadStyles(package, part);
+        }
+        catch (XmlException)
+        {
+            return [];
+        }
+    }
+
+    private static List<NumberFormat?> ReadStyles(Package package, string part)
     {
         var custom = new Dictionary<int, string>();
         var styles = new List<NumberFormat?>();
         using var reader = package.OpenXml(part);
-        var inCellXfs = false;
+        string? section = null;
         while (reader.Read())
         {
-            if (reader.NodeType == XmlNodeType.EndElement && reader.LocalName == "cellXfs")
-                inCellXfs = false;
+            if (reader.NodeType == XmlNodeType.EndElement && reader.LocalName == section)
+                section = null;
             if (reader.NodeType != XmlNodeType.Element)
                 continue;
 
             switch (reader.LocalName)
             {
-                case "numFmt" when Id(reader) is { } id && reader.GetAttribute("formatCode") is { } code:
+                // Only numFmts defines codes: differential formats (dxfs) carry numFmt elements too.
+                case "numFmts" or "cellXfs" when !reader.IsEmptyElement:
+                    section = reader.LocalName;
+                    break;
+                case "numFmt" when section == "numFmts" && Id(reader) is { } id && reader.GetAttribute("formatCode") is { } code:
                     custom[id] = code;
                     break;
-                case "cellXfs":
-                    inCellXfs = !reader.IsEmptyElement;
-                    break;
-                case "xf" when inCellXfs:
+                case "xf" when section == "cellXfs":
                     styles.Add(Format(Id(reader) ?? 0, custom));
                     break;
             }

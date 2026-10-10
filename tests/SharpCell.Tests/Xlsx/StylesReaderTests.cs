@@ -47,9 +47,33 @@ public class StylesReaderTests
     }
 
     [Fact]
-    public void A_style_index_outside_cellXfs_is_invalid_data()
+    public void A_style_index_outside_cellXfs_is_General()
     {
-        Assert.Throws<System.IO.InvalidDataException>(() => Load("<row r=\"1\"><c r=\"A1\" s=\"9\"><v>1</v></c></row>"));
+        var sheet = Load("<row r=\"1\"><c r=\"A1\" s=\"9\"><v>1</v></c></row>")["S"];
+        Assert.Equal("General", sheet["A1"].NumberFormat);
+        Assert.Equal(CellValue.Number(1), sheet["A1"].Value);
+    }
+
+    [Theory]
+    [InlineData("garbage")]
+    [InlineData("<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><cellXfs><xf numFmtId=\"4\">")]
+    public void A_styles_part_that_is_not_valid_XML_means_General_everywhere(string styles)
+    {
+        var sheet = Load("<row r=\"1\"><c r=\"A1\" s=\"1\"><v>1</v></c></row>", styles)["S"];
+        Assert.Equal("General", sheet["A1"].NumberFormat);
+    }
+
+    [Fact]
+    public void Only_numFmts_defines_codes_not_differential_formats()
+    {
+        var styles = """
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+              <numFmts count="1"><numFmt numFmtId="164" formatCode="0.000"/></numFmts>
+              <dxfs count="1"><dxf><numFmt numFmtId="164" formatCode="0%"/></dxf></dxfs>
+              <cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="164"/></cellXfs>
+            </styleSheet>
+            """;
+        Assert.Equal("0.000", Load("<row r=\"1\"><c r=\"A1\" s=\"1\"><v>1</v></c></row>", styles)["S"]["A1"].NumberFormat);
     }
 
     [Fact]

@@ -113,14 +113,10 @@ internal static class WorksheetReader
             else
                 loader.SetValue(row, column, cached);
 
-            // Without a styles part, s= has nothing to point at and the cell is General.
-            if (cell.Style is { } style && saved.Styles.Count > 0)
-            {
-                if (style >= saved.Styles.Count)
-                    throw Invalid(sheet, origin, $"its style {style} is not in the styles part");
-                if (saved.Styles[style] is { } format)
-                    sheet.SetFormat(row, column, format);
-            }
+            // A style the styles part does not have (or no styles part) leaves the cell General:
+            // a format only changes how a cell is shown, so it never stops a file from loading.
+            if (cell.Style is { } style && style < saved.Styles.Count && saved.Styles[style] is { } format)
+                sheet.SetFormat(row, column, format);
         }
 
         loader.Complete();
