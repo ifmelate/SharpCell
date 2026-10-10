@@ -41,7 +41,7 @@ internal sealed class WritePlan
         if (workbook.Source is not XlsxSource source)
             throw new NotSupportedException("Only a workbook read by XlsxReader can be saved: SharpCell writes new values into the file the workbook was read from.");
         if (Structure.Of(workbook) != source.Structure)
-            throw new NotSupportedException("Sheets, defined names, tables, hidden rows, filters or the date system changed since the workbook was read; only cell values can be saved.");
+            throw new NotSupportedException("Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed since the workbook was read; only cell values can be saved.");
         foreach (var sheet in workbook.Sheets)
         {
             CheckFormulas(sheet, source.Sheets[sheet]);

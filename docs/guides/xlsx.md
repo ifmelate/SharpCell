@@ -13,6 +13,7 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
+- The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
 

@@ -1,4 +1,16 @@
 #nullable enable
+override SharpCell.IterationSettings.Equals(object? obj) -> bool
+override SharpCell.IterationSettings.GetHashCode() -> int
+override SharpCell.IterationSettings.ToString() -> string!
 SharpCell.Cell.NumberFormat.get -> string!
 SharpCell.Cell.NumberFormat.set -> void
 SharpCell.Cell.Text.get -> string!
+SharpCell.DiagnosticKind.IterationLimitReached = 5 -> SharpCell.DiagnosticKind
+SharpCell.IterationSettings
+SharpCell.IterationSettings.Enabled.get -> bool
+SharpCell.IterationSettings.Equals(SharpCell.IterationSettings? other) -> bool
+SharpCell.IterationSettings.IterationSettings(bool Enabled = false, int MaxIterations = 100, double MaxChange = 0.001) -> void
+SharpCell.IterationSettings.MaxChange.get -> double
+SharpCell.IterationSettings.MaxIterations.get -> int
+SharpCell.Workbook.Iteration.get -> SharpCell.IterationSettings!
+SharpCell.Workbook.Iteration.set -> void

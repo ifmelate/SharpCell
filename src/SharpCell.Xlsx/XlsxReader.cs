@@ -80,12 +80,13 @@ internal static class WorkbookReader
             ?? throw new InvalidDataException("The package has no workbook part.");
         CheckContentType(package, workbookPart);
 
-        var (date1904, sheets, names) = ReadWorkbookPart(package, workbookPart);
+        var (date1904, iteration, sheets, names) = ReadWorkbookPart(package, workbookPart);
         var relationships = package.ReadRelationships(workbookPart);
 
         var workbook = new Workbook { MaxSpillCells = package.Limits.MaxSpillCells };
         if (date1904)
             workbook.DateSystem = DateSystem.Date1904;
+        workbook.Iteration = iteration;
 
         // Chart sheets and other non-worksheets hold no cells, but they count in sheet indexes.
         var byIndex = new List<(Worksheet Sheet, string Part)?>();
@@ -139,9 +140,10 @@ internal static class WorkbookReader
             throw new NotSupportedException("The file is a binary workbook (.xlsb); only .xlsx files can be read.");
     }
 
-    private static (bool Date1904, List<SheetEntry> Sheets, List<NameEntry> Names) ReadWorkbookPart(Package package, string part)
+    private static (bool Date1904, IterationSettings Iteration, List<SheetEntry> Sheets, List<NameEntry> Names) ReadWorkbookPart(Package package, string part)
     {
         var date1904 = false;
+        var iteration = new IterationSettings();
         var sheets = new List<SheetEntry>();
         var names = new List<NameEntry>();
         using var reader = package.OpenXml(part);
@@ -159,6 +161,9 @@ internal static class WorkbookReader
                 case "workbookPr":
                     date1904 = CellMetadata.IsTrue(reader.GetAttribute("date1904"));
                     break;
+                case "calcPr":
+                    iteration = ReadIteration(reader);
+                    break;
                 case "sheet":
                     if (reader.GetAttribute("name") is { } sheetName && RelationshipId(reader) is { } id)
                         sheets.Add(new SheetEntry(sheetName, id));
@@ -172,7 +177,28 @@ internal static class WorkbookReader
             reader.Read();
         }
 
-        return (date1904, sheets, names);
+        return (date1904, iteration, sheets, names);
+    }
+
+    // calcPr's defaults are Excel's: iterate false, iterateCount 100, iterateDelta 0.001.
+    private static IterationSettings ReadIteration(XmlReader reader)
+    {
+        var count = 100;
+        var delta = 0.001;
+        if (reader.GetAttribute("iterateCount") is { } countText
+            && !int.TryParse(countText, NumberStyles.Integer, CultureInfo.InvariantCulture, out count))
+            throw new InvalidDataException($"calcPr iterateCount '{countText}' is not a number.");
+        if (reader.GetAttribute("iterateDelta") is { } deltaText
+            && !double.TryParse(deltaText, NumberStyles.Float, CultureInfo.InvariantCulture, out delta))
+            throw new InvalidDataException($"calcPr iterateDelta '{deltaText}' is not a number.");
+        try
+        {
+            return new IterationSettings(CellMetadata.IsTrue(reader.GetAttribute("iterate")), count, delta);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            throw new InvalidDataException($"calcPr has iteration settings Excel does not allow: {ex.Message}", ex);
+        }
     }
 
     // Leaves the reader after the element.

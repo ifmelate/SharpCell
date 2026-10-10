@@ -95,16 +95,44 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
 
     public void RecordName(string upperName) => Dependencies?.Names.Add(upperName);
 
+    /// <summary>Evaluates a cell of the cycle being iterated: reading another member is not touching the cycle from outside.</summary>
+    public bool IsCycleMember { get; init; }
+
+    /// <summary>Set when a cell outside the cycle being iterated read a member: the cell belongs to the cycle.</summary>
+    public bool TouchedCycle { get; private set; }
+
     private CellValue Read(Worksheet sheet, int row, int column, CellData? data)
     {
         if (data is null)
             return CellValue.Empty;
         if (data.IsDirty && data.Formula is not null)
-            return Wait(new CellKey(sheet, row, column));
+        {
+            // A cell of the cycle being iterated gives its value from the last pass (0 at first).
+            var key = new CellKey(sheet, row, column);
+            if (Workbook.Calculation.ActiveCycle is { } cycle && cycle.Contains(key))
+            {
+                if (!IsCycleMember)
+                    TouchedCycle = true;
+                return data.Value.Kind == CellValueKind.Empty ? CellValue.Number(0) : data.Value;
+            }
+
+            return Wait(key);
+        }
 
         // A spilled value is only as current as its anchor.
-        if (data.SpillAnchor is { } anchor && anchor.Data is { IsDirty: true, Formula: not null })
+        if (data.SpillAnchor is { } anchor && anchor.Data is { IsDirty: true, Formula: not null } anchorData)
+        {
+            // An anchor in the cycle being iterated: an array formula's area holds this pass's
+            // values; what a formula spilled before it became part of the cycle is gone.
+            if (Workbook.Calculation.ActiveCycle is { } cycle && cycle.Contains(anchor))
+            {
+                if (!IsCycleMember)
+                    TouchedCycle = true;
+                return anchorData.FixedArray is not null ? data.Value : CellValue.Empty;
+            }
+
             return Wait(anchor);
+        }
 
         return data.Value;
     }

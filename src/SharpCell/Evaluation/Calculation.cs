@@ -17,7 +17,7 @@ namespace SharpCell.Evaluation;
 /// iterative calculation.
 /// </para>
 /// </summary>
-internal sealed class Calculation(Workbook workbook)
+internal sealed partial class Calculation(Workbook workbook)
 {
     // Dirty formulas in the order they were marked; the IsDirty flag on the cell removes duplicates.
     private readonly List<CellKey> _dirty = [];
@@ -421,6 +421,10 @@ internal sealed class Calculation(Workbook workbook)
                 data.LastAttempt = context.Dependencies;
                 data.LastAttemptVolatile = context.UsedVolatile;
 
+                // A cell that read the cycle being iterated belongs to it (a member asked for it).
+                if (context.TouchedCycle)
+                    throw new CycleGrew(key);
+
                 if (context.Pending.Count == 0)
                 {
                     CommitGuarded(key, data, value, context, cancellationToken);
@@ -432,7 +436,12 @@ internal sealed class Calculation(Workbook workbook)
                 {
                     if (input.Data is { InProgress: true })
                     {
-                        ResolveCycle(key, input);
+                        if (ActiveCycle is not null)
+                            throw new CycleGrew(input);
+                        if (workbook.Iteration.Enabled)
+                            IterateCycle(key, input, cancellationToken);
+                        else
+                            ResolveCycle(key, input);
                         break;
                     }
 
@@ -752,7 +761,7 @@ internal sealed class Calculation(Workbook workbook)
     }
 
     // The loop is the chain of requesters from the cell that asked back up to the cell it asked for.
-    private void ResolveCycle(CellKey asker, CellKey asked)
+    private static List<CellKey> CycleMembers(CellKey asker, CellKey asked)
     {
         var members = new List<CellKey>();
         CellKey? current = asker;
@@ -764,6 +773,12 @@ internal sealed class Calculation(Workbook workbook)
             current = member.Data?.Requester;
         }
 
+        return members;
+    }
+
+    private void ResolveCycle(CellKey asker, CellKey asked)
+    {
+        var members = CycleMembers(asker, asked);
         var path = new StringBuilder("Circular reference: ");
         for (var i = members.Count - 1; i >= 0; i--)
             path.Append(members[i]).Append(" -> ");

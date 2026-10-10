@@ -79,6 +79,7 @@ internal static class Structure
     {
         var text = new StringBuilder();
         text.Append("dates ").Append(workbook.DateSystem).Append('\n');
+        text.Append("iteration ").Append(workbook.Iteration).Append('\n');
         foreach (var sheet in workbook.Sheets)
         {
             text.Append("sheet ").Append(sheet.Name).Append(" filter ").Append(sheet.FilterMode).Append(" hidden");

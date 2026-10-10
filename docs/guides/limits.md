@@ -6,7 +6,7 @@ Every known gap in one list, so you can decide before you start.
 - **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
 - **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
-- **Iterative calculation.** A circular reference gives 0 in its cells and a diagnostic.
+- **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
 - **Writing formats.** Number formats are read and shape `Cell.Text`, but a changed format cannot be saved. Fonts, fills, borders, column widths and conditional formats are not read.
 - **Localized function names.** Formulas use English names, as in the file format.
 - **Links to other workbooks.** They evaluate to `#NAME?`.
