@@ -1,9 +1,13 @@
 #nullable enable
 override SharpCell.CalculationDiagnostic.ToString() -> string!
 override SharpCell.Cell.ToString() -> string!
+override SharpCell.CellRange.Equals(object? obj) -> bool
+override SharpCell.CellRange.GetHashCode() -> int
+override SharpCell.CellRange.ToString() -> string!
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
 override SharpCell.CellValue.ToString() -> string!
+override SharpCell.DefinedName.ToString() -> string!
 override SharpCell.Table.ToString() -> string!
 override SharpCell.Worksheet.ToString() -> string!
 SharpCell.CalculationDiagnostic
@@ -15,15 +19,29 @@ SharpCell.CalculationDiagnostic.Sheet.get -> SharpCell.Worksheet?
 SharpCell.Cell
 SharpCell.Cell.Address.get -> string!
 SharpCell.Cell.Column.get -> int
+SharpCell.Cell.Dependents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
 SharpCell.Cell.Formula.get -> string?
 SharpCell.Cell.Formula.set -> void
+SharpCell.Cell.Precedents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
 SharpCell.Cell.Row.get -> int
 SharpCell.Cell.Value.get -> SharpCell.CellValue
 SharpCell.Cell.Value.set -> void
 SharpCell.Cell.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.CellRange
+SharpCell.CellRange.Address.get -> string!
+SharpCell.CellRange.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
+SharpCell.CellRange.Equals(SharpCell.CellRange? other) -> bool
+SharpCell.CellRange.FirstColumn.get -> int
+SharpCell.CellRange.FirstRow.get -> int
+SharpCell.CellRange.GetValues() -> SharpCell.CellValue[,]!
+SharpCell.CellRange.LastColumn.get -> int
+SharpCell.CellRange.LastRow.get -> int
+SharpCell.CellRange.SetValues(SharpCell.CellValue[,]! values) -> void
+SharpCell.CellRange.Worksheet.get -> SharpCell.Worksheet!
 SharpCell.CellValue
 SharpCell.CellValue.AsArray() -> SharpCell.CellValue[,]!
 SharpCell.CellValue.AsBoolean() -> bool
+SharpCell.CellValue.AsDateTime(SharpCell.DateSystem system) -> System.DateTime
 SharpCell.CellValue.AsError() -> SharpCell.ErrorKind
 SharpCell.CellValue.AsLambda() -> SharpCell.LambdaValue!
 SharpCell.CellValue.AsNumber() -> double
@@ -44,8 +62,13 @@ SharpCell.CellValueKind.Text = 3 -> SharpCell.CellValueKind
 SharpCell.DateSystem
 SharpCell.DateSystem.Date1900 = 0 -> SharpCell.DateSystem
 SharpCell.DateSystem.Date1904 = 1 -> SharpCell.DateSystem
+SharpCell.DefinedName
+SharpCell.DefinedName.Formula.get -> string!
+SharpCell.DefinedName.Name.get -> string!
+SharpCell.DefinedName.Scope.get -> SharpCell.Worksheet?
 SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.CircularReference = 0 -> SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.CustomFunctionFailure = 4 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.FunctionFailure = 1 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.LimitExceeded = 3 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.UnsupportedFormula = 2 -> SharpCell.DiagnosticKind
@@ -63,7 +86,35 @@ SharpCell.ErrorKinds
 SharpCell.FormulaParseException
 SharpCell.FormulaParseException.FormulaParseException(string! message, int position) -> void
 SharpCell.FormulaParseException.Position.get -> int
+SharpCell.FunctionArguments
+SharpCell.FunctionArguments.Boolean(int index) -> SharpCell.CellValue
+SharpCell.FunctionArguments.Caller.get -> SharpCell.Cell?
+SharpCell.FunctionArguments.CancellationToken.get -> System.Threading.CancellationToken
+SharpCell.FunctionArguments.Count.get -> int
+SharpCell.FunctionArguments.Culture.get -> System.Globalization.CultureInfo!
+SharpCell.FunctionArguments.DateSystem.get -> SharpCell.DateSystem
+SharpCell.FunctionArguments.IsMissing(int index) -> bool
+SharpCell.FunctionArguments.Number(int index) -> SharpCell.CellValue
+SharpCell.FunctionArguments.Text(int index) -> SharpCell.CellValue
+SharpCell.FunctionArguments.this[int index].get -> SharpCell.CellValue
+SharpCell.FunctionCollection
+SharpCell.FunctionCollection.Add(string! name, System.Func<SharpCell.FunctionArguments!, SharpCell.CellValue>! body, SharpCell.FunctionOptions? options = null) -> void
+SharpCell.FunctionCollection.Contains(string! name) -> bool
+SharpCell.FunctionCollection.Names.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+SharpCell.FunctionCollection.Remove(string! name) -> bool
+SharpCell.FunctionOptions
+SharpCell.FunctionOptions.FunctionOptions() -> void
+SharpCell.FunctionOptions.IsVolatile.get -> bool
+SharpCell.FunctionOptions.IsVolatile.init -> void
+SharpCell.FunctionOptions.MaxArguments.get -> int
+SharpCell.FunctionOptions.MaxArguments.init -> void
+SharpCell.FunctionOptions.MinArguments.get -> int
+SharpCell.FunctionOptions.MinArguments.init -> void
+SharpCell.FunctionOptions.ScalarParameters.get -> System.Collections.Generic.IReadOnlyList<int>!
+SharpCell.FunctionOptions.ScalarParameters.init -> void
 SharpCell.LambdaValue
+SharpCell.RecalculationResult
+SharpCell.RecalculationResult.ChangedCells.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
 SharpCell.Table
 SharpCell.Table.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
 SharpCell.Table.HasHeaderRow.get -> bool
@@ -73,15 +124,18 @@ SharpCell.Table.Range.get -> string!
 SharpCell.Table.Worksheet.get -> SharpCell.Worksheet!
 SharpCell.Workbook
 SharpCell.Workbook.AddSheet(string! name) -> SharpCell.Worksheet!
+SharpCell.Workbook.Clone() -> SharpCell.Workbook!
 SharpCell.Workbook.Culture.get -> System.Globalization.CultureInfo!
 SharpCell.Workbook.Culture.set -> void
 SharpCell.Workbook.DateSystem.get -> SharpCell.DateSystem
 SharpCell.Workbook.DateSystem.set -> void
+SharpCell.Workbook.DefinedNames.get -> System.Collections.Generic.IReadOnlyList<SharpCell.DefinedName!>!
 SharpCell.Workbook.DefineName(string! name, string! formula, SharpCell.Worksheet? scope = null) -> void
 SharpCell.Workbook.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CalculationDiagnostic!>!
 SharpCell.Workbook.Evaluate(string! formula) -> SharpCell.CellValue
 SharpCell.Workbook.Evaluate(string! formula, System.Threading.CancellationToken cancellationToken) -> SharpCell.CellValue
-SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+SharpCell.Workbook.Functions.get -> SharpCell.FunctionCollection!
+SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> SharpCell.RecalculationResult!
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
 SharpCell.Workbook.Tables.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Table!>!
 SharpCell.Workbook.this[string! name].get -> SharpCell.Worksheet!
@@ -90,16 +144,20 @@ SharpCell.Workbook.TryGetTable(string! name, out SharpCell.Table? table) -> bool
 SharpCell.Workbook.Workbook() -> void
 SharpCell.Worksheet
 SharpCell.Worksheet.AddTable(string! name, string! range, bool hasHeaderRow = true, bool hasTotalsRow = false) -> SharpCell.Table!
+SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
 SharpCell.Worksheet.FilterMode.get -> bool
 SharpCell.Worksheet.FilterMode.set -> void
 SharpCell.Worksheet.IsRowHidden(int row) -> bool
 SharpCell.Worksheet.Name.get -> string!
+SharpCell.Worksheet.Range(string! address) -> SharpCell.CellRange!
 SharpCell.Worksheet.SetRowHidden(int row, bool hidden) -> void
 SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
 SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
+SharpCell.Worksheet.UsedRange.get -> SharpCell.CellRange?
 SharpCell.Worksheet.Workbook.get -> SharpCell.Workbook!
 static SharpCell.CellValue.Array(SharpCell.CellValue[,]! values) -> SharpCell.CellValue
 static SharpCell.CellValue.Boolean(bool value) -> SharpCell.CellValue
+static SharpCell.CellValue.DateTime(System.DateTime value, SharpCell.DateSystem system) -> SharpCell.CellValue
 static SharpCell.CellValue.Empty.get -> SharpCell.CellValue
 static SharpCell.CellValue.Error(SharpCell.ErrorKind kind) -> SharpCell.CellValue
 static SharpCell.CellValue.False.get -> SharpCell.CellValue
