@@ -77,6 +77,16 @@ workbook.DefineName("WithTax", "=LAMBDA(amount, amount * (1 + TaxRate))");
 CellValue gross = workbook.Evaluate("=WithTax(100)");   // 120
 ```
 
+A function's name alone is the function as a value, wherever a LAMBDA is expected: in `MAP`,
+`REDUCE`, `SCAN`, `BYROW`, `BYCOL`, `MAKEARRAY` and as the value of a `LET` name. It takes its
+arguments as a call by name would. Custom functions can be passed the same way.
+
+```csharp snippet=function-values
+sheet["D1"].Formula = "=BYROW(A1:B2, SUM)";            // 3 and 7: SUM is passed as a function
+sheet["E1"].Formula = "=LET(size, LEN, size(\"abc\"))";  // 3
+workbook.Recalculate();
+```
+
 ## Formulas outside cells
 
 ```csharp snippet=evaluate

@@ -115,6 +115,26 @@ public class GuideExamples
     }
 
     [Fact]
+    public void Functions_as_values()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+        sheet["A1"].Value = 1;
+        sheet["B1"].Value = 2;
+        sheet["A2"].Value = 3;
+        sheet["B2"].Value = 4;
+
+        // snippet: function-values
+        sheet["D1"].Formula = "=BYROW(A1:B2, SUM)";            // 3 and 7: SUM is passed as a function
+        sheet["E1"].Formula = "=LET(size, LEN, size(\"abc\"))";  // 3
+        workbook.Recalculate();
+        // end-snippet
+
+        Assert.Equal(7, sheet["D2"].Value.AsNumber());
+        Assert.Equal(3, sheet["E1"].Value.AsNumber());
+    }
+
+    [Fact]
     public void Evaluate_without_a_cell()
     {
         var workbook = new Workbook();
