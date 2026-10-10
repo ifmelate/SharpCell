@@ -21,6 +21,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Load: `Workbook workbook = XlsxReader.Load(path);` Build in code: `new Workbook()`, `AddSheet`, `sheet["A1"].Value`, `sheet["A2"].Formula = "=A1*3"`.
 - Call `workbook.Recalculate()` after changing values or formulas. Values do not update on assignment. It returns the cells whose values changed (`ChangedCells`).
 - Walk cells with `sheet.Cells` (non-empty only) or `sheet.Range("A1:C10").GetValues()`; dates convert with `value.AsDateTime(workbook.DateSystem)` and `CellValue.DateTime(date, workbook.DateSystem)`.
+- `cell.Text` is the value as Excel shows it through its number format (`cell.NumberFormat`, read from the file).
 - Custom functions: `workbook.Functions.Add("NAME", args => ..., new FunctionOptions { ... })`; the body reads cells only through its arguments and must not change the workbook.
 - For a template used per request, load and recalculate it once, then `template.Clone()` per request; cloning from several threads is safe while nothing changes the template.
 - `workbook.Evaluate("=SUM(1,2)")` evaluates a formula that lives in no cell.

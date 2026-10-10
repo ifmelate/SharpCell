@@ -71,6 +71,21 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Display_text()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-text
+        sheet["A1"].Value = 1234.5;
+        sheet["A1"].NumberFormat = "#,##0.00";   // as read from the file, or set here
+        string shown = sheet["A1"].Text;          // "1,234.50"
+        // end-snippet
+
+        Assert.Equal("1,234.50", shown);
+    }
+
+    [Fact]
     public void Defined_names()
     {
         var workbook = new Workbook();

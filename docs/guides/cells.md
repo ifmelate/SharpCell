@@ -1,7 +1,7 @@
 # Cells, ranges and dates
 
-Going through the cells of a sheet, reading and writing blocks of values, dates, and the defined
-names of a workbook.
+Going through the cells of a sheet, reading and writing blocks of values, dates, number formats
+and the text Excel shows, and the defined names of a workbook.
 
 ## Going through cells
 
@@ -67,6 +67,32 @@ DateTime monthEnd = sheet["A2"].Value.AsDateTime(workbook.DateSystem);   // 2026
 past 9999-12-31, or 60 in the 1900 date system, which Excel shows as the non-existent 29 February
 1900. The time is rounded to the millisecond. `CellValue.DateTime` refuses dates before the date
 system starts.
+
+## Number formats and display text
+
+```csharp snippet=cells-text
+sheet["A1"].Value = 1234.5;
+sheet["A1"].NumberFormat = "#,##0.00";   // as read from the file, or set here
+string shown = sheet["A1"].Text;          // "1,234.50"
+```
+
+`Cell.NumberFormat` is the cell's format code, such as `0.00`, `#,##0` or `yyyy-mm-dd`, and
+`General` when it has none. `XlsxReader` reads it from the file's cell styles, Excel's built-in
+formats included. `Cell.Text` is the value as Excel shows it through that format, with the
+workbook's culture for separators and month names: dates come out as dates, percentages with
+`%`, and `General` the way Excel's default column shows a number.
+
+| Value | `Text` |
+|---|---|
+| Number | formatted by the cell's format; a date format on a number that is no date gives `#######` |
+| Text | the format's text section (`"Name: "@`), or the text itself |
+| Logical | `TRUE` or `FALSE` |
+| Error | `#DIV/0!`, `#N/A` and so on |
+| Empty | an empty string |
+
+Column width plays no part, so a long number is never cut to `####`. A format is no content: it
+does not block a spill and is not listed by `Cells`. Formats are not saved: `XlsxWriter` refuses a
+workbook whose formats changed.
 
 ## Defined names
 
