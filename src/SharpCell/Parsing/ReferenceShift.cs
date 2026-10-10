@@ -71,15 +71,16 @@ internal static class ReferenceShift
 {
     /// <returns>The formula with its references moved; the same instance when none changed.</returns>
     /// <param name="node">The formula.</param>
-    /// <param name="formulaSheet">The sheet holding the formula: references without a sheet point into it.</param>
+    /// <param name="formulaSheet">The sheet holding the formula: references without a sheet point into it.
+    /// Null for a workbook-wide defined name, whose references without a sheet are left alone.</param>
     /// <param name="oldOrigin">The formula's cell before the edit.</param>
     /// <param name="newOrigin">The formula's cell after the edit.</param>
     /// <param name="edited">The sheet whose rows or columns changed.</param>
     /// <param name="edit">The change.</param>
-    public static FormulaNode Apply(FormulaNode node, Worksheet formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit edit) =>
+    public static FormulaNode Apply(FormulaNode node, Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit edit) =>
         new Shifter(formulaSheet, oldOrigin, newOrigin, edited, edit).Visit(node);
 
-    private sealed class Shifter(Worksheet formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit edit)
+    private sealed class Shifter(Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit edit)
     {
         public FormulaNode Visit(FormulaNode node)
         {
@@ -155,7 +156,7 @@ internal static class ReferenceShift
         private FormulaNode Reference(ReferenceNode node)
         {
             var target = node.Sheet is null ? formulaSheet
-                : node.Sheet.Last is null && formulaSheet.Workbook.TryGetSheet(node.Sheet.First, out var named) ? named
+                : node.Sheet.Last is null && edited.Workbook.TryGetSheet(node.Sheet.First, out var named) ? named
                 : null;
             var area = node.Area;
             if (target == edited)

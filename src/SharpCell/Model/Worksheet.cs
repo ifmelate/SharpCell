@@ -221,6 +221,7 @@ public sealed partial class Worksheet
         foreach (var (address, format) in source._formats)
             _formats.Add(address, format);
         _filterMode = source._filterMode;
+        _edits.AddRange(source._edits);
         CopyPresentationFrom(source);
     }
 

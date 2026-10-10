@@ -180,6 +180,84 @@ A column's own width, in the units of [Worksheet.DefaultColumnWidth](SharpCell.W
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
 
+<a id="deletecolumns-int-int"></a>
+### DeleteColumns(int, int)
+
+```csharp
+public void DeleteColumns(int column, int count = 1)
+```
+
+Deletes columns; see [Worksheet.DeleteRows](SharpCell.Worksheet.md#deleterows-int-int).
+
+**Parameters**
+
+- `column`: The first column to delete, from 1 (A is 1).
+- `count`: How many columns to delete.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The columns are not all on the sheet.
+- `InvalidOperationException`: The columns hold part of an array formula.
+- `NotSupportedException`: The columns are some but not all of a table's columns.
+
+<a id="deleterows-int-int"></a>
+### DeleteRows(int, int)
+
+```csharp
+public void DeleteRows(int row, int count = 1)
+```
+
+Deletes rows, as Excel's Delete Sheet Rows does: cells below move up. A reference to a deleted cell becomes `#REF!`, a range that loses some of its rows shrinks, and a table whose rows are all deleted is removed. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `row`: The first row to delete, from 1.
+- `count`: How many rows to delete.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rows are not all on the sheet.
+- `InvalidOperationException`: The rows hold part of an array formula, or a table's header or totals row or all its data rows without the whole table.
+
+<a id="insertcolumns-int-int"></a>
+### InsertColumns(int, int)
+
+```csharp
+public void InsertColumns(int column, int count = 1)
+```
+
+Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Worksheet.md#insertrows-int-int).
+
+**Parameters**
+
+- `column`: The column the new columns take the place of, from 1 (A is 1).
+- `count`: How many columns to insert.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The columns would not fit on the sheet.
+- `InvalidOperationException`: Content would be pushed past the last column, or the columns would split an array formula.
+- `NotSupportedException`: The columns would be inserted inside a table.
+
+<a id="insertrows-int-int"></a>
+### InsertRows(int, int)
+
+```csharp
+public void InsertRows(int row, int count = 1)
+```
+
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), which reports no change for cells that only moved.
+
+**Parameters**
+
+- `row`: The row the new rows take the place of, from 1.
+- `count`: How many rows to insert.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rows would not fit on the sheet.
+- `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula (Ctrl+Shift+Enter).
+
 <a id="iscolumnhidden-int"></a>
 ### IsColumnHidden(int)
 

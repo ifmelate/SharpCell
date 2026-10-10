@@ -44,7 +44,8 @@ public sealed class Table
     /// <summary>The column names from left to right.</summary>
     public IReadOnlyList<string> Columns { get; }
 
-    internal Area Area { get; }
+    /// <summary>The table's cells; changes when rows or columns are inserted or deleted.</summary>
+    internal Area Area { get; set; }
 
     internal int FirstDataRow => Area.FirstRow + (HasHeaderRow ? 1 : 0);
 

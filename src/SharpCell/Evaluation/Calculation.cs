@@ -310,6 +310,70 @@ internal sealed partial class Calculation(Workbook workbook)
         }
     }
 
+    /// <summary>
+    /// Starts over after <paramref name="change"/> moved cells: what calculation keeps is keyed by
+    /// position, so it is all forgotten, spilled cells go, and every formula is calculated again by
+    /// the next recalculation, as after loading. Array formulas keep their (moved) areas.
+    /// </summary>
+    public void Rebuild(Action change)
+    {
+        Graph.Clear();
+        _spillWatch.Clear();
+        _fixedArrays.Clear();
+        _volatile.Clear();
+        _cellDiagnostics.Clear();
+        _detachedDiagnostics = [];
+        _before.Clear();
+        _dirty.Clear();
+        _evaluations.Clear();
+        _spillCells = 0;
+        foreach (var sheet in workbook.Sheets)
+        {
+            var spilled = new List<(int Row, int Column)>();
+            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            {
+                var data = cell.Data;
+                if (data.Formula is null && data.SpillAnchor is not null)
+                {
+                    spilled.Add((cell.Row, cell.Column));
+                    continue;
+                }
+
+                data.Registered = null;
+                data.LastAttempt = null;
+                data.LastAttemptVolatile = false;
+                data.InProgress = false;
+                data.Requester = null;
+                data.SpillWatch = null;
+                data.SpillArea = null;
+                data.IsDirty = false;
+            }
+
+            foreach (var (row, column) in spilled)
+                sheet.Store.Remove(row, column);
+        }
+
+        change();
+
+        foreach (var sheet in workbook.Sheets)
+        {
+            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            {
+                if (cell.Data.Formula is null)
+                    continue;
+                var key = new CellKey(sheet, cell.Row, cell.Column);
+                if (cell.Data.FixedArray is { } area)
+                {
+                    TryReserve(area);
+                    cell.Data.SpillArea = area;
+                    RegisterFixedArray(key, area);
+                }
+
+                MarkDirty(key, cell.Data);
+            }
+        }
+    }
+
     /// <summary>A formula was put in place by a file loader: it is calculated by the next recalculation.</summary>
     public void MarkLoaded(CellKey key, CellData data) => MarkDirty(key, data);
 

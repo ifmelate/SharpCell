@@ -80,6 +80,35 @@ public sealed class Workbook
         return table;
     }
 
+    /// <summary>Moves the tables of a sheet whose rows or columns changed; a table <paramref name="map"/> gives no area is removed.</summary>
+    internal void MoveTables(Worksheet sheet, Func<Table, Area?> map)
+    {
+        if (!_tableAreas.TryGetValue(sheet, out var areas))
+            return;
+        var tables = _tables.FindAll(table => table.Worksheet == sheet);
+        foreach (var table in tables)
+        {
+            var key = new CellKey(sheet, table.Area.FirstRow, table.Area.FirstColumn);
+            areas.Remove(table.Area, key);
+            _tablesByCorner.Remove(key);
+        }
+
+        foreach (var table in tables)
+        {
+            if (map(table) is not { } area)
+            {
+                _tables.Remove(table);
+                _tablesByName.Remove(table.Name.ToUpperInvariant());
+                continue;
+            }
+
+            table.Area = area;
+            var key = new CellKey(sheet, area.FirstRow, area.FirstColumn);
+            areas.Add(area, key);
+            _tablesByCorner[key] = table;
+        }
+    }
+
     /// <summary>The sheets in order.</summary>
     public IReadOnlyList<Worksheet> Sheets => _sheets;
 

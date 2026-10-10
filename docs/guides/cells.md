@@ -156,6 +156,32 @@ frozen panes. None of them changes a result.
 `XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
 the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
 
+## Inserting and deleting rows and columns
+
+```csharp snippet=insert-rows
+sheet.InsertRows(3);             // a new row 3; rows 3 and below move down
+sheet["A3"].Value = "Travel";
+sheet["B3"].Value = 300;
+workbook.Recalculate();          // B7 is =SUM(B2:B6) now and includes the new row
+
+sheet.DeleteColumns(5);          // column E goes; formulas that read it get #REF!
+```
+
+`InsertRows`, `DeleteRows`, `InsertColumns` and `DeleteColumns` work like Excel's commands. Cells,
+styles, number formats, row heights, column widths, hidden rows and columns, merged areas and
+tables move, and every reference to the moved cells follows them: in formulas of every sheet and
+in defined names. A range the new rows are inserted into grows (`SUM(B2:B5)` becomes `SUM(B2:B6)`),
+and so do merged areas and tables; inserting at a range's first row moves it instead. A range that
+loses some of its rows shrinks, a reference to a deleted cell becomes `#REF!`, and a table whose
+rows are all deleted is removed. Whole-column references such as `A:A` do not change when rows
+move. References through several sheets (`Sheet1:Sheet3!A1`) and text given to `INDIRECT` do not
+change either, as in Excel.
+
+Every formula is calculated again at the next `Workbook.Recalculate`. An edit that would push
+content past the last row or column, split an array formula (Ctrl+Shift+Enter), or remove a
+table's header or totals row without the whole table throws `InvalidOperationException` and changes
+nothing. Inserting or deleting columns inside a table throws `NotSupportedException`.
+
 ## Defined names
 
 ```csharp snippet=cells-names
