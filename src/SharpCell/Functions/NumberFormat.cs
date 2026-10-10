@@ -92,6 +92,15 @@ internal sealed class NumberFormat
         return section.Format(shown, culture, dateSystem);
     }
 
+    /// <summary>Whether the first section shows a date: year, month or day.</summary>
+    public bool ShowsDate => _numberSections.Length > 0 && _numberSections[0].ShowsDate;
+
+    /// <summary>Whether the first section shows a time of day or elapsed time.</summary>
+    public bool ShowsTime => _numberSections.Length > 0 && _numberSections[0].ShowsTime;
+
+    /// <summary>Whether the first section shows the number as a percentage.</summary>
+    public bool ShowsPercent => _numberSections.Length > 0 && _numberSections[0].ShowsPercent;
+
     /// <summary>Formats text: through the text section (its <c>@</c> stands for the text), unchanged without one.</summary>
     public string FormatText(string text) => _textSection is null ? text : _textSection.FormatText(text);
 
@@ -247,6 +256,12 @@ internal sealed class NumberFormat
         private readonly int _point = -1;
         private readonly int _slash = -1;
 
+        public bool ShowsDate { get; }
+
+        public bool ShowsTime { get; }
+
+        public bool ShowsPercent => _percent > 0;
+
         private Section(List<Token> tokens, Condition? condition)
         {
             _tokens = tokens;
@@ -266,11 +281,18 @@ internal sealed class NumberFormat
                         _secondDigits = token.Length;
                         _isDate = true;
                         break;
+                    case Code.Year or Code.Month or Code.Day:
+                        ShowsDate = true;
+                        _isDate = true;
+                        break;
                     case >= Code.Year:
                         _isDate = true;
                         break;
                 }
             }
+
+            ShowsTime = _isDate && tokens.Exists(t => t.Code is Code.Hour or Code.Minute or Code.Second or Code.ElapsedHours
+                or Code.ElapsedMinutes or Code.ElapsedSeconds or Code.SecondFraction or Code.AmPm);
 
             if (_isDate)
                 return;

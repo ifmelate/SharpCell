@@ -1,1 +1,3 @@
 #nullable enable
+SharpCell.Cell.Input.get -> string!
+SharpCell.Cell.Input.set -> void
