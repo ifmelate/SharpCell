@@ -192,6 +192,14 @@ public sealed class Worksheet
 
     private bool _filterMode;
 
+    /// <summary>Copies the cells, hidden rows and filter mode of a sheet of another workbook into this new sheet.</summary>
+    internal void CopyFrom(Worksheet source, Func<Worksheet, Worksheet> map)
+    {
+        Store.CopyFrom(source.Store, data => data.CopyFor(map));
+        _hiddenRows.UnionWith(source._hiddenRows);
+        _filterMode = source._filterMode;
+    }
+
     private static void CheckRow(int row)
     {
         if (row is < 1 or > CellAddress.MaxRow)

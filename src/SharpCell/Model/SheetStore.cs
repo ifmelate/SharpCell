@@ -71,6 +71,18 @@ internal sealed class SheetStore
         }
     }
 
+    /// <summary>
+    /// Fills this empty store with copies of another store's cells. Only reads the source, so
+    /// several threads may copy one store at once.
+    /// </summary>
+    public void CopyFrom(SheetStore source, System.Func<CellData, CellData> copy)
+    {
+        foreach (var row in source._rowNumbers)
+            _rows.Add(row, source._rows[row].Copy(copy));
+        _rowNumbers.UnionWith(source._rowNumbers);
+        Count = source.Count;
+    }
+
     /// <summary>Existing cells inside the rectangle, row by row, columns ascending. Corners must be ordered.</summary>
     public IEnumerable<StoredCell> Enumerate(int firstRow, int firstColumn, int lastRow, int lastColumn)
     {
@@ -94,6 +106,15 @@ internal sealed class SheetStore
         public int ColumnAt(int index) => _columns[index];
 
         public CellData CellAt(int index) => _cells[index];
+
+        public RowData Copy(System.Func<CellData, CellData> copy)
+        {
+            var row = new RowData();
+            row._columns.AddRange(_columns);
+            foreach (var cell in _cells)
+                row._cells.Add(copy(cell));
+            return row;
+        }
 
         public CellData? Get(int column)
         {

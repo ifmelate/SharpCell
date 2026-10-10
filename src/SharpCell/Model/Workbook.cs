@@ -183,7 +183,68 @@ public sealed class Workbook
     /// What a file reader keeps about the file the workbook came from, for writing it back; null for
     /// a workbook built in code. The engine does not look inside.
     /// </summary>
-    internal object? Source { get; set; }
+    internal IWorkbookSource? Source { get; set; }
+
+    /// <summary>
+    /// An independent copy: sheets, cells and their calculated values, formulas still out of date,
+    /// spills, diagnostics, defined names, tables, hidden rows, settings and custom functions (the
+    /// same delegates), and the file it was read from, so <c>XlsxWriter</c> can save the copy too.
+    /// Nothing is calculated again. Parsed formulas and the file's bytes are shared, not copied.
+    /// <para>
+    /// Cloning only reads this workbook, so several threads may clone it at the same time as long as
+    /// nothing changes or calculates it meanwhile: a service can load a template once and clone it
+    /// for each request. Like any workbook, each copy is for one thread at a time.
+    /// </para>
+    /// </summary>
+    /// <returns>The copy; <see cref="Recalculate"/> on it reports changes from this point on only.</returns>
+    public Workbook Clone()
+    {
+        var clone = new Workbook
+        {
+            _culture = _culture,
+            _dateSystem = _dateSystem,
+            Registry = Registry,
+            Clock = Clock,
+            Random = Random,
+            MaxSpillCells = MaxSpillCells,
+        };
+
+        var sheets = new Dictionary<Worksheet, Worksheet>(_sheets.Count);
+        foreach (var sheet in _sheets)
+        {
+            var copy = new Worksheet(clone, sheet.Name);
+            clone._sheets.Add(copy);
+            sheets.Add(sheet, copy);
+        }
+
+        Worksheet Map(Worksheet sheet) => sheets[sheet];
+        foreach (var sheet in _sheets)
+            sheets[sheet].CopyFrom(sheet, Map);
+
+        foreach (var name in Names.All)
+            clone.Names.Set(new NameDefinition(name.Name, name.Spelling, name.Text, name.Formula, name.Scope is null ? null : Map(name.Scope)));
+
+        foreach (var table in _tables)
+            clone.AddCopiedTable(new Table(Map(table.Worksheet), table.Name, table.Area, table.HasHeaderRow, table.HasTotalsRow, table.Columns));
+
+        clone.Functions.CopyFrom(Functions);
+        clone.Calculation.CopyFrom(Calculation, Map);
+        clone.Source = Source?.CopyFor(Map);
+        return clone;
+    }
+
+    // A table of a cloned workbook: checked when the original was made, and nothing to invalidate.
+    private void AddCopiedTable(Table table)
+    {
+        var upper = table.Name.ToUpperInvariant();
+        if (!_tableAreas.TryGetValue(table.Worksheet, out var areas))
+            _tableAreas[table.Worksheet] = areas = new RangeIndex();
+        var key = new CellKey(table.Worksheet, table.Area.FirstRow, table.Area.FirstColumn);
+        areas.Add(table.Area, key);
+        _tablesByCorner[key] = table;
+        _tables.Add(table);
+        _tablesByName[upper] = table;
+    }
 
 
     /// <summary>Gets a sheet by name, ignoring case.</summary>

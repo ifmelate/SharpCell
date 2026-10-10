@@ -19,4 +19,13 @@ internal sealed class Dependencies
 
     /// <summary>Upper-case names, including names that were not defined at the time.</summary>
     public HashSet<string> Names { get; } = new(StringComparer.Ordinal);
+
+    public Dependencies CopyFor(Func<Worksheet, Worksheet> map)
+    {
+        var copy = new Dependencies();
+        foreach (var (sheet, area) in Areas)
+            copy.Areas.Add(new SheetArea(map(sheet), area));
+        copy.Names.UnionWith(Names);
+        return copy;
+    }
 }

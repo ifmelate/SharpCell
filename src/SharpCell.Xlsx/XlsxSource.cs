@@ -12,7 +12,7 @@ namespace SharpCell.Xlsx;
 /// so a save can write new values into the same file and refuse changes it cannot write.
 /// </summary>
 internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workbookPart,
-    IReadOnlyDictionary<Worksheet, SheetSource> sheets, string structure)
+    IReadOnlyDictionary<Worksheet, SheetSource> sheets, string structure) : IWorkbookSource
 {
     public byte[] Bytes { get; } = bytes;
 
@@ -24,6 +24,15 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
 
     /// <summary>The workbook's structure as read, from <see cref="Xlsx.Structure.Of"/>.</summary>
     public string Structure { get; } = structure;
+
+    /// <summary>The same file for a clone of the workbook: the bytes and the per-sheet records are shared.</summary>
+    public IWorkbookSource CopyFor(Func<Worksheet, Worksheet> map)
+    {
+        var sheets = new Dictionary<Worksheet, SheetSource>(Sheets.Count);
+        foreach (var (sheet, source) in Sheets)
+            sheets.Add(map(sheet), source);
+        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Structure);
+    }
 
     public static XlsxSource Capture(byte[] bytes, XlsxLimits limits, string workbookPart, Workbook workbook,
         IReadOnlyDictionary<Worksheet, string> parts)

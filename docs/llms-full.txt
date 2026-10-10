@@ -2001,6 +2001,19 @@ Adds a sheet at the end.
 
 - `ArgumentException`: The name is not a valid sheet name, or a sheet with that name exists.
 
+<a id="clone"></a>
+### Clone()
+
+```csharp
+public Workbook Clone()
+```
+
+An independent copy: sheets, cells and their calculated values, formulas still out of date, spills, diagnostics, defined names, tables, hidden rows, settings and custom functions (the same delegates), and the file it was read from, so `XlsxWriter` can save the copy too. Nothing is calculated again. Parsed formulas and the file's bytes are shared, not copied.
+
+Cloning only reads this workbook, so several threads may clone it at the same time as long as nothing changes or calculates it meanwhile: a service can load a template once and clone it for each request. Like any workbook, each copy is for one thread at a time.
+
+**Returns:** The copy; [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) on it reports changes from this point on only.
+
 <a id="definename-string-string-worksheet"></a>
 ### DefineName(string, string, Worksheet)
 
