@@ -80,6 +80,38 @@ static List<Cell> Affected(Cell input)
 }
 ```
 
+## Iterative calculation
+
+A formula that reads its own result, directly or through other cells, is a circular reference.
+Excel gives its cells 0, and so does SharpCell, unless iterative calculation is on:
+
+```csharp snippet=iterative
+var workbook = new Workbook { Iteration = new IterationSettings(Enabled: true) };
+Worksheet loan = workbook.AddSheet("Loan");
+loan["A1"].Value = 1000;                          // opening balance
+loan["A2"].Formula = "=A1+A3";                    // closing balance
+loan["A3"].Formula = "=(A1+A2)/2*0.05";           // interest on the average balance: a circular reference
+workbook.Recalculate();
+// loan["A2"].Value is about 1051.28; without iteration A2 and A3 would be 0
+```
+
+With `Workbook.Iteration` enabled, the cells of a circular reference are calculated in passes, each
+reading the others' latest values, until no value changes by more than `MaxChange` (0.001 by
+default) or `MaxIterations` passes (100 by default) are done. A cycle that does not settle keeps its
+last values and gets an `IterationLimitReached` diagnostic on each of its cells. The cells of a
+circular reference are calculated again on every `Recalculate`, continuing from their values, as in
+Excel: `=A1+1` in A1 grows by `MaxIterations` each time. A circular reference through a spilling
+formula is not iterated; it gives 0 and a `CircularReference` diagnostic.
+
+`XlsxReader` reads the settings from the file, as Excel saves them. Changing them calculates every
+formula again.
+
+Iterative calculation follows Excel's documented behaviour, checked by SharpCell's own tests: a
+counter and converging models give Excel's results whatever the order. It has not been compared with
+results calculated by Excel, because Excel for the web does not support iterative calculation. In a
+cycle of several cells that does not settle, the values after the last pass depend on the order the
+cells are calculated in (sheet, then row, then column), which may differ from Excel's.
+
 ## Cancellation
 
 ```csharp snippet=cancel
@@ -118,6 +150,7 @@ foreach (CalculationDiagnostic diagnostic in workbook.Diagnostics)
 | `FunctionFailure` | A function failed unexpectedly. This is a SharpCell bug worth reporting. | `#VALUE!` |
 | `UnsupportedFormula` | A formula uses something SharpCell cannot evaluate, such as a link to another workbook. | `#NAME?` |
 | `LimitExceeded` | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together. | An error |
+| `IterationLimitReached` | With iterative calculation on, a circular reference did not settle within `MaxIterations` passes. | Its last values |
 | `CustomFunctionFailure` | A [custom function](custom-functions.md) threw an exception. | `#VALUE!` |
 
 Diagnostics describe the current state: editing a cell or calculating it without the problem removes its entries.

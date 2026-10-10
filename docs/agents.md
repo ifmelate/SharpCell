@@ -21,6 +21,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Load: `Workbook workbook = XlsxReader.Load(path);` Build in code: `new Workbook()`, `AddSheet`, `sheet["A1"].Value`, `sheet["A2"].Formula = "=A1*3"`.
 - Call `workbook.Recalculate()` after changing values or formulas. Values do not update on assignment. It returns the cells whose values changed (`ChangedCells`).
 - Walk cells with `sheet.Cells` (non-empty only) or `sheet.Range("A1:C10").GetValues()`; dates convert with `value.AsDateTime(workbook.DateSystem)` and `CellValue.DateTime(date, workbook.DateSystem)`.
+- Circular references give 0 unless `workbook.Iteration = new IterationSettings(Enabled: true)`; files carry their own setting.
 - Custom functions: `workbook.Functions.Add("NAME", args => ..., new FunctionOptions { ... })`; the body reads cells only through its arguments and must not change the workbook.
 - For a template used per request, load and recalculate it once, then `template.Clone()` per request; cloning from several threads is safe while nothing changes the template.
 - `workbook.Evaluate("=SUM(1,2)")` evaluates a formula that lives in no cell.
@@ -30,7 +31,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread (clones of one template included).
 - Call `Workbook.Recalculate()` before `XlsxWriter.Save`; only cell values can be saved, into the file the workbook was read from.
-- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsm/.xlsb, iterative calculation, localized function names.
+- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsm/.xlsb, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```

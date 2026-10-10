@@ -12,6 +12,7 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Tables, with their column names and header and totals rows.
 - Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
+- The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
 

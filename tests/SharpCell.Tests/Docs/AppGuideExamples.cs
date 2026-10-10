@@ -194,6 +194,23 @@ public class AppGuideExamples
     // end-snippet
 
     [Fact]
+    public void Iterative_calculation()
+    {
+        // snippet: iterative
+        var workbook = new Workbook { Iteration = new IterationSettings(Enabled: true) };
+        Worksheet loan = workbook.AddSheet("Loan");
+        loan["A1"].Value = 1000;                          // opening balance
+        loan["A2"].Formula = "=A1+A3";                    // closing balance
+        loan["A3"].Formula = "=(A1+A2)/2*0.05";           // interest on the average balance: a circular reference
+        workbook.Recalculate();
+        // loan["A2"].Value is about 1051.28; without iteration A2 and A3 would be 0
+        // end-snippet
+
+        Assert.Equal(1051.28, loan["A2"].Value.AsNumber(), 2);
+        Assert.Empty(workbook.Diagnostics);
+    }
+
+    [Fact]
     public void Clone_a_template_per_request()
     {
         double[] amounts = [1350, 1500];

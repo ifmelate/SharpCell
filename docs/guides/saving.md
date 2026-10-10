@@ -30,7 +30,7 @@ be the target.
 |---|---|
 | A workbook built in code, not read by `XlsxReader` | `NotSupportedException` |
 | A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
-| Sheets, defined names, tables, hidden rows, filters or the date system changed | `NotSupportedException` |
+| Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed | `NotSupportedException` |
 | A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
