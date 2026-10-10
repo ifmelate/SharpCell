@@ -248,6 +248,57 @@ public class XlsxWriterTests
         Assert.Equal(6, Reload(file)["S"]["A2"].Value.AsNumber());
     }
 
+    // A volatile spill (weekly_timesheet.xlsx: a month's days) saves its cells as <f ca="1"/>.
+    private static TestXlsx VolatileSpill() => new TestXlsx { Metadata = TestXlsx.DynamicArrayMetadata }.Sheet("S",
+        "<row r=\"1\"><c r=\"A1\" cm=\"1\"><f t=\"array\" ref=\"A1:A2\">_xlfn.SEQUENCE(B1)</f><v>1</v></c><c r=\"B1\"><v>2</v></c></row>"
+        + "<row r=\"2\"><c r=\"A2\" s=\"1\"><f ca=\"1\"/><v>2</v></c></row>");
+
+    [Fact]
+    public void A_cell_a_volatile_spill_left_is_cleared()
+    {
+        var workbook = Load(VolatileSpill());
+        workbook["S"]["B1"].Value = 1;
+        workbook.Recalculate();
+
+        var file = Save(workbook);
+
+        Assert.Contains("<row r=\"2\"><c r=\"A2\" s=\"1\" /></row>", Part(file, Sheet1));
+        Assert.Equal(CellValue.Empty, Reload(file)["S"]["A2"].Value);
+    }
+
+    [Fact]
+    public void A_value_typed_over_a_volatile_spill_is_saved()
+    {
+        var workbook = Load(VolatileSpill());
+        workbook["S"]["A2"].Value = 42;
+        workbook.Recalculate();
+
+        var file = Save(workbook);
+
+        Assert.Contains("<c r=\"A2\" s=\"1\"><v>42</v></c>", Part(file, Sheet1));
+        Assert.Equal(42, Reload(file)["S"]["A2"].Value.AsNumber());
+    }
+
+    // The month in A3 = F1+SEQUENCE(DAY(EOMONTH(F1,0)))-1 follows TODAY(): 31 days saved, 30 in November.
+    [Fact]
+    public void A_real_template_whose_volatile_spill_shrinks_can_be_saved()
+    {
+        var workbook = XlsxReader.Load(CorpusFiles.PathOf("excel/templates/weekly_timesheet.xlsx"));
+        workbook.Clock = new November();
+        workbook.Recalculate();
+
+        var file = Save(workbook, new XlsxWriteOptions { KeepUncalculated = true });
+
+        Assert.Equal(CellValue.Empty, Reload(file)["Timesheet"]["A33"].Value);
+    }
+
+    private sealed class November : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 11, 15, 12, 0, 0, TimeSpan.Zero);
+
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+    }
+
     [Fact]
     public void A_typed_spill_or_calc_error_cannot_be_saved()
     {

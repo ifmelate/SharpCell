@@ -273,9 +273,8 @@ internal sealed class WorksheetWriter
         var value = data is null ? CellValue.Empty : CellEncoding.Storable(data.Value);
         var unchanged = value.Equals(saved.Value);
 
-        // A formula the reader takes as a value: a data table, which Excel calculates. A spilled cell
-        // Excel saved with an empty formula belongs to its spill and gets the spill's value.
-        if (saved.HasFormula && data?.SpillAnchor is null)
+        // A data table: Excel calculates it and the reader takes its value as a constant.
+        if (saved.IsDataTable)
         {
             return unchanged
                 ? source
@@ -294,6 +293,11 @@ internal sealed class WorksheetWriter
         }
 
         CheckConstant(data, value, address);
+
+        // Excel saves the cells of a volatile spill with an empty formula (<f ca="1"/>): a value typed
+        // over one is the user's, without it.
+        if (data?.SpillAnchor is null)
+            source.Elements(_ns + "f").Remove();
         return Rewrite(source, value, isFormula: false, data);
     }
 

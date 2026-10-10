@@ -130,13 +130,13 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
 
     public CellMetadata? Metadata { get; } = metadata;
 
-    /// <summary>The value saved in a &lt;c&gt; element, and whether it has a formula (&lt;f&gt;).</summary>
-    public (CellValue Value, bool HasFormula) Read(XElement cell, Worksheet sheet, int row, int column)
+    /// <summary>The value saved in a &lt;c&gt; element, and whether its formula belongs to an Excel data table.</summary>
+    public (CellValue Value, bool IsDataTable) Read(XElement cell, Worksheet sheet, int row, int column)
     {
         using var reader = cell.CreateReader();
         reader.MoveToContent();
         var xml = WorksheetReader.ReadCell(reader);
-        return (WorksheetReader.SavedValue(xml, this, sheet, new CellAddress(row, column)), xml.FormulaText is not null);
+        return (WorksheetReader.SavedValue(xml, this, sheet, new CellAddress(row, column)), xml.FormulaType == "dataTable");
     }
 }
 
