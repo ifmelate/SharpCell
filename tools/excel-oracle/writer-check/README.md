@@ -36,12 +36,24 @@ From `excel/templates/invoice.xlsx`. The last item of C15:C25 cleared: the item 
 - `B18`: <empty>
 - `C17`: <empty>
 
+## volatile-spill-november.xlsx
+
+From `excel/templates/weekly_timesheet.xlsx`. TODAY() fixed at 2026-11-15: the month's days in A3 (F1+SEQUENCE(DAY(EOMONTH(F1,0)))-1) shrink from 31 to 30; the weekday names next to them are text in a spill, written as formula results (t="str"). Excel recalculates TODAY() when it opens the file, so it will show its own month: check that the file opens without repair and that the weekday names are plain text.
+
+- `Timesheet!F1`: 46341
+- `Timesheet!A3`: 46341
+- `Timesheet!B3`: "Sun"
+- `Timesheet!A32`: 46370
+- `Timesheet!B32`: "Mon"
+- `Timesheet!A33`: <empty>
+- `Timesheet!B33`: <empty>
+
 ## spill-blocked.xlsx
 
 From `excel/DynamicArrays.xlsx`. B5 typed over the SEQUENCE spill at A3:B12: A3 is #SPILL! (a blocked spill, new rich value, the file had no xl/richData); F3 and K3 read it.
 
 - `DynamicArrays!A3`: #SPILL!
-- `DynamicArrays!F3`: #REF!
+- `DynamicArrays!F3`: #SPILL!
 - `DynamicArrays!K3`: 0
 - `DynamicArrays!B5`: 999
 

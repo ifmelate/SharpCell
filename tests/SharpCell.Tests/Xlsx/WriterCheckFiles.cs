@@ -44,6 +44,11 @@ public class WriterCheckFiles
                 sheet[row - 1, 3].Value = CellValue.Empty;
             },
             ["B15", "B16", "B17", "B18", "C17"]),
+        new("volatile-spill-november", "excel/templates/weekly_timesheet.xlsx",
+            "TODAY() fixed at 2026-11-15: the month's days in A3 (F1+SEQUENCE(DAY(EOMONTH(F1,0)))-1) shrink from 31 to 30; "
+            + "the weekday names next to them are text in a spill, written as formula results (t=\"str\"). Excel recalculates TODAY() when it opens the file, so it will show its own month: check that the file opens without repair and that the weekday names are plain text.",
+            workbook => workbook.Clock = new November(),
+            ["Timesheet!F1", "Timesheet!A3", "Timesheet!B3", "Timesheet!A32", "Timesheet!B32", "Timesheet!A33", "Timesheet!B33"]),
         new("spill-blocked", "excel/DynamicArrays.xlsx",
             "B5 typed over the SEQUENCE spill at A3:B12: A3 is #SPILL! (a blocked spill, new rich value, the file had no xl/richData); F3 and K3 read it.",
             workbook => workbook["DynamicArrays"]["B5"].Value = 999,
@@ -83,6 +88,13 @@ public class WriterCheckFiles
         }
 
         File.WriteAllText(Path.Combine(folder, "README.md"), readme.ToString());
+    }
+
+    private sealed class November : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 11, 15, 12, 0, 0, TimeSpan.Zero);
+
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 
     // The invoice lists items in C15:C25 of its first sheet.
