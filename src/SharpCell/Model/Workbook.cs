@@ -17,6 +17,7 @@ public sealed class Workbook
     private readonly List<Worksheet> _sheets = [];
     private CultureInfo _culture = CultureInfo.InvariantCulture;
     private DateSystem _dateSystem;
+    private IterationSettings _iteration = new();
 
     /// <summary>An empty workbook with no sheets, the invariant culture and the 1900 date system.</summary>
     public Workbook()
@@ -105,6 +106,23 @@ public sealed class Workbook
         {
             ThrowIfInCustomFunction();
             _dateSystem = value;
+            Calculation.InvalidateAll();
+        }
+    }
+
+    /// <summary>
+    /// Iterative calculation of circular references, off by default as in Excel; the .xlsx reader
+    /// sets it from the file. Changing it calculates every formula again at the next
+    /// <see cref="Recalculate"/>.
+    /// </summary>
+    public IterationSettings Iteration
+    {
+        get => _iteration;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            ThrowIfInCustomFunction();
+            _iteration = value;
             Calculation.InvalidateAll();
         }
     }
@@ -203,6 +221,7 @@ public sealed class Workbook
         {
             _culture = _culture,
             _dateSystem = _dateSystem,
+            _iteration = _iteration,
             Registry = Registry,
             Clock = Clock,
             Random = Random,

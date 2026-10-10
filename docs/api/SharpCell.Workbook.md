@@ -68,6 +68,15 @@ public FunctionCollection Functions { get; }
 
 Functions of your own that formulas of this workbook can call, besides Excel's.
 
+<a id="iteration"></a>
+### Iteration
+
+```csharp
+public IterationSettings Iteration { get; set; }
+```
+
+Iterative calculation of circular references, off by default as in Excel; the .xlsx reader sets it from the file. Changing it calculates every formula again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
 <a id="sheets"></a>
 ### Sheets
 

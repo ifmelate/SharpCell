@@ -1,1 +1,13 @@
 #nullable enable
+SharpCell.DiagnosticKind.IterationLimitReached = 5 -> SharpCell.DiagnosticKind
+SharpCell.IterationSettings
+SharpCell.IterationSettings.Enabled.get -> bool
+override SharpCell.IterationSettings.Equals(object? obj) -> bool
+SharpCell.IterationSettings.Equals(SharpCell.IterationSettings? other) -> bool
+override SharpCell.IterationSettings.GetHashCode() -> int
+SharpCell.IterationSettings.IterationSettings(bool Enabled = false, int MaxIterations = 100, double MaxChange = 0.001) -> void
+SharpCell.IterationSettings.MaxChange.get -> double
+SharpCell.IterationSettings.MaxIterations.get -> int
+override SharpCell.IterationSettings.ToString() -> string!
+SharpCell.Workbook.Iteration.get -> SharpCell.IterationSettings!
+SharpCell.Workbook.Iteration.set -> void

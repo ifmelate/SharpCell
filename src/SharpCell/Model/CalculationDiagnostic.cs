@@ -26,6 +26,12 @@ public enum DiagnosticKind
     /// <c>#VALUE!</c>. The message names the function and the exception.
     /// </summary>
     CustomFunctionFailure,
+
+    /// <summary>
+    /// With <see cref="Workbook.Iteration"/> enabled, a circular reference did not settle within
+    /// <see cref="IterationSettings.MaxIterations"/> passes; its cells keep their last values.
+    /// </summary>
+    IterationLimitReached,
 }
 
 /// <summary>Something calculation noticed that is not visible in cell values alone.</summary>

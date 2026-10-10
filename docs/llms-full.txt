@@ -1714,6 +1714,7 @@ What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
 | <a id="unsupportedformula"></a>`UnsupportedFormula` | 2 | A formula uses something SharpCell cannot evaluate, such as a function it does not know or (in a file) a link to another workbook; the cell got `#NAME?`. |
 | <a id="limitexceeded"></a>`LimitExceeded` | 3 | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together; the cell got an error. |
 | <a id="customfunctionfailure"></a>`CustomFunctionFailure` | 4 | A function added through [Workbook.Functions](SharpCell.Workbook.md#functions) threw an exception; the cell got `#VALUE!`. The message names the function and the exception. |
+| <a id="iterationlimitreached"></a>`IterationLimitReached` | 5 | With [Workbook.Iteration](SharpCell.Workbook.md#iteration) enabled, a circular reference did not settle within [IterationSettings.MaxIterations](SharpCell.IterationSettings.md#maxiterations) passes; its cells keep their last values. |
 
 ---
 
@@ -2061,6 +2062,108 @@ The 0-based positions of scalar parameters. A scalar parameter receives one valu
 
 ---
 
+<!-- page: api/SharpCell.IterationSettings.md -->
+
+# IterationSettings
+
+```csharp
+public sealed class IterationSettings
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0.
+
+## Constructors
+
+<a id="ctor-bool-int-double"></a>
+### IterationSettings(bool, int, double)
+
+```csharp
+public IterationSettings(bool Enabled = false, int MaxIterations = 100, double MaxChange = 0.001)
+```
+
+Settings for iterative calculation; the defaults are Excel's, with iteration off.
+
+**Parameters**
+
+- `Enabled`: Whether circular references are calculated iteratively.
+- `MaxIterations`: The most passes over a circular reference, 1 to 32,767.
+- `MaxChange`: A circular reference has settled when no value of it changed by more than this in a pass; 0 or more.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A limit is outside what Excel allows.
+
+## Properties
+
+<a id="enabled"></a>
+### Enabled
+
+```csharp
+public bool Enabled { get; }
+```
+
+Whether circular references are calculated iteratively.
+
+<a id="maxchange"></a>
+### MaxChange
+
+```csharp
+public double MaxChange { get; }
+```
+
+A circular reference has settled when no value changed by more than this in a pass; 0.001 by default.
+
+<a id="maxiterations"></a>
+### MaxIterations
+
+```csharp
+public int MaxIterations { get; }
+```
+
+The most passes over a circular reference; 100 by default.
+
+## Methods
+
+<a id="equals-iterationsettings"></a>
+### Equals(IterationSettings)
+
+```csharp
+public bool Equals(IterationSettings? other)
+```
+
+Whether the other settings are the same.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is the same settings.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [IterationSettings.Equals](SharpCell.IterationSettings.md#equals-iterationsettings).
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The settings as text, such as `Enabled, 100 iterations, change 0.001`.
+
+---
+
 <!-- page: api/SharpCell.LambdaValue.md -->
 
 # LambdaValue
@@ -2250,6 +2353,15 @@ public FunctionCollection Functions { get; }
 ```
 
 Functions of your own that formulas of this workbook can call, besides Excel's.
+
+<a id="iteration"></a>
+### Iteration
+
+```csharp
+public IterationSettings Iteration { get; set; }
+```
+
+Iterative calculation of circular references, off by default as in Excel; the .xlsx reader sets it from the file. Changing it calculates every formula again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 <a id="sheets"></a>
 ### Sheets
