@@ -1,3 +1,4 @@
+using System;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
@@ -57,4 +58,22 @@ internal sealed class CellData
     /// other cells of the area are its spilled cells and cannot be changed on their own.
     /// </summary>
     public Area? FixedArray;
+
+    /// <summary>
+    /// A copy for another workbook whose sheets <paramref name="map"/> gives. The parsed formula is
+    /// immutable and shared; what the last unfinished evaluation read is not needed outside it.
+    /// </summary>
+    public CellData CopyFor(Func<Worksheet, Worksheet> map) => new()
+    {
+        Value = Value,
+        FormulaText = FormulaText,
+        Formula = Formula,
+        IsDirty = IsDirty,
+        Registered = Registered?.CopyFor(map),
+        IsLegacy = IsLegacy,
+        SpillAnchor = SpillAnchor is { } anchor ? anchor with { Sheet = map(anchor.Sheet) } : null,
+        SpillArea = SpillArea,
+        SpillWatch = SpillWatch,
+        FixedArray = FixedArray,
+    };
 }

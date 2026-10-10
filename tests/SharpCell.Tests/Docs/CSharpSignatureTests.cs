@@ -21,7 +21,7 @@ public class CSharpSignatureTests
         Assert.Equal("public Workbook()", CSharpSignature.Of(typeof(Workbook).GetConstructor(Type.EmptyTypes)!));
         Assert.Equal("public CellValue Evaluate(string formula, CancellationToken cancellationToken)",
             CSharpSignature.Of(typeof(Workbook).GetMethod("Evaluate", [typeof(string), typeof(CancellationToken)])!));
-        Assert.Equal("public void Recalculate(CancellationToken cancellationToken = default)",
+        Assert.Equal("public RecalculationResult Recalculate(CancellationToken cancellationToken = default)",
             CSharpSignature.Of(typeof(Workbook).GetMethod("Recalculate")!));
         Assert.Equal("public bool TryGetSheet(string name, out Worksheet? sheet)",
             CSharpSignature.Of(typeof(Workbook).GetMethod("TryGetSheet")!));

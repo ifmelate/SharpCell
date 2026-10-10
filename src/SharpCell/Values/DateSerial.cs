@@ -22,6 +22,29 @@ internal static class DateSerial
         return value >= FirstRealMarch1900 ? days + 1 : days;
     }
 
+    /// <summary>
+    /// The DateTime of a serial number, the time rounded to the millisecond; false for numbers that
+    /// are no date: negative, past 9999-12-31, or the non-existent 1900-02-29 (serial 60) of the
+    /// 1900 system. Serials below 1 in the 1900 system are times on 1899-12-31, the inverse of
+    /// <see cref="FromDateTime"/>.
+    /// </summary>
+    public static bool TryToDateTime(double serial, DateSystem system, out DateTime value)
+    {
+        value = default;
+        const double MillisecondsPerDay = 86_400_000;
+        if (!(serial >= 0))
+            return false;
+        var milliseconds = Math.Round(serial * MillisecondsPerDay, MidpointRounding.AwayFromZero);
+        var days = Math.Floor(milliseconds / MillisecondsPerDay);
+        if (days > MaxSerial(system) || (system == DateSystem.Date1900 && days == 60))
+            return false;
+
+        var time = milliseconds - days * MillisecondsPerDay;
+        var date = system == DateSystem.Date1904 ? Epoch1904.AddDays(days) : Epoch1900.AddDays(days < 60 ? days : days - 1);
+        value = date.AddMilliseconds(time);
+        return true;
+    }
+
     /// <summary>The last day Excel knows, 9999-12-31, as a serial number.</summary>
     public static double MaxSerial(DateSystem system) => system == DateSystem.Date1904 ? 2957003 : 2958465;
 

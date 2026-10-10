@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
@@ -43,6 +44,7 @@ public sealed class Cell
             if (value.Kind is CellValueKind.Missing or CellValueKind.Array or CellValueKind.Lambda)
                 throw new ArgumentException($"A cell cannot hold a {value.Kind} value.", nameof(value));
 
+            Worksheet.Workbook.ThrowIfInCustomFunction();
             EnsureNotArrayMember();
             var key = Key;
             var calculation = Worksheet.Workbook.Calculation;
@@ -88,6 +90,7 @@ public sealed class Cell
     /// <param name="value">Formula text, or null to remove the formula.</param>
     internal void SetFormula(string? value, bool legacy)
     {
+        Worksheet.Workbook.ThrowIfInCustomFunction();
         EnsureNotArrayMember();
         var key = Key;
         var calculation = Worksheet.Workbook.Calculation;
@@ -115,6 +118,79 @@ public sealed class Cell
         data.Value = CellValue.Empty;
         data.SpillAnchor = null;
         calculation.AfterChange(key, data);
+    }
+
+    /// <summary>
+    /// The cells and ranges the cell's formula read in its last calculation: references in the
+    /// formula, in the defined names it uses, and those built while calculating (<c>INDIRECT</c>,
+    /// <c>OFFSET</c>). A branch of <c>IF</c> that was not taken is not included. A cell filled by
+    /// another cell's spill has that cell as its precedent; a constant or empty cell has none. The
+    /// ranges come in the order of their sheets in the workbook, then by their top-left cell.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The formula is out of date: call <see cref="Workbook.Recalculate"/> first.</exception>
+    public IReadOnlyList<CellRange> Precedents
+    {
+        get
+        {
+            var data = Worksheet.Store.Get(Row, Column);
+            if (data?.Formula is null)
+            {
+                return data?.SpillAnchor is { } anchor
+                    ? [new CellRange(anchor.Sheet, Area.Cell(anchor.Row, anchor.Column))]
+                    : [];
+            }
+
+            if (data.IsDirty)
+                throw new InvalidOperationException($"{this} has not been calculated since it or its inputs changed; call Recalculate first.");
+
+            var order = Worksheet.Workbook.Calculation.SheetOrder();
+            var areas = new List<SheetArea>(data.Registered?.Areas ?? []);
+            areas.Sort((a, b) =>
+            {
+                var bySheet = order[a.Sheet].CompareTo(order[b.Sheet]);
+                if (bySheet != 0)
+                    return bySheet;
+                var x = a.Area;
+                var y = b.Area;
+                return x.FirstRow != y.FirstRow ? x.FirstRow.CompareTo(y.FirstRow)
+                    : x.FirstColumn != y.FirstColumn ? x.FirstColumn.CompareTo(y.FirstColumn)
+                    : x.LastRow != y.LastRow ? x.LastRow.CompareTo(y.LastRow)
+                    : x.LastColumn.CompareTo(y.LastColumn);
+            });
+            return areas.ConvertAll(a => new CellRange(a.Sheet, a.Area));
+        }
+    }
+
+    /// <summary>
+    /// The formula cells that read this cell in their last calculation, alone or in a range; for a
+    /// cell whose formula spills, also the cells it spilled into. Direct readers only: follow
+    /// <see cref="Dependents"/> again for the cells that read those. In the order of their sheets
+    /// in the workbook, then by row and column.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Some formula of the workbook is out of date: call
+    /// <see cref="Workbook.Recalculate"/> first.</exception>
+    public IReadOnlyList<Cell> Dependents
+    {
+        get
+        {
+            var calculation = Worksheet.Workbook.Calculation;
+            if (calculation.HasDirty)
+                throw new InvalidOperationException("Formulas of the workbook have not been calculated since they or their inputs changed; call Recalculate first.");
+
+            var key = Key;
+            var readers = new HashSet<CellKey>();
+            calculation.Graph.ForEachReader(key, reader => readers.Add(reader));
+            if (Worksheet.Store.Get(Row, Column)?.SpillArea is { } spill)
+            {
+                foreach (var cell in Worksheet.Store.Enumerate(spill.FirstRow, spill.FirstColumn, spill.LastRow, spill.LastColumn))
+                {
+                    if (cell.Data.SpillAnchor == key)
+                        readers.Add(new CellKey(Worksheet, cell.Row, cell.Column));
+                }
+            }
+
+            return calculation.SortedCells([.. readers]);
+        }
     }
 
     private CellKey Key => new(Worksheet, Row, Column);

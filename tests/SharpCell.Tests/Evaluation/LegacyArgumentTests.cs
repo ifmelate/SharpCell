@@ -71,7 +71,7 @@ public class LegacyArgumentTests
                 total += element.Kind == CellValueKind.Number ? element.AsNumber() : 0;
             return CellValue.Number(total);
         }));
-        _wb.Functions = registry;
+        _wb.Registry = registry;
 
         Assert.Equal(N(20), Legacy("=ARRAYSUM((A1:A3>0)*B1:B3)"));
         Assert.Equal(N(60), Legacy("=ARRAYSUM(B1:B3*1)", row: 3, column: 4));

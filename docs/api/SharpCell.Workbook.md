@@ -41,6 +41,15 @@ public DateSystem DateSystem { get; set; }
 
 Whether serial dates count from 1900 or from 1904, as set in the file.
 
+<a id="definednames"></a>
+### DefinedNames
+
+```csharp
+public IReadOnlyList<DefinedName> DefinedNames { get; }
+```
+
+The defined names, workbook-wide and sheet-scoped, in the order they were first defined: a snapshot that later definitions do not change.
+
 <a id="diagnostics"></a>
 ### Diagnostics
 
@@ -49,6 +58,15 @@ public IReadOnlyList<CalculationDiagnostic> Diagnostics { get; }
 ```
 
 Current calculation problems: circular references and failing functions. An entry of a cell disappears when the cell is edited or calculated without the problem; entries from [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) last until the next call of it.
+
+<a id="functions"></a>
+### Functions
+
+```csharp
+public FunctionCollection Functions { get; }
+```
+
+Functions of your own that formulas of this workbook can call, besides Excel's.
 
 <a id="sheets"></a>
 ### Sheets
@@ -92,6 +110,19 @@ Adds a sheet at the end.
 
 - `ArgumentException`: The name is not a valid sheet name, or a sheet with that name exists.
 
+<a id="clone"></a>
+### Clone()
+
+```csharp
+public Workbook Clone()
+```
+
+An independent copy: sheets, cells and their calculated values, formulas still out of date, spills, diagnostics, defined names, tables, hidden rows, settings and custom functions (the same delegates), and the file it was read from, so `XlsxWriter` can save the copy too. Nothing is calculated again. Parsed formulas and the file's bytes are shared, not copied.
+
+Cloning only reads this workbook, so several threads may clone it at the same time as long as nothing changes or calculates it meanwhile: a service can load a template once and clone it for each request. Like any workbook, each copy is for one thread at a time.
+
+**Returns:** The copy; [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) on it reports changes from this point on only.
+
 <a id="definename-string-string-worksheet"></a>
 ### DefineName(string, string, Worksheet)
 
@@ -127,14 +158,16 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 ### Recalculate(CancellationToken)
 
 ```csharp
-public void Recalculate(CancellationToken cancellationToken = default)
+public RecalculationResult Recalculate(CancellationToken cancellationToken = default)
 ```
 
 Calculates every formula that is out of date: those whose inputs changed since the last calculation and those using volatile functions (NOW, RAND).
 
+**Returns:** The cells whose values calculation changed since the previous call, including what [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) calculated in between.
+
 **Exceptions**
 
-- `OperationCanceledException`: The token was cancelled; finished cells keep their new values.
+- `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)

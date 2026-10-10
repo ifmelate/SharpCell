@@ -290,7 +290,7 @@ public class RecalculationTests
     {
         var registry = new FunctionRegistry();
         registry.Add(new FunctionInfo("BOOM", 0, 0, [ArgumentKind.Value], _ => throw new InvalidOperationException("kaboom")));
-        _wb.Functions = registry;
+        _wb.Registry = registry;
         _s["B2"].Formula = "=BOOM()";
         _wb.Recalculate();
 

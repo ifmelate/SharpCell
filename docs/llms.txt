@@ -9,7 +9,9 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Overview](https://ifmelate.github.io/SharpCell/index.md): What SharpCell is, its packages and a first example.
 - [Getting started](https://ifmelate.github.io/SharpCell/getting-started.md): Install, read an .xlsx file, recalculate, read values; walks through the console sample.
 - [Formulas and values](https://ifmelate.github.io/SharpCell/guides/formulas.md): Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors.
-- [Recalculation](https://ifmelate.github.io/SharpCell/guides/recalculation.md): When values update, volatile functions, cancellation, diagnostics, threads, culture and dates.
+- [Cells, ranges and dates](https://ifmelate.github.io/SharpCell/guides/cells.md): Going through non-empty cells, UsedRange, reading and writing blocks of values, dates as DateTime, defined names.
+- [Recalculation](https://ifmelate.github.io/SharpCell/guides/recalculation.md): When values update, changed cells, precedents and dependents, cancellation, diagnostics, threads, cloning templates, culture and dates.
+- [Custom functions](https://ifmelate.github.io/SharpCell/guides/custom-functions.md): Functions written in C# that formulas call by name: arguments, scalar parameters, volatile functions, failures.
 - [Reading .xlsx files](https://ifmelate.github.io/SharpCell/guides/xlsx.md): What the reader loads and skips, saved results, streams, unsupported formats.
 - [Saving .xlsx files](https://ifmelate.github.io/SharpCell/guides/saving.md): Writing recalculated values back into the file a workbook was read from: what is written, what is refused, KeepUncalculated.
 - [Tables and hidden rows](https://ifmelate.github.io/SharpCell/guides/tables.md): Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE.
@@ -21,14 +23,20 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 
 - [CalculationDiagnostic](https://ifmelate.github.io/SharpCell/api/SharpCell.CalculationDiagnostic.md): Something calculation noticed that is not visible in cell values alone.
 - [Cell](https://ifmelate.github.io/SharpCell/api/SharpCell.Cell.md): A handle to one cell position.
+- [CellRange](https://ifmelate.github.io/SharpCell/api/SharpCell.CellRange.md): A rectangle of cells on one sheet, such as `A1:C10`.
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
 - [DateSystem](https://ifmelate.github.io/SharpCell/api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
+- [DefinedName](https://ifmelate.github.io/SharpCell/api/SharpCell.DefinedName.md): A defined name as Workbook.DefinedNames lists it.
 - [DiagnosticKind](https://ifmelate.github.io/SharpCell/api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
 - [ErrorKind](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKind.md): Excel error values.
 - [ErrorKinds](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKinds.md): Conversion between ErrorKind and its literal text (`#DIV/0!`).
 - [FormulaParseException](https://ifmelate.github.io/SharpCell/api/SharpCell.FormulaParseException.md): Thrown when formula text cannot be parsed.
+- [FunctionArguments](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionArguments.md): The arguments of one call of a function added through Workbook.Functions.
+- [FunctionCollection](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionCollection.md): The functions a workbook's formulas can call besides Excel's: add one with FunctionCollection.Add, and formulas calling it by name (ignoring case) use it from the next calculation on.
+- [FunctionOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionOptions.md): How a function added through Workbook.Functions takes its arguments.
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
+- [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.

@@ -18,3 +18,4 @@ What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
 | <a id="functionfailure"></a>`FunctionFailure` | 1 | A function failed unexpectedly; the cell got `#VALUE!`. |
 | <a id="unsupportedformula"></a>`UnsupportedFormula` | 2 | A formula uses something SharpCell cannot evaluate, such as a function it does not know or (in a file) a link to another workbook; the cell got `#NAME?`. |
 | <a id="limitexceeded"></a>`LimitExceeded` | 3 | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together; the cell got an error. |
+| <a id="customfunctionfailure"></a>`CustomFunctionFailure` | 4 | A function added through [Workbook.Functions](SharpCell.Workbook.md#functions) threw an exception; the cell got `#VALUE!`. The message names the function and the exception. |

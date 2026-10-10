@@ -8,9 +8,9 @@ namespace SharpCell.Functions;
 /// <summary>Calls a registry function: argument checks, element-wise application, the exception boundary.</summary>
 internal static class FunctionInvoker
 {
-    public static Operand Invoke(FunctionNode node, EvaluationContext context)
+    public static Operand Invoke(FunctionNode node, FunctionInfo function, EvaluationContext context)
     {
-        if (!context.Workbook.Functions.TryGet(node.Name, out var function) || function!.Status == FunctionStatus.NotImplemented)
+        if (function.Status == FunctionStatus.NotImplemented)
             return CellValue.Error(ErrorKind.Name);
 
         var arguments = node.Arguments;

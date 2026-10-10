@@ -166,7 +166,7 @@ public class FunctionTests
     {
         var registry = new FunctionRegistry();
         registry.Add(new FunctionInfo("BOOM", 0, 0, [ArgumentKind.Value], _ => throw new InvalidOperationException("kaboom")));
-        _wb.Functions = registry;
+        _wb.Registry = registry;
 
         Assert.Equal(Err(ErrorKind.Value), _wb.Evaluate("=BOOM()"));
         var diagnostic = Assert.Single(_wb.Diagnostics);
@@ -189,7 +189,7 @@ public class FunctionTests
                 cancellation.Cancel();
             return call[0].Value;
         }));
-        _wb.Functions = registry;
+        _wb.Registry = registry;
 
         Assert.Throws<OperationCanceledException>(() => _wb.Evaluate("=TICK(A1:A100000)", cancellation.Token));
         Assert.True(calls < 100000, $"all {calls} elements were visited after cancellation");
@@ -200,7 +200,7 @@ public class FunctionTests
     {
         var registry = new FunctionRegistry();
         registry.Add(new FunctionInfo("STOP", 0, 0, [ArgumentKind.Value], _ => throw new OperationCanceledException()));
-        _wb.Functions = registry;
+        _wb.Registry = registry;
         Assert.Throws<OperationCanceledException>(() => _wb.Evaluate("=STOP()"));
     }
 
@@ -209,7 +209,7 @@ public class FunctionTests
     {
         var registry = new FunctionRegistry();
         registry.Add(new FunctionInfo("LATER", 0, 0, [ArgumentKind.Value], _ => CellValue.Number(1)) { Status = FunctionStatus.NotImplemented });
-        _wb.Functions = registry;
+        _wb.Registry = registry;
         Assert.Equal(Err(ErrorKind.Name), _wb.Evaluate("=LATER()"));
     }
 

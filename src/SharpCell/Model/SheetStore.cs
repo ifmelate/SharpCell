@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SharpCell.Evaluation;
 
 namespace SharpCell;
 
@@ -15,6 +16,27 @@ internal sealed class SheetStore
 
     public int Count { get; private set; }
 
+    /// <summary>Changes when a cell is added or removed, so a public enumeration can detect it.</summary>
+    public int Version { get; private set; }
+
+    /// <summary>The first and last row and column holding a cell; null when the store is empty.</summary>
+    public Area? Bounds
+    {
+        get
+        {
+            if (_rowNumbers.Count == 0)
+                return null;
+            int first = int.MaxValue, last = 0;
+            foreach (var data in _rows.Values)
+            {
+                first = System.Math.Min(first, data.ColumnAt(0));
+                last = System.Math.Max(last, data.ColumnAt(data.Count - 1));
+            }
+
+            return new Area(_rowNumbers.Min, first, _rowNumbers.Max, last);
+        }
+    }
+
     public CellData? Get(int row, int column) => _rows.TryGetValue(row, out var data) ? data.Get(column) : null;
 
     public CellData GetOrCreate(int row, int column)
@@ -28,7 +50,10 @@ internal sealed class SheetStore
 
         var cell = data.GetOrCreate(column, out var created);
         if (created)
+        {
             Count++;
+            Version++;
+        }
         return cell;
     }
 
@@ -38,11 +63,24 @@ internal sealed class SheetStore
             return;
 
         Count--;
+        Version++;
         if (data.IsEmpty)
         {
             _rows.Remove(row);
             _rowNumbers.Remove(row);
         }
+    }
+
+    /// <summary>
+    /// Fills this empty store with copies of another store's cells. Only reads the source, so
+    /// several threads may copy one store at once.
+    /// </summary>
+    public void CopyFrom(SheetStore source, System.Func<CellData, CellData> copy)
+    {
+        foreach (var row in source._rowNumbers)
+            _rows.Add(row, source._rows[row].Copy(copy));
+        _rowNumbers.UnionWith(source._rowNumbers);
+        Count = source.Count;
     }
 
     /// <summary>Existing cells inside the rectangle, row by row, columns ascending. Corners must be ordered.</summary>
@@ -68,6 +106,15 @@ internal sealed class SheetStore
         public int ColumnAt(int index) => _columns[index];
 
         public CellData CellAt(int index) => _cells[index];
+
+        public RowData Copy(System.Func<CellData, CellData> copy)
+        {
+            var row = new RowData();
+            row._columns.AddRange(_columns);
+            foreach (var cell in _cells)
+                row._cells.Add(copy(cell));
+            return row;
+        }
 
         public CellData? Get(int column)
         {

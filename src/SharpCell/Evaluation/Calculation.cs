@@ -43,6 +43,10 @@ internal sealed class Calculation(Workbook workbook)
     private readonly Dictionary<CellKey, IReadOnlyList<CalculationDiagnostic>> _cellDiagnostics = [];
     private IReadOnlyList<CalculationDiagnostic> _detachedDiagnostics = [];
 
+    // The value each cell had before calculation first wrote it since the last Recalculate, so that
+    // Recalculate can tell which cells it (or Evaluate) changed. Edits by the user drop the entry.
+    private readonly Dictionary<CellKey, CellValue> _before = [];
+
     public DependencyGraph Graph { get; } = new();
 
     /// <summary>Formula evaluations attempted by recalculation, restarts included. For tests.</summary>
@@ -74,9 +78,74 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
+    /// <summary>
+    /// Takes over the state of another workbook's calculation for a copy of that workbook, whose
+    /// sheets (cells already copied) <paramref name="map"/> gives. Reads the source only, so several
+    /// threads may copy one workbook at once: the indexes are rebuilt from the copied cells instead of
+    /// being queried, since a query may reorganize an index.
+    /// </summary>
+    public void CopyFrom(Calculation source, Func<Worksheet, Worksheet> map)
+    {
+        CellKey Map(CellKey key) => key with { Sheet = map(key.Sheet) };
+
+        foreach (var key in source._dirty)
+            _dirty.Add(Map(key));
+        foreach (var key in source._volatile)
+            _volatile.Add(Map(key));
+        _spillCells = source._spillCells;
+
+        foreach (var sheet in workbook.Sheets)
+        {
+            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            {
+                var key = new CellKey(sheet, cell.Row, cell.Column);
+                var data = cell.Data;
+                if (data.Registered is { } registered)
+                    Graph.Register(key, registered);
+                if (data.SpillWatch is { } watched)
+                {
+                    if (!_spillWatch.TryGetValue(sheet, out var watch))
+                        _spillWatch[sheet] = watch = new RangeIndex();
+                    watch.Add(watched, key);
+                }
+
+                if (data.FixedArray is { } fixedArea)
+                    RegisterFixedArray(key, fixedArea);
+            }
+        }
+
+        // A loop's members share one diagnostic; the copies share one too.
+        var copies = new Dictionary<CalculationDiagnostic, CalculationDiagnostic>(ReferenceEqualityComparer.Instance);
+        CalculationDiagnostic Copy(CalculationDiagnostic diagnostic)
+        {
+            if (!copies.TryGetValue(diagnostic, out var copy))
+            {
+                copy = new CalculationDiagnostic(diagnostic.Kind, diagnostic.Sheet is { } sheet ? map(sheet) : null,
+                    diagnostic.Address, diagnostic.Message);
+                copies.Add(diagnostic, copy);
+            }
+
+            return copy;
+        }
+
+        foreach (var (key, diagnostics) in source._cellDiagnostics)
+        {
+            var copied = new CalculationDiagnostic[diagnostics.Count];
+            for (var i = 0; i < copied.Length; i++)
+                copied[i] = Copy(diagnostics[i]);
+            _cellDiagnostics.Add(Map(key), copied);
+        }
+
+        var detached = new CalculationDiagnostic[source._detachedDiagnostics.Count];
+        for (var i = 0; i < detached.Length; i++)
+            detached[i] = Copy(source._detachedDiagnostics[i]);
+        _detachedDiagnostics = detached;
+    }
+
     /// <summary>Call before a cell's content changes: its old dependencies and its spill stop counting.</summary>
     public void BeforeChange(CellKey key, CellData? data)
     {
+        _before.Remove(key);
         if (data?.Registered is { } registered)
         {
             Graph.Unregister(key, registered);
@@ -159,7 +228,8 @@ internal sealed class Calculation(Workbook workbook)
         }
     }
 
-    public void Recalculate(CancellationToken cancellationToken)
+    /// <returns>The cells whose values calculation changed since the last call, in sheet, row and column order.</returns>
+    public IReadOnlyList<Cell> Recalculate(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         _evaluations.Clear();
@@ -176,7 +246,49 @@ internal sealed class Calculation(Workbook workbook)
         for (var i = 0; i < _dirty.Count; i++)
             Compute(_dirty[i], cancellationToken);
         _dirty.Clear();
+        return TakeChanges();
     }
+
+    private List<Cell> TakeChanges()
+    {
+        var changed = new List<CellKey>();
+        foreach (var (key, before) in _before)
+        {
+            if (!(key.Data?.Value ?? CellValue.Empty).Equals(before))
+                changed.Add(key);
+        }
+
+        _before.Clear();
+        return SortedCells(changed);
+    }
+
+    /// <summary>Cells in the order of their sheets in the workbook, then by row and column.</summary>
+    public List<Cell> SortedCells(List<CellKey> keys)
+    {
+        var order = SheetOrder();
+        keys.Sort((a, b) =>
+        {
+            var bySheet = order[a.Sheet].CompareTo(order[b.Sheet]);
+            if (bySheet != 0)
+                return bySheet;
+            return a.Row != b.Row ? a.Row.CompareTo(b.Row) : a.Column.CompareTo(b.Column);
+        });
+        var cells = new List<Cell>(keys.Count);
+        foreach (var key in keys)
+            cells.Add(new Cell(key.Sheet, key.Row, key.Column));
+        return cells;
+    }
+
+    public Dictionary<Worksheet, int> SheetOrder()
+    {
+        var order = new Dictionary<Worksheet, int>();
+        for (var i = 0; i < workbook.Sheets.Count; i++)
+            order[workbook.Sheets[i]] = i;
+        return order;
+    }
+
+    // Called before calculation writes a cell's value: keeps the value from before the first write.
+    private void Remember(CellKey key, CellData? data) => _before.TryAdd(key, data?.Value ?? CellValue.Empty);
 
     /// <summary>Evaluates a formula outside any cell, computing dirty cells it reads first.</summary>
     public CellValue EvaluateDetached(FormulaNode formula, Worksheet? sheet, CellAddress origin, CancellationToken cancellationToken)
@@ -385,6 +497,7 @@ internal sealed class Calculation(Workbook workbook)
                     continue;
                 if (++written % 4096 == 0)
                     cancellationToken.ThrowIfCancellationRequested();
+                Remember(new CellKey(key.Sheet, key.Row + r, key.Column + c), null);
                 var spilled = store.GetOrCreate(key.Row + r, key.Column + c);
                 spilled.Value = SpilledValue(array[r, c]);
                 spilled.SpillAnchor = key;
@@ -430,8 +543,10 @@ internal sealed class Calculation(Workbook workbook)
                     cancellationToken.ThrowIfCancellationRequested();
 
                 // A formula inside the area can only come from a malformed file; it is left alone.
-                if (store.Get(area.FirstRow + r, area.FirstColumn + c) is { Formula: not null })
+                var existing = store.Get(area.FirstRow + r, area.FirstColumn + c);
+                if (existing is { Formula: not null })
                     continue;
+                Remember(new CellKey(key.Sheet, area.FirstRow + r, area.FirstColumn + c), existing);
                 var member = store.GetOrCreate(area.FirstRow + r, area.FirstColumn + c);
                 member.Value = SpilledValue(Element(r, c));
                 member.SpillAnchor = key;
@@ -463,7 +578,10 @@ internal sealed class Calculation(Workbook workbook)
 
         // Right to left: a row keeps its columns in a list, and removing from its end is cheap.
         for (var i = owned.Count - 1; i >= 0; i--)
+        {
+            Remember(new CellKey(key.Sheet, owned[i].Row, owned[i].Column), owned[i].Data);
             store.Remove(owned[i].Row, owned[i].Column);
+        }
         data.SpillArea = null;
         _spillCells -= area.CellCount;
     }
@@ -589,6 +707,7 @@ internal sealed class Calculation(Workbook workbook)
     private void Commit(CellKey key, CellData data, CellValue value, Dependencies dependencies, bool usedVolatile,
         CancellationToken cancellationToken = default, IReadOnlySet<CellKey>? quiet = null)
     {
+        Remember(key, data);
         var oldSpill = data.SpillArea;
         var oldValues = oldSpill is { } previousArea ? Snapshot(key.Sheet, previousArea) : null;
         Unwatch(key, data);
