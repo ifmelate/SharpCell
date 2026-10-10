@@ -52,6 +52,36 @@ internal sealed class SheetLook
 
     public static SheetLook Of(Worksheet sheet) => new(sheet);
 
+    private SheetLook(SheetLook look, SheetEditMap map, Worksheet sheet)
+    {
+        ColumnWidths = Moved(look.ColumnWidths, column => map.MapColumn(sheet, column));
+        HiddenColumns = look.HiddenColumns.Select(column => map.MapColumn(sheet, column)).OfType<int>().ToHashSet();
+        RowHeights = Moved(look.RowHeights, row => map.MapRow(sheet, row));
+        HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
+        Merged = [.. look.Merged.Select(area => map.Map(sheet, area)).OfType<Area>().Where(area => !area.IsSingleCell)];
+        FrozenRows = look.FrozenRows;
+        FrozenColumns = look.FrozenColumns;
+        ShowGridlines = look.ShowGridlines;
+        DefaultColumnWidth = look.DefaultColumnWidth;
+        DefaultRowHeight = look.DefaultRowHeight;
+        FilterMode = look.FilterMode;
+    }
+
+    /// <summary>The sheet as read, with its rows and columns where the sheet's edits moved them.</summary>
+    public SheetLook Mapped(SheetEditMap map, Worksheet sheet) => map.HasEdits(sheet) ? new SheetLook(this, map, sheet) : this;
+
+    private static Dictionary<int, double> Moved(IReadOnlyDictionary<int, double> sizes, Func<int, int?> map)
+    {
+        var moved = new Dictionary<int, double>();
+        foreach (var (index, size) in sizes)
+        {
+            if (map(index) is { } to)
+                moved[to] = size;
+        }
+
+        return moved;
+    }
+
     public IReadOnlyDictionary<int, double> ColumnWidths { get; }
 
     public IReadOnlySet<int> HiddenColumns { get; }

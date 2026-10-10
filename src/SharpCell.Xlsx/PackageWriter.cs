@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
 
 namespace SharpCell.Xlsx;
@@ -71,6 +72,7 @@ internal static class PackageWriter
                 names[address] = name;
         }
 
+        var removedTables = MoveTables(edit, plan);
         foreach (var sheet in workbook.Sheets)
         {
             var sheetSource = source.SheetFor(sheet);
@@ -78,7 +80,8 @@ internal static class PackageWriter
                 ? package.OpenXml(part)
                 : System.Xml.XmlReader.Create(new StringReader(NewWorksheet));
             var bytes = WorksheetWriter.Write(reader, sheet, sheetSource, plan, saved, metadata, styles,
-                tables.TryGetValue(sheet, out var ids) ? ids : [], headers.TryGetValue(sheet, out var names) ? names : []);
+                tables.TryGetValue(sheet, out var ids) ? ids : [], removedTables.TryGetValue(sheet, out var removed) ? removed : [],
+                headers.TryGetValue(sheet, out var names) ? names : []);
             if (bytes is not null || sheetSource.Part is null)
                 edit.Parts[parts[sheet]] = bytes ?? Encoding.UTF8.GetBytes(NewWorksheet);
         }
@@ -93,6 +96,56 @@ internal static class PackageWriter
         WorkbookWriter.Write(edit, plan, newSheets);
         edit.Complete();
         return edit.Parts.Count == 0 && edit.Removed.Count == 0 ? source.Bytes : Repack(package, edit);
+    }
+
+    // The file's tables on sheets whose rows or columns moved: written again where the model has
+    // them, or removed with their parts when their rows were deleted.
+    private static Dictionary<Worksheet, HashSet<string>> MoveTables(PackageEdit edit, WritePlan plan)
+    {
+        var removed = new Dictionary<Worksheet, HashSet<string>>();
+        var package = edit.Package;
+        foreach (var (sheet, sheetSource) in plan.Source.Sheets)
+        {
+            if (!plan.Edits.HasEdits(sheet))
+                continue;
+            foreach (var relationship in package.ReadRelationships(sheetSource.Part!).Values)
+            {
+                if (!relationship.Is("table") || !package.Exists(relationship.Target))
+                    continue;
+                var read = TableReader.Read(package, relationship.Target);
+                if (!plan.Workbook.TryGetTable(read.Name, out var table) || table!.Worksheet != sheet)
+                {
+                    if (!removed.TryGetValue(sheet, out var ids))
+                        removed[sheet] = ids = [];
+                    ids.Add(relationship.Id);
+                    edit.RemovePart(sheetSource.Part!, relationship.Target);
+                    continue;
+                }
+
+                if (table.Area == read.Area)
+                    continue;
+                var document = edit.ReadXml(relationship.Target)!;
+                var root = document.Root!;
+                root.SetAttributeValue("ref", WorksheetParts.Format(table.Area));
+                if (root.Element(root.Name.Namespace + "autoFilter") is { } filter)
+                {
+                    var area = table.HasTotalsRow ? table.Area with { LastRow = table.Area.LastRow - 1 } : table.Area;
+                    filter.SetAttributeValue("ref", WorksheetParts.Format(area));
+                }
+
+                foreach (var sort in root.Descendants().Where(d => d.Name.LocalName == "sortState" && d.Attribute("ref") is not null).ToList())
+                {
+                    if (plan.Edits.MapSqref(sheet, (string)sort.Attribute("ref")!) is { } mapped)
+                        sort.SetAttributeValue("ref", mapped);
+                    else
+                        sort.Remove();
+                }
+
+                edit.Parts[relationship.Target] = XmlParts.Save(document);
+            }
+        }
+
+        return removed;
     }
 
     // Every entry in its original order, with its name and time; written parts replace theirs,

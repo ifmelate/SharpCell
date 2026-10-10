@@ -31,7 +31,7 @@ internal static class WorkbookWriter
         var workbook = plan.Workbook;
         var look = plan.Source.Look;
         var part = plan.Source.WorkbookPart;
-        var namesChanged = look.NamesChanged(workbook);
+        var namesChanged = look.NamesChanged(workbook) || plan.Edits.Any;
         var iterationChanged = !workbook.Iteration.Equals(look.Iteration);
         if (newSheets.Count == 0 && !namesChanged && !iterationChanged && workbook.DateSystem == look.DateSystem && !plan.FullCalcOnLoad)
             return;
@@ -53,7 +53,7 @@ internal static class WorkbookWriter
         }
 
         if (namesChanged)
-            WriteNames(root, sheets, workbook, look);
+            WriteNames(root, sheets, workbook, look, plan.Edits);
 
         if (iterationChanged || plan.FullCalcOnLoad)
         {
@@ -75,7 +75,7 @@ internal static class WorkbookWriter
 
     // Names the file has keep their element, with the model's formula where it changed; names
     // SharpCell does not read (print areas, macro names) stay as they are; new names go at the end.
-    private static void WriteNames(XElement root, XElement sheets, Workbook workbook, WorkbookLook look)
+    private static void WriteNames(XElement root, XElement sheets, Workbook workbook, WorkbookLook look, SheetEditMap edits)
     {
         var ns = root.Name.Namespace;
         var sheetNames = sheets.Elements(ns + "sheet").Select(s => (string?)s.Attribute("name") ?? "").ToList();
@@ -90,7 +90,12 @@ internal static class WorkbookWriter
             var scope = (int?)element.Attribute("localSheetId") is { } index && index >= 0 && index < sheetNames.Count ? sheetNames[index].ToUpperInvariant() : "";
             var key = model.Keys.FirstOrDefault(k => k.Name == name && k.Scope.ToUpperInvariant() == scope);
             if (key.Name is null || !written.Add(key))
+            {
+                // A name SharpCell does not read (a print area, a filter's range) follows moved rows too.
+                var sheet = scope.Length > 0 && workbook.TryGetSheet(scope, out var scoped) ? scoped : null;
+                element.Value = edits.MapFormula(element.Value, sheet, new CellAddress(1, 1));
                 continue;
+            }
             var definition = model[key];
             if (!look.Names.TryGetValue(key, out var text) || text != definition.Text)
                 element.Value = FileText(definition);

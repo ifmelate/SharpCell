@@ -57,11 +57,15 @@ public sealed class TestXlsx
         return this;
     }
 
-    public TestXlsx Part(string name, string content)
+    public TestXlsx Part(string name, string content, string? contentType = null)
     {
         _extraParts[name] = content;
+        if (contentType is not null)
+            _extraTypes[name] = contentType;
         return this;
     }
+
+    private readonly Dictionary<string, string> _extraTypes = [];
 
     public MemoryStream Build()
     {
@@ -87,6 +91,8 @@ public sealed class TestXlsx
                 types.Append($"<Override PartName=\"/xl/styles.xml\" ContentType=\"{Ml}styles+xml\"/>");
             if (Theme is not null)
                 types.Append("<Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/>");
+            foreach (var (name, type) in _extraTypes)
+                types.Append($"<Override PartName=\"/{name}\" ContentType=\"{type}\"/>");
             if (CalcChain is not null)
                 types.Append("<Override PartName=\"/xl/calcChain.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml\"/>");
             types.Append("</Types>");

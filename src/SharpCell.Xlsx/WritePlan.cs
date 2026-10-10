@@ -31,6 +31,9 @@ internal sealed class WritePlan
 
     public Workbook Workbook { get; }
 
+    /// <summary>Where the file's positions are now, after rows and columns were inserted or deleted.</summary>
+    public SheetEditMap Edits { get; private init; } = null!;
+
     public XlsxSource Source { get; }
 
     /// <summary>Formula cells SharpCell could not calculate: they keep the result saved in the file.</summary>
@@ -74,7 +77,7 @@ internal sealed class WritePlan
 
         if (problems.Count > 0 && !options.KeepUncalculated)
             throw new XlsxWriteException(problems);
-        return new WritePlan(workbook, source, kept, formulasChanged, options.RewriteAllValues);
+        return new WritePlan(workbook, source, kept, formulasChanged, options.RewriteAllValues) { Edits = new SheetEditMap(workbook) };
     }
 
     /// <summary>Whether the formula a cell has now is the one it was read with.</summary>
@@ -85,6 +88,10 @@ internal sealed class WritePlan
 
     private static bool FormulasChanged(Worksheet sheet, SheetSource source)
     {
+        // Cells that moved are written again, formulas included.
+        if (sheet.Edits.Count > 0)
+            return true;
+
         foreach (var address in source.Formulas.Keys)
         {
             if (!IsLoadedFormula(sheet.Store.Get(address.Row, address.Column), source, address))

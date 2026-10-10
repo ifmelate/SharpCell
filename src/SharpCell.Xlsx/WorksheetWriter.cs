@@ -57,15 +57,24 @@ internal sealed class WorksheetWriter
     // The rectangle of the sheet's stored cells, or null for an empty sheet.
     private readonly Area? _used;
 
-    // Relationship ids of table parts added for new tables.
+    // Relationship ids of table parts added for new tables, and of those of removed tables.
     private readonly IReadOnlyList<string> _newTables;
+    private readonly IReadOnlySet<string> _removedTables;
+
+    // Rows and columns inserted or deleted: in this sheet, the file's positions move; in any
+    // sheet, formulas the model does not hold (conditional formats) follow the references.
+    private readonly SheetEditMap _map;
+    private readonly bool _shifted;
 
     // Header cells of new tables, written with their column's name.
     private readonly IReadOnlyDictionary<CellAddress, string> _headers;
 
     private WorksheetWriter(Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved, CellMetadataWriter metadata,
-        StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlyDictionary<CellAddress, string> headers)
+        StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables, IReadOnlyDictionary<CellAddress, string> headers)
     {
+        _map = plan.Edits;
+        _shifted = source.Part is not null && _map.HasEdits(sheet);
+        _removedTables = removedTables;
         _sheet = sheet;
         _plan = plan;
         _saved = saved;
@@ -75,17 +84,17 @@ internal sealed class WorksheetWriter
         _newTables = newTables;
         _headers = headers;
         _expandShared = plan.FormulasChangedIn(sheet);
+        if (newTables.Count > 0 || removedTables.Count > 0)
+            _pending.Add("tableParts");
         _model = ModelCells(sheet, headers.Keys).GetEnumerator();
         _hasModel = _model.MoveNext();
-        if (newTables.Count > 0)
-            _pending.Add("tableParts");
         foreach (var cell in ModelCells(sheet, headers.Keys))
             _used = _used is { } area ? Area.Bounding(area, Area.Cell(cell.Row, cell.Column)) : Area.Cell(cell.Row, cell.Column);
 
-        _look = _source.Look;
-        _columnsChanged = _look.ColumnsChanged(sheet);
+        _look = _source.Look.Mapped(_map, sheet);
+        _columnsChanged = _look.ColumnsChanged(sheet) || (_shifted && _map.HasColumnEdits(sheet));
         _rowsChanged = _look.RowsChanged(sheet);
-        _mergesChanged = _look.MergesChanged(sheet);
+        _mergesChanged = _look.MergesChanged(sheet) || _shifted;
         _viewChanged = _look.ViewChanged(sheet);
         _defaultsChanged = _look.DefaultsChanged(sheet);
         _filterChanged = _look.FilterChanged(sheet);
@@ -119,10 +128,12 @@ internal sealed class WorksheetWriter
     /// <param name="styles">Cell styles to find or add entries in.</param>
     /// <param name="newTables">Relationship ids of table parts to list.</param>
     /// <param name="headers">Header cells of new tables, with their column names.</param>
+    /// <param name="removedTables">Relationship ids of table parts to leave out.</param>
     public static byte[]? Write(XmlReader reader, Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved,
-        CellMetadataWriter metadata, StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlyDictionary<CellAddress, string> headers)
+        CellMetadataWriter metadata, StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables,
+        IReadOnlyDictionary<CellAddress, string> headers)
     {
-        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, headers);
+        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers);
         var output = new MemoryStream();
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
             writer.Copy(reader, xml);
@@ -166,7 +177,19 @@ internal sealed class WorksheetWriter
                     case "sheetData":
                         SheetData(reader, writer);
                         break;
-                    case "tableParts" when _newTables.Count > 0:
+                    case "sheetViews" when !_viewChanged && _shifted:
+                    case "autoFilter" when _shifted:
+                    case "hyperlinks" when _shifted:
+                    case "rowBreaks" when _shifted:
+                    case "colBreaks" when _shifted:
+                    case "ignoredErrors" when _shifted:
+                    case "protectedRanges" when _shifted:
+                    case "conditionalFormatting" when _map.Any:
+                    case "dataValidations" when _map.Any:
+                    case "extLst" when _map.Any:
+                        Shifted((XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
+                        break;
+                    case "tableParts" when _newTables.Count > 0 || _removedTables.Count > 0:
                     case "sheetPr" when _filterChanged:
                     case "sheetViews" when _viewChanged:
                     case "sheetFormatPr" when _defaultsChanged:
@@ -211,6 +234,7 @@ internal sealed class WorksheetWriter
     private XElement? Build(string name, XElement? source) => name switch
     {
         "sheetPr" => SheetProperties(source),
+        "sheetViews" when _shifted => Shifted(SheetViews(source)),
         "sheetViews" => SheetViews(source),
         "sheetFormatPr" => SheetFormat(source),
         "cols" => Columns(source),
@@ -218,16 +242,168 @@ internal sealed class WorksheetWriter
         _ => MergeCells(),
     };
 
-    private XElement TableParts(XElement? element)
+    // An element of the file holding positions or formulas, with them moved by the edits; null when
+    // nothing of it is left.
+    private XElement? Shifted(XElement? element)
+    {
+        if (element is null)
+            return null;
+        var before = new XElement(element);
+        var result = element.Name.LocalName switch
+        {
+            "autoFilter" => AutoFilter(element),
+            "sheetViews" => Selections(element),
+            "conditionalFormatting" => Ranged(element),
+            "dataValidations" => List(element, "dataValidation", Ranged),
+            "hyperlinks" => List(element, "hyperlink", e => MapAttribute(e, "ref")),
+            "ignoredErrors" => List(element, "ignoredError", e => MapAttribute(e, "sqref")),
+            "protectedRanges" => List(element, "protectedRange", e => MapAttribute(e, "sqref")),
+            "rowBreaks" => Breaks(element, rows: true),
+            "colBreaks" => Breaks(element, rows: false),
+            "extLst" => Extensions(element),
+            _ => element,
+        };
+
+        if (result is null || !XNode.DeepEquals(before, result))
+            _changed = true;
+        return result;
+    }
+
+    private XElement? MapAttribute(XElement element, string name)
+    {
+        if (!_shifted || (string?)element.Attribute(name) is not { } text)
+            return element;
+        var mapped = _map.MapSqref(_sheet, text);
+        if (mapped is null)
+            return null;
+        element.SetAttributeValue(name, mapped);
+        return element;
+    }
+
+    // An element with a sqref and formulas relative to its first cell (a conditional format, a
+    // data validation): the formulas follow the references, then the sqref moves.
+    private XElement? Ranged(XElement element)
+    {
+        var sqref = (string?)element.Attribute("sqref");
+        if (SheetEditMap.FirstCell(sqref) is { } origin)
+        {
+            var anchor = _shifted ? _map.FirstSurvivingCell(_sheet, sqref!) : origin;
+            foreach (var formula in element.Descendants().Where(d => d.Name.LocalName is "formula" or "formula1" or "formula2" && !d.HasElements))
+                formula.Value = _map.MapFormula(formula.Value, _sheet, origin, anchor);
+        }
+
+        return MapAttribute(element, "sqref");
+    }
+
+    private static XElement? List(XElement element, string child, Func<XElement, XElement?> map)
+    {
+        foreach (var item in element.Elements(element.Name.Namespace + child).ToList())
+        {
+            if (map(item) is null)
+                item.Remove();
+        }
+
+        var count = element.Elements(element.Name.Namespace + child).Count();
+        if (count == 0)
+            return null;
+        if (element.Attribute("count") is not null)
+            element.SetAttributeValue("count", count);
+        return element;
+    }
+
+    private XElement? AutoFilter(XElement element)
+    {
+        if ((string?)element.Attribute("ref") is not { } text || !TryParseArea(text, out var area))
+            return element;
+        if (_map.Map(_sheet, area) is not { } moved)
+            return null;
+        element.SetAttributeValue("ref", Format(moved));
+
+        // Filter columns count from the filter's first column.
+        foreach (var column in element.Elements(_ns + "filterColumn").ToList())
+        {
+            if (!int.TryParse((string?)column.Attribute("colId"), NumberStyles.None, CultureInfo.InvariantCulture, out var id))
+                continue;
+            if (_map.MapColumn(_sheet, area.FirstColumn + id) is { } to)
+                column.SetAttributeValue("colId", to - moved.FirstColumn);
+            else
+                column.Remove();
+        }
+
+        return element;
+    }
+
+    private XElement Selections(XElement element)
+    {
+        foreach (var selection in element.Descendants(_ns + "selection"))
+        {
+            if ((string?)selection.Attribute("activeCell") is { } active && CellAddress.TryParse(active, out var cell))
+                selection.SetAttributeValue("activeCell", _map.Map(_sheet, cell)?.ToString());
+            if ((string?)selection.Attribute("sqref") is { } sqref)
+                selection.SetAttributeValue("sqref", _map.MapSqref(_sheet, sqref));
+        }
+
+        return element;
+    }
+
+    // A page break's id is the last row (or column) before it.
+    private XElement? Breaks(XElement element, bool rows)
+    {
+        foreach (var brk in element.Elements(_ns + "brk").ToList())
+        {
+            if (!int.TryParse((string?)brk.Attribute("id"), NumberStyles.None, CultureInfo.InvariantCulture, out var id))
+                continue;
+            if ((rows ? _map.MapRow(_sheet, id) : _map.MapColumn(_sheet, id)) is { } to)
+                brk.SetAttributeValue("id", to);
+            else
+                brk.Remove();
+        }
+
+        var breaks = element.Elements(_ns + "brk").ToList();
+        if (breaks.Count == 0)
+            return null;
+        element.SetAttributeValue("count", breaks.Count);
+        if (element.Attribute("manualBreakCount") is not null)
+            element.SetAttributeValue("manualBreakCount", breaks.Count(b => (string?)b.Attribute("man") is "1" or "true"));
+        return element;
+    }
+
+    // Newer conditional formats and validations keep their ranges in xm:sqref and their formulas in xm:f.
+    private XElement Extensions(XElement element)
+    {
+        foreach (var sqref in element.Descendants().Where(d => d.Name.LocalName == "sqref" && !d.HasElements).ToList())
+        {
+            var owner = sqref.Parent!;
+            if (SheetEditMap.FirstCell(sqref.Value) is { } origin)
+            {
+                var anchor = _shifted ? _map.FirstSurvivingCell(_sheet, sqref.Value) : origin;
+                foreach (var formula in owner.Descendants().Where(d => d.Name.LocalName == "f" && !d.HasElements))
+                    formula.Value = _map.MapFormula(formula.Value, _sheet, origin, anchor);
+            }
+
+            if (!_shifted)
+                continue;
+            if (_map.MapSqref(_sheet, sqref.Value) is { } mapped)
+                sqref.Value = mapped;
+            else
+                owner.Remove();
+        }
+
+        return element;
+    }
+
+    private XElement? TableParts(XElement? element)
     {
         XNamespace relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
         element ??= new XElement(_ns + "tableParts", new XAttribute(XNamespace.Xmlns + "r", relationships));
         var existing = element.Elements(_ns + "tablePart").SelectMany(t => t.Attributes()).FirstOrDefault(a => a.Name.LocalName == "id" && a.Name.Namespace != XNamespace.None);
         var r = existing?.Name.Namespace ?? relationships;
+        element.Elements(_ns + "tablePart").Where(t => t.Attributes().Any(a => a.Name.LocalName == "id" && _removedTables.Contains(a.Value))).Remove();
         foreach (var id in _newTables)
             element.Add(new XElement(_ns + "tablePart", new XAttribute(r + "id", id)));
-        element.SetAttributeValue("count", element.Elements(_ns + "tablePart").Count());
-        return element;
+        var count = element.Elements(_ns + "tablePart").Count();
+        element.SetAttributeValue("count", count);
+        return count == 0 ? null : element;
     }
 
     private XElement SheetProperties(XElement? element)
@@ -299,7 +475,10 @@ internal sealed class WorksheetWriter
                 continue;
             var attributes = col.Attributes().Where(a => a.Name.LocalName is not ("min" or "max")).Select(a => (a.Name.LocalName, a.Value)).ToList();
             for (var column = min; column <= max; column++)
-                columns[column] = [.. attributes];
+            {
+                if ((_shifted ? _map.MapColumn(_sheet, column) : column) is { } to)
+                    columns[to] = [.. attributes];
+            }
         }
 
         var touched = new SortedSet<int>(_look.ColumnWidths.Keys);
@@ -393,12 +572,13 @@ internal sealed class WorksheetWriter
             writer.WriteAttributeString("hidden", "1");
     }
 
-    // Widened to the cells the sheet now has; never narrowed (a larger one is also valid).
+    // Widened to the cells the sheet now has; never narrowed (a larger one is also valid), except
+    // after rows or columns moved.
     private XElement Dimension(XElement dimension)
     {
         if (dimension.Attribute("ref") is { } reference && _used is { } used && TryParseArea(reference.Value, out var area))
         {
-            var widened = Area.Bounding(area, used);
+            var widened = _shifted ? used : Area.Bounding(area, used);
             if (widened != area)
                 reference.Value = Format(widened);
         }
@@ -438,8 +618,15 @@ internal sealed class WorksheetWriter
                 if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "row" && reader.GetAttribute("r") is { } r)
                 {
                     row = ParseRow(r);
-                    NewRowsBefore(row, writer);
-                    Row(reader, writer, row);
+                    if (MappedRow(row) is { } mapped)
+                    {
+                        NewRowsBefore(mapped, writer);
+                        Row(reader, writer, mapped, row);
+                    }
+                    else
+                    {
+                        reader.Skip();
+                    }
                 }
                 else if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "row")
                 {
@@ -448,10 +635,12 @@ internal sealed class WorksheetWriter
                     var element = (XElement)XNode.ReadFrom(reader);
                     var first = element.Elements(_ns + "c").Select(c => (string?)c.Attribute("r")).FirstOrDefault(a => a is not null);
                     row = first is not null && CellAddress.TryParse(first, out var address) ? address.Row : row + 1;
-                    NewRowsBefore(row, writer);
+                    if (MappedRow(row) is not { } mapped)
+                        continue;
+                    NewRowsBefore(mapped, writer);
                     using var rowReader = element.CreateReader();
                     rowReader.MoveToContent();
-                    Row(rowReader, writer, row);
+                    Row(rowReader, writer, mapped, row);
                 }
                 else
                 {
@@ -466,32 +655,51 @@ internal sealed class WorksheetWriter
         writer.WriteFullEndElement();
     }
 
-    private void Row(XmlReader reader, XmlWriter writer, int row)
+    // A row of the file where the edits put it; null when it was deleted.
+    private int? MappedRow(int row)
+    {
+        if (!_shifted)
+            return row;
+        var mapped = _map.MapRow(_sheet, row);
+        if (mapped is null)
+            _changed = true;
+        return mapped;
+    }
+
+    /// <param name="reader">On the row element.</param>
+    /// <param name="writer">Where the row goes.</param>
+    /// <param name="row">The row's number in the sheet now.</param>
+    /// <param name="sourceRow">Its number in the file.</param>
+    private void Row(XmlReader reader, XmlWriter writer, int row, int sourceRow)
     {
         var depth = reader.Depth;
         var empty = reader.IsEmptyElement;
         var positioned = reader.GetAttribute("r") is not null;
         while (_nextChangedRow < _changedRows.Count && _changedRows[_nextChangedRow] <= row)
             _nextChangedRow++;
-        if (_rowsChanged && _look.RowChanged(_sheet, row))
+        var sized = _rowsChanged && _look.RowChanged(_sheet, row);
+        if (sized || _shifted)
         {
-            // The row's height and hidden flag as the sheet has them now; its other attributes stay.
+            // The row's number, height and hidden flag as the sheet has them now; its other attributes
+            // stay, except spans, which moved columns would make wrong.
             _changed = true;
             writer.WriteStartElement(reader.Prefix, reader.LocalName, reader.NamespaceURI);
-            if (!positioned)
-                writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
             if (reader.MoveToFirstAttribute())
             {
                 do
                 {
-                    if (reader.LocalName is not ("ht" or "customHeight" or "hidden") || reader.NamespaceURI.Length != 0)
+                    var skip = reader.NamespaceURI.Length == 0
+                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || (sized && reader.LocalName is "ht" or "customHeight" or "hidden"));
+                    if (!skip)
                         writer.WriteAttributeString(reader.Prefix, reader.LocalName, reader.NamespaceURI, reader.Value);
                 }
                 while (reader.MoveToNextAttribute());
                 reader.MoveToElement();
             }
 
-            WriteRowAttributes(writer, row);
+            if (sized)
+                WriteRowAttributes(writer, row);
             reader.Read();
         }
         else
@@ -501,7 +709,7 @@ internal sealed class WorksheetWriter
                 writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
         }
 
-        var column = 0;
+        var sourceColumn = 0;
         if (!empty)
         {
             while (!(reader.NodeType == XmlNodeType.EndElement && reader.Depth == depth))
@@ -511,18 +719,34 @@ internal sealed class WorksheetWriter
                     var source = (XElement)XNode.ReadFrom(reader);
                     if (source.Attribute("r") is { } r && CellAddress.TryParse(r.Value, out var address))
                     {
-                        if (address.Row != row)
-                            throw new InvalidDataException($"Cell {address} of sheet '{_sheet.Name}' lies in row {row}; the file cannot be written back.");
-                        column = address.Column;
+                        if (address.Row != sourceRow)
+                            throw new InvalidDataException($"Cell {address} of sheet '{_sheet.Name}' lies in row {sourceRow}; the file cannot be written back.");
+                        sourceColumn = address.Column;
                     }
                     else
                     {
-                        column++;
+                        sourceColumn++;
+                    }
+
+                    var sourceAddress = new CellAddress(sourceRow, sourceColumn);
+                    int column;
+                    if (!_shifted)
+                    {
+                        column = sourceColumn;
+                    }
+                    else if (_map.MapColumn(_sheet, sourceColumn) is { } mappedColumn)
+                    {
+                        column = mappedColumn;
+                    }
+                    else
+                    {
+                        _changed = true;
+                        continue;
                     }
 
                     CheckOrder(row, column);
                     NewCellsBefore(row, column, writer);
-                    Cell(source, row, column)?.WriteTo(writer);
+                    Cell(source, row, column, sourceAddress)?.WriteTo(writer);
                 }
                 else
                 {
@@ -637,7 +861,7 @@ internal sealed class WorksheetWriter
 
     // A cell the file does not have: a new constant or formula, a cell a spill now covers, or a
     // cell with only a style or a number format.
-    private XElement? NewCell(ModelCell cell) => Styled(NewContent(cell), null, cell.Row, cell.Column);
+    private XElement? NewCell(ModelCell cell) => Styled(NewContent(cell), null, cell.Row, cell.Column, null);
 
     private XElement? NewContent(ModelCell cell)
     {
@@ -659,15 +883,23 @@ internal sealed class WorksheetWriter
     }
 
     // The source cell, the cell written again, or null when the cell goes away.
-    private XElement? Cell(XElement source, int row, int column) =>
-        Styled(_headers.TryGetValue(new CellAddress(row, column), out var header) ? HeaderCell(source, row, column, header) : Content(source, row, column),
-            StyleIndex(source), row, column);
+    private XElement? Cell(XElement source, int row, int column, CellAddress sourceAddress)
+    {
+        // The cell's position as the sheet has it now.
+        var address = new CellAddress(row, column).ToString();
+        if (source.Attribute("r") is { } r)
+            r.Value = address;
+        else
+            source.ReplaceAttributes(new XAttribute("r", address), source.Attributes().ToList());
+        return Styled(_headers.TryGetValue(new CellAddress(row, column), out var header)
+                ? HeaderCell(source, row, column, header)
+                : Content(source, row, column, sourceAddress),
+            StyleIndex(source), row, column, sourceAddress);
+    }
 
     // A new table's header cell holds its column's name as text.
     private XElement HeaderCell(XElement source, int row, int column, string name)
     {
-        if (source.Attribute("r") is null)
-            source.ReplaceAttributes(new XAttribute("r", new CellAddress(row, column).ToString()), source.Attributes().ToList());
         if (_hasModel && _model.Current.Row == row && _model.Current.Column == column)
             Advance();
         source.Elements(_ns + "f").Remove();
@@ -680,9 +912,9 @@ internal sealed class WorksheetWriter
 
     // The cell with the style index its look and number format need now; a cell left with neither
     // content nor style goes away.
-    private XElement? Styled(XElement? element, int? sourceStyle, int row, int column)
+    private XElement? Styled(XElement? element, int? sourceStyle, int row, int column, CellAddress? sourceAddress)
     {
-        var target = TargetStyle(sourceStyle, row, column);
+        var target = TargetStyle(sourceStyle, row, column, sourceAddress);
         if (target == sourceStyle)
             return element;
         _changed = true;
@@ -699,13 +931,12 @@ internal sealed class WorksheetWriter
 
     // The style index is kept while the cell looks as it did when read; otherwise the style is found
     // or made from the cell's old one. Cells without a style of their own show the workbook default.
-    private int? TargetStyle(int? sourceStyle, int row, int column)
+    private int? TargetStyle(int? sourceStyle, int row, int column, CellAddress? sourceAddress)
     {
-        var address = new CellAddress(row, column);
         var style = _sheet.StyleAt(row, column) ?? _sheet.Workbook.DefaultStyle;
         var code = _sheet.FormatAt(row, column)?.FormatCode ?? "General";
-        var loadedStyle = _source.Styles.TryGetValue(address, out var own) ? own : _plan.Source.Look.DefaultStyle;
-        var loadedCode = _source.Formats.TryGetValue(address, out var format) ? format : "General";
+        var loadedStyle = sourceAddress is { } at && _source.Styles.TryGetValue(at, out var own) ? own : _plan.Source.Look.DefaultStyle;
+        var loadedCode = sourceAddress is { } place && _source.Formats.TryGetValue(place, out var format) ? format : "General";
         if (style == loadedStyle && code == loadedCode)
             return sourceStyle;
         var index = _styles.XfFor(sourceStyle ?? 0, style, code);
@@ -713,11 +944,9 @@ internal sealed class WorksheetWriter
     }
 
     // The source cell with the model's content, or null when it has none.
-    private XElement? Content(XElement source, int row, int column)
+    private XElement? Content(XElement source, int row, int column, CellAddress sourceAddress)
     {
         var address = new CellAddress(row, column);
-        if (source.Attribute("r") is null)
-            source.ReplaceAttributes(new XAttribute("r", address.ToString()), source.Attributes().ToList());
 
         CellData? data = null;
         if (_hasModel && _model.Current.Row == row && _model.Current.Column == column)
@@ -732,8 +961,10 @@ internal sealed class WorksheetWriter
 
         var saved = _saved.Read(source, _sheet, row, column);
         var sourceFormula = source.Element(_ns + "f");
+        if (_shifted && saved.IsDataTable)
+            throw new NotSupportedException($"{_sheet.Name}!{address} is part of an Excel data table, which SharpCell cannot move; save before inserting or deleting rows or columns there.");
         if (data?.FormulaText is not null
-            && (!WritePlan.IsLoadedFormula(data, _source, address) || (_expandShared && (string?)sourceFormula?.Attribute("t") == "shared")))
+            && (_shifted || !WritePlan.IsLoadedFormula(data, _source, sourceAddress) || (_expandShared && (string?)sourceFormula?.Attribute("t") == "shared")))
             return WriteFormula(source, data, row, column);
 
         if (data?.FormulaText is not null)
