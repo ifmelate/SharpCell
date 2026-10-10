@@ -12,6 +12,8 @@ Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, d
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 
+The workbook keeps the file's bytes in memory, so `XlsxWriter` can write new values into the same file.
+
 ## Methods
 
 <a id="load-stream"></a>
