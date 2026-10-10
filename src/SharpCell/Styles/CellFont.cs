@@ -2,11 +2,19 @@ using System;
 
 namespace SharpCell;
 
-/// <summary>The font of a cell's text. Change one with <c>with</c>: <c>font with { Bold = true }</c>.</summary>
+/// <summary>
+/// The font of a cell's text. A record: fonts compare by value, and <c>with</c> makes a changed
+/// copy, such as <c>font with { Bold = true }</c>.
+/// </summary>
 public sealed record CellFont
 {
     private readonly string _name = "Calibri";
     private readonly double _size = 11;
+
+    /// <summary>Calibri 11 in the automatic colour, as <see cref="Default"/>; set properties in an initializer.</summary>
+    public CellFont()
+    {
+    }
 
     /// <summary>Calibri 11 in the automatic colour, the font of a new workbook in Excel 2007 to 2021.</summary>
     public static CellFont Default { get; } = new();

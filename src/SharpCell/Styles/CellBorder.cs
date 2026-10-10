@@ -1,6 +1,6 @@
 namespace SharpCell;
 
-/// <summary>One edge of a cell's border.</summary>
+/// <summary>One edge of a cell's border. A record: borders compare by value.</summary>
 /// <param name="Style">The line.</param>
 /// <param name="Color">The colour; null for automatic, which Excel shows black.</param>
 public sealed record CellBorder(CellBorderStyle Style, CellColor? Color = null);

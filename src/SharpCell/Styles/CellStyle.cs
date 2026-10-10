@@ -4,13 +4,19 @@ namespace SharpCell;
 
 /// <summary>
 /// How a cell looks in Excel: font, fill, borders and alignment. The number format is not part of
-/// it; see <see cref="Cell.NumberFormat"/>. Styles play no part in calculation. Change one with
-/// <c>with</c>: <c>style with { Fill = CellColor.FromRgb(0xFFFF00) }</c>.
+/// it; see <see cref="Cell.NumberFormat"/>. Styles play no part in calculation. A record: styles
+/// compare by value, and <c>with</c> makes a changed copy, such as
+/// <c>style with { Fill = CellColor.FromRgb(0xFFFF00) }</c>.
 /// </summary>
 public sealed record CellStyle
 {
     private readonly CellFont _font = CellFont.Default;
     private readonly int _indent;
+
+    /// <summary>A style like <see cref="Default"/>; set properties in an initializer.</summary>
+    public CellStyle()
+    {
+    }
 
     /// <summary>The style of a new workbook's cells: <see cref="CellFont.Default"/>, no fill, no borders, General alignment at the bottom.</summary>
     public static CellStyle Default { get; } = new();

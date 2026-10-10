@@ -86,6 +86,49 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Cell_styles()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-styles
+        CellStyle header = sheet["A1"].Style with   // the workbook's default until the cell has its own
+        {
+            Font = sheet["A1"].Style.Font with { Bold = true },
+            Fill = CellColor.FromRgb(0xD9E1F2),
+            BottomBorder = new CellBorder(CellBorderStyle.Thin),
+            HorizontalAlignment = CellHorizontalAlignment.Center,
+        };
+        sheet["A1"].Style = header;
+        bool bold = sheet["A1"].Style.Font.Bold;      // true
+        string font = sheet["B1"].Style.Font.Name;    // "Calibri", the default
+        // end-snippet
+
+        Assert.True(bold);
+        Assert.Equal("Calibri", font);
+        Assert.Equal("#D9E1F2", sheet["A1"].Style.Fill.ToString());
+    }
+
+    [Fact]
+    public void Sheet_geometry()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-geometry
+        sheet.SetColumnWidth(2, 20);      // column B, in the units .xlsx files use
+        sheet.SetRowHeight(1, 30);        // row 1, in points
+        sheet.SetColumnHidden(3, true);   // column C
+        sheet.Merge("A1:D1");
+        double? width = sheet.ColumnWidth(1);           // null: column A has the default width
+        string merged = sheet.MergedAreas[0].Address;   // "A1:D1"
+        // end-snippet
+
+        Assert.Null(width);
+        Assert.Equal("A1:D1", merged);
+    }
+
+    [Fact]
     public void Defined_names()
     {
         var workbook = new Workbook();

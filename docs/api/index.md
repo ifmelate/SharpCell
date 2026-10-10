@@ -10,9 +10,17 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 |---|---|
 | [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) | Something calculation noticed that is not visible in cell values alone. |
 | [Cell](SharpCell.Cell.md) | A handle to one cell position. |
+| [CellBorder](SharpCell.CellBorder.md) | One edge of a cell's border. |
+| [CellBorderStyle](SharpCell.CellBorderStyle.md) | The lines Excel draws borders with. |
+| [CellColor](SharpCell.CellColor.md) | A colour as Excel shows it, in sRGB. |
+| [CellFont](SharpCell.CellFont.md) | The font of a cell's text. |
+| [CellHorizontalAlignment](SharpCell.CellHorizontalAlignment.md) | Where a cell's text sits across the cell. |
 | [CellRange](SharpCell.CellRange.md) | A rectangle of cells on one sheet, such as `A1:C10`. |
+| [CellStyle](SharpCell.CellStyle.md) | How a cell looks in Excel: font, fill, borders and alignment. |
+| [CellUnderline](SharpCell.CellUnderline.md) | How a font underlines text. |
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
+| [CellVerticalAlignment](SharpCell.CellVerticalAlignment.md) | Where a cell's text sits from top to bottom of the cell. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
 | [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
 | [DiagnosticKind](SharpCell.DiagnosticKind.md) | What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports. |
@@ -33,7 +41,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 
 | Type | Summary |
 |---|---|
-| [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system. |
+| [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights and merged cells. |
 | [XlsxWriteException](SharpCell.Xlsx.XlsxWriteException.md) | A workbook was not saved because SharpCell could not calculate some of its formulas; see [XlsxWriteOptions.KeepUncalculated](SharpCell.Xlsx.XlsxWriteOptions.md#keepuncalculated). |
 | [XlsxWriteOptions](SharpCell.Xlsx.XlsxWriteOptions.md) | Options for [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md). |
 | [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) | Saves a workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) back into its file with new values: change input cells, call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), save. |

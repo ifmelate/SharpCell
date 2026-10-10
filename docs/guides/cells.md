@@ -94,6 +94,56 @@ Column width plays no part, so a long number is never cut to `####`. A format is
 does not block a spill and is not listed by `Cells`. Formats are not saved: `XlsxWriter` refuses a
 workbook whose formats changed.
 
+## Styles
+
+```csharp snippet=cells-styles
+CellStyle header = sheet["A1"].Style with   // the workbook's default until the cell has its own
+{
+    Font = sheet["A1"].Style.Font with { Bold = true },
+    Fill = CellColor.FromRgb(0xD9E1F2),
+    BottomBorder = new CellBorder(CellBorderStyle.Thin),
+    HorizontalAlignment = CellHorizontalAlignment.Center,
+};
+sheet["A1"].Style = header;
+bool bold = sheet["A1"].Style.Font.Bold;      // true
+string font = sheet["B1"].Style.Font.Name;    // "Calibri", the default
+```
+
+`Cell.Style` is how the cell looks in Excel: its `CellFont` (name, size in points, bold,
+italic, underline, strikethrough, colour), a fill colour, the four edges of its border and its
+alignment, wrapping and indent. A cell without a style of its own has `Workbook.DefaultStyle`,
+which `XlsxReader` takes from the file's Normal style; setting `Style` to null gives it back.
+Styles are records: they compare by value, and `with` makes a changed copy.
+
+`XlsxReader` turns theme and indexed colours into RGB with the file's theme and palette. Only
+solid fills are read; patterns and gradients read as no fill. Styles of whole rows and columns
+(for cells that hold nothing), conditional formats, rotated text, shrink to fit and diagonal
+borders are not read. A style plays no part in calculation and is no content.
+
+## Column widths, row heights and merged cells
+
+```csharp snippet=cells-geometry
+sheet.SetColumnWidth(2, 20);      // column B, in the units .xlsx files use
+sheet.SetRowHeight(1, 30);        // row 1, in points
+sheet.SetColumnHidden(3, true);   // column C
+sheet.Merge("A1:D1");
+double? width = sheet.ColumnWidth(1);           // null: column A has the default width
+string merged = sheet.MergedAreas[0].Address;   // "A1:D1"
+```
+
+Column widths are in the units .xlsx files use: characters of the widest digit of the default
+font, padding included, so Excel's standard 8.43 characters of Calibri 11 are 9.140625 here.
+Row heights are in points. Null means the sheet's default, `Worksheet.DefaultColumnWidth` and
+`Worksheet.DefaultRowHeight`, which are null too when the file gives none. Converting either to
+pixels depends on the font and the screen and is left to the application.
+
+Hidden columns change no result, as in Excel; hidden rows do (see
+[Tables and hidden rows](tables.md)). `Merge` keeps the values of the cells it covers, where
+Excel's Merge command would clear all but the top-left one.
+
+Styles, sizes and merged cells are not saved: `XlsxWriter` copies them from the file and refuses
+a workbook in which they changed.
+
 ## Defined names
 
 ```csharp snippet=cells-names

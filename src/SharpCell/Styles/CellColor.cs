@@ -4,7 +4,7 @@ namespace SharpCell;
 
 /// <summary>
 /// A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into
-/// these when it is read; Excel ignores the alpha channel, so there is none.
+/// these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
 /// </summary>
 /// <param name="R">Red, 0 to 255.</param>
 /// <param name="G">Green, 0 to 255.</param>

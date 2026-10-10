@@ -385,6 +385,56 @@ Column width plays no part, so a long number is never cut to `####`. A format is
 does not block a spill and is not listed by `Cells`. Formats are not saved: `XlsxWriter` refuses a
 workbook whose formats changed.
 
+## Styles
+
+```csharp snippet=cells-styles
+CellStyle header = sheet["A1"].Style with   // the workbook's default until the cell has its own
+{
+    Font = sheet["A1"].Style.Font with { Bold = true },
+    Fill = CellColor.FromRgb(0xD9E1F2),
+    BottomBorder = new CellBorder(CellBorderStyle.Thin),
+    HorizontalAlignment = CellHorizontalAlignment.Center,
+};
+sheet["A1"].Style = header;
+bool bold = sheet["A1"].Style.Font.Bold;      // true
+string font = sheet["B1"].Style.Font.Name;    // "Calibri", the default
+```
+
+`Cell.Style` is how the cell looks in Excel: its `CellFont` (name, size in points, bold,
+italic, underline, strikethrough, colour), a fill colour, the four edges of its border and its
+alignment, wrapping and indent. A cell without a style of its own has `Workbook.DefaultStyle`,
+which `XlsxReader` takes from the file's Normal style; setting `Style` to null gives it back.
+Styles are records: they compare by value, and `with` makes a changed copy.
+
+`XlsxReader` turns theme and indexed colours into RGB with the file's theme and palette. Only
+solid fills are read; patterns and gradients read as no fill. Styles of whole rows and columns
+(for cells that hold nothing), conditional formats, rotated text, shrink to fit and diagonal
+borders are not read. A style plays no part in calculation and is no content.
+
+## Column widths, row heights and merged cells
+
+```csharp snippet=cells-geometry
+sheet.SetColumnWidth(2, 20);      // column B, in the units .xlsx files use
+sheet.SetRowHeight(1, 30);        // row 1, in points
+sheet.SetColumnHidden(3, true);   // column C
+sheet.Merge("A1:D1");
+double? width = sheet.ColumnWidth(1);           // null: column A has the default width
+string merged = sheet.MergedAreas[0].Address;   // "A1:D1"
+```
+
+Column widths are in the units .xlsx files use: characters of the widest digit of the default
+font, padding included, so Excel's standard 8.43 characters of Calibri 11 are 9.140625 here.
+Row heights are in points. Null means the sheet's default, `Worksheet.DefaultColumnWidth` and
+`Worksheet.DefaultRowHeight`, which are null too when the file gives none. Converting either to
+pixels depends on the font and the screen and is left to the application.
+
+Hidden columns change no result, as in Excel; hidden rows do (see
+[Tables and hidden rows](tables.md)). `Merge` keeps the values of the cells it covers, where
+Excel's Merge command would clear all but the top-left one.
+
+Styles, sizes and merged cells are not saved: `XlsxWriter` copies them from the file and refuses
+a workbook in which they changed.
+
 ## Defined names
 
 ```csharp snippet=cells-names
@@ -733,11 +783,13 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
+- Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
+- Column widths, row heights, hidden columns and merged cells (see [Cells, ranges and dates](cells.md#column-widths-row-heights-and-merged-cells)).
 - The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
 
-Other styles (fonts, fills, borders), column widths, conditional formats, charts, pivot tables, comments and macros are skipped.
+Pattern and gradient fills, styles of whole rows and columns, conditional formats, charts, pivot tables, comments and macros are skipped.
 
 | File | Result |
 |---|---|
@@ -803,6 +855,7 @@ be the target.
 | A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
 | Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed | `NotSupportedException` |
 | A number format changed or set | `NotSupportedException` |
+| A cell style, column width, row height, hidden column, merged area or the default style changed | `NotSupportedException` |
 | A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
@@ -1195,6 +1248,15 @@ public int Row { get; }
 
 The row number, from 1.
 
+<a id="style"></a>
+### Style
+
+```csharp
+public CellStyle Style { get; set; }
+```
+
+How the cell looks: font, fill, borders and alignment. A cell without a style of its own has [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle); setting null gives it back. Styles are read from .xlsx files; they play no part in calculation, and a style alone does not make a cell hold something.
+
 <a id="text"></a>
 ### Text
 
@@ -1236,6 +1298,302 @@ public override string ToString()
 ```
 
 The address with the sheet name, such as `Sheet1!B2`.
+
+---
+
+<!-- page: api/SharpCell.CellBorder.md -->
+
+# CellBorder
+
+```csharp
+public sealed class CellBorder
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+One edge of a cell's border. A record: borders compare by value.
+
+## Constructors
+
+<a id="ctor-cellborderstyle-cellcolor"></a>
+### CellBorder(CellBorderStyle, CellColor?)
+
+```csharp
+public CellBorder(CellBorderStyle Style, CellColor? Color = default)
+```
+
+One edge of a cell's border. A record: borders compare by value.
+
+**Parameters**
+
+- `Style`: The line.
+- `Color`: The colour; null for automatic, which Excel shows black.
+
+## Properties
+
+<a id="color"></a>
+### Color
+
+```csharp
+public CellColor? Color { get; init; }
+```
+
+The colour; null for automatic, which Excel shows black.
+
+<a id="style"></a>
+### Style
+
+```csharp
+public CellBorderStyle Style { get; init; }
+```
+
+The line.
+
+---
+
+<!-- page: api/SharpCell.CellBorderStyle.md -->
+
+# CellBorderStyle
+
+```csharp
+public enum CellBorderStyle
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The lines Excel draws borders with.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="thin"></a>`Thin` | 0 | A thin solid line. |
+| <a id="medium"></a>`Medium` | 1 | A solid line of medium weight. |
+| <a id="thick"></a>`Thick` | 2 | A thick solid line. |
+| <a id="double"></a>`Double` | 3 | Two thin lines. |
+| <a id="hair"></a>`Hair` | 4 | A hairline, thinner than [CellBorderStyle.Thin](SharpCell.CellBorderStyle.md#thin). |
+| <a id="dotted"></a>`Dotted` | 5 | A thin line of dots. |
+| <a id="dashed"></a>`Dashed` | 6 | A thin dashed line. |
+| <a id="dashdot"></a>`DashDot` | 7 | A thin line of dashes and dots. |
+| <a id="dashdotdot"></a>`DashDotDot` | 8 | A thin line of a dash and two dots. |
+| <a id="mediumdashed"></a>`MediumDashed` | 9 | A dashed line of medium weight. |
+| <a id="mediumdashdot"></a>`MediumDashDot` | 10 | A line of dashes and dots of medium weight. |
+| <a id="mediumdashdotdot"></a>`MediumDashDotDot` | 11 | A line of a dash and two dots of medium weight. |
+| <a id="slantdashdot"></a>`SlantDashDot` | 12 | A slanted line of dashes and dots of medium weight. |
+
+---
+
+<!-- page: api/SharpCell.CellColor.md -->
+
+# CellColor
+
+```csharp
+public readonly struct CellColor
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
+
+## Constructors
+
+<a id="ctor-byte-byte-byte"></a>
+### CellColor(byte, byte, byte)
+
+```csharp
+public CellColor(byte R, byte G, byte B)
+```
+
+A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
+
+**Parameters**
+
+- `R`: Red, 0 to 255.
+- `G`: Green, 0 to 255.
+- `B`: Blue, 0 to 255.
+
+## Properties
+
+<a id="b"></a>
+### B
+
+```csharp
+public byte B { get; init; }
+```
+
+Blue, 0 to 255.
+
+<a id="g"></a>
+### G
+
+```csharp
+public byte G { get; init; }
+```
+
+Green, 0 to 255.
+
+<a id="r"></a>
+### R
+
+```csharp
+public byte R { get; init; }
+```
+
+Red, 0 to 255.
+
+## Methods
+
+<a id="fromrgb-int"></a>
+### FromRgb(int)
+
+```csharp
+public static CellColor FromRgb(int rgb)
+```
+
+A colour from a `0xRRGGBB` number.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The colour as `#RRGGBB`.
+
+---
+
+<!-- page: api/SharpCell.CellFont.md -->
+
+# CellFont
+
+```csharp
+public sealed class CellFont
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The font of a cell's text. A record: fonts compare by value, and `with` makes a changed copy, such as `font with { Bold = true }`.
+
+## Constructors
+
+<a id="ctor"></a>
+### CellFont()
+
+```csharp
+public CellFont()
+```
+
+Calibri 11 in the automatic colour, as [CellFont.Default](SharpCell.CellFont.md#default); set properties in an initializer.
+
+## Properties
+
+<a id="bold"></a>
+### Bold
+
+```csharp
+public bool Bold { get; init; }
+```
+
+Bold text.
+
+<a id="color"></a>
+### Color
+
+```csharp
+public CellColor? Color { get; init; }
+```
+
+The text colour; null for automatic, which Excel shows black.
+
+<a id="default"></a>
+### Default
+
+```csharp
+public static CellFont Default { get; }
+```
+
+Calibri 11 in the automatic colour, the font of a new workbook in Excel 2007 to 2021.
+
+<a id="italic"></a>
+### Italic
+
+```csharp
+public bool Italic { get; init; }
+```
+
+Italic text.
+
+<a id="name"></a>
+### Name
+
+```csharp
+public string Name { get; init; }
+```
+
+The font family, such as `Calibri`.
+
+**Exceptions**
+
+- `ArgumentException`: The name is empty.
+
+<a id="size"></a>
+### Size
+
+```csharp
+public double Size { get; init; }
+```
+
+The size in points, 1 to 409 as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The size is outside 1 to 409.
+
+<a id="strikethrough"></a>
+### Strikethrough
+
+```csharp
+public bool Strikethrough { get; init; }
+```
+
+Text struck through.
+
+<a id="underline"></a>
+### Underline
+
+```csharp
+public CellUnderline Underline { get; init; }
+```
+
+The underline, if any.
+
+---
+
+<!-- page: api/SharpCell.CellHorizontalAlignment.md -->
+
+# CellHorizontalAlignment
+
+```csharp
+public enum CellHorizontalAlignment
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Where a cell's text sits across the cell.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="general"></a>`General` | 0 | Excel's default: numbers right, text left, logical values and errors in the middle. |
+| <a id="left"></a>`Left` | 1 | Against the left edge, after the indent. |
+| <a id="center"></a>`Center` | 2 | In the middle. |
+| <a id="right"></a>`Right` | 3 | Against the right edge, before the indent. |
+| <a id="fill"></a>`Fill` | 4 | The text repeated to fill the cell. |
+| <a id="justify"></a>`Justify` | 5 | Wrapped, each line but the last spread to both edges. |
+| <a id="centercontinuous"></a>`CenterContinuous` | 6 | In the middle of this cell and the empty cells to its right. |
+| <a id="distributed"></a>`Distributed` | 7 | Each line spread evenly across the cell. |
 
 ---
 
@@ -1384,6 +1742,160 @@ public override string ToString()
 ```
 
 The address with the sheet name as a formula writes it, such as `Sheet1!A1:C10` or `'My Sheet'!B2`.
+
+---
+
+<!-- page: api/SharpCell.CellStyle.md -->
+
+# CellStyle
+
+```csharp
+public sealed class CellStyle
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a cell looks in Excel: font, fill, borders and alignment. The number format is not part of it; see [Cell.NumberFormat](SharpCell.Cell.md#numberformat). Styles play no part in calculation. A record: styles compare by value, and `with` makes a changed copy, such as `style with { Fill = CellColor.FromRgb(0xFFFF00) }`.
+
+## Constructors
+
+<a id="ctor"></a>
+### CellStyle()
+
+```csharp
+public CellStyle()
+```
+
+A style like [CellStyle.Default](SharpCell.CellStyle.md#default); set properties in an initializer.
+
+## Properties
+
+<a id="bottomborder"></a>
+### BottomBorder
+
+```csharp
+public CellBorder? BottomBorder { get; init; }
+```
+
+The bottom edge of the border; null for none.
+
+<a id="default"></a>
+### Default
+
+```csharp
+public static CellStyle Default { get; }
+```
+
+The style of a new workbook's cells: [CellFont.Default](SharpCell.CellFont.md#default), no fill, no borders, General alignment at the bottom.
+
+<a id="fill"></a>
+### Fill
+
+```csharp
+public CellColor? Fill { get; init; }
+```
+
+The colour the cell is filled with; null for none. Only solid fills are read from files.
+
+<a id="font"></a>
+### Font
+
+```csharp
+public CellFont Font { get; init; }
+```
+
+The font.
+
+<a id="horizontalalignment"></a>
+### HorizontalAlignment
+
+```csharp
+public CellHorizontalAlignment HorizontalAlignment { get; init; }
+```
+
+Where the text sits across the cell. [CellHorizontalAlignment.General](SharpCell.CellHorizontalAlignment.md#general) is Excel's default: numbers right, text left, logical values and errors in the middle.
+
+<a id="indent"></a>
+### Indent
+
+```csharp
+public int Indent { get; init; }
+```
+
+The indent, in steps of the width of three characters of the default font; 0 to 250.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The indent is outside 0 to 250.
+
+<a id="leftborder"></a>
+### LeftBorder
+
+```csharp
+public CellBorder? LeftBorder { get; init; }
+```
+
+The left edge of the border; null for none.
+
+<a id="rightborder"></a>
+### RightBorder
+
+```csharp
+public CellBorder? RightBorder { get; init; }
+```
+
+The right edge of the border; null for none.
+
+<a id="topborder"></a>
+### TopBorder
+
+```csharp
+public CellBorder? TopBorder { get; init; }
+```
+
+The top edge of the border; null for none.
+
+<a id="verticalalignment"></a>
+### VerticalAlignment
+
+```csharp
+public CellVerticalAlignment VerticalAlignment { get; init; }
+```
+
+Where the text sits from top to bottom of the cell; Excel's default is the bottom.
+
+<a id="wraptext"></a>
+### WrapText
+
+```csharp
+public bool WrapText { get; init; }
+```
+
+Whether text wraps onto more lines inside the cell.
+
+---
+
+<!-- page: api/SharpCell.CellUnderline.md -->
+
+# CellUnderline
+
+```csharp
+public enum CellUnderline
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a font underlines text.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="none"></a>`None` | 0 | No underline. |
+| <a id="single"></a>`Single` | 1 | One line under the characters. |
+| <a id="double"></a>`Double` | 2 | Two lines under the characters. |
+| <a id="singleaccounting"></a>`SingleAccounting` | 3 | One line across the whole cell, lower than [CellUnderline.Single](SharpCell.CellUnderline.md#single). |
+| <a id="doubleaccounting"></a>`DoubleAccounting` | 4 | Two lines across the whole cell, lower than [CellUnderline.Double](SharpCell.CellUnderline.md#double). |
 
 ---
 
@@ -1701,6 +2213,30 @@ The kind of value a [CellValue](SharpCell.CellValue.md) holds.
 | <a id="error"></a>`Error` | 5 | An Excel error value such as `#DIV/0!`; errors are values, not exceptions. |
 | <a id="array"></a>`Array` | 6 | A rectangular array, the result of a dynamic array formula or an array constant. |
 | <a id="lambda"></a>`Lambda` | 7 | A function value created by `LAMBDA`. |
+
+---
+
+<!-- page: api/SharpCell.CellVerticalAlignment.md -->
+
+# CellVerticalAlignment
+
+```csharp
+public enum CellVerticalAlignment
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Where a cell's text sits from top to bottom of the cell.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="top"></a>`Top` | 0 | Against the top edge. |
+| <a id="center"></a>`Center` | 1 | In the middle. |
+| <a id="bottom"></a>`Bottom` | 2 | Against the bottom edge, Excel's default. |
+| <a id="justify"></a>`Justify` | 3 | Lines spread to the top and bottom edges. |
+| <a id="distributed"></a>`Distributed` | 4 | Lines spread evenly from top to bottom. |
 
 ---
 
@@ -2413,6 +2949,19 @@ public DateSystem DateSystem { get; set; }
 
 Whether serial dates count from 1900 or from 1904, as set in the file.
 
+<a id="defaultstyle"></a>
+### DefaultStyle
+
+```csharp
+public CellStyle DefaultStyle { get; set; }
+```
+
+The style of every cell without one of its own: the Normal style of a file read with SharpCell.Xlsx, [CellStyle.Default](SharpCell.CellStyle.md#default) for a new workbook.
+
+**Exceptions**
+
+- `ArgumentNullException`: The style is null.
+
 <a id="definednames"></a>
 ### DefinedNames
 
@@ -2597,6 +3146,32 @@ public IEnumerable<Cell> Cells { get; }
 
 The cells of the sheet that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Values and formulas may be changed while enumerating; adding or removing a cell makes the next step throw `InvalidOperationException`.
 
+<a id="defaultcolumnwidth"></a>
+### DefaultColumnWidth
+
+```csharp
+public double? DefaultColumnWidth { get; set; }
+```
+
+The width of columns without one of their own, as .xlsx files store it: in characters of the widest digit of the workbook's default font, padding included. Excel's standard 8.43 characters of Calibri 11 are 9.140625 here. Null when not given; Excel then uses 8 characters.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The width is outside 0 to 255.
+
+<a id="defaultrowheight"></a>
+### DefaultRowHeight
+
+```csharp
+public double? DefaultRowHeight { get; set; }
+```
+
+The height of rows without one of their own, in points. Null when not given; Excel then fits it to the default font, 15 points for Calibri 11.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The height is outside 0 to 409.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -2605,6 +3180,15 @@ public bool FilterMode { get; set; }
 ```
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
+<a id="mergedareas"></a>
+### MergedAreas
+
+```csharp
+public IReadOnlyList<CellRange> MergedAreas { get; }
+```
+
+The merged areas, in the order they were merged.
 
 <a id="name"></a>
 ### Name
@@ -2673,6 +3257,32 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
 
+<a id="columnwidth-int"></a>
+### ColumnWidth(int)
+
+```csharp
+public double? ColumnWidth(int column)
+```
+
+A column's own width, in the units of [Worksheet.DefaultColumnWidth](SharpCell.Worksheet.md#defaultcolumnwidth); null when it has none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="iscolumnhidden-int"></a>
+### IsColumnHidden(int)
+
+```csharp
+public bool IsColumnHidden(int column)
+```
+
+Whether a column is hidden.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="isrowhidden-int"></a>
 ### IsRowHidden(int)
 
@@ -2686,6 +3296,19 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="merge-string"></a>
+### Merge(string)
+
+```csharp
+public void Merge(string address)
+```
+
+Merges a range of at least two cells into one, as Excel shows it: the top-left cell covers the range. The values of the other cells are kept; Excel's Merge command would clear them.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a range of two cells or more, or it overlaps a merged area.
+
 <a id="range-string"></a>
 ### Range(string)
 
@@ -2698,6 +3321,58 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 **Exceptions**
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
+
+<a id="rowheight-int"></a>
+### RowHeight(int)
+
+```csharp
+public double? RowHeight(int row)
+```
+
+A row's own height in points; null when it has none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setcolumnhidden-int-bool"></a>
+### SetColumnHidden(int, bool)
+
+```csharp
+public void SetColumnHidden(int column, bool hidden)
+```
+
+Hides or shows a column. Unlike hidden rows, hidden columns change no result, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="setcolumnwidth-int-double"></a>
+### SetColumnWidth(int, double?)
+
+```csharp
+public void SetColumnWidth(int column, double? width)
+```
+
+Gives a column a width of its own, in the units of [Worksheet.DefaultColumnWidth](SharpCell.Worksheet.md#defaultcolumnwidth); null takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet, or the width outside 0 to 255.
+
+<a id="setrowheight-int-double"></a>
+### SetRowHeight(int, double?)
+
+```csharp
+public void SetRowHeight(int row, double? height)
+```
+
+Gives a row a height of its own in points; null takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet, or the height outside 0 to 409.
 
 <a id="setrowhidden-int-bool"></a>
 ### SetRowHidden(int, bool)
@@ -2721,6 +3396,19 @@ public override string ToString()
 
 The sheet name.
 
+<a id="unmerge-string"></a>
+### Unmerge(string)
+
+```csharp
+public void Unmerge(string address)
+```
+
+Undoes a merge; the address must be exactly a merged area.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a merged area.
+
 ---
 
 <!-- page: api/SharpCell.Xlsx.XlsxReader.md -->
@@ -2733,7 +3421,7 @@ public static class XlsxReader
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system. Styles, charts, pivot tables and macros are not read.
+Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights and merged cells. Charts, pivot tables and macros are not read.
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 
