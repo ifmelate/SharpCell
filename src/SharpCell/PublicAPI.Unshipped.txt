@@ -1,1 +1,7 @@
 #nullable enable
+SharpCell.Worksheet.FrozenColumns.get -> int
+SharpCell.Worksheet.FrozenColumns.set -> void
+SharpCell.Worksheet.FrozenRows.get -> int
+SharpCell.Worksheet.FrozenRows.set -> void
+SharpCell.Worksheet.ShowGridlines.get -> bool
+SharpCell.Worksheet.ShowGridlines.set -> void

@@ -15,6 +15,7 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
 - Column widths, row heights, hidden columns and merged cells (see [Cells, ranges and dates](cells.md#column-widths-row-heights-and-merged-cells)).
+- Frozen panes and whether gridlines show (see [Cells, ranges and dates](cells.md#frozen-panes-and-gridlines)).
 - The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read

@@ -9,7 +9,8 @@ namespace SharpCell.Xlsx;
 /// <summary>
 /// Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names,
 /// tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles,
-/// column widths, row heights and merged cells. Charts, pivot tables and macros are not read.
+/// column widths, row heights, merged cells, frozen panes and gridlines. Charts, pivot tables and
+/// macros are not read.
 /// <para>
 /// Every formula is out of date after loading: <see cref="Cell.Value"/> shows the value cached in
 /// the file until <see cref="Workbook.Recalculate"/> calculates it. A formula SharpCell cannot

@@ -120,7 +120,9 @@ internal static class Presentation
         {
             text.Append("sheet ").Append(sheet.Name)
                 .Append(" column ").Append(Number(sheet.DefaultColumnWidth))
-                .Append(" row ").Append(Number(sheet.DefaultRowHeight)).Append('\n');
+                .Append(" row ").Append(Number(sheet.DefaultRowHeight))
+                .Append(" frozen ").Append(sheet.FrozenRows.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(sheet.FrozenColumns.ToString(CultureInfo.InvariantCulture))
+                .Append(" gridlines ").Append(sheet.ShowGridlines).Append('\n');
             foreach (var (column, width) in sheet.ColumnWidths.OrderBy(p => p.Key))
                 text.Append("column ").Append(column.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(Number(width)).Append('\n');
             foreach (var column in sheet.HiddenColumns.Order())

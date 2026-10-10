@@ -432,8 +432,21 @@ Hidden columns change no result, as in Excel; hidden rows do (see
 [Tables and hidden rows](tables.md)). `Merge` keeps the values of the cells it covers, where
 Excel's Merge command would clear all but the top-left one.
 
-Styles, sizes and merged cells are not saved: `XlsxWriter` copies them from the file and refuses
-a workbook in which they changed.
+## Frozen panes and gridlines
+
+```csharp snippet=cells-view
+sheet.FrozenRows = 1;          // the header row stays in place while the rest scrolls
+sheet.FrozenColumns = 1;       // and so does column A
+sheet.ShowGridlines = false;   // as View > Gridlines turned off in Excel
+```
+
+`FrozenRows` and `FrozenColumns` are the rows at the top and the columns on the left that Excel's
+Freeze Panes keeps in place; `ShowGridlines` is whether Excel draws gridlines on the sheet.
+`XlsxReader` takes them from the sheet's first view. A plain split that is not frozen reads as no
+frozen panes. None of them changes a result.
+
+Styles, sizes, merged cells, frozen panes and gridlines are not saved: `XlsxWriter` copies them
+from the file and refuses a workbook in which they changed.
 
 ## Defined names
 
@@ -785,6 +798,7 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
 - Column widths, row heights, hidden columns and merged cells (see [Cells, ranges and dates](cells.md#column-widths-row-heights-and-merged-cells)).
+- Frozen panes and whether gridlines show (see [Cells, ranges and dates](cells.md#frozen-panes-and-gridlines)).
 - The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
@@ -855,7 +869,7 @@ be the target.
 | A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
 | Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed | `NotSupportedException` |
 | A number format changed or set | `NotSupportedException` |
-| A cell style, column width, row height, hidden column, merged area or the default style changed | `NotSupportedException` |
+| A cell style, column width, row height, hidden column, merged area, frozen panes, gridlines or the default style changed | `NotSupportedException` |
 | A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
@@ -3181,6 +3195,32 @@ public bool FilterMode { get; set; }
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
 
+<a id="frozencolumns"></a>
+### FrozenColumns
+
+```csharp
+public int FrozenColumns { get; set; }
+```
+
+How many columns on the left stay in place while the rest scrolls; 0 for none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is negative or leaves no column to scroll.
+
+<a id="frozenrows"></a>
+### FrozenRows
+
+```csharp
+public int FrozenRows { get; set; }
+```
+
+How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes keeps them; 0 for none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is negative or leaves no row to scroll.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -3198,6 +3238,15 @@ public string Name { get; }
 ```
 
 The sheet name.
+
+<a id="showgridlines"></a>
+### ShowGridlines
+
+```csharp
+public bool ShowGridlines { get; set; }
+```
+
+Whether Excel draws gridlines between the sheet's cells; true unless turned off.
 
 <a id="usedrange"></a>
 ### UsedRange
@@ -3421,7 +3470,7 @@ public static class XlsxReader
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights and merged cells. Charts, pivot tables and macros are not read.
+Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines. Charts, pivot tables and macros are not read.
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 

@@ -56,6 +56,32 @@ public bool FilterMode { get; set; }
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
 
+<a id="frozencolumns"></a>
+### FrozenColumns
+
+```csharp
+public int FrozenColumns { get; set; }
+```
+
+How many columns on the left stay in place while the rest scrolls; 0 for none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is negative or leaves no column to scroll.
+
+<a id="frozenrows"></a>
+### FrozenRows
+
+```csharp
+public int FrozenRows { get; set; }
+```
+
+How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes keeps them; 0 for none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is negative or leaves no row to scroll.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -73,6 +99,15 @@ public string Name { get; }
 ```
 
 The sheet name.
+
+<a id="showgridlines"></a>
+### ShowGridlines
+
+```csharp
+public bool ShowGridlines { get; set; }
+```
+
+Whether Excel draws gridlines between the sheet's cells; true unless turned off.
 
 <a id="usedrange"></a>
 ### UsedRange

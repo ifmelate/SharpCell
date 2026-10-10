@@ -45,6 +45,9 @@ public class XlsxWriterStyleTests
         { "merge", s => s.Merge("A3:B3") },
         { "merge", s => s.Unmerge("C1:D1") },
         { "default style", s => s.Workbook.DefaultStyle = CellStyle.Default with { WrapText = true } },
+        { "frozen", s => s.FrozenRows = 1 },
+        { "frozen", s => s.FrozenColumns = 2 },
+        { "gridlines", s => s.ShowGridlines = false },
     };
 
     [Theory]

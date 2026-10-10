@@ -129,6 +129,21 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Sheet_view()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-view
+        sheet.FrozenRows = 1;          // the header row stays in place while the rest scrolls
+        sheet.FrozenColumns = 1;       // and so does column A
+        sheet.ShowGridlines = false;   // as View > Gridlines turned off in Excel
+        // end-snippet
+
+        Assert.Equal((1, 1, false), (sheet.FrozenRows, sheet.FrozenColumns, sheet.ShowGridlines));
+    }
+
+    [Fact]
     public void Defined_names()
     {
         var workbook = new Workbook();

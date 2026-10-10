@@ -36,6 +36,7 @@ internal static class WorksheetReader
         var row = 0;
         var column = 0;
         var tableIds = new List<string>();
+        var sheetViews = 0;
         reader.Read();
         while (!reader.EOF)
         {
@@ -82,6 +83,27 @@ internal static class WorksheetReader
                         sheet.DefaultRowHeight = Size(reader.GetAttribute("defaultRowHeight"), MaxRowHeight);
                         break;
                 }
+            }
+
+            // Only the first view counts: further ones belong to other windows on the workbook.
+            if (reader.Depth == 2 && reader.LocalName == "sheetView")
+            {
+                if (++sheetViews == 1 && reader.GetAttribute("showGridLines") is "0" or "false")
+                    sheet.ShowGridlines = false;
+                reader.Read();
+                continue;
+            }
+
+            if (reader.Depth == 3 && reader.LocalName == "pane" && sheetViews == 1)
+            {
+                // In a frozen pane the splits count rows and columns; in a plain split they are twips.
+                if (reader.GetAttribute("state") is "frozen" or "frozenSplit")
+                {
+                    sheet.FrozenColumns = Count(reader.GetAttribute("xSplit"), CellAddress.MaxColumn);
+                    sheet.FrozenRows = Count(reader.GetAttribute("ySplit"), CellAddress.MaxRow);
+                }
+                reader.Read();
+                continue;
             }
 
             // Column sizes and merged cells only change how the sheet is shown: anything broken in
@@ -180,6 +202,11 @@ internal static class WorksheetReader
                 sheet.SetColumnHidden(column, true);
         }
     }
+
+    // A whole count of frozen rows or columns that leaves some to scroll; 0 for anything else.
+    private static int Count(string? text, int max) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var count)
+        && count >= 0 && count < max && count == Math.Floor(count) ? (int)count : 0;
 
     // A size within Excel's limits, or null for one that is missing or is not.
     private static double? Size(string? text, double max) =>

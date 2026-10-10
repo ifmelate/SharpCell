@@ -49,7 +49,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.
-- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights and merged cells.
+- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines.
 - [XlsxWriteException](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxWriteException.md): A workbook was not saved because SharpCell could not calculate some of its formulas; see XlsxWriteOptions.KeepUncalculated.
 - [XlsxWriteOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxWriteOptions.md): Options for XlsxWriter.
 - [XlsxWriter](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxWriter.md): Saves a workbook read by XlsxReader back into its file with new values: change input cells, call Workbook.Recalculate, save.
