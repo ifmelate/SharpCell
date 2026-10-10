@@ -47,6 +47,25 @@ public class XlsxWriterKeepTests
         Assert.Equal(PartBytes(original, "xl/workbook.xml"), PartBytes(Save(workbook, Keep), "xl/workbook.xml"));
     }
 
+    // In Excel a spilled cell cannot be cleared on its own, but a value typed over one is the user's.
+    [Fact]
+    public void Values_typed_inside_a_kept_spill_are_saved()
+    {
+        var xlsx = new TestXlsx { Metadata = TestXlsx.DynamicArrayMetadata }.Sheet("S",
+            "<row r=\"1\"><c r=\"A1\" cm=\"1\"><f t=\"array\" ref=\"A1:A3\">NOSUCHFN()</f><v>1</v></c></row>"
+            + "<row r=\"2\"><c r=\"A2\"><v>2</v></c></row><row r=\"3\"><c r=\"A3\"><v>3</v></c></row>");
+        var workbook = Load(xlsx);
+        workbook["S"]["A3"].Value = 42;
+        workbook["S"]["A4"].Value = 7;
+        workbook.Recalculate();
+
+        var sheet = Part(Save(workbook, Keep), "xl/worksheets/sheet1.xml");
+
+        Assert.Contains("<c r=\"A2\"><v>2</v></c>", sheet);
+        Assert.Contains("<c r=\"A3\"><v>42</v></c>", sheet);
+        Assert.Contains("<c r=\"A4\"><v>7</v></c>", sheet);
+    }
+
     [Fact]
     public void A_kept_dynamic_array_keeps_its_spill()
     {

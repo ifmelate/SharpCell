@@ -251,7 +251,8 @@ internal sealed class WorksheetWriter
     private XElement? NewCell(StoredCell cell)
     {
         var value = CellEncoding.Storable(cell.Data.Value);
-        if (value.Kind == CellValueKind.Empty || _keptSpills.Exists(area => area.Contains(cell.Row, cell.Column)))
+        if (value.Kind == CellValueKind.Empty
+            || (cell.Data.SpillAnchor is not null && _keptSpills.Exists(area => area.Contains(cell.Row, cell.Column))))
             return null;
         var address = new CellAddress(cell.Row, cell.Column);
         CheckConstant(cell.Data, value, address);
@@ -272,7 +273,8 @@ internal sealed class WorksheetWriter
             Advance();
         }
 
-        if (_keptSpills.Exists(area => area.Contains(row, column)))
+        // A kept spill keeps its saved cells, but not over a value the user typed there.
+        if ((data is null || data.SpillAnchor is not null) && _keptSpills.Exists(area => area.Contains(row, column)))
             return source;
 
         var saved = _saved.Read(source, _sheet, row, column);
