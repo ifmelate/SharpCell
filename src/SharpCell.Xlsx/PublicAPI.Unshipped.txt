@@ -1,12 +1,1 @@
 #nullable enable
-SharpCell.Xlsx.XlsxWriteException
-SharpCell.Xlsx.XlsxWriteException.Problems.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CalculationDiagnostic!>!
-SharpCell.Xlsx.XlsxWriteOptions
-SharpCell.Xlsx.XlsxWriteOptions.KeepUncalculated.get -> bool
-SharpCell.Xlsx.XlsxWriteOptions.KeepUncalculated.init -> void
-SharpCell.Xlsx.XlsxWriteOptions.XlsxWriteOptions() -> void
-SharpCell.Xlsx.XlsxWriter
-static SharpCell.Xlsx.XlsxWriter.Save(SharpCell.Workbook! workbook, string! path) -> void
-static SharpCell.Xlsx.XlsxWriter.Save(SharpCell.Workbook! workbook, string! path, SharpCell.Xlsx.XlsxWriteOptions! options) -> void
-static SharpCell.Xlsx.XlsxWriter.Save(SharpCell.Workbook! workbook, System.IO.Stream! stream) -> void
-static SharpCell.Xlsx.XlsxWriter.Save(SharpCell.Workbook! workbook, System.IO.Stream! stream, SharpCell.Xlsx.XlsxWriteOptions! options) -> void
