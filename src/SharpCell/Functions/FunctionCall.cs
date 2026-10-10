@@ -20,6 +20,26 @@ internal sealed class FunctionCall
         _pendingAtStart = context.PendingReads;
     }
 
+    /// <summary>A call whose arguments are already evaluated, as a function value receives them.</summary>
+    public FunctionCall(EvaluationContext context, IReadOnlyList<Operand> arguments)
+    {
+        Context = context;
+        var nodes = new FormulaNode[arguments.Count];
+        _arguments = new Operand?[arguments.Count];
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            var missing = !arguments[i].IsReference && arguments[i].Value.Kind == CellValueKind.Missing;
+            nodes[i] = missing ? MissingNode.Instance : Evaluated;
+            _arguments[i] = arguments[i];
+        }
+
+        _nodes = nodes;
+        _pendingAtStart = context.PendingReads;
+    }
+
+    // Stands for an argument that was evaluated before the call; never evaluated again.
+    private static readonly FormulaNode Evaluated = new NumberNode(0);
+
     /// <summary>Whether this call has read a dirty cell; its result will be discarded.</summary>
     public bool MetPendingInput => Context.PendingReads > _pendingAtStart;
 

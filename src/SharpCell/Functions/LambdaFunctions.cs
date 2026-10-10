@@ -29,7 +29,7 @@ internal static class LambdaFunctions
         var count = call.Count - 1;
         if (!TryGetLambda(call, count, out var lambda, out var error))
             return error;
-        if (lambda.Parameters.Length != count)
+        if (!Lambdas.Takes(lambda, count, call.Context))
             return CellValue.Error(ErrorKind.Value);
 
         var arrays = new CellValue[count][,];
@@ -77,7 +77,7 @@ internal static class LambdaFunctions
     {
         if (!TryGetLambda(call, 2, out var lambda, out var error))
             return error;
-        if (lambda.Parameters.Length != 2)
+        if (!Lambdas.Takes(lambda, 2, call.Context))
             return CellValue.Error(ErrorKind.Value);
 
         var accumulator = call.IsMissing(0) ? CellValue.Missing : call.Value(0);
@@ -112,7 +112,7 @@ internal static class LambdaFunctions
     {
         if (!TryGetLambda(call, 1, out var lambda, out var error))
             return error;
-        if (lambda.Parameters.Length != 1)
+        if (!Lambdas.Takes(lambda, 1, call.Context))
             return CellValue.Error(ErrorKind.Value);
 
         var input = call[0];
@@ -184,7 +184,7 @@ internal static class LambdaFunctions
     {
         if (!TryGetLambda(call, 2, out var lambda, out var error))
             return error;
-        if (lambda.Parameters.Length != 2)
+        if (!Lambdas.Takes(lambda, 2, call.Context))
             return CellValue.Error(ErrorKind.Value);
 
         var rowsValue = Coercion.ToNumber(call.Value(0), call.Context.Culture, call.Context.DateSystem);
@@ -217,12 +217,12 @@ internal static class LambdaFunctions
         return CellValue.Array(result);
     }
 
-    private static bool TryGetLambda(FunctionCall call, int index, out Closure lambda, out CellValue error)
+    private static bool TryGetLambda(FunctionCall call, int index, out LambdaValue lambda, out CellValue error)
     {
         var value = call.Value(index);
-        if (value.Kind == CellValueKind.Lambda && value.AsLambda() is Closure closure)
+        if (value.Kind == CellValueKind.Lambda)
         {
-            lambda = closure;
+            lambda = value.AsLambda();
             error = default;
             return true;
         }
@@ -232,7 +232,7 @@ internal static class LambdaFunctions
         return false;
     }
 
-    private static CellValue Element(Closure lambda, Operand[] arguments, FunctionCall call, int index)
+    private static CellValue Element(LambdaValue lambda, Operand[] arguments, FunctionCall call, int index)
     {
         CheckCancellation(call, index);
         return Scalar(Evaluator.ToValue(Lambdas.Invoke(lambda, arguments, call.Context), call.Context));

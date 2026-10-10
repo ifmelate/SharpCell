@@ -34,8 +34,9 @@ internal static class Lambdas
     {
         if (callee.IsError)
             return callee;
-        if (callee.Kind != CellValueKind.Lambda || callee.AsLambda() is not Closure closure)
+        if (callee.Kind != CellValueKind.Lambda)
             return CellValue.Error(ErrorKind.Value);
+        var lambda = callee.AsLambda();
 
         var pendingBefore = context.PendingReads;
         var arguments = new Operand[argumentNodes.Count];
@@ -46,7 +47,39 @@ internal static class Lambdas
         if (context.PendingReads > pendingBefore)
             return EvaluationContext.PendingPlaceholder;
 
-        return Invoke(closure, arguments, context);
+        return Invoke(lambda, arguments, context);
+    }
+
+    /// <summary>
+    /// Whether a function value can be called with this many arguments: a LAMBDA with exactly that
+    /// many parameters, a function passed by name within its argument counts.
+    /// </summary>
+    public static bool Takes(LambdaValue lambda, int count, EvaluationContext context) => lambda switch
+    {
+        Closure closure => closure.Parameters.Length == count,
+        BuiltInFunction function => context.Workbook.TryGetFunction(function.Name, out var info)
+            && count >= info!.MinArguments && count <= info.MaxArguments,
+        _ => false,
+    };
+
+    /// <summary>Calls a LAMBDA or a function passed as a value with evaluated arguments.</summary>
+    public static Operand Invoke(LambdaValue lambda, IReadOnlyList<Operand> arguments, EvaluationContext context) => lambda switch
+    {
+        Closure closure => Invoke(closure, arguments, context),
+        BuiltInFunction function => Invoke(function, arguments, context),
+        _ => CellValue.Error(ErrorKind.Value),
+    };
+
+    private static Operand Invoke(BuiltInFunction function, IReadOnlyList<Operand> arguments, EvaluationContext context)
+    {
+        // Looked up at the call: a custom function removed since the value was made is #NAME?.
+        if (!context.Workbook.TryGetFunction(function.Name, out var info))
+            return CellValue.Error(ErrorKind.Name);
+        if (context.LambdaDepth >= MaxCallDepth)
+            return CellValue.Error(ErrorKind.Num);
+        if (++context.LambdaCalls % CancellationCheckInterval == 0)
+            context.CancellationToken.ThrowIfCancellationRequested();
+        return Functions.FunctionInvoker.InvokeWithOperands(info!, arguments, context);
     }
 
     public static Operand Invoke(Closure closure, IReadOnlyList<Operand> arguments, EvaluationContext context)

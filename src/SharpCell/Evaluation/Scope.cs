@@ -79,3 +79,12 @@ internal sealed class Closure(string[] parameters, bool[] optional, FormulaNode 
         }
     }
 }
+
+/// <summary>
+/// A function passed as a value, as in <c>BYROW(A1:B3, SUM)</c> (Excel calls it an eta-reduced
+/// lambda): one of Excel's functions or a custom one, called with the argument rules of a call by name.
+/// </summary>
+internal sealed class BuiltInFunction(string upperName) : LambdaValue
+{
+    public string Name { get; } = upperName;
+}
