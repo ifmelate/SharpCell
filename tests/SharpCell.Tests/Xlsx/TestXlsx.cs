@@ -23,6 +23,9 @@ public sealed class TestXlsx
 
     public string? Metadata { get; set; }
 
+    /// <summary>The whole xl/styles.xml part, or null for none.</summary>
+    public string? Styles { get; set; }
+
     public string WorkbookContentType { get; set; } = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
 
     /// <summary>Use absolute targets ("/xl/...") in the workbook relationships.</summary>
@@ -95,6 +98,12 @@ public sealed class TestXlsx
             {
                 rels.Append($"<Relationship Id=\"rIdMD\" Type=\"{Rel}/sheetMetadata\" Target=\"{prefix}metadata.xml\"/>");
                 Write(zip, "xl/metadata.xml", Metadata);
+            }
+
+            if (Styles is not null)
+            {
+                rels.Append($"<Relationship Id=\"rIdST\" Type=\"{Rel}/styles\" Target=\"{prefix}styles.xml\"/>");
+                Write(zip, "xl/styles.xml", Styles);
             }
 
             rels.Append("</Relationships>");
