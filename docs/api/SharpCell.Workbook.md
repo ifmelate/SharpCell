@@ -41,6 +41,19 @@ public DateSystem DateSystem { get; set; }
 
 Whether serial dates count from 1900 or from 1904, as set in the file.
 
+<a id="defaultstyle"></a>
+### DefaultStyle
+
+```csharp
+public CellStyle DefaultStyle { get; set; }
+```
+
+The style of every cell without one of its own: the Normal style of a file read with SharpCell.Xlsx, [CellStyle.Default](SharpCell.CellStyle.md#default) for a new workbook.
+
+**Exceptions**
+
+- `ArgumentNullException`: The style is null.
+
 <a id="definednames"></a>
 ### DefinedNames
 

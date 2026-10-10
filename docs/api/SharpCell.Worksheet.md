@@ -21,6 +21,32 @@ public IEnumerable<Cell> Cells { get; }
 
 The cells of the sheet that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Values and formulas may be changed while enumerating; adding or removing a cell makes the next step throw `InvalidOperationException`.
 
+<a id="defaultcolumnwidth"></a>
+### DefaultColumnWidth
+
+```csharp
+public double? DefaultColumnWidth { get; set; }
+```
+
+The width of columns without one of their own, as .xlsx files store it: in characters of the widest digit of the workbook's default font, padding included. Excel's standard 8.43 characters of Calibri 11 are 9.140625 here. Null when not given; Excel then uses 8 characters.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The width is outside 0 to 255.
+
+<a id="defaultrowheight"></a>
+### DefaultRowHeight
+
+```csharp
+public double? DefaultRowHeight { get; set; }
+```
+
+The height of rows without one of their own, in points. Null when not given; Excel then fits it to the default font, 15 points for Calibri 11.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The height is outside 0 to 409.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -29,6 +55,15 @@ public bool FilterMode { get; set; }
 ```
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
+<a id="mergedareas"></a>
+### MergedAreas
+
+```csharp
+public IReadOnlyList<CellRange> MergedAreas { get; }
+```
+
+The merged areas, in the order they were merged.
 
 <a id="name"></a>
 ### Name
@@ -97,6 +132,32 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
 
+<a id="columnwidth-int"></a>
+### ColumnWidth(int)
+
+```csharp
+public double? ColumnWidth(int column)
+```
+
+A column's own width, in the units of [Worksheet.DefaultColumnWidth](SharpCell.Worksheet.md#defaultcolumnwidth); null when it has none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="iscolumnhidden-int"></a>
+### IsColumnHidden(int)
+
+```csharp
+public bool IsColumnHidden(int column)
+```
+
+Whether a column is hidden.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="isrowhidden-int"></a>
 ### IsRowHidden(int)
 
@@ -110,6 +171,19 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="merge-string"></a>
+### Merge(string)
+
+```csharp
+public void Merge(string address)
+```
+
+Merges a range of at least two cells into one, as Excel shows it: the top-left cell covers the range. The values of the other cells are kept; Excel's Merge command would clear them.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a range of two cells or more, or it overlaps a merged area.
+
 <a id="range-string"></a>
 ### Range(string)
 
@@ -122,6 +196,58 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 **Exceptions**
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
+
+<a id="rowheight-int"></a>
+### RowHeight(int)
+
+```csharp
+public double? RowHeight(int row)
+```
+
+A row's own height in points; null when it has none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setcolumnhidden-int-bool"></a>
+### SetColumnHidden(int, bool)
+
+```csharp
+public void SetColumnHidden(int column, bool hidden)
+```
+
+Hides or shows a column. Unlike hidden rows, hidden columns change no result, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="setcolumnwidth-int-double"></a>
+### SetColumnWidth(int, double?)
+
+```csharp
+public void SetColumnWidth(int column, double? width)
+```
+
+Gives a column a width of its own, in the units of [Worksheet.DefaultColumnWidth](SharpCell.Worksheet.md#defaultcolumnwidth); null takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet, or the width outside 0 to 255.
+
+<a id="setrowheight-int-double"></a>
+### SetRowHeight(int, double?)
+
+```csharp
+public void SetRowHeight(int row, double? height)
+```
+
+Gives a row a height of its own in points; null takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet, or the height outside 0 to 409.
 
 <a id="setrowhidden-int-bool"></a>
 ### SetRowHidden(int, bool)
@@ -144,3 +270,16 @@ public override string ToString()
 ```
 
 The sheet name.
+
+<a id="unmerge-string"></a>
+### Unmerge(string)
+
+```csharp
+public void Unmerge(string address)
+```
+
+Undoes a merge; the address must be exactly a merged area.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a merged area.

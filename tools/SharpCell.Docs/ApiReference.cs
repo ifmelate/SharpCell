@@ -26,9 +26,14 @@ internal static class ApiReference
 
     public static IReadOnlyList<Assembly> DocumentedAssemblies() => [typeof(Workbook).Assembly, typeof(XlsxReader).Assembly];
 
-    /// <summary>The members a page lists: declared, public, without accessors and compiler plumbing.</summary>
+    /// <summary>
+    /// The members a page lists: declared, public, without accessors and compiler plumbing. The
+    /// members a record gets from the compiler (value equality, <c>ToString</c>, <c>Deconstruct</c>,
+    /// the clone behind <c>with</c>) are left out; the record's own summary says it compares by value.
+    /// </summary>
     public static IReadOnlyList<MemberInfo> MembersOf(Type type) =>
         type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Where(m => !m.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), false))
             .Where(m => m switch
             {
                 MethodInfo method => !method.IsSpecialName || method.Name.StartsWith("op_", StringComparison.Ordinal),

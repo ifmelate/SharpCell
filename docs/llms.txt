@@ -23,9 +23,17 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 
 - [CalculationDiagnostic](https://ifmelate.github.io/SharpCell/api/SharpCell.CalculationDiagnostic.md): Something calculation noticed that is not visible in cell values alone.
 - [Cell](https://ifmelate.github.io/SharpCell/api/SharpCell.Cell.md): A handle to one cell position.
+- [CellBorder](https://ifmelate.github.io/SharpCell/api/SharpCell.CellBorder.md): One edge of a cell's border.
+- [CellBorderStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellBorderStyle.md): The lines Excel draws borders with.
+- [CellColor](https://ifmelate.github.io/SharpCell/api/SharpCell.CellColor.md): A colour as Excel shows it, in sRGB.
+- [CellFont](https://ifmelate.github.io/SharpCell/api/SharpCell.CellFont.md): The font of a cell's text.
+- [CellHorizontalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellHorizontalAlignment.md): Where a cell's text sits across the cell.
 - [CellRange](https://ifmelate.github.io/SharpCell/api/SharpCell.CellRange.md): A rectangle of cells on one sheet, such as `A1:C10`.
+- [CellStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellStyle.md): How a cell looks in Excel: font, fill, borders and alignment.
+- [CellUnderline](https://ifmelate.github.io/SharpCell/api/SharpCell.CellUnderline.md): How a font underlines text.
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
+- [CellVerticalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellVerticalAlignment.md): Where a cell's text sits from top to bottom of the cell.
 - [DateSystem](https://ifmelate.github.io/SharpCell/api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
 - [DefinedName](https://ifmelate.github.io/SharpCell/api/SharpCell.DefinedName.md): A defined name as Workbook.DefinedNames lists it.
 - [DiagnosticKind](https://ifmelate.github.io/SharpCell/api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
@@ -41,7 +49,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.
-- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system.
+- [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights and merged cells.
 - [XlsxWriteException](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxWriteException.md): A workbook was not saved because SharpCell could not calculate some of its formulas; see XlsxWriteOptions.KeepUncalculated.
 - [XlsxWriteOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxWriteOptions.md): Options for XlsxWriter.
 - [XlsxWriter](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxWriter.md): Saves a workbook read by XlsxReader back into its file with new values: change input cells, call Workbook.Recalculate, save.

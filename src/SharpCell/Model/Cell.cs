@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
@@ -216,6 +217,22 @@ public sealed class Cell
             if (!SharpCell.Functions.NumberFormat.TryParse(value, out var format))
                 throw new ArgumentException($"'{value}' is not a number format code.", nameof(value));
             Worksheet.SetFormat(Row, Column, format);
+        }
+    }
+
+    /// <summary>
+    /// How the cell looks: font, fill, borders and alignment. A cell without a style of its own has
+    /// <see cref="Workbook.DefaultStyle"/>; setting null gives it back. Styles are read from .xlsx
+    /// files; they play no part in calculation, and a style alone does not make a cell hold something.
+    /// </summary>
+    [AllowNull]
+    public CellStyle Style
+    {
+        get => Worksheet.StyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle;
+        set
+        {
+            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.SetStyle(Row, Column, value);
         }
     }
 

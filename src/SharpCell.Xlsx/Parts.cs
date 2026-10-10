@@ -124,12 +124,12 @@ internal static class XmlText
 }
 
 /// <summary>What cells of a file point into, and reading a cell element the way the reader does.</summary>
-internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetadata? metadata, IReadOnlyList<Functions.NumberFormat?> styles)
+internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetadata? metadata, IReadOnlyList<CellXf> styles)
 {
     public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
 
-    /// <summary>The number format of each cell style; empty when the file has no styles part.</summary>
-    public IReadOnlyList<Functions.NumberFormat?> Styles { get; } = styles;
+    /// <summary>Each cell style: its number format and how it looks; empty when the file has no styles part.</summary>
+    public IReadOnlyList<CellXf> Styles { get; } = styles;
 
     public CellMetadata? Metadata { get; } = metadata;
 

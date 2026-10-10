@@ -11,7 +11,7 @@ namespace SharpCell;
 /// A sheet of a <see cref="SharpCell.Workbook"/>. Reading a cell that was never set costs nothing:
 /// a <see cref="Cell"/> is a handle, and storage is allocated only when a value or formula is set.
 /// </summary>
-public sealed class Worksheet
+public sealed partial class Worksheet
 {
     internal Worksheet(Workbook workbook, string name)
     {
@@ -221,6 +221,7 @@ public sealed class Worksheet
         foreach (var (address, format) in source._formats)
             _formats.Add(address, format);
         _filterMode = source._filterMode;
+        CopyPresentationFrom(source);
     }
 
     private static void CheckRow(int row)

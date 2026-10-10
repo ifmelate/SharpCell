@@ -91,6 +91,15 @@ public int Row { get; }
 
 The row number, from 1.
 
+<a id="style"></a>
+### Style
+
+```csharp
+public CellStyle Style { get; set; }
+```
+
+How the cell looks: font, fill, borders and alignment. A cell without a style of its own has [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle); setting null gives it back. Styles are read from .xlsx files; they play no part in calculation, and a style alone does not make a cell hold something.
+
 <a id="text"></a>
 ### Text
 

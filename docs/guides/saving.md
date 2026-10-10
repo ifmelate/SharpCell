@@ -32,6 +32,7 @@ be the target.
 | A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
 | Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed | `NotSupportedException` |
 | A number format changed or set | `NotSupportedException` |
+| A cell style, column width, row height, hidden column, merged area or the default style changed | `NotSupportedException` |
 | A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |

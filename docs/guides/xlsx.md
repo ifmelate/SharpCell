@@ -13,11 +13,13 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
+- Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
+- Column widths, row heights, hidden columns and merged cells (see [Cells, ranges and dates](cells.md#column-widths-row-heights-and-merged-cells)).
 - The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
 
-Other styles (fonts, fills, borders), column widths, conditional formats, charts, pivot tables, comments and macros are skipped.
+Pattern and gradient fills, styles of whole rows and columns, conditional formats, charts, pivot tables, comments and macros are skipped.
 
 | File | Result |
 |---|---|

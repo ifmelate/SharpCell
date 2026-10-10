@@ -42,10 +42,13 @@ internal sealed class WritePlan
             throw new NotSupportedException("Only a workbook read by XlsxReader can be saved: SharpCell writes new values into the file the workbook was read from.");
         if (Structure.Of(workbook) != source.Structure)
             throw new NotSupportedException("Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed since the workbook was read; only cell values can be saved.");
+        if (Presentation.Of(workbook) != source.Presentation)
+            throw new NotSupportedException("Column widths, hidden columns, row heights, merged cells or the default style changed since the workbook was read; XlsxWriter writes values, not styles.");
         foreach (var sheet in workbook.Sheets)
         {
             CheckFormulas(sheet, source.Sheets[sheet]);
             CheckFormats(sheet, source.Sheets[sheet]);
+            CheckStyles(sheet, source.Sheets[sheet]);
         }
         if (workbook.Calculation.HasDirty)
             throw new InvalidOperationException("Some formulas are not calculated; call Workbook.Recalculate before saving.");
@@ -82,6 +85,25 @@ internal sealed class WritePlan
                 throw FormatChanged(sheet, address);
         }
     }
+
+    // Styles are copied as they were: a style SharpCell changed cannot be written.
+    private static void CheckStyles(Worksheet sheet, SheetSource source)
+    {
+        foreach (var (address, style) in source.Styles)
+        {
+            if (sheet.StyleAt(address.Row, address.Column) != style)
+                throw StyleChanged(sheet, address);
+        }
+
+        foreach (var address in sheet.Styles.Keys)
+        {
+            if (!source.Styles.ContainsKey(address))
+                throw StyleChanged(sheet, address);
+        }
+    }
+
+    private static NotSupportedException StyleChanged(Worksheet sheet, CellAddress address) =>
+        new($"The style of {sheet.Name}!{address} changed since the workbook was read; XlsxWriter writes values, not styles.");
 
     private static NotSupportedException FormatChanged(Worksheet sheet, CellAddress address) =>
         new($"The number format of {sheet.Name}!{address} changed since the workbook was read; XlsxWriter writes values, not formats.");

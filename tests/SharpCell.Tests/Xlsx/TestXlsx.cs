@@ -26,6 +26,9 @@ public sealed class TestXlsx
     /// <summary>The whole xl/styles.xml part, or null for none.</summary>
     public string? Styles { get; set; }
 
+    /// <summary>The whole xl/theme/theme1.xml part, or null for none.</summary>
+    public string? Theme { get; set; }
+
     public string WorkbookContentType { get; set; } = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
 
     /// <summary>Use absolute targets ("/xl/...") in the workbook relationships.</summary>
@@ -104,6 +107,12 @@ public sealed class TestXlsx
             {
                 rels.Append($"<Relationship Id=\"rIdST\" Type=\"{Rel}/styles\" Target=\"{prefix}styles.xml\"/>");
                 Write(zip, "xl/styles.xml", Styles);
+            }
+
+            if (Theme is not null)
+            {
+                rels.Append($"<Relationship Id=\"rIdTH\" Type=\"{Rel}/theme\" Target=\"{prefix}theme/theme1.xml\"/>");
+                Write(zip, "xl/theme/theme1.xml", Theme);
             }
 
             rels.Append("</Relationships>");
