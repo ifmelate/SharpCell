@@ -256,7 +256,8 @@ internal sealed class WorksheetWriter
             return null;
         var address = new CellAddress(cell.Row, cell.Column);
         CheckConstant(cell.Data, value, address);
-        return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: false, cell.Data);
+        // A spilled cell holds its anchor's result, written like a formula's (text as t="str").
+        return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: cell.Data.SpillAnchor is not null, cell.Data);
     }
 
     // The source cell, the cell written again, or null when the cell goes away.
@@ -322,7 +323,7 @@ internal sealed class WorksheetWriter
         // over one is the user's, without it.
         if (data?.SpillAnchor is null)
             source.Elements(_ns + "f").Remove();
-        return Rewrite(source, value, isFormula: false, data);
+        return Rewrite(source, value, isFormula: data?.SpillAnchor is not null, data);
     }
 
     // A dynamic array formula's ref is the area its result spills over, or just its cell.
