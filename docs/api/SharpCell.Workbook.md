@@ -145,14 +145,16 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 ### Recalculate(CancellationToken)
 
 ```csharp
-public void Recalculate(CancellationToken cancellationToken = default)
+public RecalculationResult Recalculate(CancellationToken cancellationToken = default)
 ```
 
 Calculates every formula that is out of date: those whose inputs changed since the last calculation and those using volatile functions (NOW, RAND).
 
+**Returns:** The cells whose values calculation changed since the previous call, including what [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) calculated in between.
+
 **Exceptions**
 
-- `OperationCanceledException`: The token was cancelled; finished cells keep their new values.
+- `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)

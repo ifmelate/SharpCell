@@ -1,4 +1,6 @@
 #nullable enable
+SharpCell.Cell.Dependents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
+SharpCell.Cell.Precedents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
 SharpCell.CellRange
 SharpCell.CellRange.Address.get -> string!
 SharpCell.CellRange.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
@@ -46,8 +48,12 @@ SharpCell.FunctionOptions.MinArguments.get -> int
 SharpCell.FunctionOptions.MinArguments.init -> void
 SharpCell.FunctionOptions.ScalarParameters.get -> System.Collections.Generic.IReadOnlyList<int>!
 SharpCell.FunctionOptions.ScalarParameters.init -> void
+SharpCell.RecalculationResult
+SharpCell.RecalculationResult.ChangedCells.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
 SharpCell.Workbook.DefinedNames.get -> System.Collections.Generic.IReadOnlyList<SharpCell.DefinedName!>!
 SharpCell.Workbook.Functions.get -> SharpCell.FunctionCollection!
+SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> SharpCell.RecalculationResult!
 SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
 SharpCell.Worksheet.Range(string! address) -> SharpCell.CellRange!
 SharpCell.Worksheet.UsedRange.get -> SharpCell.CellRange?
+*REMOVED*SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void

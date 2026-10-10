@@ -787,6 +787,19 @@ public int Column { get; }
 
 The column number, from 1 (A is 1).
 
+<a id="dependents"></a>
+### Dependents
+
+```csharp
+public IReadOnlyList<Cell> Dependents { get; }
+```
+
+The formula cells that read this cell in their last calculation, alone or in a range; for a cell whose formula spills, also the cells it spilled into. Direct readers only: follow [Cell.Dependents](SharpCell.Cell.md#dependents) again for the cells that read those. In the order of their sheets in the workbook, then by row and column.
+
+**Exceptions**
+
+- `InvalidOperationException`: Some formula of the workbook is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+
 <a id="formula"></a>
 ### Formula
 
@@ -799,6 +812,19 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 **Exceptions**
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
+
+<a id="precedents"></a>
+### Precedents
+
+```csharp
+public IReadOnlyList<CellRange> Precedents { get; }
+```
+
+The cells and ranges the cell's formula read in its last calculation: references in the formula, in the defined names it uses, and those built while calculating (`INDIRECT`, `OFFSET`). A branch of `IF` that was not taken is not included. A cell filled by another cell's spill has that cell as its precedent; a constant or empty cell has none. The ranges come in the order of their sheets in the workbook, then by their top-left cell.
+
+**Exceptions**
+
+- `InvalidOperationException`: The formula is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
 
 <a id="row"></a>
 ### Row
@@ -1757,6 +1783,31 @@ A function value produced by `LAMBDA`. Instances are created only by the engine.
 
 ---
 
+<!-- page: api/SharpCell.RecalculationResult.md -->
+
+# RecalculationResult
+
+```csharp
+public sealed class RecalculationResult
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did.
+
+## Properties
+
+<a id="changedcells"></a>
+### ChangedCells
+
+```csharp
+public IReadOnlyList<Cell> ChangedCells { get; }
+```
+
+The cells whose values calculation changed since the previous [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) (or since the workbook was loaded or cloned): formula cells, and cells a spill filled, changed or left (those are now empty). Cells you changed yourself are not included, nor cells that changed and changed back. In the order of their sheets in the workbook, then by row and column.
+
+---
+
 <!-- page: api/SharpCell.Table.md -->
 
 # Table
@@ -1985,14 +2036,16 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 ### Recalculate(CancellationToken)
 
 ```csharp
-public void Recalculate(CancellationToken cancellationToken = default)
+public RecalculationResult Recalculate(CancellationToken cancellationToken = default)
 ```
 
 Calculates every formula that is out of date: those whose inputs changed since the last calculation and those using volatile functions (NOW, RAND).
 
+**Returns:** The cells whose values calculation changed since the previous call, including what [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) calculated in between.
+
 **Exceptions**
 
-- `OperationCanceledException`: The token was cancelled; finished cells keep their new values.
+- `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)

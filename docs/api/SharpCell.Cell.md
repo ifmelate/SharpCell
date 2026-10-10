@@ -30,6 +30,19 @@ public int Column { get; }
 
 The column number, from 1 (A is 1).
 
+<a id="dependents"></a>
+### Dependents
+
+```csharp
+public IReadOnlyList<Cell> Dependents { get; }
+```
+
+The formula cells that read this cell in their last calculation, alone or in a range; for a cell whose formula spills, also the cells it spilled into. Direct readers only: follow [Cell.Dependents](SharpCell.Cell.md#dependents) again for the cells that read those. In the order of their sheets in the workbook, then by row and column.
+
+**Exceptions**
+
+- `InvalidOperationException`: Some formula of the workbook is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+
 <a id="formula"></a>
 ### Formula
 
@@ -42,6 +55,19 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 **Exceptions**
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
+
+<a id="precedents"></a>
+### Precedents
+
+```csharp
+public IReadOnlyList<CellRange> Precedents { get; }
+```
+
+The cells and ranges the cell's formula read in its last calculation: references in the formula, in the defined names it uses, and those built while calculating (`INDIRECT`, `OFFSET`). A branch of `IF` that was not taken is not included. A cell filled by another cell's spill has that cell as its precedent; a constant or empty cell has none. The ranges come in the order of their sheets in the workbook, then by their top-left cell.
+
+**Exceptions**
+
+- `InvalidOperationException`: The formula is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
 
 <a id="row"></a>
 ### Row

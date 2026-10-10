@@ -257,11 +257,14 @@ public sealed class Workbook
     /// Calculates every formula that is out of date: those whose inputs changed since the last
     /// calculation and those using volatile functions (NOW, RAND).
     /// </summary>
-    /// <exception cref="OperationCanceledException">The token was cancelled; finished cells keep their new values.</exception>
-    public void Recalculate(CancellationToken cancellationToken = default)
+    /// <returns>The cells whose values calculation changed since the previous call, including what
+    /// <see cref="Evaluate(string)"/> calculated in between.</returns>
+    /// <exception cref="OperationCanceledException">The token was cancelled; finished cells keep their
+    /// new values, and their changes are reported by the next call.</exception>
+    public RecalculationResult Recalculate(CancellationToken cancellationToken = default)
     {
         ThrowIfInCustomFunction();
-        Calculation.Recalculate(cancellationToken);
+        return new RecalculationResult(Calculation.Recalculate(cancellationToken));
     }
 
     /// <summary>
