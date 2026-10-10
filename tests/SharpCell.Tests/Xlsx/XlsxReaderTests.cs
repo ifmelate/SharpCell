@@ -452,7 +452,7 @@ public class XlsxReaderTests
     public void Rich_error_with_errorType_after_other_keys_is_read()
     {
         // Excel writes a blocked spill as a structure whose keys are colOffset, errorType,
-        // rwOffset, subType (ironcalc ISREF.xlsx); errorType is not the first value.
+        // rwOffset, subType (excel/calc_tests/INFORMATION/ISREF.xlsx); errorType is not the first value.
         const string metadata = "<metadata xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:xlrd=\"http://schemas.microsoft.com/office/spreadsheetml/2017/richdata\">"
             + "<metadataTypes count=\"1\"><metadataType name=\"XLRICHVALUE\"/></metadataTypes>"
             + "<futureMetadata name=\"XLRICHVALUE\" count=\"1\"><bk><extLst><ext uri=\"{3e2802c4-a4d2-4d8b-9148-e3be6c30e623}\"><xlrd:rvb i=\"0\"/></ext></extLst></bk></futureMetadata>"
@@ -502,7 +502,7 @@ public class ExternalReferenceDetectionTests
         // Found by XlsxFuzzTests: one byte raises the extra field length of the first central
         // directory record past the end of the file. .NET 8 reports that as an IOException; the
         // reader promises InvalidDataException for a damaged file.
-        var bytes = File.ReadAllBytes(CorpusFiles.PathOf("ironcalc/DynamicArrays.xlsx"));
+        var bytes = File.ReadAllBytes(CorpusFiles.PathOf("excel/DynamicArrays.xlsx"));
         Assert.Equal(0x00, bytes[10767]);
         bytes[10767] = 0x2B;
         Assert.Throws<InvalidDataException>(() => XlsxReader.Load(new MemoryStream(bytes)));

@@ -24,12 +24,12 @@ public class XlsxFuzzTests
 
     private static readonly string[] Seeds =
     [
-        "ironcalc/DynamicArrays.xlsx",
-        "ironcalc/calc_tests/simple_functions.xlsx",
-        "ironcalc/calc_tests/defined_names.xlsx",
-        "ironcalc/calc_tests/LOGICAL/IF_ARRAY.xlsx",
-        "ironcalc/templates/invoice.xlsx",
-        "ironcalc/tables.xlsx",
+        "excel/DynamicArrays.xlsx",
+        "excel/calc_tests/simple_functions.xlsx",
+        "excel/calc_tests/defined_names.xlsx",
+        "excel/calc_tests/LOGICAL/IF_ARRAY.xlsx",
+        "excel/templates/invoice.xlsx",
+        "excel/tables.xlsx",
         "excel-web/filter-mode.xlsx",
     ];
 

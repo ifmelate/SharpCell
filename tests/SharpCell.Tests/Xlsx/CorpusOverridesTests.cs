@@ -7,7 +7,7 @@ namespace SharpCell.Tests.Xlsx;
 
 public class CorpusOverridesTests
 {
-    private const string Irr = "ironcalc/calc_tests/FINANCIAL/IRR.xlsx";
+    private const string Irr = "excel/calc_tests/FINANCIAL/IRR.xlsx";
 
     private const string Json = """
         [
@@ -50,7 +50,7 @@ public class CorpusOverridesTests
         Assert.Contains(noisy, c => c.Sheet == "General" && c.Address == "M2");
 
         var overrides = CorpusOverrides.Parse("""
-            [{ "file": "ironcalc/calc_tests/FINANCIAL/IRR.xlsx", "cells": ["General!M2:M19"], "absolute": 1e-6, "reason": "NPV at the IRR." }]
+            [{ "file": "excel/calc_tests/FINANCIAL/IRR.xlsx", "cells": ["General!M2:M19"], "absolute": 1e-6, "reason": "NPV at the IRR." }]
             """);
         var widened = CorpusRunner.Run(CorpusFiles.PathOf(Irr), Irr, TimeSpan.FromMinutes(1), overrides);
 
@@ -64,9 +64,9 @@ public class CorpusOverridesTests
     [Fact]
     public void Culture_of_a_file_is_used_to_calculate_it()
     {
-        const string file = "ironcalc/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx";
+        const string file = "excel/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx";
         var overrides = CorpusOverrides.Parse("""
-            [{ "file": "ironcalc/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx", "culture": "en-IE", "reason": "Euro and day-first dates." }]
+            [{ "file": "excel/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx", "culture": "en-IE", "reason": "Euro and day-first dates." }]
             """);
         var result = CorpusRunner.Run(CorpusFiles.PathOf(file), file, TimeSpan.FromMinutes(1), overrides);
         Assert.All(result.Cells, c => Assert.True(c.Passed, $"{c.Sheet}!{c.Address}: Excel {c.Expected}, SharpCell {c.Actual}"));
@@ -76,7 +76,7 @@ public class CorpusOverridesTests
     public void Report_lists_the_rules_and_counts_widened_cells()
     {
         var overrides = CorpusOverrides.Parse("""
-            [{ "file": "ironcalc/calc_tests/FINANCIAL/IRR.xlsx", "cells": ["General!M2:M19"], "absolute": 1e-6, "reason": "NPV at the IRR." }]
+            [{ "file": "excel/calc_tests/FINANCIAL/IRR.xlsx", "cells": ["General!M2:M19"], "absolute": 1e-6, "reason": "NPV at the IRR." }]
             """);
         var result = CorpusRunner.Run(CorpusFiles.PathOf(Irr), Irr, TimeSpan.FromMinutes(1), overrides);
         var report = new Report([result], overrides);

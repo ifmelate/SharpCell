@@ -17,7 +17,7 @@ From `../../samples/SharpCell.Sample/budget.xlsx`. Rent B2 changed to 1350; text
 
 ## spill-grow.xlsx
 
-From `ironcalc/templates/invoice.xlsx`. A new item in the first empty cell of C15:C25: the item numbers in column B (SEQUENCE over COUNTA) grow by one.
+From `excel/templates/invoice.xlsx`. A new item in the first empty cell of C15:C25: the item numbers in column B (SEQUENCE over COUNTA) grow by one.
 
 - `B15`: 1
 - `B16`: 2
@@ -28,7 +28,7 @@ From `ironcalc/templates/invoice.xlsx`. A new item in the first empty cell of C1
 
 ## spill-shrink.xlsx
 
-From `ironcalc/templates/invoice.xlsx`. The last item of C15:C25 cleared: the item numbers in column B shrink by one.
+From `excel/templates/invoice.xlsx`. The last item of C15:C25 cleared: the item numbers in column B shrink by one.
 
 - `B15`: 1
 - `B16`: 2
@@ -38,7 +38,7 @@ From `ironcalc/templates/invoice.xlsx`. The last item of C15:C25 cleared: the it
 
 ## spill-blocked.xlsx
 
-From `ironcalc/DynamicArrays.xlsx`. B5 typed over the SEQUENCE spill at A3:B12: A3 is #SPILL! (a blocked spill, new rich value, the file had no xl/richData); F3 and K3 read it.
+From `excel/DynamicArrays.xlsx`. B5 typed over the SEQUENCE spill at A3:B12: A3 is #SPILL! (a blocked spill, new rich value, the file had no xl/richData); F3 and K3 read it.
 
 - `DynamicArrays!A3`: #SPILL!
 - `DynamicArrays!F3`: #REF!
@@ -47,7 +47,7 @@ From `ironcalc/DynamicArrays.xlsx`. B5 typed over the SEQUENCE spill at A3:B12: 
 
 ## rich-errors-cleared.xlsx
 
-From `ironcalc/calc_tests/INFORMATION/ISREF.xlsx`. M1 set to TRUE: D7 (was #CALC!) and D9 (was #SPILL!) get plain values and lose their vm; D11 shrinks to one cell.
+From `excel/calc_tests/INFORMATION/ISREF.xlsx`. M1 set to TRUE: D7 (was #CALC!) and D9 (was #SPILL!) get plain values and lose their vm; D11 shrinks to one cell.
 
 - `D7`: 10
 - `D9`: 10
@@ -57,5 +57,5 @@ From `ironcalc/calc_tests/INFORMATION/ISREF.xlsx`. M1 set to TRUE: D7 (was #CALC
 
 ## keep-uncalculated.xlsx
 
-From `ironcalc/calc_tests/LOGICAL/IFERROR.xlsx`. Saved with KeepUncalculated: formulas calling functions SharpCell does not know keep Excel's results; the file asks Excel to recalculate on open.
+From `excel/calc_tests/LOGICAL/IFERROR.xlsx`. Saved with KeepUncalculated: formulas calling functions SharpCell does not know keep Excel's results; the file asks Excel to recalculate on open.
 

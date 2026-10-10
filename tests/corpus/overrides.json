@@ -1,31 +1,31 @@
 [
   {
-    "file": "ironcalc/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx",
+    "file": "excel/calc_tests/TEXT/T_VALUE_VALUETOTEXT.xlsx",
     "culture": "en-IE",
     "reason": "Excel calculated the file with the euro and day-first dates: VALUE(\"23€\") is 23 and \"10-12-1999\" is 10 December. A file does not record its locale; with en-IE every cell matches, with en-GB only part do."
   },
   {
-    "file": "ironcalc/calc_tests/MATH_AND_TRIGONOMETRY/EXP_SIGN.xlsx",
+    "file": "excel/calc_tests/MATH_AND_TRIGONOMETRY/EXP_SIGN.xlsx",
     "culture": "en-IE",
     "reason": "Excel read the text \"€100\" as the number 100, so the file was calculated with the euro."
   },
   {
-    "file": "ironcalc/calc_tests/DATE_AND_TIME/DATEVALUE.xlsx",
+    "file": "excel/calc_tests/DATE_AND_TIME/DATEVALUE.xlsx",
     "culture": "en-IE",
     "reason": "Excel read \"26-01-01\" with the day first, as in the locale it calculated the file in."
   },
   {
-    "file": "ironcalc/calc_tests/DATE_AND_TIME/DAYS_DAYS360.xlsx",
+    "file": "excel/calc_tests/DATE_AND_TIME/DAYS_DAYS360.xlsx",
     "culture": "en-IE",
     "reason": "Excel did not read \"July 1, 2026\" as a date, as in a day-first English locale."
   },
   {
-    "file": "ironcalc/calc_tests/DATE_AND_TIME/NETWORKDAYS_NETWORKDAYS.INTL.xlsx",
+    "file": "excel/calc_tests/DATE_AND_TIME/NETWORKDAYS_NETWORKDAYS.INTL.xlsx",
     "culture": "en-IE",
     "reason": "Excel did not read \"July 1, 2026\" as a date, as in a day-first English locale."
   },
   {
-    "file": "ironcalc/calc_tests/FINANCIAL/IRR.xlsx",
+    "file": "excel/calc_tests/FINANCIAL/IRR.xlsx",
     "cells": [
       "General!M2:M19", "General!L22", "Two Values!C4", "Three Parameters!D2", "Three Parameters!E2:E5",
       "FullRow!P1:Q1", "FullRow!N2:R2", "FullColumn!B21:B23"
@@ -34,26 +34,26 @@
     "reason": "NPV at the rate IRR found, and IRR where the exact rate is 0: both are zero up to the solver's accuracy (Excel documents IRR as accurate within 0.00001 percent), so Excel and SharpCell give different tiny numbers."
   },
   {
-    "file": "ironcalc/calc_tests/FINANCIAL/XNPV.xlsx",
+    "file": "excel/calc_tests/FINANCIAL/XNPV.xlsx",
     "cells": ["Sheet1!R2", "Sheet1!R4:R5"],
     "absolute": 1e-8,
     "relative": 1e-8,
     "reason": "Excel stops XIRR when the result is accurate within 0.000001 percent (Microsoft's documentation of XIRR); SharpCell solves further."
   },
   {
-    "file": "ironcalc/calc_tests/FINANCIAL/PRICE_YIELD.xlsx",
+    "file": "excel/calc_tests/FINANCIAL/PRICE_YIELD.xlsx",
     "cells": ["ODDFPRICE_ODDFYIELD!K8", "ODDFPRICE_ODDFYIELD!K31", "ODDFPRICE_ODDFYIELD!K49"],
     "relative": 1e-8,
     "reason": "The exact yield is 0.05, the rate the prices were made from; Excel's iteration stops about 7e-11 short of it and SharpCell reaches it."
   },
   {
-    "file": "ironcalc/calc_tests/STATISTICAL/BETADIST_BETAINV.xlsx",
+    "file": "excel/calc_tests/STATISTICAL/BETADIST_BETAINV.xlsx",
     "cells": ["Sheet1!H16"],
     "absolute": 1e-15,
     "reason": "The result is zero up to rounding: Excel gives -2.2e-16 and SharpCell -1.1e-16."
   },
   {
-    "file": "ironcalc/calc_tests/STATISTICAL/NORM_DIST.xlsx",
+    "file": "excel/calc_tests/STATISTICAL/NORM_DIST.xlsx",
     "cells": ["NORM.DIST NORM.INV!F16"],
     "absolute": 1e-15,
     "reason": "The probability is 0.5 plus about 1e-11, so the result's last digits are below the precision of the input itself; the two differ by 9e-16."

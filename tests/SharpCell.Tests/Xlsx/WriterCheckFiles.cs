@@ -32,11 +32,11 @@ public class WriterCheckFiles
                 budget["A20"].Value = 42;
             },
             ["Budget!B2", "Budget!B6", "Budget!F2", "Budget!G2", "Budget!G3", "Budget!G4", "Budget!G5", "Budget!A20"]),
-        new("spill-grow", "ironcalc/templates/invoice.xlsx",
+        new("spill-grow", "excel/templates/invoice.xlsx",
             "A new item in the first empty cell of C15:C25: the item numbers in column B (SEQUENCE over COUNTA) grow by one.",
             workbook => FirstEmpty(workbook, out _, out _).Value = "Extra item",
             ["B15", "B16", "B17", "B18", "B19", "C18"]),
-        new("spill-shrink", "ironcalc/templates/invoice.xlsx",
+        new("spill-shrink", "excel/templates/invoice.xlsx",
             "The last item of C15:C25 cleared: the item numbers in column B shrink by one.",
             workbook =>
             {
@@ -44,15 +44,15 @@ public class WriterCheckFiles
                 sheet[row - 1, 3].Value = CellValue.Empty;
             },
             ["B15", "B16", "B17", "B18", "C17"]),
-        new("spill-blocked", "ironcalc/DynamicArrays.xlsx",
+        new("spill-blocked", "excel/DynamicArrays.xlsx",
             "B5 typed over the SEQUENCE spill at A3:B12: A3 is #SPILL! (a blocked spill, new rich value, the file had no xl/richData); F3 and K3 read it.",
             workbook => workbook["DynamicArrays"]["B5"].Value = 999,
             ["DynamicArrays!A3", "DynamicArrays!F3", "DynamicArrays!K3", "DynamicArrays!B5"]),
-        new("rich-errors-cleared", "ironcalc/calc_tests/INFORMATION/ISREF.xlsx",
+        new("rich-errors-cleared", "excel/calc_tests/INFORMATION/ISREF.xlsx",
             "M1 set to TRUE: D7 (was #CALC!) and D9 (was #SPILL!) get plain values and lose their vm; D11 shrinks to one cell.",
             workbook => workbook.Sheets[0]["M1"].Value = true,
             ["D7", "D9", "D11", "D12", "D14"]),
-        new("keep-uncalculated", "ironcalc/calc_tests/LOGICAL/IFERROR.xlsx",
+        new("keep-uncalculated", "excel/calc_tests/LOGICAL/IFERROR.xlsx",
             "Saved with KeepUncalculated: formulas calling functions SharpCell does not know keep Excel's results; the file asks Excel to recalculate on open.",
             _ => { },
             [], Keep: true),

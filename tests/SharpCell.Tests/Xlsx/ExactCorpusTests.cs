@@ -9,7 +9,7 @@ public class ExactCorpusTests
 {
     public static TheoryData<string> Files() =>
     [
-        "ironcalc/tables.xlsx",
+        "excel/tables.xlsx",
         "excel-web/tables-spike.xlsx",
         "excel-web/hidden-rows.xlsx",
         "excel-web/filter-mode.xlsx",
