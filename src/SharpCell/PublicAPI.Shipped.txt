@@ -279,6 +279,10 @@ SharpCell.Worksheet.DefaultRowHeight.get -> double?
 SharpCell.Worksheet.DefaultRowHeight.set -> void
 SharpCell.Worksheet.FilterMode.get -> bool
 SharpCell.Worksheet.FilterMode.set -> void
+SharpCell.Worksheet.FrozenColumns.get -> int
+SharpCell.Worksheet.FrozenColumns.set -> void
+SharpCell.Worksheet.FrozenRows.get -> int
+SharpCell.Worksheet.FrozenRows.set -> void
 SharpCell.Worksheet.IsColumnHidden(int column) -> bool
 SharpCell.Worksheet.IsRowHidden(int row) -> bool
 SharpCell.Worksheet.Merge(string! address) -> void
@@ -290,6 +294,8 @@ SharpCell.Worksheet.SetColumnHidden(int column, bool hidden) -> void
 SharpCell.Worksheet.SetColumnWidth(int column, double? width) -> void
 SharpCell.Worksheet.SetRowHeight(int row, double? height) -> void
 SharpCell.Worksheet.SetRowHidden(int row, bool hidden) -> void
+SharpCell.Worksheet.ShowGridlines.get -> bool
+SharpCell.Worksheet.ShowGridlines.set -> void
 SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
 SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
 SharpCell.Worksheet.Unmerge(string! address) -> void
