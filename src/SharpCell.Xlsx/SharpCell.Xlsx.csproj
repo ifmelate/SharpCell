@@ -5,7 +5,7 @@
     <IsTrimmable>true</IsTrimmable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>SharpCell.Xlsx</RootNamespace>
-    <Description>Reads .xlsx files into SharpCell workbooks: values, formulas, cached results, defined names.</Description>
+    <Description>Reads .xlsx files into SharpCell workbooks (values, formulas, saved results, names, tables) and saves recalculated values back into them.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />

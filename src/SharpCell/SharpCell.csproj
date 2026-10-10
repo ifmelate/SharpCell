@@ -5,7 +5,7 @@
     <IsTrimmable>true</IsTrimmable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>SharpCell</RootNamespace>
-    <Description>Excel formula engine for .NET: parser, dependency graph, recalculation, dynamic arrays, LET/LAMBDA.</Description>
+    <Description>Excel formula engine for .NET: 465 functions, dependency graph, recalculation, dynamic arrays, LET/LAMBDA, tables, custom functions, changed cells, cloning workbooks.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
