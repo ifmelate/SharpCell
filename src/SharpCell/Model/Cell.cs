@@ -193,6 +193,59 @@ public sealed class Cell
         }
     }
 
+    /// <summary>
+    /// The number format Excel shows the cell with, as a format code such as <c>0.00</c>,
+    /// <c>#,##0</c> or <c>yyyy-mm-dd</c>; <c>General</c> when the cell has none. Formats are read
+    /// from .xlsx files and shape <see cref="Text"/>; they play no part in calculation. An empty
+    /// cell can have a format, and a format alone does not make a cell hold something.
+    /// </summary>
+    /// <exception cref="ArgumentException">The code is not a number format.</exception>
+    public string NumberFormat
+    {
+        get => Worksheet.FormatAt(Row, Column)?.FormatCode ?? "General";
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            Worksheet.Workbook.ThrowIfInCustomFunction();
+            if (value.Length == 0 || value.Equals("General", StringComparison.OrdinalIgnoreCase))
+            {
+                Worksheet.SetFormat(Row, Column, null);
+                return;
+            }
+
+            if (!SharpCell.Functions.NumberFormat.TryParse(value, out var format))
+                throw new ArgumentException($"'{value}' is not a number format code.", nameof(value));
+            Worksheet.SetFormat(Row, Column, format);
+        }
+    }
+
+    /// <summary>
+    /// The cell as Excel shows it: the value formatted by <see cref="NumberFormat"/> with the
+    /// workbook's culture and date system. Column width plays no part, so a number that fits no
+    /// width is never cut short; a date format on a number that is no date shows <c>#######</c>.
+    /// Errors show as <c>#DIV/0!</c> and the like, logical values as <c>TRUE</c> and <c>FALSE</c>,
+    /// an empty cell as an empty string.
+    /// </summary>
+    public string Text
+    {
+        get
+        {
+            var value = Value;
+            var format = Worksheet.FormatAt(Row, Column);
+            var workbook = Worksheet.Workbook;
+            return value.Kind switch
+            {
+                CellValueKind.Number => format is null
+                    ? SharpCell.Functions.NumberFormat.FormatGeneral(value.AsNumber(), workbook.Culture)
+                    : format.Format(value.AsNumber(), workbook.Culture, workbook.DateSystem) ?? "#######",
+                CellValueKind.Text => format is null ? value.AsText() : format.FormatText(value.AsText()),
+                CellValueKind.Boolean => value.AsBoolean() ? "TRUE" : "FALSE",
+                CellValueKind.Error => value.AsError().ToText(),
+                _ => "",
+            };
+        }
+    }
+
     private CellKey Key => new(Worksheet, Row, Column);
 
     // As in Excel, an array formula is changed as a whole, from its top-left cell.

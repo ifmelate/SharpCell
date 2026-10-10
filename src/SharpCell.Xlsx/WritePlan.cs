@@ -43,7 +43,10 @@ internal sealed class WritePlan
         if (Structure.Of(workbook) != source.Structure)
             throw new NotSupportedException("Sheets, defined names, tables, hidden rows, filters or the date system changed since the workbook was read; only cell values can be saved.");
         foreach (var sheet in workbook.Sheets)
+        {
             CheckFormulas(sheet, source.Sheets[sheet]);
+            CheckFormats(sheet, source.Sheets[sheet]);
+        }
         if (workbook.Calculation.HasDirty)
             throw new InvalidOperationException("Some formulas are not calculated; call Workbook.Recalculate before saving.");
 
@@ -63,6 +66,25 @@ internal sealed class WritePlan
             throw new XlsxWriteException(problems);
         return new WritePlan(source, kept, options.RewriteAllValues);
     }
+
+    // Styles are copied as they were: a number format SharpCell changed cannot be written.
+    private static void CheckFormats(Worksheet sheet, SheetSource source)
+    {
+        foreach (var (address, code) in source.Formats)
+        {
+            if (sheet.FormatAt(address.Row, address.Column)?.FormatCode != code)
+                throw FormatChanged(sheet, address);
+        }
+
+        foreach (var (address, format) in sheet.Formats)
+        {
+            if (!source.Formats.ContainsKey(address))
+                throw FormatChanged(sheet, address);
+        }
+    }
+
+    private static NotSupportedException FormatChanged(Worksheet sheet, CellAddress address) =>
+        new($"The number format of {sheet.Name}!{address} changed since the workbook was read; XlsxWriter writes values, not formats.");
 
     private static void CheckFormulas(Worksheet sheet, SheetSource source)
     {

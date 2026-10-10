@@ -47,7 +47,10 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
                     formulas[new CellAddress(cell.Row, cell.Column)] = new LoadedFormula(text, cell.Data.IsLegacy, cell.Data.FixedArray);
             }
 
-            sheets[sheet] = new SheetSource(part, formulas);
+            var formats = new Dictionary<CellAddress, string>();
+            foreach (var (address, format) in sheet.Formats)
+                formats[address] = format.FormatCode;
+            sheets[sheet] = new SheetSource(part, formulas, formats);
         }
 
         return new XlsxSource(bytes, limits, workbookPart, sheets, Xlsx.Structure.Of(workbook));
@@ -55,11 +58,15 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
 }
 
 /// <summary>A worksheet's part in the file and its formulas as they were read.</summary>
-internal sealed class SheetSource(string part, IReadOnlyDictionary<CellAddress, LoadedFormula> formulas)
+internal sealed class SheetSource(string part, IReadOnlyDictionary<CellAddress, LoadedFormula> formulas,
+    IReadOnlyDictionary<CellAddress, string> formats)
 {
     public string Part { get; } = part;
 
     public IReadOnlyDictionary<CellAddress, LoadedFormula> Formulas { get; } = formulas;
+
+    /// <summary>The number format codes other than General, as read; a save refuses any change to them.</summary>
+    public IReadOnlyDictionary<CellAddress, string> Formats { get; } = formats;
 }
 
 /// <summary>A formula cell as read: the formula a save leaves in the file must still be this one.</summary>

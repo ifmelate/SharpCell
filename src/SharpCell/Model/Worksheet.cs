@@ -150,6 +150,25 @@ public sealed class Worksheet
 
     private readonly HashSet<int> _hiddenRows = [];
 
+    // Number formats other than General, apart from the cells: a format is no content, so it
+    // neither blocks a spill nor counts in COUNTA, and calculation never sees it.
+    private readonly Dictionary<CellAddress, Functions.NumberFormat> _formats = [];
+
+    internal Functions.NumberFormat? FormatAt(int row, int column) =>
+        _formats.Count != 0 && _formats.TryGetValue(new CellAddress(row, column), out var format) ? format : null;
+
+    /// <summary>Sets or (with null) removes the number format of a cell.</summary>
+    internal void SetFormat(int row, int column, Functions.NumberFormat? format)
+    {
+        if (format is null)
+            _formats.Remove(new CellAddress(row, column));
+        else
+            _formats[new CellAddress(row, column)] = format;
+    }
+
+    /// <summary>The cells with a number format other than General, in no particular order.</summary>
+    internal IReadOnlyDictionary<CellAddress, Functions.NumberFormat> Formats => _formats;
+
     /// <summary>The hidden rows, in no particular order.</summary>
     internal IReadOnlyCollection<int> HiddenRows => _hiddenRows;
 
@@ -199,6 +218,8 @@ public sealed class Worksheet
     {
         Store.CopyFrom(source.Store, data => data.CopyFor(map));
         _hiddenRows.UnionWith(source._hiddenRows);
+        foreach (var (address, format) in source._formats)
+            _formats.Add(address, format);
         _filterMode = source._filterMode;
     }
 

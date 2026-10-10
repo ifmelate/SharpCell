@@ -72,4 +72,34 @@ public class XlsxWriterApiTests
         Assert.Throws<ArgumentNullException>(() => XlsxWriter.Save(workbook, (string)null!));
         Assert.Throws<ArgumentNullException>(() => XlsxWriter.Save(workbook, new MemoryStream(), null!));
     }
+
+    [Theory]
+    [InlineData("A1", "0.00")]
+    [InlineData("B1", "0.00")]
+    [InlineData("C1", "General")]
+    public void A_changed_number_format_cannot_be_saved(string cell, string code)
+    {
+        var file = new TestXlsx
+        {
+            Styles = "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><cellXfs count=\"2\"><xf numFmtId=\"0\"/><xf numFmtId=\"10\"/></cellXfs></styleSheet>",
+        }.Sheet("S", "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"C1\" s=\"1\"><v>1</v></c></row>");
+        var workbook = XlsxWriterTests.Load(file);
+        Assert.Equal("0.00%", workbook["S"]["C1"].NumberFormat);
+        var unchanged = XlsxWriterTests.Save(workbook);
+
+        workbook["S"][cell].NumberFormat = code;
+        var ex = Assert.Throws<NotSupportedException>(() => XlsxWriterTests.Save(workbook));
+        Assert.Contains($"S!{cell}", ex.Message);
+        Assert.Contains("format", ex.Message);
+        Assert.NotEmpty(unchanged);
+    }
+
+    [Fact]
+    public void A_format_set_back_to_what_the_file_had_saves()
+    {
+        var workbook = XlsxWriterTests.Load(new TestXlsx().Sheet("S", "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>"));
+        workbook["S"]["A1"].NumberFormat = "0.00";
+        workbook["S"]["A1"].NumberFormat = "General";
+        Assert.NotEmpty(XlsxWriterTests.Save(workbook));
+    }
 }

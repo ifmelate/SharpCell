@@ -15,6 +15,7 @@ returns the uploaded file unchanged, without results.)
 | `hidden-rows.xlsx` | a row hidden by hand on sheets without a filter: a plain range, a sheet autoFilter without criteria, tables with and without a header row and filter buttons |
 | `spill-blocked.xlsx` | a spill reference (`A3#`) to an anchor whose spill a typed value blocks is `#SPILL!`, not `#REF!` (see below) |
 | `filter-mode.xlsx` | a sheet with a table filter, a sheet filter, a filter that hides nothing, and no filter: on a sheet with any filter criteria, every hidden row counts as filtered |
+| `number-formats.xlsx` | `TEXT(value, code)` next to the same value shown through a cell style with that code: `Cell.Text` of column C must equal Excel's saved `TEXT` result in column B (Excel saves no display text) |
 
 The same check run on `../excel/tables.xlsx` with its results removed reproduced all 212
 results saved by desktop Excel.

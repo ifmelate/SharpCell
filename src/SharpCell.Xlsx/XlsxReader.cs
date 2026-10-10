@@ -255,7 +255,9 @@ internal static class WorkbookReader
             FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
             FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
         var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
-        return new SavedCells(sharedStrings, metadata);
+        var stylesPart = FirstOfType(relationships, "styles")?.Target;
+        var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart) : [];
+        return new SavedCells(sharedStrings, metadata, styles);
     }
 
     internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)

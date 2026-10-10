@@ -56,6 +56,19 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="numberformat"></a>
+### NumberFormat
+
+```csharp
+public string NumberFormat { get; set; }
+```
+
+The number format Excel shows the cell with, as a format code such as `0.00`, `#,##0` or `yyyy-mm-dd`; `General` when the cell has none. Formats are read from .xlsx files and shape [Cell.Text](SharpCell.Cell.md#text); they play no part in calculation. An empty cell can have a format, and a format alone does not make a cell hold something.
+
+**Exceptions**
+
+- `ArgumentException`: The code is not a number format.
+
 <a id="precedents"></a>
 ### Precedents
 
@@ -77,6 +90,15 @@ public int Row { get; }
 ```
 
 The row number, from 1.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string Text { get; }
+```
+
+The cell as Excel shows it: the value formatted by [Cell.NumberFormat](SharpCell.Cell.md#numberformat) with the workbook's culture and date system. Column width plays no part, so a number that fits no width is never cut short; a date format on a number that is no date shows `#######`. Errors show as `#DIV/0!` and the like, logical values as `TRUE` and `FALSE`, an empty cell as an empty string.
 
 <a id="value"></a>
 ### Value

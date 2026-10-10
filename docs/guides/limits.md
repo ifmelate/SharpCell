@@ -7,7 +7,7 @@ Every known gap in one list, so you can decide before you start.
 - **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation.** A circular reference gives 0 in its cells and a diagnostic.
-- **Display formats.** Cell number formats are not read, so there is no text of a cell as Excel shows it; read dates with `CellValue.AsDateTime`. The `TEXT` function formats numbers itself.
+- **Writing formats.** Number formats are read and shape `Cell.Text`, but a changed format cannot be saved. Fonts, fills, borders, column widths and conditional formats are not read.
 - **Localized function names.** Formulas use English names, as in the file format.
 - **Links to other workbooks.** They evaluate to `#NAME?`.
 - **Cube, real-time data and web functions.** `CUBE*`, `RTD` and `WEBSERVICE` are not available.

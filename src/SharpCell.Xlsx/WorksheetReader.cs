@@ -19,6 +19,7 @@ internal static class WorksheetReader
         public string? Type;
         public int? Cm;
         public int? Vm;
+        public int? Style;
         public string? FormulaType;
         public string? FormulaText;
         public string? FormulaRef;
@@ -111,6 +112,11 @@ internal static class WorksheetReader
                 LoadFormula(loader, cell, origin, cached, saved.Metadata, shared);
             else
                 loader.SetValue(row, column, cached);
+
+            // A style the styles part does not have (or no styles part) leaves the cell General:
+            // a format only changes how a cell is shown, so it never stops a file from loading.
+            if (cell.Style is { } style && style < saved.Styles.Count && saved.Styles[style] is { } format)
+                sheet.SetFormat(row, column, format);
         }
 
         loader.Complete();
@@ -209,6 +215,7 @@ internal static class WorksheetReader
             Type = reader.GetAttribute("t"),
             Cm = int.TryParse(reader.GetAttribute("cm"), NumberStyles.None, CultureInfo.InvariantCulture, out var cm) ? cm : null,
             Vm = int.TryParse(reader.GetAttribute("vm"), NumberStyles.None, CultureInfo.InvariantCulture, out var vm) ? vm : null,
+            Style = int.TryParse(reader.GetAttribute("s"), NumberStyles.None, CultureInfo.InvariantCulture, out var s) ? s : null,
         };
         if (reader.IsEmptyElement)
         {
