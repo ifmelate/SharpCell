@@ -115,8 +115,8 @@ format of its own keeps it.
 Getting `Input` gives the text Excel shows to edit the cell: the formula, a number in full, a
 percentage as one, a date or time as the culture writes it, and text with an apostrophe in front
 when it would read as something else. Typed back, it gives the same content. A format taken from
-typing is a changed format, so `XlsxWriter` refuses to save the workbook, as for any format set in
-code. The formats Excel gives typed currency and dates are not yet compared with Excel's.
+typing is saved with the cell by `XlsxWriter`. The formats Excel gives typed currency and dates are
+not yet compared with Excel's.
 
 ## Styles
 

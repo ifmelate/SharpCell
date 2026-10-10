@@ -191,6 +191,24 @@ public class CellInputTests
         Assert.Equal("11.10.2026", Typed("11.10.2026", "de-DE").Input);
     }
 
+    [Fact]
+    public void Formats_taken_from_typing_are_saved()
+    {
+        var workbook = new Workbook { Culture = CultureInfo.GetCultureInfo("en-US") };
+        var sheet = workbook.AddSheet("S");
+        sheet["A1"].Input = "12.5%";
+        sheet["A2"].Input = "10/11/2026";
+        using var stream = new MemoryStream();
+
+        SharpCell.Xlsx.XlsxWriter.Save(workbook, stream);
+        stream.Position = 0;
+        var loaded = SharpCell.Xlsx.XlsxReader.Load(stream)["S"];
+
+        Assert.Equal("0.00%", loaded["A1"].NumberFormat);
+        Assert.Equal(0.125, loaded["A1"].Value.AsNumber());
+        Assert.Equal("m/d/yyyy", loaded["A2"].NumberFormat);
+    }
+
     private sealed class FixedClock : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => new(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
