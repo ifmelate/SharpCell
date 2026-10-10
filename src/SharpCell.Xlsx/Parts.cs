@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace SharpCell.Xlsx;
 
@@ -119,6 +120,23 @@ internal static class XmlText
 
         reader.Read();
         return Decode(sb.ToString());
+    }
+}
+
+/// <summary>What cells of a file point into, and reading a cell element the way the reader does.</summary>
+internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetadata? metadata)
+{
+    public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
+
+    public CellMetadata? Metadata { get; } = metadata;
+
+    /// <summary>The value saved in a &lt;c&gt; element, and whether it has a formula (&lt;f&gt;).</summary>
+    public (CellValue Value, bool HasFormula) Read(XElement cell, Worksheet sheet, int row, int column)
+    {
+        using var reader = cell.CreateReader();
+        reader.MoveToContent();
+        var xml = WorksheetReader.ReadCell(reader);
+        return (WorksheetReader.SavedValue(xml, this, sheet, new CellAddress(row, column)), xml.FormulaText is not null);
     }
 }
 

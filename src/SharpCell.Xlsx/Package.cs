@@ -90,12 +90,17 @@ internal sealed class Package : IDisposable
 
     public bool Exists(string part) => _entries.ContainsKey(part);
 
+    /// <summary>The zip entries in the order the file stores them.</summary>
+    public IReadOnlyList<ZipArchiveEntry> Entries => _zip.Entries;
+
+    /// <summary>Opens a part's bytes, counted against the limits.</summary>
+    public Stream Open(string part) => _entries.TryGetValue(part, out var entry)
+        ? new LimitedStream(entry.Open(), this, part)
+        : throw new InvalidDataException($"The package has no part '{part}'.");
+
     /// <summary>Opens a part for reading as XML: no DTDs, no external resources, size limited.</summary>
     public XmlReader OpenXml(string part)
     {
-        if (!_entries.TryGetValue(part, out var entry))
-            throw new InvalidDataException($"The package has no part '{part}'.");
-
         var settings = new XmlReaderSettings
         {
             DtdProcessing = DtdProcessing.Prohibit,
@@ -104,7 +109,7 @@ internal sealed class Package : IDisposable
             IgnoreProcessingInstructions = true,
             CloseInput = true,
         };
-        return XmlReader.Create(new LimitedStream(entry.Open(), this, part), settings);
+        return XmlReader.Create(Open(part), settings);
     }
 
     /// <summary>The relationships of a part (or of the package for ""), keyed by id. External targets are left out.</summary>

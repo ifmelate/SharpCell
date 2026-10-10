@@ -113,21 +113,14 @@ internal static class WorkbookReader
         foreach (var name in names)
             DefineName(workbook, name, byIndex);
 
-        var sharedStringsPart = FirstOfType(relationships, "sharedStrings")?.Target;
-        var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
-            ? SharedStrings.Read(package, sharedStringsPart)
-            : [];
-        var rich = RichValues.Read(package,
-            FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
-            FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
-        var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
+        var saved = ReadSavedCells(package, relationships);
 
         sheetParts = new Dictionary<Worksheet, string>();
         foreach (var entry in byIndex)
         {
             if (entry is { } sheet)
             {
-                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, sharedStrings, metadata);
+                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, saved);
                 sheetParts[sheet.Sheet] = sheet.Part;
             }
         }
@@ -251,7 +244,21 @@ internal static class WorkbookReader
         return id;
     }
 
-    private static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)
+    /// <summary>The parts cells point into: shared strings, and the metadata behind dynamic arrays and newer errors.</summary>
+    internal static SavedCells ReadSavedCells(Package package, Dictionary<string, Relationship> relationships)
+    {
+        var sharedStringsPart = FirstOfType(relationships, "sharedStrings")?.Target;
+        var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
+            ? SharedStrings.Read(package, sharedStringsPart)
+            : [];
+        var rich = RichValues.Read(package,
+            FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
+            FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
+        var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
+        return new SavedCells(sharedStrings, metadata);
+    }
+
+    internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)
     {
         Relationship? first = null;
         foreach (var relationship in relationships.Values)
