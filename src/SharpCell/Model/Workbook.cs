@@ -130,6 +130,12 @@ public sealed class Workbook
     /// <summary>Source for RAND and friends; replaced in tests.</summary>
     internal Random Random { get; set; } = Random.Shared;
 
+    /// <summary>
+    /// What a file reader keeps about the file the workbook came from, for writing it back; null for
+    /// a workbook built in code. The engine does not look inside.
+    /// </summary>
+    internal object? Source { get; set; }
+
 
     /// <summary>Gets a sheet by name, ignoring case.</summary>
     public Worksheet this[string name] =>

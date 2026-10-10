@@ -285,8 +285,22 @@ internal static class Evaluator
 
         var name = EvaluateName(new NameNode(null, node.Name), context);
         if (!name.IsReference && name.Value.Kind == CellValueKind.Error && name.Value.AsError() == ErrorKind.Name)
+        {
+            // Neither a function SharpCell knows nor a defined name: Excel may know it, so the result
+            // is not trustworthy. A defined name that is #NAME? reported its own problem.
+            if (!IsDefinedName(node.Name, context))
+                context.Report(DiagnosticKind.UnsupportedFormula, $"Unknown function {node.Name}.");
             return name;
+        }
+
         return Lambdas.Call(ToValue(name, context), node.Arguments, context);
+    }
+
+    private static bool IsDefinedName(string name, EvaluationContext context)
+    {
+        var upper = name.ToUpperInvariant();
+        var names = context.Workbook.Names;
+        return (context.Sheet is { } sheet && names.TryGet(upper, sheet, out _)) || names.TryGet(upper, null, out _);
     }
 
     // Lookup order: LET names and LAMBDA parameters, the sheet's own names, then workbook names. Relative references inside a name

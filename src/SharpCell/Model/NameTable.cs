@@ -21,6 +21,8 @@ internal sealed class NameTable
 {
     private readonly Dictionary<(Worksheet? Scope, string Name), NameDefinition> _names = [];
 
+    public IEnumerable<NameDefinition> All => _names.Values;
+
     public void Set(NameDefinition definition) => _names[(definition.Scope, definition.Name)] = definition;
 
     public bool ContainsInAnyScope(string upperName)
