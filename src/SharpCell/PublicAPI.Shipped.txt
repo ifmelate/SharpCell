@@ -277,12 +277,16 @@ SharpCell.Worksheet.DefaultColumnWidth.get -> double?
 SharpCell.Worksheet.DefaultColumnWidth.set -> void
 SharpCell.Worksheet.DefaultRowHeight.get -> double?
 SharpCell.Worksheet.DefaultRowHeight.set -> void
+SharpCell.Worksheet.DeleteColumns(int column, int count = 1) -> void
+SharpCell.Worksheet.DeleteRows(int row, int count = 1) -> void
 SharpCell.Worksheet.FilterMode.get -> bool
 SharpCell.Worksheet.FilterMode.set -> void
 SharpCell.Worksheet.FrozenColumns.get -> int
 SharpCell.Worksheet.FrozenColumns.set -> void
 SharpCell.Worksheet.FrozenRows.get -> int
 SharpCell.Worksheet.FrozenRows.set -> void
+SharpCell.Worksheet.InsertColumns(int column, int count = 1) -> void
+SharpCell.Worksheet.InsertRows(int row, int count = 1) -> void
 SharpCell.Worksheet.IsColumnHidden(int column) -> bool
 SharpCell.Worksheet.IsRowHidden(int row) -> bool
 SharpCell.Worksheet.Merge(string! address) -> void

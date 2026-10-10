@@ -1,5 +1,1 @@
 #nullable enable
-SharpCell.Worksheet.DeleteColumns(int column, int count = 1) -> void
-SharpCell.Worksheet.DeleteRows(int row, int count = 1) -> void
-SharpCell.Worksheet.InsertColumns(int column, int count = 1) -> void
-SharpCell.Worksheet.InsertRows(int row, int count = 1) -> void
