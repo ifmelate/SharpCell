@@ -104,6 +104,23 @@ public class CellInputTests
     }
 
     [Fact]
+    public void Text_of_four_words_reads_and_calculates_as_text()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("S");
+        sheet["A1"].Input = "Sales by region, 2026";
+        sheet["B1"].Formula = "=A1+1";
+        sheet["C1"].Formula = "=DATEVALUE(A1)";
+
+        workbook.Recalculate();
+
+        Assert.Equal(CellValue.Text("Sales by region, 2026"), sheet["A1"].Value);
+        Assert.Equal("Sales by region, 2026", sheet["A1"].Input);
+        Assert.Equal(ErrorKind.Value, sheet["B1"].Value.AsError());
+        Assert.Equal(ErrorKind.Value, sheet["C1"].Value.AsError());
+    }
+
+    [Fact]
     public void An_apostrophe_keeps_the_rest_as_text()
     {
         var cell = Typed("'0123");

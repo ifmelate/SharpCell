@@ -101,6 +101,9 @@ public class DateTextTests
     [InlineData("Jan")]
     [InlineData("26-01-01")]
     [InlineData("9999-12-31 24:00")]
+    [InlineData("Sales by region, 2026")]   // four parts: used to throw instead of saying no
+    [InlineData("1-2-3-4")]
+    [InlineData("Jan 1 2020 x")]
     public void Not_dates(string text) => Assert.Null(Parse(text));
 
     [Fact]

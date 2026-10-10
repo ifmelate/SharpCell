@@ -278,7 +278,8 @@ internal static class DateText
             }
             else
             {
-                if (token.Kind is not (TokenKind.Separator or TokenKind.Space))
+                // A separator after the third item would start a fourth: no date has one.
+                if (count == 3 || token.Kind is not (TokenKind.Separator or TokenKind.Space))
                     return false;
                 separators[count - 1] = token.Separator;
             }
