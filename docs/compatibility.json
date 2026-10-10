@@ -1,6 +1,6 @@
 {
-  "cells": 76082,
-  "passed": 76080,
+  "cells": 76099,
+  "passed": 76097,
   "widened": 38,
   "files": [
     {
@@ -25,6 +25,18 @@
       "widened": 0,
       "comparedCells": {
         "Spike": "D50:D53 D55:D58 D60:D63 D65:D68 D70:D73"
+      },
+      "failingCells": {}
+    },
+    {
+      "file": "excel-web/spill-blocked.xlsx",
+      "cells": 17,
+      "passed": 17,
+      "skipped": 0,
+      "widened": 0,
+      "comparedCells": {
+        "ArrayFormulas": "A3 B3 C3 D3",
+        "DynamicArrays": "A3 A14 A19:A21 B19:B21 C19:C21 F3 K3"
       },
       "failingCells": {}
     },
@@ -3771,8 +3783,8 @@
     {
       "name": "FILTER",
       "status": "implemented",
-      "cases": 54,
-      "passed": 54
+      "cases": 55,
+      "passed": 55
     },
     {
       "name": "FIND",
@@ -4949,8 +4961,8 @@
     {
       "name": "RANDARRAY",
       "status": "implemented",
-      "cases": 9,
-      "passed": 9
+      "cases": 18,
+      "passed": 18
     },
     {
       "name": "RANDBETWEEN",
@@ -5132,8 +5144,8 @@
     {
       "name": "SEQUENCE",
       "status": "implemented",
-      "cases": 690,
-      "passed": 690
+      "cases": 691,
+      "passed": 691
     },
     {
       "name": "SERIESSUM",
@@ -5162,8 +5174,8 @@
     {
       "name": "SIN",
       "status": "implemented",
-      "cases": 72,
-      "passed": 72
+      "cases": 76,
+      "passed": 76
     },
     {
       "name": "SINH",
@@ -5288,8 +5300,8 @@
     {
       "name": "SUM",
       "status": "implemented",
-      "cases": 168,
-      "passed": 168
+      "cases": 169,
+      "passed": 169
     },
     {
       "name": "SUMIF",
@@ -5396,8 +5408,8 @@
     {
       "name": "TAKE",
       "status": "implemented",
-      "cases": 16,
-      "passed": 16
+      "cases": 17,
+      "passed": 17
     },
     {
       "name": "TAN",

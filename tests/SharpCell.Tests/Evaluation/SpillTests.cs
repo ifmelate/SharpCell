@@ -121,6 +121,25 @@ public class SpillTests
         Assert.Equal(N(1), _s["E2"].Value);
     }
 
+    // Excel for the web, tests/corpus/excel-web/spill-blocked.xlsx: TAKE(A3#,3,1) and SUM(A3#) are #SPILL!.
+    [Fact]
+    public void A_spill_reference_to_a_blocked_anchor_passes_on_its_spill_error()
+    {
+        _s["A1"].Formula = "=SEQUENCE(3)";
+        _s["A2"].Value = 9;
+        _s["C1"].Formula = "=SUM(A1#)";
+        _s["C2"].Formula = "=TAKE(A1#,1)";
+        _wb.Recalculate();
+        Assert.Equal(SpillError, _s["A1"].Value);
+        Assert.Equal(SpillError, _s["C1"].Value);
+        Assert.Equal(SpillError, _s["C2"].Value);
+
+        _s["A2"].Value = CellValue.Empty;
+        _wb.Recalculate();
+        Assert.Equal(N(6), _s["C1"].Value);
+        Assert.Equal(N(1), _s["C2"].Value);
+    }
+
     [Fact]
     public void Typing_into_a_spilled_cell_blocks_the_spill()
     {

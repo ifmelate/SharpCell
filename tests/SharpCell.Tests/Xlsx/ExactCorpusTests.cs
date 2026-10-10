@@ -13,6 +13,7 @@ public class ExactCorpusTests
         "excel-web/tables-spike.xlsx",
         "excel-web/hidden-rows.xlsx",
         "excel-web/filter-mode.xlsx",
+        "excel-web/spill-blocked.xlsx",
     ];
 
     [Theory]
