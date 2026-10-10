@@ -10,6 +10,12 @@ PR = 'http://schemas.openxmlformats.org/package/2006/relationships'
 T = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/'
 CT = 'application/vnd.openxmlformats-officedocument.spreadsheetml.'
 HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+METADATA = (f'{HEAD}<metadata xmlns="{NS}" xmlns:xda="http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray">'
+            '<metadataTypes count="1"><metadataType name="XLDAPR" minSupportedVersion="120000" copy="1" pasteAll="1" pasteValues="1" merge="1" '
+            'splitFirst="1" rowColShift="1" clearFormats="1" clearComments="1" assign="1" coerce="1" cellMeta="1"/></metadataTypes>'
+            '<futureMetadata name="XLDAPR" count="1"><bk><extLst><ext uri="{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}">'
+            '<xda:dynamicArrayProperties fDynamic="1" fCollapsed="0"/></ext></extLst></bk></futureMetadata>'
+            '<cellMetadata count="1"><bk><rc t="1" v="0"/></bk></cellMetadata></metadata>')
 
 # (label as typed in Excel, formula as a file stores it)
 CASES = [
@@ -58,7 +64,9 @@ for r, t in enumerate(['ab', 'cde', 'f'], start=1):
 for i, (label, formula) in enumerate(CASES):
     r = 1 + 4 * i
     put('E', r, f'<c r="E{r}" t="s"><v>{sst(label)}</v></c>')
-    put('F', r, f'<c r="F{r}"><f>{escape(formula)}</f></c>')
+    # A dynamic array formula, as Excel marks it: cm points at the XLDAPR cell metadata. Without
+    # it Excel reads the formula as one written before dynamic arrays and does not spill it.
+    put('F', r, f'<c r="F{r}" cm="1"><f t="array" ref="F{r}">{escape(formula)}</f></c>')
 sheet_rows = ''.join(f'<row r="{r}">' + ''.join(rows[r][c] for c in sorted(rows[r])) + '</row>' for r in sorted(rows))
 sheet = f'{HEAD}<worksheet xmlns="{NS}" xmlns:r="{RNS}"><sheetData>{sheet_rows}</sheetData></worksheet>'
 
@@ -68,10 +76,11 @@ with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('xl/worksheets/sheet1.xml', sheet)
     z.writestr('xl/workbook.xml', f'{HEAD}<workbook xmlns="{NS}" xmlns:r="{RNS}"><sheets><sheet name="F" sheetId="1" r:id="rId1"/></sheets>'
                '<definedNames><definedName name="Rate">0.5</definedName></definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>')
-    z.writestr('xl/_rels/workbook.xml.rels', rels([('rId1', 'worksheet', 'worksheets/sheet1.xml'), ('rId2', 'sharedStrings', 'sharedStrings.xml')]))
+    z.writestr('xl/_rels/workbook.xml.rels', rels([('rId1', 'worksheet', 'worksheets/sheet1.xml'), ('rId2', 'sharedStrings', 'sharedStrings.xml'), ('rId3', 'sheetMetadata', 'metadata.xml')]))
+    z.writestr('xl/metadata.xml', METADATA)
     z.writestr('_rels/.rels', rels([('rId1', 'officeDocument', 'xl/workbook.xml')]))
     z.writestr('xl/sharedStrings.xml', f'{HEAD}<sst xmlns="{NS}" count="{len(strings)}" uniqueCount="{len(strings)}">' + ''.join(f'<si><t xml:space="preserve">{escape(s)}</t></si>' for s in strings) + '</sst>')
-    overrides = [('/xl/workbook.xml', 'sheet.main+xml'), ('/xl/worksheets/sheet1.xml', 'worksheet+xml'), ('/xl/sharedStrings.xml', 'sharedStrings+xml')]
+    overrides = [('/xl/workbook.xml', 'sheet.main+xml'), ('/xl/worksheets/sheet1.xml', 'worksheet+xml'), ('/xl/sharedStrings.xml', 'sharedStrings+xml'), ('/xl/metadata.xml', 'sheetMetadata+xml')]
     z.writestr('[Content_Types].xml', f'{HEAD}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
                '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'
                + ''.join(f'<Override PartName="{p}" ContentType="{CT}{c}"/>' for p, c in overrides) + '</Types>')
