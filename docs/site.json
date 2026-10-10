@@ -19,6 +19,7 @@
         { "path": "guides/tables.md", "title": "Tables and hidden rows", "description": "Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE." },
         { "path": "guides/functions.md", "title": "Functions", "description": "Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions." },
         { "path": "guides/limits.md", "title": "What SharpCell does not do", "description": "Every known gap in one list." },
+        { "path": "roadmap.md", "title": "Roadmap", "description": "What was released, what is being built now and what comes later." },
         { "path": "agents.md", "title": "For AI coding agents", "description": "llms.txt, llms-full.txt and rules to paste into an agent's instructions." }
       ]
     }

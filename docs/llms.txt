@@ -17,6 +17,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Tables and hidden rows](https://ifmelate.github.io/SharpCell/guides/tables.md): Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE.
 - [Functions](https://ifmelate.github.io/SharpCell/guides/functions.md): Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions.
 - [What SharpCell does not do](https://ifmelate.github.io/SharpCell/guides/limits.md): Every known gap in one list.
+- [Roadmap](https://ifmelate.github.io/SharpCell/roadmap.md): What was released, what is being built now and what comes later.
 - [For AI coding agents](https://ifmelate.github.io/SharpCell/agents.md): llms.txt, llms-full.txt and rules to paste into an agent's instructions.
 
 ## API reference
