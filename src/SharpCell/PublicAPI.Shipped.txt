@@ -8,6 +8,9 @@ override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
 override SharpCell.CellValue.ToString() -> string!
 override SharpCell.DefinedName.ToString() -> string!
+override SharpCell.IterationSettings.Equals(object? obj) -> bool
+override SharpCell.IterationSettings.GetHashCode() -> int
+override SharpCell.IterationSettings.ToString() -> string!
 override SharpCell.Table.ToString() -> string!
 override SharpCell.Worksheet.ToString() -> string!
 SharpCell.CalculationDiagnostic
@@ -22,8 +25,11 @@ SharpCell.Cell.Column.get -> int
 SharpCell.Cell.Dependents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
 SharpCell.Cell.Formula.get -> string?
 SharpCell.Cell.Formula.set -> void
+SharpCell.Cell.NumberFormat.get -> string!
+SharpCell.Cell.NumberFormat.set -> void
 SharpCell.Cell.Precedents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
 SharpCell.Cell.Row.get -> int
+SharpCell.Cell.Text.get -> string!
 SharpCell.Cell.Value.get -> SharpCell.CellValue
 SharpCell.Cell.Value.set -> void
 SharpCell.Cell.Worksheet.get -> SharpCell.Worksheet!
@@ -70,6 +76,7 @@ SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.CircularReference = 0 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.CustomFunctionFailure = 4 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.FunctionFailure = 1 -> SharpCell.DiagnosticKind
+SharpCell.DiagnosticKind.IterationLimitReached = 5 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.LimitExceeded = 3 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.UnsupportedFormula = 2 -> SharpCell.DiagnosticKind
 SharpCell.ErrorKind
@@ -112,6 +119,12 @@ SharpCell.FunctionOptions.MinArguments.get -> int
 SharpCell.FunctionOptions.MinArguments.init -> void
 SharpCell.FunctionOptions.ScalarParameters.get -> System.Collections.Generic.IReadOnlyList<int>!
 SharpCell.FunctionOptions.ScalarParameters.init -> void
+SharpCell.IterationSettings
+SharpCell.IterationSettings.Enabled.get -> bool
+SharpCell.IterationSettings.Equals(SharpCell.IterationSettings? other) -> bool
+SharpCell.IterationSettings.IterationSettings(bool Enabled = false, int MaxIterations = 100, double MaxChange = 0.001) -> void
+SharpCell.IterationSettings.MaxChange.get -> double
+SharpCell.IterationSettings.MaxIterations.get -> int
 SharpCell.LambdaValue
 SharpCell.RecalculationResult
 SharpCell.RecalculationResult.ChangedCells.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
@@ -135,6 +148,8 @@ SharpCell.Workbook.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<S
 SharpCell.Workbook.Evaluate(string! formula) -> SharpCell.CellValue
 SharpCell.Workbook.Evaluate(string! formula, System.Threading.CancellationToken cancellationToken) -> SharpCell.CellValue
 SharpCell.Workbook.Functions.get -> SharpCell.FunctionCollection!
+SharpCell.Workbook.Iteration.get -> SharpCell.IterationSettings!
+SharpCell.Workbook.Iteration.set -> void
 SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> SharpCell.RecalculationResult!
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
 SharpCell.Workbook.Tables.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Table!>!
