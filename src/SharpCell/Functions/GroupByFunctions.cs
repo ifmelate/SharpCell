@@ -10,28 +10,34 @@ internal static class GroupByFunctions
         registry.Add(new FunctionInfo("PERCENTOF", 2, 2, [ArgumentKind.Any, ArgumentKind.Any], PercentOf));
     }
 
-    // PERCENTOF(data_subset, data_all): SUM(data_subset) / SUM(data_all).
+    // PERCENTOF(data_subset, data_all): SUM(data_subset) / SUM(data_all). An error inside either
+    // gives #NUM!, not the error itself (Excel for the web).
     private static Operand PercentOf(FunctionCall call)
     {
-        var part = SumOf(call, 0);
+        var part = SumOf(call, 0, out var inData);
         if (part.IsError)
-            return part;
-        var all = SumOf(call, 1);
+            return inData ? CellValue.Error(ErrorKind.Num) : part;
+        var all = SumOf(call, 1, out inData);
         if (all.IsError)
-            return all;
+            return inData ? CellValue.Error(ErrorKind.Num) : all;
         return all.AsNumber() == 0 ? CellValue.Error(ErrorKind.Div0) : CellValue.Number(part.AsNumber() / all.AsNumber());
     }
 
     /// <summary>The sum of one argument as SUM takes it: numbers of ranges and arrays, a direct value converted.</summary>
-    public static CellValue SumOf(FunctionCall call, int index)
+    /// <param name="call">The call.</param>
+    /// <param name="index">The argument.</param>
+    /// <param name="inData">Whether an error result is an error value found in the data, rather than a value that could not be converted.</param>
+    public static CellValue SumOf(FunctionCall call, int index, out bool inData)
     {
         var total = 0.0;
+        var found = false;
         CellValue? error = null;
         Aggregation.ForEachIn(call, index, (value, source) =>
         {
             if (value.IsError)
             {
                 error = value;
+                found = true;
                 return false;
             }
 
@@ -53,6 +59,7 @@ internal static class GroupByFunctions
             total += number.AsNumber();
             return true;
         });
+        inData = found;
         return error ?? CellValue.Number(total);
     }
 }

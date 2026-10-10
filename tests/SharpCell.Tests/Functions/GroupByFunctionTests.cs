@@ -31,7 +31,7 @@ public class GroupByFunctionTests
 
     [Theory]
     [InlineData("=PERCENTOF({1,2},{0,0})", "#DIV/0!")]
-    [InlineData("=PERCENTOF({1,#N/A},{4})", "#N/A")]
+    [InlineData("=PERCENTOF({1,#N/A},{4})", "#NUM!")]   // Excel for the web: an error inside gives #NUM!
     [InlineData("=PERCENTOF({1},{#NUM!})", "#NUM!")]
     [InlineData("=PERCENTOF(\"x\",4)", "#VALUE!")]
     public void PERCENTOF_errors(string formula, string expected)
