@@ -24,3 +24,12 @@ results saved by desktop Excel.
 (`excel/DynamicArrays.xlsx` with `B5` set to 999, written by SharpCell's `XlsxWriter`) opened in
 Excel for the web and saved with Download a Copy. Excel recalculated it on opening: the `#REF!`
 SharpCell had written for `TAKE(A3#,3,1)` and `SUM(A3#)` came back as `#SPILL!`.
+
+`writer-*.xlsx` were made on 2026-10-10: SharpCell's `XlsxWriter` saved a workbook built in code
+(`writer-new.xlsx`) and Excel's templates from `../excel/templates` with two rows inserted at row 4
+of every sheet, a styled cell and a new sheet; `calcPr fullCalcOnLoad` was set, and each file was
+opened in Excel for the web, recalculated, and saved with Download a Copy. Excel opened every file
+without repairing it, and every formula and value matched what SharpCell saved, apart from `NOW()`.
+`XlsxWriterExcelWebTests` builds the same workbooks again and compares them with these copies.
+Excel for the web rewrote the theme's cached system colour and rounded some column widths and row
+heights; neither is compared.
