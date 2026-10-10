@@ -114,6 +114,21 @@ public sealed class Workbook
 
     internal NameTable Names { get; } = new();
 
+    /// <summary>
+    /// The defined names, workbook-wide and sheet-scoped, in the order they were first defined: a
+    /// snapshot that later definitions do not change.
+    /// </summary>
+    public IReadOnlyList<DefinedName> DefinedNames
+    {
+        get
+        {
+            var names = new List<DefinedName>();
+            foreach (var definition in Names.All)
+                names.Add(new DefinedName(definition.Spelling, definition.Text, definition.Scope));
+            return names;
+        }
+    }
+
     internal Calculation Calculation { get; }
 
     internal FunctionRegistry Functions { get; set; } = FunctionRegistry.Default;
@@ -189,7 +204,7 @@ public sealed class Workbook
         var text = formula.StartsWith('=') ? formula : "=" + formula;
         var node = FormulaParser.Parse(text, new CellAddress(1, 1));
         var upper = name.ToUpperInvariant();
-        Names.Set(new NameDefinition(upper, text, node, scope));
+        Names.Set(new NameDefinition(upper, name, text, node, scope));
         Calculation.InvalidateName(upper);
     }
 
@@ -198,7 +213,7 @@ public sealed class Workbook
     {
         var text = formula.StartsWith('=') ? formula : "=" + formula;
         var upper = name.ToUpperInvariant();
-        Names.Set(new NameDefinition(upper, text, new UnsupportedNode(text[1..], reason), scope));
+        Names.Set(new NameDefinition(upper, name, text, new UnsupportedNode(text[1..], reason), scope));
         Calculation.InvalidateName(upper);
     }
 

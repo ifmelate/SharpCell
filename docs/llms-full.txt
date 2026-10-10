@@ -844,6 +844,154 @@ The address with the sheet name, such as `Sheet1!B2`.
 
 ---
 
+<!-- page: api/SharpCell.CellRange.md -->
+
+# CellRange
+
+```csharp
+public sealed class CellRange
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A rectangle of cells on one sheet, such as `A1:C10`. Like a [Cell](SharpCell.Cell.md), it is a handle: creating one allocates no cells.
+
+## Properties
+
+<a id="address"></a>
+### Address
+
+```csharp
+public string Address { get; }
+```
+
+The A1 address without the sheet name: `A1:C10`, or `B2` for one cell.
+
+<a id="cells"></a>
+### Cells
+
+```csharp
+public IEnumerable<Cell> Cells { get; }
+```
+
+The cells of the range that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Only existing cells are visited, so `A:A` is cheap. Values and formulas of the cells may be changed while enumerating; adding or removing a cell of the sheet makes the next step throw `InvalidOperationException`.
+
+<a id="firstcolumn"></a>
+### FirstColumn
+
+```csharp
+public int FirstColumn { get; }
+```
+
+The first column, from 1 (A is 1).
+
+<a id="firstrow"></a>
+### FirstRow
+
+```csharp
+public int FirstRow { get; }
+```
+
+The first row, from 1.
+
+<a id="lastcolumn"></a>
+### LastColumn
+
+```csharp
+public int LastColumn { get; }
+```
+
+The last column, from 1.
+
+<a id="lastrow"></a>
+### LastRow
+
+```csharp
+public int LastRow { get; }
+```
+
+The last row, from 1.
+
+<a id="worksheet"></a>
+### Worksheet
+
+```csharp
+public Worksheet Worksheet { get; }
+```
+
+The sheet the range is on.
+
+## Methods
+
+<a id="equals-cellrange"></a>
+### Equals(CellRange)
+
+```csharp
+public bool Equals(CellRange? other)
+```
+
+Whether the other range is on the same sheet with the same corners.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is a range on the same sheet with the same corners.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [CellRange.Equals](SharpCell.CellRange.md#equals-cellrange).
+
+<a id="getvalues"></a>
+### GetValues()
+
+```csharp
+public CellValue[,] GetValues()
+```
+
+The value of every cell, empty ones included, indexed `[row, column]` from the range's top-left cell. A whole column allocates an element for each of its 1,048,576 cells; use [Worksheet.UsedRange](SharpCell.Worksheet.md#usedrange) or [CellRange.Cells](SharpCell.CellRange.md#cells) for sparse data.
+
+**Exceptions**
+
+- `InvalidOperationException`: The range has more cells than an array can hold.
+
+<a id="setvalues-cellvalue"></a>
+### SetValues(CellValue[,])
+
+```csharp
+public void SetValues(CellValue[,] values)
+```
+
+Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value) one by one would: formulas are replaced and [CellValue.Empty](SharpCell.CellValue.md#empty) clears a cell. Everything is checked before the first cell is written, so an exception leaves the sheet unchanged.
+
+**Parameters**
+
+- `values`: Values indexed `[row, column]`, exactly as large as the range.
+
+**Exceptions**
+
+- `ArgumentException`: The array's size differs from the range's, or it holds a Missing, array or lambda value.
+- `InvalidOperationException`: A cell is part of an array formula other than its top-left cell.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The address with the sheet name as a formula writes it, such as `Sheet1!A1:C10` or `'My Sheet'!B2`.
+
+---
+
 <!-- page: api/SharpCell.CellValue.md -->
 
 # CellValue
@@ -941,6 +1089,20 @@ public bool AsBoolean()
 
 The logical value. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Boolean](SharpCell.CellValueKind.md#boolean).
 
+<a id="asdatetime-datesystem"></a>
+### AsDateTime(DateSystem)
+
+```csharp
+public DateTime AsDateTime(DateSystem system)
+```
+
+The number read as a date and time: Excel stores dates as serial days counted from the workbook's `system` ([Workbook.DateSystem](SharpCell.Workbook.md#datesystem)), the time of day as the fraction, here rounded to the millisecond. The result's kind is `DateTimeKind.Unspecified`, as Excel knows no time zones.
+
+**Exceptions**
+
+- `InvalidOperationException`: [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Number](SharpCell.CellValueKind.md#number).
+- `ArgumentOutOfRangeException`: The number is no date: negative, past 9999-12-31, or 60 in the 1900 system, which Excel shows as the non-existent 1900-02-29.
+
 <a id="aserror"></a>
 ### AsError()
 
@@ -985,6 +1147,19 @@ public static CellValue Boolean(bool value)
 ```
 
 A logical value.
+
+<a id="datetime-datetime-datesystem"></a>
+### DateTime(DateTime, DateSystem)
+
+```csharp
+public static CellValue DateTime(DateTime value, DateSystem system)
+```
+
+A date and time as the serial number Excel stores: days counted from the workbook's `system` ([Workbook.DateSystem](SharpCell.Workbook.md#datesystem)), the time of day as the fraction.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The date is before the date system starts: 1899-12-31 in the 1900 system, 1904-01-01 in the 1904 system.
 
 <a id="equals-cellvalue"></a>
 ### Equals(CellValue)
@@ -1152,6 +1327,60 @@ The workbook's date system: which day serial number 0 or 1 stands for.
 |---|---|---|
 | <a id="date1900"></a>`Date1900` | 0 | Serial 1 is 1900-01-01 and the non-existent 1900-02-29 is serial 60, as in Excel for Windows. |
 | <a id="date1904"></a>`Date1904` | 1 | Serial 0 is 1904-01-01, as in old Excel for Mac. |
+
+---
+
+<!-- page: api/SharpCell.DefinedName.md -->
+
+# DefinedName
+
+```csharp
+public sealed class DefinedName
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it.
+
+## Properties
+
+<a id="formula"></a>
+### Formula
+
+```csharp
+public string Formula { get; }
+```
+
+The formula the name stands for, starting with `=`, such as `=Sheet1!$A$1:$A$10`.
+
+<a id="name"></a>
+### Name
+
+```csharp
+public string Name { get; }
+```
+
+The name as it was defined; formulas use it ignoring case.
+
+<a id="scope"></a>
+### Scope
+
+```csharp
+public Worksheet? Scope { get; }
+```
+
+The sheet the name is visible on, or null for a name of the whole workbook.
+
+## Methods
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The name.
 
 ---
 
@@ -1419,6 +1648,15 @@ public DateSystem DateSystem { get; set; }
 
 Whether serial dates count from 1900 or from 1904, as set in the file.
 
+<a id="definednames"></a>
+### DefinedNames
+
+```csharp
+public IReadOnlyList<DefinedName> DefinedNames { get; }
+```
+
+The defined names, workbook-wide and sheet-scoped, in the order they were first defined: a snapshot that later definitions do not change.
+
 <a id="diagnostics"></a>
 ### Diagnostics
 
@@ -1552,6 +1790,15 @@ A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never se
 
 ## Properties
 
+<a id="cells"></a>
+### Cells
+
+```csharp
+public IEnumerable<Cell> Cells { get; }
+```
+
+The cells of the sheet that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Values and formulas may be changed while enumerating; adding or removing a cell makes the next step throw `InvalidOperationException`.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -1569,6 +1816,15 @@ public string Name { get; }
 ```
 
 The sheet name.
+
+<a id="usedrange"></a>
+### UsedRange
+
+```csharp
+public CellRange? UsedRange { get; }
+```
+
+The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.
 
 <a id="workbook"></a>
 ### Workbook
@@ -1631,6 +1887,19 @@ Whether a row is hidden.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="range-string"></a>
+### Range(string)
+
+```csharp
+public CellRange Range(string address)
+```
+
+A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whole rows `2:3`.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not such an address; a sheet name is not allowed.
 
 <a id="setrowhidden-int-bool"></a>
 ### SetRowHidden(int, bool)

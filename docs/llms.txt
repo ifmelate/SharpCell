@@ -21,9 +21,11 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 
 - [CalculationDiagnostic](https://ifmelate.github.io/SharpCell/api/SharpCell.CalculationDiagnostic.md): Something calculation noticed that is not visible in cell values alone.
 - [Cell](https://ifmelate.github.io/SharpCell/api/SharpCell.Cell.md): A handle to one cell position.
+- [CellRange](https://ifmelate.github.io/SharpCell/api/SharpCell.CellRange.md): A rectangle of cells on one sheet, such as `A1:C10`.
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
 - [DateSystem](https://ifmelate.github.io/SharpCell/api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
+- [DefinedName](https://ifmelate.github.io/SharpCell/api/SharpCell.DefinedName.md): A defined name as Workbook.DefinedNames lists it.
 - [DiagnosticKind](https://ifmelate.github.io/SharpCell/api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
 - [ErrorKind](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKind.md): Excel error values.
 - [ErrorKinds](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKinds.md): Conversion between ErrorKind and its literal text (`#DIV/0!`).

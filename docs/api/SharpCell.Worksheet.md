@@ -12,6 +12,15 @@ A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never se
 
 ## Properties
 
+<a id="cells"></a>
+### Cells
+
+```csharp
+public IEnumerable<Cell> Cells { get; }
+```
+
+The cells of the sheet that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Values and formulas may be changed while enumerating; adding or removing a cell makes the next step throw `InvalidOperationException`.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -29,6 +38,15 @@ public string Name { get; }
 ```
 
 The sheet name.
+
+<a id="usedrange"></a>
+### UsedRange
+
+```csharp
+public CellRange? UsedRange { get; }
+```
+
+The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.
 
 <a id="workbook"></a>
 ### Workbook
@@ -91,6 +109,19 @@ Whether a row is hidden.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="range-string"></a>
+### Range(string)
+
+```csharp
+public CellRange Range(string address)
+```
+
+A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whole rows `2:3`.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not such an address; a sheet name is not allowed.
 
 <a id="setrowhidden-int-bool"></a>
 ### SetRowHidden(int, bool)

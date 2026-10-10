@@ -1,1 +1,26 @@
 #nullable enable
+SharpCell.CellRange
+SharpCell.CellRange.Address.get -> string!
+SharpCell.CellRange.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
+override SharpCell.CellRange.Equals(object? obj) -> bool
+SharpCell.CellRange.Equals(SharpCell.CellRange? other) -> bool
+SharpCell.CellRange.FirstColumn.get -> int
+SharpCell.CellRange.FirstRow.get -> int
+override SharpCell.CellRange.GetHashCode() -> int
+SharpCell.CellRange.GetValues() -> SharpCell.CellValue[,]!
+SharpCell.CellRange.LastColumn.get -> int
+SharpCell.CellRange.LastRow.get -> int
+SharpCell.CellRange.SetValues(SharpCell.CellValue[,]! values) -> void
+override SharpCell.CellRange.ToString() -> string!
+SharpCell.CellRange.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.CellValue.AsDateTime(SharpCell.DateSystem system) -> System.DateTime
+static SharpCell.CellValue.DateTime(System.DateTime value, SharpCell.DateSystem system) -> SharpCell.CellValue
+SharpCell.DefinedName
+SharpCell.DefinedName.Formula.get -> string!
+SharpCell.DefinedName.Name.get -> string!
+SharpCell.DefinedName.Scope.get -> SharpCell.Worksheet?
+override SharpCell.DefinedName.ToString() -> string!
+SharpCell.Workbook.DefinedNames.get -> System.Collections.Generic.IReadOnlyList<SharpCell.DefinedName!>!
+SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
+SharpCell.Worksheet.Range(string! address) -> SharpCell.CellRange!
+SharpCell.Worksheet.UsedRange.get -> SharpCell.CellRange?

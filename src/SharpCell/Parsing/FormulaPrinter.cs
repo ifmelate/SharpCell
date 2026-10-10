@@ -267,6 +267,10 @@ internal sealed class FormulaPrinter
         _sb.Append('!');
     }
 
+    /// <summary>A sheet name as a formula writes it before <c>!</c>: quoted when it has to be.</summary>
+    internal static string QuoteSheetName(string name) =>
+        NeedsQuotes(name) ? "'" + name.Replace("'", "''", StringComparison.Ordinal) + "'" : name;
+
     // Unquoted sheet names must lex as one word and must not read as a reference or a boolean.
     private static bool NeedsQuotes(string name)
     {

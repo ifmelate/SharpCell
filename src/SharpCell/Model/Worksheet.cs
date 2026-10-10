@@ -52,6 +52,27 @@ public sealed class Worksheet
         }
     }
 
+    /// <summary>A range of this sheet by A1 address: <c>A1:C10</c>, <c>B2</c>, whole columns <c>A:B</c> or whole rows <c>2:3</c>.</summary>
+    /// <exception cref="ArgumentException">The text is not such an address; a sheet name is not allowed.</exception>
+    public CellRange Range(string address)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+        if (!ReferenceSyntax.TryParseA1Area(address, new CellAddress(1, 1), out var parsed))
+            throw new ArgumentException($"'{address}' is not a range such as A1:C10.", nameof(address));
+        return new CellRange(this, Area.Resolve(parsed, new CellAddress(1, 1)));
+    }
+
+    /// <summary>
+    /// The cells of the sheet that hold something (a constant, a formula or a value spilled into
+    /// them), row by row and left to right. Values and formulas may be changed while enumerating;
+    /// adding or removing a cell makes the next step throw <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public IEnumerable<Cell> Cells =>
+        CellRange.EnumerateCells(this, new Area(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn));
+
+    /// <summary>The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.</summary>
+    public CellRange? UsedRange => Store.Bounds is { } bounds ? new CellRange(this, bounds) : null;
+
     /// <summary>
     /// Makes a range a table that formulas can refer to by name, as in <c>Sales[Units]</c>. Column
     /// names come from the header row as it is now: a cell's value as text (a formula's too),

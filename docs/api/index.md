@@ -10,9 +10,11 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 |---|---|
 | [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) | Something calculation noticed that is not visible in cell values alone. |
 | [Cell](SharpCell.Cell.md) | A handle to one cell position. |
+| [CellRange](SharpCell.CellRange.md) | A rectangle of cells on one sheet, such as `A1:C10`. |
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
+| [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
 | [DiagnosticKind](SharpCell.DiagnosticKind.md) | What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports. |
 | [ErrorKind](SharpCell.ErrorKind.md) | Excel error values. |
 | [ErrorKinds](SharpCell.ErrorKinds.md) | Conversion between [ErrorKind](SharpCell.ErrorKind.md) and its literal text (`#DIV/0!`). |

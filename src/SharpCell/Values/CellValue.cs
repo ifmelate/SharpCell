@@ -124,6 +124,37 @@ public readonly struct CellValue : IEquatable<CellValue>
     /// <summary>The function value. Throws <see cref="InvalidOperationException"/> when <see cref="Kind"/> is not <see cref="CellValueKind.Lambda"/>.</summary>
     public LambdaValue AsLambda() => Kind == CellValueKind.Lambda ? (LambdaValue)_object! : throw WrongKind(CellValueKind.Lambda);
 
+    /// <summary>
+    /// The number read as a date and time: Excel stores dates as serial days counted from the
+    /// workbook's <paramref name="system"/> (<see cref="Workbook.DateSystem"/>), the time of day as
+    /// the fraction, here rounded to the millisecond. The result's kind is
+    /// <see cref="DateTimeKind.Unspecified"/>, as Excel knows no time zones.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"><see cref="Kind"/> is not <see cref="CellValueKind.Number"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The number is no date: negative, past 9999-12-31, or
+    /// 60 in the 1900 system, which Excel shows as the non-existent 1900-02-29.</exception>
+    public System.DateTime AsDateTime(DateSystem system)
+    {
+        var serial = AsNumber();
+        return DateSerial.TryToDateTime(serial, system, out var value)
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(system), serial, $"{serial.ToString(CultureInfo.InvariantCulture)} is not a date in the {system} system.");
+    }
+
+    /// <summary>
+    /// A date and time as the serial number Excel stores: days counted from the workbook's
+    /// <paramref name="system"/> (<see cref="Workbook.DateSystem"/>), the time of day as the fraction.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The date is before the date system starts:
+    /// 1899-12-31 in the 1900 system, 1904-01-01 in the 1904 system.</exception>
+    public static CellValue DateTime(System.DateTime value, DateSystem system)
+    {
+        var serial = DateSerial.FromDateTime(value, system);
+        return serial >= 0
+            ? Number(serial)
+            : throw new ArgumentOutOfRangeException(nameof(value), value, $"The {system} system has no dates before its start.");
+    }
+
     /// <summary>A number, so <c>cell.Value = 42</c> works.</summary>
     public static implicit operator CellValue(double value) => Number(value);
 

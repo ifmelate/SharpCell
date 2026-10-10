@@ -95,6 +95,20 @@ public bool AsBoolean()
 
 The logical value. Throws `InvalidOperationException` when [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Boolean](SharpCell.CellValueKind.md#boolean).
 
+<a id="asdatetime-datesystem"></a>
+### AsDateTime(DateSystem)
+
+```csharp
+public DateTime AsDateTime(DateSystem system)
+```
+
+The number read as a date and time: Excel stores dates as serial days counted from the workbook's `system` ([Workbook.DateSystem](SharpCell.Workbook.md#datesystem)), the time of day as the fraction, here rounded to the millisecond. The result's kind is `DateTimeKind.Unspecified`, as Excel knows no time zones.
+
+**Exceptions**
+
+- `InvalidOperationException`: [CellValue.Kind](SharpCell.CellValue.md#kind) is not [CellValueKind.Number](SharpCell.CellValueKind.md#number).
+- `ArgumentOutOfRangeException`: The number is no date: negative, past 9999-12-31, or 60 in the 1900 system, which Excel shows as the non-existent 1900-02-29.
+
 <a id="aserror"></a>
 ### AsError()
 
@@ -139,6 +153,19 @@ public static CellValue Boolean(bool value)
 ```
 
 A logical value.
+
+<a id="datetime-datetime-datesystem"></a>
+### DateTime(DateTime, DateSystem)
+
+```csharp
+public static CellValue DateTime(DateTime value, DateSystem system)
+```
+
+A date and time as the serial number Excel stores: days counted from the workbook's `system` ([Workbook.DateSystem](SharpCell.Workbook.md#datesystem)), the time of day as the fraction.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The date is before the date system starts: 1899-12-31 in the 1900 system, 1904-01-01 in the 1904 system.
 
 <a id="equals-cellvalue"></a>
 ### Equals(CellValue)

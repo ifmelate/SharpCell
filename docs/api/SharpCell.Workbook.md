@@ -41,6 +41,15 @@ public DateSystem DateSystem { get; set; }
 
 Whether serial dates count from 1900 or from 1904, as set in the file.
 
+<a id="definednames"></a>
+### DefinedNames
+
+```csharp
+public IReadOnlyList<DefinedName> DefinedNames { get; }
+```
+
+The defined names, workbook-wide and sheet-scoped, in the order they were first defined: a snapshot that later definitions do not change.
+
 <a id="diagnostics"></a>
 ### Diagnostics
 
