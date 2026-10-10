@@ -27,6 +27,9 @@ internal sealed class WorksheetWriter
     private string _prefix = "";
     private CellAddress _previous;
 
+    // Areas of kept dynamic arrays as the file states them: their spilled cells stay as saved.
+    private readonly List<Area> _keptSpills = [];
+
     // The rectangle of the sheet's stored cells, or null for an empty sheet.
     private readonly Area? _used;
 
@@ -224,7 +227,7 @@ internal sealed class WorksheetWriter
     private XElement? NewCell(StoredCell cell)
     {
         var value = CellEncoding.Storable(cell.Data.Value);
-        if (value.Kind == CellValueKind.Empty)
+        if (value.Kind == CellValueKind.Empty || _keptSpills.Exists(area => area.Contains(cell.Row, cell.Column)))
             return null;
         var address = new CellAddress(cell.Row, cell.Column);
         CheckConstant(cell.Data, value, address);
@@ -245,11 +248,19 @@ internal sealed class WorksheetWriter
             Advance();
         }
 
+        if (_keptSpills.Exists(area => area.Contains(row, column)))
+            return source;
+
         var saved = _saved.Read(source, _sheet, row, column);
         if (data?.FormulaText is not null)
         {
             if (_plan.KeptCells.Contains(new CellKey(_sheet, row, column)))
+            {
+                if (source.Element(_ns + "f") is { } kept && (string?)kept.Attribute("t") == "array"
+                    && (string?)kept.Attribute("ref") is { } reference && TryParseArea(reference, out var spill))
+                    _keptSpills.Add(spill);
                 return source;
+            }
             var moved = UpdateSpillRef(source, data, row, column);
             var result = CellEncoding.Storable(data.Value);
             return !moved && !_plan.RewriteAllValues && result.Equals(saved.Value)

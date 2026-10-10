@@ -22,6 +22,9 @@ internal static class PackageWriter
                 parts[sheetSource.Part] = bytes;
         }
 
+        if (plan.FullCalcOnLoad)
+            parts[source.WorkbookPart] = WorkbookPartWriter.WithFullCalcOnLoad(package, source.WorkbookPart);
+
         return parts.Count == 0 ? source.Bytes : Repack(package, parts);
     }
 
