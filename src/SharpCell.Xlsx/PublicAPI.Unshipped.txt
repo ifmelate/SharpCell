@@ -1,1 +1,7 @@
 #nullable enable
+SharpCell.Xlsx.XlsxWriteException
+SharpCell.Xlsx.XlsxWriteException.Problems.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CalculationDiagnostic!>!
+SharpCell.Xlsx.XlsxWriteOptions
+SharpCell.Xlsx.XlsxWriteOptions.KeepUncalculated.get -> bool
+SharpCell.Xlsx.XlsxWriteOptions.KeepUncalculated.init -> void
+SharpCell.Xlsx.XlsxWriteOptions.XlsxWriteOptions() -> void
