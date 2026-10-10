@@ -126,7 +126,9 @@ internal static class PackageWriter
 
             foreach (var (part, bytes) in parts)
             {
-                using var to = zip.CreateEntry(part, CompressionLevel.Optimal).Open();
+                var entry = zip.CreateEntry(part, CompressionLevel.Optimal);
+                entry.LastWriteTime = Template.EntryTime;
+                using var to = entry.Open();
                 to.Write(bytes);
             }
         }

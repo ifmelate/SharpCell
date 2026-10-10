@@ -114,10 +114,10 @@ internal sealed class SheetSource(string? part, IReadOnlyDictionary<CellAddress,
 
     public IReadOnlyDictionary<CellAddress, LoadedFormula> Formulas { get; } = formulas;
 
-    /// <summary>The number format codes other than General, as read; a save refuses any change to them.</summary>
+    /// <summary>The number format codes other than General, as read.</summary>
     public IReadOnlyDictionary<CellAddress, string> Formats { get; } = formats;
 
-    /// <summary>The cells' own styles, as read; a save refuses any change to them.</summary>
+    /// <summary>The cells' own styles, as read.</summary>
     public IReadOnlyDictionary<CellAddress, CellStyle> Styles { get; } = styles;
 }
 

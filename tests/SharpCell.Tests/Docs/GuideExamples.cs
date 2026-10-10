@@ -37,10 +37,40 @@ public class GuideExamples
             Workbook workbook = XlsxReader.Load(templatePath);
             workbook["Budget"]["B2"].Value = 1350;   // an input
             workbook.Recalculate();                  // required before saving
-            XlsxWriter.Save(workbook, resultPath);   // styles, charts and other cells stay as they were
+            XlsxWriter.Save(workbook, resultPath);   // charts, comments and other cells stay as they were
             // end-snippet
 
             Assert.Equal(1960, XlsxReader.Load(resultPath)["Budget"]["B6"].Value.AsNumber());
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Save_a_new_workbook()
+    {
+        var folder = Directory.CreateTempSubdirectory().FullName;
+        var path = Path.Combine(folder, "report.xlsx");
+        try
+        {
+            // snippet: save-new
+            var workbook = new Workbook();
+            Worksheet sheet = workbook.AddSheet("Report");
+            sheet["A1"].Value = "Total";
+            sheet["A1"].Style = sheet["A1"].Style with { Font = sheet["A1"].Style.Font with { Bold = true } };
+            sheet["B1"].Formula = "=SUM(B2:B4)";
+            sheet["B2"].Value = 10;
+            sheet["B3"].Value = 20;
+            sheet["B4"].Value = 30;
+            sheet["B1"].NumberFormat = "#,##0.00";
+            sheet.SetColumnWidth(1, 15);
+            workbook.Recalculate();
+            XlsxWriter.Save(workbook, path);   // a new .xlsx file; Excel shows Total 60.00
+            // end-snippet
+
+            Assert.Equal(60, XlsxReader.Load(path)["Report"]["B1"].Value.AsNumber());
         }
         finally
         {

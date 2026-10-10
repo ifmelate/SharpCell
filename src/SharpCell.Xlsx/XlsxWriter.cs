@@ -5,38 +5,38 @@ using System.Xml;
 namespace SharpCell.Xlsx;
 
 /// <summary>
-/// Saves a workbook read by <see cref="XlsxReader"/> back into its file with new values: change
-/// input cells, call <see cref="Workbook.Recalculate"/>, save. Everything SharpCell does not model
-/// (styles, charts, pivot tables, comments, macros) is copied from the original file unchanged, and so
-/// is every cell whose value did not change. Only values can change: new or changed formulas, new
-/// sheets, names or tables cannot be saved.
+/// Saves a workbook as an .xlsx file: values, formulas, styles, number formats, sizes, merged cells,
+/// panes, sheets, defined names and tables. A workbook read by <see cref="XlsxReader"/> is saved into
+/// the file it was read from: everything SharpCell does not model (charts, pivot tables, comments,
+/// conditional formats, macros) is copied unchanged, and so is every cell that did not change. A
+/// workbook built in code becomes a new file. Call <see cref="Workbook.Recalculate"/> before saving.
 /// </summary>
 public static class XlsxWriter
 {
     private static readonly XlsxWriteOptions Defaults = new();
 
     /// <summary>Saves the workbook to a file, replacing it if it exists (the file it was read from too).</summary>
-    /// <param name="workbook">A workbook read by <see cref="XlsxReader"/> and recalculated.</param>
-    /// <param name="path">Path of the .xlsx file to write. The file is replaced only once the new one is complete.</param>
-    /// <exception cref="NotSupportedException">The workbook was built in code, or something other than cell values changed since it was read.</exception>
-    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first.</exception>
+    /// <param name="workbook">A recalculated workbook, read by <see cref="XlsxReader"/> or built in code.</param>
+    /// <param name="path">Path of the .xlsx file to write (.xlsm for a macro-enabled workbook read from one). The file is replaced only once the new one is complete.</param>
+    /// <exception cref="NotSupportedException">A cell of an Excel data table changed, or a cell holds <c>#SPILL!</c> or <c>#CALC!</c> as a value.</exception>
+    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first; or the workbook has no sheets.</exception>
     /// <exception cref="XlsxWriteException">SharpCell could not calculate some formulas; see <see cref="XlsxWriteOptions.KeepUncalculated"/>.</exception>
     public static void Save(Workbook workbook, string path) => Save(workbook, path, Defaults);
 
     /// <summary>Saves the workbook to a stream, which is left open.</summary>
-    /// <param name="workbook">A workbook read by <see cref="XlsxReader"/> and recalculated.</param>
+    /// <param name="workbook">A recalculated workbook, read by <see cref="XlsxReader"/> or built in code.</param>
     /// <param name="stream">Where the .xlsx content goes; it need not be seekable. Nothing is written when the save is refused.</param>
-    /// <exception cref="NotSupportedException">The workbook was built in code, or something other than cell values changed since it was read.</exception>
-    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first.</exception>
+    /// <exception cref="NotSupportedException">A cell of an Excel data table changed, or a cell holds <c>#SPILL!</c> or <c>#CALC!</c> as a value.</exception>
+    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first; or the workbook has no sheets.</exception>
     /// <exception cref="XlsxWriteException">SharpCell could not calculate some formulas; see <see cref="XlsxWriteOptions.KeepUncalculated"/>.</exception>
     public static void Save(Workbook workbook, Stream stream) => Save(workbook, stream, Defaults);
 
     /// <summary>Saves the workbook to a file, replacing it if it exists (the file it was read from too).</summary>
-    /// <param name="workbook">A workbook read by <see cref="XlsxReader"/> and recalculated.</param>
-    /// <param name="path">Path of the .xlsx file to write. The file is replaced only once the new one is complete.</param>
+    /// <param name="workbook">A recalculated workbook, read by <see cref="XlsxReader"/> or built in code.</param>
+    /// <param name="path">Path of the .xlsx file to write (.xlsm for a macro-enabled workbook read from one). The file is replaced only once the new one is complete.</param>
     /// <param name="options">What to do with formulas SharpCell cannot calculate.</param>
-    /// <exception cref="NotSupportedException">The workbook was built in code, or something other than cell values changed since it was read.</exception>
-    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first.</exception>
+    /// <exception cref="NotSupportedException">A cell of an Excel data table changed, or a cell holds <c>#SPILL!</c> or <c>#CALC!</c> as a value.</exception>
+    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first; or the workbook has no sheets.</exception>
     /// <exception cref="XlsxWriteException">SharpCell could not calculate some formulas and <paramref name="options"/> does not keep them.</exception>
     public static void Save(Workbook workbook, string path, XlsxWriteOptions options)
     {
@@ -61,11 +61,11 @@ public static class XlsxWriter
     }
 
     /// <summary>Saves the workbook to a stream, which is left open.</summary>
-    /// <param name="workbook">A workbook read by <see cref="XlsxReader"/> and recalculated.</param>
+    /// <param name="workbook">A recalculated workbook, read by <see cref="XlsxReader"/> or built in code.</param>
     /// <param name="stream">Where the .xlsx content goes; it need not be seekable. Nothing is written when the save is refused.</param>
     /// <param name="options">What to do with formulas SharpCell cannot calculate.</param>
-    /// <exception cref="NotSupportedException">The workbook was built in code, or something other than cell values changed since it was read.</exception>
-    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first.</exception>
+    /// <exception cref="NotSupportedException">A cell of an Excel data table changed, or a cell holds <c>#SPILL!</c> or <c>#CALC!</c> as a value.</exception>
+    /// <exception cref="InvalidOperationException">Some formulas are not calculated: call <see cref="Workbook.Recalculate"/> first; or the workbook has no sheets.</exception>
     /// <exception cref="XlsxWriteException">SharpCell could not calculate some formulas and <paramref name="options"/> does not keep them.</exception>
     public static void Save(Workbook workbook, Stream stream, XlsxWriteOptions options)
     {

@@ -196,7 +196,7 @@ internal sealed class WorksheetWriter
     // Adds the elements the part lacks that come before an element of this rank.
     private void WritePending(int rank, XmlWriter writer)
     {
-        foreach (var name in _pending.Where(name => WorksheetParts.Rank(name) < rank).ToList())
+        foreach (var name in _pending.Where(name => WorksheetParts.Rank(name) < rank).OrderBy(WorksheetParts.Rank).ToList())
         {
             _pending.Remove(name);
             if (Build(name, null) is { } element)

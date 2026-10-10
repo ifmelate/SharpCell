@@ -382,8 +382,7 @@ workbook's culture for separators and month names: dates come out as dates, perc
 | Empty | an empty string |
 
 Column width plays no part, so a long number is never cut to `####`. A format is no content: it
-does not block a spill and is not listed by `Cells`. Formats are not saved: `XlsxWriter` refuses a
-workbook whose formats changed.
+does not block a spill and is not listed by `Cells`. `XlsxWriter` saves formats with the cells.
 
 ## Styles
 
@@ -445,8 +444,8 @@ Freeze Panes keeps in place; `ShowGridlines` is whether Excel draws gridlines on
 `XlsxReader` takes them from the sheet's first view. A plain split that is not frozen reads as no
 frozen panes. None of them changes a result.
 
-Styles, sizes, merged cells, frozen panes and gridlines are not saved: `XlsxWriter` copies them
-from the file and refuses a workbook in which they changed.
+`XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
+the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
 
 ## Defined names
 
@@ -830,7 +829,7 @@ The stream does not have to be seekable; a stream that is not is copied into mem
 
 ## Writing
 
-`XlsxWriter` saves new values into the file a workbook was read from; see [Saving .xlsx files](saving.md).
+`XlsxWriter` saves a workbook into the file it was read from, keeping what SharpCell does not read; see [Saving .xlsx files](saving.md).
 
 ---
 
@@ -838,39 +837,66 @@ The stream does not have to be seekable; a stream that is not is copied into mem
 
 # Saving .xlsx files
 
-`XlsxWriter` saves a workbook back into the file it was read from, with the values SharpCell
-calculated. It is made for templates: read a workbook, change input cells, recalculate, save.
+`XlsxWriter` saves a workbook as an .xlsx file: one read by `XlsxReader`, with whatever you changed,
+or one built in code.
 
 ```csharp snippet=save-template
 Workbook workbook = XlsxReader.Load(templatePath);
 workbook["Budget"]["B2"].Value = 1350;   // an input
 workbook.Recalculate();                  // required before saving
-XlsxWriter.Save(workbook, resultPath);   // styles, charts and other cells stay as they were
+XlsxWriter.Save(workbook, resultPath);   // charts, comments and other cells stay as they were
+```
+
+```csharp snippet=save-new
+var workbook = new Workbook();
+Worksheet sheet = workbook.AddSheet("Report");
+sheet["A1"].Value = "Total";
+sheet["A1"].Style = sheet["A1"].Style with { Font = sheet["A1"].Style.Font with { Bold = true } };
+sheet["B1"].Formula = "=SUM(B2:B4)";
+sheet["B2"].Value = 10;
+sheet["B3"].Value = 20;
+sheet["B4"].Value = 30;
+sheet["B1"].NumberFormat = "#,##0.00";
+sheet.SetColumnWidth(1, 15);
+workbook.Recalculate();
+XlsxWriter.Save(workbook, path);   // a new .xlsx file; Excel shows Total 60.00
 ```
 
 ## What is written
 
-Only cell values. Everything else in the file is copied unchanged: styles, number formats, column
-widths, charts, pivot tables, comments, data validation, macros and parts SharpCell does not know.
-A cell whose value did not change is copied as it was. New text goes into the cell itself, not into
-the shared string table.
+Everything SharpCell models:
 
-Dynamic arrays that grow or shrink get their new cells and area. `#SPILL!` and `#CALC!` are saved the
-way Excel saves them, so Excel shows them before it recalculates.
+- Cell values and formulas, with the results SharpCell calculated. Formulas are written the way
+  Excel stores them, so newer functions such as `XLOOKUP`, `FILTER` or `LET` work when Excel opens
+  the file.
+- Dynamic arrays, with the area they spill over. A formula that reads a range where one value is
+  expected (`=SUM(A1:A3*2)`) is saved as a dynamic array formula, so Excel does not reduce it as
+  Excel 2016 would.
+- Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
+  cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
+  filtered.
+- New sheets, defined names, new tables, the date system and the iteration settings.
 
-Saving a workbook with no changed values writes the original file byte for byte. Saving to a path
-writes a new file next to the target and then replaces it, so the file the workbook was read from can
-be the target.
+A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
+file: charts, pivot tables, comments, conditional formats, data validation, pictures, macros,
+pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
+and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
+pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
+byte.
+
+New text goes into the cell itself, not into the shared string table. A new table's header cells
+are saved holding the column names as text, as Excel requires. When formulas change, the file's
+calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are saved the way Excel
+saves them, so Excel shows them before it recalculates.
+
+Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
+was read from can be the target.
 
 ## What cannot be saved
 
 | Situation | Exception |
 |---|---|
-| A workbook built in code, not read by `XlsxReader` | `NotSupportedException` |
-| A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
-| Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed | `NotSupportedException` |
-| A number format changed or set | `NotSupportedException` |
-| A cell style, column width, row height, hidden column, merged area, frozen panes, gridlines or the default style changed | `NotSupportedException` |
+| A workbook without sheets | `InvalidOperationException` |
 | A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
@@ -1023,12 +1049,12 @@ Dates and times are numbers: serial days, with the time of day as the fraction. 
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves changed values into the file a workbook was read from (see [Saving .xlsx files](saving.md)). It cannot create a file from a workbook built in code, or save new formulas, sheets, names, tables or styles.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures, conditional formats or data validation, or remove or rename sheets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
-- **Writing formats.** Number formats are read and shape `Cell.Text`, but a changed format cannot be saved. Fonts, fills, borders, column widths and conditional formats are not read.
+- **Styles are partly read.** Fonts, solid fills, borders, alignment and number formats are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
 - **Localized function names.** Formulas use English names, as in the file format.
 - **Links to other workbooks.** They evaluate to `#NAME?`.
 - **Cube, real-time data and web functions.** `CUBE*`, `RTD` and `WEBSERVICE` are not available.
@@ -1073,8 +1099,8 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Formulas use Excel's file syntax: English function names, commas between arguments, dot decimals; the leading `=` is optional.
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread (clones of one template included).
-- Call `Workbook.Recalculate()` before `XlsxWriter.Save`; only cell values can be saved, into the file the workbook was read from.
-- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsb, localized function names.
+- Call `Workbook.Recalculate()` before `XlsxWriter.Save`. It saves values, formulas, styles, sizes, sheets, names and tables; a workbook read from a file keeps its charts, pivot tables and comments.
+- Not supported: .xls/.xlsb, encrypted files, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```
@@ -3475,7 +3501,7 @@ Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, d
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 
-The workbook keeps the file's bytes in memory, so [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) can write new values into the same file.
+The workbook keeps the file's bytes in memory, so [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) can write changes into the same file.
 
 ## Methods
 
@@ -3592,7 +3618,7 @@ public static class XlsxWriter
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Saves a workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) back into its file with new values: change input cells, call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), save. Everything SharpCell does not model (styles, charts, pivot tables, comments, macros) is copied from the original file unchanged, and so is every cell whose value did not change. Only values can change: new or changed formulas, new sheets, names or tables cannot be saved.
+Saves a workbook as an .xlsx file: values, formulas, styles, number formats, sizes, merged cells, panes, sheets, defined names and tables. A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) is saved into the file it was read from: everything SharpCell does not model (charts, pivot tables, comments, conditional formats, macros) is copied unchanged, and so is every cell that did not change. A workbook built in code becomes a new file. Call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) before saving.
 
 ## Methods
 
@@ -3607,13 +3633,13 @@ Saves the workbook to a stream, which is left open.
 
 **Parameters**
 
-- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
+- `workbook`: A recalculated workbook, read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) or built in code.
 - `stream`: Where the .xlsx content goes; it need not be seekable. Nothing is written when the save is refused.
 
 **Exceptions**
 
-- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
-- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `NotSupportedException`: A cell of an Excel data table changed, or a cell holds `#SPILL!` or `#CALC!` as a value.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first; or the workbook has no sheets.
 - `XlsxWriteException`: SharpCell could not calculate some formulas; see [XlsxWriteOptions.KeepUncalculated](SharpCell.Xlsx.XlsxWriteOptions.md#keepuncalculated).
 
 <a id="save-workbook-stream-xlsxwriteoptions"></a>
@@ -3627,14 +3653,14 @@ Saves the workbook to a stream, which is left open.
 
 **Parameters**
 
-- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
+- `workbook`: A recalculated workbook, read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) or built in code.
 - `stream`: Where the .xlsx content goes; it need not be seekable. Nothing is written when the save is refused.
 - `options`: What to do with formulas SharpCell cannot calculate.
 
 **Exceptions**
 
-- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
-- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `NotSupportedException`: A cell of an Excel data table changed, or a cell holds `#SPILL!` or `#CALC!` as a value.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first; or the workbook has no sheets.
 - `XlsxWriteException`: SharpCell could not calculate some formulas and `options` does not keep them.
 
 <a id="save-workbook-string"></a>
@@ -3648,13 +3674,13 @@ Saves the workbook to a file, replacing it if it exists (the file it was read fr
 
 **Parameters**
 
-- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
-- `path`: Path of the .xlsx file to write. The file is replaced only once the new one is complete.
+- `workbook`: A recalculated workbook, read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) or built in code.
+- `path`: Path of the .xlsx file to write (.xlsm for a macro-enabled workbook read from one). The file is replaced only once the new one is complete.
 
 **Exceptions**
 
-- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
-- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `NotSupportedException`: A cell of an Excel data table changed, or a cell holds `#SPILL!` or `#CALC!` as a value.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first; or the workbook has no sheets.
 - `XlsxWriteException`: SharpCell could not calculate some formulas; see [XlsxWriteOptions.KeepUncalculated](SharpCell.Xlsx.XlsxWriteOptions.md#keepuncalculated).
 
 <a id="save-workbook-string-xlsxwriteoptions"></a>
@@ -3668,12 +3694,12 @@ Saves the workbook to a file, replacing it if it exists (the file it was read fr
 
 **Parameters**
 
-- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
-- `path`: Path of the .xlsx file to write. The file is replaced only once the new one is complete.
+- `workbook`: A recalculated workbook, read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) or built in code.
+- `path`: Path of the .xlsx file to write (.xlsm for a macro-enabled workbook read from one). The file is replaced only once the new one is complete.
 - `options`: What to do with formulas SharpCell cannot calculate.
 
 **Exceptions**
 
-- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
-- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `NotSupportedException`: A cell of an Excel data table changed, or a cell holds `#SPILL!` or `#CALC!` as a value.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first; or the workbook has no sheets.
 - `XlsxWriteException`: SharpCell could not calculate some formulas and `options` does not keep them.

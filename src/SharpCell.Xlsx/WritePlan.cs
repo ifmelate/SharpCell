@@ -48,8 +48,9 @@ internal sealed class WritePlan
     /// <exception cref="XlsxWriteException">Some formulas cannot be calculated and the options do not keep them.</exception>
     public static WritePlan Create(Workbook workbook, XlsxWriteOptions options)
     {
-        if (workbook.Source is not XlsxSource source)
-            throw new NotSupportedException("Only a workbook read by XlsxReader can be saved: SharpCell writes new values into the file the workbook was read from.");
+        if (workbook.Sheets.Count == 0)
+            throw new InvalidOperationException("A workbook needs at least one sheet to be saved.");
+        var source = workbook.Source as XlsxSource ?? Template.SourceFor(workbook);
         var formulasChanged = new HashSet<Worksheet>();
         foreach (var sheet in workbook.Sheets)
         {

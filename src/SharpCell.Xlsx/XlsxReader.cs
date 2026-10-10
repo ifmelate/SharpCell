@@ -19,7 +19,7 @@ namespace SharpCell.Xlsx;
 /// <c>#NAME?</c> and listed in <see cref="Workbook.Diagnostics"/>.
 /// </para>
 /// <para>
-/// The workbook keeps the file's bytes in memory, so <see cref="XlsxWriter"/> can write new values
+/// The workbook keeps the file's bytes in memory, so <see cref="XlsxWriter"/> can write changes
 /// into the same file.
 /// </para>
 /// </summary>
@@ -52,7 +52,7 @@ public static class XlsxReader
         return Load(copy.ToArray(), limits);
     }
 
-    // The file stays in memory with the workbook: XlsxWriter writes new values into it.
+    // The file stays in memory with the workbook: XlsxWriter writes changes into it.
     internal static Workbook Load(byte[] bytes, XlsxLimits limits)
     {
         try

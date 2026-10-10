@@ -91,8 +91,7 @@ workbook's culture for separators and month names: dates come out as dates, perc
 | Empty | an empty string |
 
 Column width plays no part, so a long number is never cut to `####`. A format is no content: it
-does not block a spill and is not listed by `Cells`. Formats are not saved: `XlsxWriter` refuses a
-workbook whose formats changed.
+does not block a spill and is not listed by `Cells`. `XlsxWriter` saves formats with the cells.
 
 ## Styles
 
@@ -154,8 +153,8 @@ Freeze Panes keeps in place; `ShowGridlines` is whether Excel draws gridlines on
 `XlsxReader` takes them from the sheet's first view. A plain split that is not frozen reads as no
 frozen panes. None of them changes a result.
 
-Styles, sizes, merged cells, frozen panes and gridlines are not saved: `XlsxWriter` copies them
-from the file and refuses a workbook in which they changed.
+`XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
+the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
 
 ## Defined names
 

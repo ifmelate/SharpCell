@@ -1,38 +1,65 @@
 # Saving .xlsx files
 
-`XlsxWriter` saves a workbook back into the file it was read from, with the values SharpCell
-calculated. It is made for templates: read a workbook, change input cells, recalculate, save.
+`XlsxWriter` saves a workbook as an .xlsx file: one read by `XlsxReader`, with whatever you changed,
+or one built in code.
 
 ```csharp snippet=save-template
 Workbook workbook = XlsxReader.Load(templatePath);
 workbook["Budget"]["B2"].Value = 1350;   // an input
 workbook.Recalculate();                  // required before saving
-XlsxWriter.Save(workbook, resultPath);   // styles, charts and other cells stay as they were
+XlsxWriter.Save(workbook, resultPath);   // charts, comments and other cells stay as they were
+```
+
+```csharp snippet=save-new
+var workbook = new Workbook();
+Worksheet sheet = workbook.AddSheet("Report");
+sheet["A1"].Value = "Total";
+sheet["A1"].Style = sheet["A1"].Style with { Font = sheet["A1"].Style.Font with { Bold = true } };
+sheet["B1"].Formula = "=SUM(B2:B4)";
+sheet["B2"].Value = 10;
+sheet["B3"].Value = 20;
+sheet["B4"].Value = 30;
+sheet["B1"].NumberFormat = "#,##0.00";
+sheet.SetColumnWidth(1, 15);
+workbook.Recalculate();
+XlsxWriter.Save(workbook, path);   // a new .xlsx file; Excel shows Total 60.00
 ```
 
 ## What is written
 
-Only cell values. Everything else in the file is copied unchanged: styles, number formats, column
-widths, charts, pivot tables, comments, data validation, macros and parts SharpCell does not know.
-A cell whose value did not change is copied as it was. New text goes into the cell itself, not into
-the shared string table.
+Everything SharpCell models:
 
-Dynamic arrays that grow or shrink get their new cells and area. `#SPILL!` and `#CALC!` are saved the
-way Excel saves them, so Excel shows them before it recalculates.
+- Cell values and formulas, with the results SharpCell calculated. Formulas are written the way
+  Excel stores them, so newer functions such as `XLOOKUP`, `FILTER` or `LET` work when Excel opens
+  the file.
+- Dynamic arrays, with the area they spill over. A formula that reads a range where one value is
+  expected (`=SUM(A1:A3*2)`) is saved as a dynamic array formula, so Excel does not reduce it as
+  Excel 2016 would.
+- Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
+  cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
+  filtered.
+- New sheets, defined names, new tables, the date system and the iteration settings.
 
-Saving a workbook with no changed values writes the original file byte for byte. Saving to a path
-writes a new file next to the target and then replaces it, so the file the workbook was read from can
-be the target.
+A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
+file: charts, pivot tables, comments, conditional formats, data validation, pictures, macros,
+pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
+and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
+pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
+byte.
+
+New text goes into the cell itself, not into the shared string table. A new table's header cells
+are saved holding the column names as text, as Excel requires. When formulas change, the file's
+calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are saved the way Excel
+saves them, so Excel shows them before it recalculates.
+
+Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
+was read from can be the target.
 
 ## What cannot be saved
 
 | Situation | Exception |
 |---|---|
-| A workbook built in code, not read by `XlsxReader` | `NotSupportedException` |
-| A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
-| Sheets, defined names, tables, hidden rows, filters, the date system or the iteration settings changed | `NotSupportedException` |
-| A number format changed or set | `NotSupportedException` |
-| A cell style, column width, row height, hidden column, merged area, frozen panes, gridlines or the default style changed | `NotSupportedException` |
+| A workbook without sheets | `InvalidOperationException` |
 | A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |

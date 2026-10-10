@@ -47,4 +47,4 @@ The stream does not have to be seekable; a stream that is not is copied into mem
 
 ## Writing
 
-`XlsxWriter` saves new values into the file a workbook was read from; see [Saving .xlsx files](saving.md).
+`XlsxWriter` saves a workbook into the file it was read from, keeping what SharpCell does not read; see [Saving .xlsx files](saving.md).

@@ -41,7 +41,7 @@ workbook.Recalculate();
 CellValue result = sheet["A2"].Value;   // 6
 ```
 
-A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `SharpCell.Xlsx` reads `.xlsx` and `.xlsm` files (not `.xls` or `.xlsb`) and saves recalculated values back into them ([Saving .xlsx files](docs/guides/saving.md)).
+A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `SharpCell.Xlsx` reads `.xlsx` and `.xlsm` files (not `.xls` or `.xlsb`) saves them with your changes, and creates new ones ([Saving .xlsx files](docs/guides/saving.md)).
 
 ## Documentation
 

@@ -31,8 +31,8 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Formulas use Excel's file syntax: English function names, commas between arguments, dot decimals; the leading `=` is optional.
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread (clones of one template included).
-- Call `Workbook.Recalculate()` before `XlsxWriter.Save`; only cell values can be saved, into the file the workbook was read from.
-- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsb, localized function names.
+- Call `Workbook.Recalculate()` before `XlsxWriter.Save`. It saves values, formulas, styles, sizes, sheets, names and tables; a workbook read from a file keeps its charts, pivot tables and comments.
+- Not supported: .xls/.xlsb, encrypted files, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```

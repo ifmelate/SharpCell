@@ -30,12 +30,15 @@ public class WritePlanTests
     }
 
     [Fact]
-    public void A_workbook_built_in_code_cannot_be_saved()
+    public void A_workbook_built_in_code_is_saved_into_the_template()
     {
         var workbook = new Workbook();
         workbook.AddSheet("S");
 
-        Assert.Throws<NotSupportedException>(() => WritePlan.Create(workbook, Default));
+        var plan = WritePlan.Create(workbook, Default);
+
+        Assert.Empty(plan.Source.Sheets);
+        Assert.Equal("xl/workbook.xml", plan.Source.WorkbookPart);
     }
 
     [Theory]
