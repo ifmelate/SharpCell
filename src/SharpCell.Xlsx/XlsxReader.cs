@@ -17,7 +17,7 @@ namespace SharpCell.Xlsx;
 /// <c>#NAME?</c> and listed in <see cref="Workbook.Diagnostics"/>.
 /// </para>
 /// <para>
-/// The workbook keeps the file's bytes in memory, so <c>XlsxWriter</c> can write new values
+/// The workbook keeps the file's bytes in memory, so <see cref="XlsxWriter"/> can write new values
 /// into the same file.
 /// </para>
 /// </summary>

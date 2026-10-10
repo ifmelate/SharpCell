@@ -8,7 +8,7 @@ public sealed class XlsxWriteOptions
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Options for `XlsxWriter`.
+Options for [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md).
 
 ## Constructors
 

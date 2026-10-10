@@ -1611,7 +1611,7 @@ Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, d
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 
-The workbook keeps the file's bytes in memory, so `XlsxWriter` can write new values into the same file.
+The workbook keeps the file's bytes in memory, so [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) can write new values into the same file.
 
 ## Methods
 
@@ -1692,7 +1692,7 @@ public sealed class XlsxWriteOptions
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Options for `XlsxWriter`.
+Options for [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md).
 
 ## Constructors
 
@@ -1715,3 +1715,101 @@ public bool KeepUncalculated { get; init; }
 ```
 
 What to do with formulas SharpCell cannot calculate, such as calls of functions it does not know or links to other workbooks. False (the default) refuses to save with an [XlsxWriteException](SharpCell.Xlsx.XlsxWriteException.md). True keeps the result Excel saved for them and marks the file so that Excel recalculates every formula when it opens it; until then, cells that read such a formula show what SharpCell calculated for them.
+
+---
+
+<!-- page: api/SharpCell.Xlsx.XlsxWriter.md -->
+
+# XlsxWriter
+
+```csharp
+public static class XlsxWriter
+```
+
+Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
+
+Saves a workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) back into its file with new values: change input cells, call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), save. Everything SharpCell does not model (styles, charts, pivot tables, comments, macros) is copied from the original file unchanged, and so is every cell whose value did not change. Only values can change: new or changed formulas, new sheets, names or tables cannot be saved.
+
+## Methods
+
+<a id="save-workbook-stream"></a>
+### Save(Workbook, Stream)
+
+```csharp
+public static void Save(Workbook workbook, Stream stream)
+```
+
+Saves the workbook to a stream, which is left open.
+
+**Parameters**
+
+- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
+- `stream`: Where the .xlsx content goes; it need not be seekable. Nothing is written when the save is refused.
+
+**Exceptions**
+
+- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `XlsxWriteException`: SharpCell could not calculate some formulas; see [XlsxWriteOptions.KeepUncalculated](SharpCell.Xlsx.XlsxWriteOptions.md#keepuncalculated).
+
+<a id="save-workbook-stream-xlsxwriteoptions"></a>
+### Save(Workbook, Stream, XlsxWriteOptions)
+
+```csharp
+public static void Save(Workbook workbook, Stream stream, XlsxWriteOptions options)
+```
+
+Saves the workbook to a stream, which is left open.
+
+**Parameters**
+
+- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
+- `stream`: Where the .xlsx content goes; it need not be seekable. Nothing is written when the save is refused.
+- `options`: What to do with formulas SharpCell cannot calculate.
+
+**Exceptions**
+
+- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `XlsxWriteException`: SharpCell could not calculate some formulas and `options` does not keep them.
+
+<a id="save-workbook-string"></a>
+### Save(Workbook, string)
+
+```csharp
+public static void Save(Workbook workbook, string path)
+```
+
+Saves the workbook to a file, replacing it if it exists (the file it was read from too).
+
+**Parameters**
+
+- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
+- `path`: Path of the .xlsx file to write. The file is replaced only once the new one is complete.
+
+**Exceptions**
+
+- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `XlsxWriteException`: SharpCell could not calculate some formulas; see [XlsxWriteOptions.KeepUncalculated](SharpCell.Xlsx.XlsxWriteOptions.md#keepuncalculated).
+
+<a id="save-workbook-string-xlsxwriteoptions"></a>
+### Save(Workbook, string, XlsxWriteOptions)
+
+```csharp
+public static void Save(Workbook workbook, string path, XlsxWriteOptions options)
+```
+
+Saves the workbook to a file, replacing it if it exists (the file it was read from too).
+
+**Parameters**
+
+- `workbook`: A workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) and recalculated.
+- `path`: Path of the .xlsx file to write. The file is replaced only once the new one is complete.
+- `options`: What to do with formulas SharpCell cannot calculate.
+
+**Exceptions**
+
+- `NotSupportedException`: The workbook was built in code, or something other than cell values changed since it was read.
+- `InvalidOperationException`: Some formulas are not calculated: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+- `XlsxWriteException`: SharpCell could not calculate some formulas and `options` does not keep them.

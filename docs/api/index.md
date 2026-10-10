@@ -28,4 +28,5 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 |---|---|
 | [XlsxReader](SharpCell.Xlsx.XlsxReader.md) | Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, and the date system. |
 | [XlsxWriteException](SharpCell.Xlsx.XlsxWriteException.md) | A workbook was not saved because SharpCell could not calculate some of its formulas; see [XlsxWriteOptions.KeepUncalculated](SharpCell.Xlsx.XlsxWriteOptions.md#keepuncalculated). |
-| [XlsxWriteOptions](SharpCell.Xlsx.XlsxWriteOptions.md) | Options for `XlsxWriter`. |
+| [XlsxWriteOptions](SharpCell.Xlsx.XlsxWriteOptions.md) | Options for [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md). |
+| [XlsxWriter](SharpCell.Xlsx.XlsxWriter.md) | Saves a workbook read by [XlsxReader](SharpCell.Xlsx.XlsxReader.md) back into its file with new values: change input cells, call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), save. |

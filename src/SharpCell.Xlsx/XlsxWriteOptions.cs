@@ -1,6 +1,6 @@
 namespace SharpCell.Xlsx;
 
-/// <summary>Options for <c>XlsxWriter</c>.</summary>
+/// <summary>Options for <see cref="XlsxWriter"/>.</summary>
 public sealed class XlsxWriteOptions
 {
     /// <summary>The defaults: a save is refused when some formulas cannot be calculated.</summary>
