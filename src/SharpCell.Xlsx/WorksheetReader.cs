@@ -57,6 +57,10 @@ internal static class WorksheetReader
                         throw new InvalidDataException($"A hidden row in '{part}' lies outside the sheet.");
                     sheet.SetRowHidden(row, true);
                 }
+
+                // Excel writes ht for rows grown to fit a larger font too, not only for customHeight.
+                if (Size(reader.GetAttribute("ht"), MaxRowHeight) is { } height && row <= CellAddress.MaxRow)
+                    sheet.SetRowHeight(row, height);
                 reader.Read();
                 continue;
             }
@@ -73,7 +77,32 @@ internal static class WorksheetReader
                         if (AutoFilter.HasCriteria(reader))
                             sheet.FilterMode = true;
                         break;
+                    case "sheetFormatPr":
+                        sheet.DefaultColumnWidth = Size(reader.GetAttribute("defaultColWidth"), MaxColumnWidth);
+                        sheet.DefaultRowHeight = Size(reader.GetAttribute("defaultRowHeight"), MaxRowHeight);
+                        break;
                 }
+            }
+
+            // Column sizes and merged cells only change how the sheet is shown: anything broken in
+            // them is skipped rather than refusing the file.
+            if (reader.Depth == 2 && reader.LocalName == "col")
+            {
+                ReadColumns(reader, sheet);
+                reader.Read();
+                continue;
+            }
+
+            if (reader.Depth == 2 && reader.LocalName == "mergeCell")
+            {
+                if (reader.GetAttribute("ref") is { } merged && ReferenceSyntax.TryParseA1Area(merged, new CellAddress(1, 1), out var parsedArea))
+                {
+                    var area = Area.Resolve(parsedArea, new CellAddress(1, 1));
+                    if (!area.IsSingleCell)
+                        sheet.TryMerge(area);
+                }
+                reader.Read();
+                continue;
             }
 
             if (reader.LocalName == "tablePart")
@@ -113,16 +142,48 @@ internal static class WorksheetReader
             else
                 loader.SetValue(row, column, cached);
 
-            // A style the styles part does not have (or no styles part) leaves the cell General:
-            // a format only changes how a cell is shown, so it never stops a file from loading.
-            if (cell.Style is { } style && style < saved.Styles.Count && saved.Styles[style] is { } format)
-                sheet.SetFormat(row, column, format);
+            // A style the styles part does not have (or no styles part) leaves the cell General with
+            // the default style: a style only changes how a cell is shown, so it never stops a file
+            // from loading. A cell with the default style keeps none of its own.
+            if (cell.Style is { } style && style < saved.Styles.Count)
+            {
+                var xf = saved.Styles[style];
+                if (xf.Format is { } format)
+                    sheet.SetFormat(row, column, format);
+                if (xf.Style != sheet.Workbook.DefaultStyle)
+                    sheet.SetStyle(row, column, xf.Style);
+            }
         }
 
         loader.Complete();
         if (tableIds.Count > 0)
             ReadTables(package, part, sheet, tableIds);
     }
+
+    private const double MaxColumnWidth = 255;
+    private const double MaxRowHeight = 409;
+
+    private static void ReadColumns(XmlReader reader, Worksheet sheet)
+    {
+        if (!int.TryParse(reader.GetAttribute("min"), NumberStyles.None, CultureInfo.InvariantCulture, out var min)
+            || !int.TryParse(reader.GetAttribute("max"), NumberStyles.None, CultureInfo.InvariantCulture, out var max)
+            || min < 1 || max > CellAddress.MaxColumn || min > max)
+            return;
+
+        var width = Size(reader.GetAttribute("width"), MaxColumnWidth);
+        var hidden = reader.GetAttribute("hidden") is "1" or "true";
+        for (var column = min; column <= max; column++)
+        {
+            if (width is not null)
+                sheet.SetColumnWidth(column, width);
+            if (hidden)
+                sheet.SetColumnHidden(column, true);
+        }
+    }
+
+    // A size within Excel's limits, or null for one that is missing or is not.
+    private static double? Size(string? text, double max) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var size) && size >= 0 && size <= max ? size : null;
 
     private static void ReadTables(Package package, string part, Worksheet sheet, List<string> ids)
     {

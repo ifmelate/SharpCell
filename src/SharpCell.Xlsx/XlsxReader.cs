@@ -8,8 +8,8 @@ namespace SharpCell.Xlsx;
 
 /// <summary>
 /// Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names,
-/// tables, hidden rows, whether a sheet is filtered, and the date system. Styles, charts, pivot
-/// tables and macros are not read.
+/// tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles,
+/// column widths, row heights and merged cells. Charts, pivot tables and macros are not read.
 /// <para>
 /// Every formula is out of date after loading: <see cref="Cell.Value"/> shows the value cached in
 /// the file until <see cref="Workbook.Recalculate"/> calculates it. A formula SharpCell cannot
@@ -115,6 +115,8 @@ internal static class WorkbookReader
             DefineName(workbook, name, byIndex);
 
         var saved = ReadSavedCells(package, relationships);
+        if (saved.Styles.Count > 0)
+            workbook.DefaultStyle = saved.Styles[0].Style;
 
         sheetParts = new Dictionary<Worksheet, string>();
         foreach (var entry in byIndex)
@@ -282,7 +284,8 @@ internal static class WorkbookReader
             FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
         var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
         var stylesPart = FirstOfType(relationships, "styles")?.Target;
-        var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart) : [];
+        var theme = ThemeReader.Read(package, FirstOfType(relationships, "theme")?.Target);
+        var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : [];
         return new SavedCells(sharedStrings, metadata, styles);
     }
 
