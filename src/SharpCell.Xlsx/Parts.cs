@@ -39,6 +39,52 @@ internal static class XmlText
     }
 
     /// <summary>
+    /// The inverse of <see cref="Decode"/>: carriage returns and characters XML cannot hold become
+    /// <c>_xHHHH_</c>, and text that reads as such an escape gets its underscore escaped
+    /// (<c>_x0041_</c> becomes <c>_x005F_x0041_</c>). Tabs and line feeds stay as they are.
+    /// </summary>
+    public static string Encode(string text)
+    {
+        StringBuilder? sb = null;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var ch = text[i];
+            var escape = ch == '_' && IsEscape(text, i) ? "_x005F_"
+                : NeedsEscape(text, i) ? "_x" + ((int)ch).ToString("X4", CultureInfo.InvariantCulture) + "_"
+                : null;
+            if (escape is null)
+            {
+                sb?.Append(ch);
+                continue;
+            }
+
+            sb ??= new StringBuilder(text.Length + 16).Append(text, 0, i);
+            sb.Append(escape);
+        }
+
+        return sb?.ToString() ?? text;
+    }
+
+    // "_xHHHH_" at i, which Decode would read as one character.
+    private static bool IsEscape(string text, int i) =>
+        i + 7 <= text.Length && text[i + 1] == 'x' && text[i + 6] == '_'
+        && ushort.TryParse(text.AsSpan(i + 2, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out _);
+
+    private static bool NeedsEscape(string text, int i)
+    {
+        var ch = text[i];
+        if (ch < 0x20)
+            return ch is not ('\t' or '\n');
+        if (ch is '\uFFFE' or '\uFFFF')
+            return true;
+        if (char.IsHighSurrogate(ch))
+            return i + 1 >= text.Length || !char.IsLowSurrogate(text[i + 1]);
+        if (char.IsLowSurrogate(ch))
+            return i == 0 || !char.IsHighSurrogate(text[i - 1]);
+        return false;
+    }
+
+    /// <summary>
     /// Text of a string item (<c>si</c> or <c>is</c>) the reader is on: plain <c>t</c> or rich text
     /// runs concatenated; phonetic guides (<c>rPh</c>) are not part of the value. Leaves the reader
     /// after the item.
