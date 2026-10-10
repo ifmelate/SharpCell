@@ -4809,6 +4809,12 @@
       "passed": 16
     },
     {
+      "name": "PERCENTOF",
+      "status": "implemented",
+      "cases": 0,
+      "passed": 0
+    },
+    {
       "name": "PERCENTRANK",
       "status": "implemented",
       "cases": 0,

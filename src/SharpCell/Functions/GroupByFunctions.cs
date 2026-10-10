@@ -1,0 +1,58 @@
+using SharpCell.Evaluation;
+
+namespace SharpCell.Functions;
+
+/// <summary>PERCENTOF; GROUPBY and PIVOTBY build on it.</summary>
+internal static class GroupByFunctions
+{
+    public static void Register(FunctionRegistry registry)
+    {
+        registry.Add(new FunctionInfo("PERCENTOF", 2, 2, [ArgumentKind.Any, ArgumentKind.Any], PercentOf));
+    }
+
+    // PERCENTOF(data_subset, data_all): SUM(data_subset) / SUM(data_all).
+    private static Operand PercentOf(FunctionCall call)
+    {
+        var part = SumOf(call, 0);
+        if (part.IsError)
+            return part;
+        var all = SumOf(call, 1);
+        if (all.IsError)
+            return all;
+        return all.AsNumber() == 0 ? CellValue.Error(ErrorKind.Div0) : CellValue.Number(part.AsNumber() / all.AsNumber());
+    }
+
+    /// <summary>The sum of one argument as SUM takes it: numbers of ranges and arrays, a direct value converted.</summary>
+    public static CellValue SumOf(FunctionCall call, int index)
+    {
+        var total = 0.0;
+        CellValue? error = null;
+        Aggregation.ForEachIn(call, index, (value, source) =>
+        {
+            if (value.IsError)
+            {
+                error = value;
+                return false;
+            }
+
+            if (value.Kind == CellValueKind.Number)
+            {
+                total += value.AsNumber();
+                return true;
+            }
+
+            if (source != ValueSource.Direct || value.Kind is CellValueKind.Empty or CellValueKind.Missing)
+                return true;
+            var number = Coercion.ToNumber(value, call.Context.Culture, call.Context.DateSystem);
+            if (number.IsError)
+            {
+                error = number;
+                return false;
+            }
+
+            total += number.AsNumber();
+            return true;
+        });
+        return error ?? CellValue.Number(total);
+    }
+}
