@@ -187,4 +187,54 @@ public class IterativeCalculationTests
         Assert.Equal(new[] { "A1", "B1", "C1" }, w.Diagnostics.Select(d => d.Address).Order());
         Assert.Equal(s["B1"].Value, s["C1"].Value);
     }
+
+    [Fact]
+    public void A_legacy_array_formula_read_through_its_area_iterates_without_throwing()
+    {
+        using var file = new Xlsx.TestXlsx { WorkbookTail = "<calcPr iterate=\"1\" iterateCount=\"3\" iterateDelta=\"0\"/>" }.Sheet("S",
+            "<row r=\"1\"><c r=\"A1\"><f>A3+1</f></c></row><row r=\"2\"><c r=\"A2\"><f t=\"array\" ref=\"A2:A3\">A1</f></c></row>").Build();
+        var w = SharpCell.Xlsx.XlsxReader.Load(file);
+
+        w.Recalculate();
+        w.Recalculate();
+
+        var s = w["S"];
+        Assert.Equal(CellValueKind.Number, s["A1"].Value.Kind);
+        Assert.Equal(s["A2"].Value, s["A3"].Value);                              // the array area repeats its one value
+        Assert.Equal(s["A1"].Value, s["A3"].Value);   // A2's area was filled after A1 in the last pass
+        Assert.False(w.Calculation.HasDirty);
+    }
+
+    [Fact]
+    public void A_formula_that_spilled_before_and_now_reads_its_old_spill_iterates_without_throwing()
+    {
+        var (w, s) = New(iterations: 3, change: 0);
+        s["C1"].Value = 1;
+        s["A1"].Formula = "=IF(C1=1,SEQUENCE(2),A2+1)";
+        w.Recalculate();
+        s["C1"].Value = 0;
+
+        w.Recalculate();
+
+        Assert.Equal(CellValueKind.Number, s["A1"].Value.Kind);
+        Assert.False(w.Calculation.HasDirty);
+    }
+
+    [Fact]
+    public void A_total_read_by_every_row_is_found_in_a_few_restarts()
+    {
+        // A1 is a total every row reads: the loop first found is one row and A1; the other rows join.
+        const int rows = 2000;
+        var (w, s) = New(iterations: 3, change: 0);
+        s["A1"].Formula = $"=SUM(B1:B{rows})/{2 * rows}+1";
+        for (var r = 1; r <= rows; r++)
+            s[$"B{r}"].Formula = "=A1";
+
+        w.Recalculate();
+
+        Assert.False(w.Calculation.HasDirty);
+        Assert.Equal(s["A1"].Value, s[$"B{rows}"].Value);
+        Assert.True(w.Calculation.EvaluationCount < 20 * rows, $"{w.Calculation.EvaluationCount} evaluations");
+        Assert.True(w.Calculation.IterationRestarts < 5, $"{w.Calculation.IterationRestarts} restarts");
+    }
 }

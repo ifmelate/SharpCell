@@ -120,8 +120,19 @@ internal sealed class EvaluationContext(Workbook workbook, Worksheet? sheet, Cel
         }
 
         // A spilled value is only as current as its anchor.
-        if (data.SpillAnchor is { } anchor && anchor.Data is { IsDirty: true, Formula: not null })
+        if (data.SpillAnchor is { } anchor && anchor.Data is { IsDirty: true, Formula: not null } anchorData)
+        {
+            // An anchor in the cycle being iterated: an array formula's area holds this pass's
+            // values; what a formula spilled before it became part of the cycle is gone.
+            if (Workbook.Calculation.ActiveCycle is { } cycle && cycle.Contains(anchor))
+            {
+                if (!IsCycleMember)
+                    TouchedCycle = true;
+                return anchorData.FixedArray is not null ? data.Value : CellValue.Empty;
+            }
+
             return Wait(anchor);
+        }
 
         return data.Value;
     }

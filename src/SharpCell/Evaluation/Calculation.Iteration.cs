@@ -13,13 +13,21 @@ namespace SharpCell.Evaluation;
 /// </summary>
 internal sealed partial class Calculation
 {
+    /// <summary>Times an iteration started again because the cycle had more cells than first found. For tests.</summary>
+    public int IterationRestarts { get; private set; }
+
     /// <summary>The cycle being iterated: reading one of its cells gives its value instead of waiting for it.</summary>
     public HashSet<CellKey>? ActiveCycle { get; private set; }
 
-    /// <summary>Thrown when a cell turns out to belong to the cycle being iterated; the iteration starts again with it.</summary>
-    private sealed class CycleGrew(CellKey joiner) : Exception("The cycle being iterated has more cells.")
+    /// <summary>Thrown when cells turn out to belong to the cycle being iterated; the iteration starts again with them.</summary>
+    private sealed class CycleGrew(IReadOnlyList<CellKey> joiners) : Exception("The cycle being iterated has more cells.")
     {
-        public CellKey Joiner { get; } = joiner;
+        public CycleGrew(CellKey joiner)
+            : this([joiner])
+        {
+        }
+
+        public IReadOnlyList<CellKey> Joiners { get; } = joiners;
     }
 
     private void IterateCycle(CellKey asker, CellKey asked, CancellationToken cancellationToken)
@@ -35,8 +43,17 @@ internal sealed partial class Calculation
             }
             catch (CycleGrew grew)
             {
-                if (!members.Add(grew.Joiner))
-                    throw new InvalidOperationException($"{grew.Joiner} joined the cycle twice.", grew);
+                IterationRestarts++;
+                var added = false;
+                foreach (var joiner in grew.Joiners)
+                    added |= members.Add(joiner);
+
+                // Nothing new means the cycle cannot be told apart: resolve it as without iteration.
+                if (!added)
+                {
+                    ResolveCycle(asker, asked);
+                    return;
+                }
             }
         }
     }
@@ -74,7 +91,18 @@ internal sealed partial class Calculation
                     if (value.Kind == CellValueKind.Array && data.FixedArray is null)
                         return false;
 
-                    var scalar = value.Kind == CellValueKind.Array ? value.AsArray()[0, 0] : value;
+                    // An array formula fills its area on every pass, so cells reading the area see this pass.
+                    CellValue scalar;
+                    if (data.FixedArray is { } fixedArea)
+                    {
+                        ClearSpill(member, data);
+                        scalar = FillFixed(member, data, value, fixedArea, cancellationToken);
+                    }
+                    else
+                    {
+                        scalar = value;
+                    }
+
                     change = Math.Max(change, Change(data.Value, scalar));
                     data.Value = scalar;
                     results[member] = (value, context.Dependencies!, context.Diagnostics);
@@ -121,8 +149,23 @@ internal sealed partial class Calculation
             var value = EvaluateGuarded(data.Formula!, context);
             if (context.Pending.Count == 0)
                 return (value, context);
+
+            // Every input that turns out to read the cycle joins it, all in one restart.
+            List<CellKey>? joiners = null;
             foreach (var input in context.Pending)
-                Compute(input, cancellationToken);
+            {
+                try
+                {
+                    Compute(input, cancellationToken);
+                }
+                catch (CycleGrew grew)
+                {
+                    (joiners ??= []).AddRange(grew.Joiners);
+                }
+            }
+
+            if (joiners is not null)
+                throw new CycleGrew(joiners);
         }
     }
 
