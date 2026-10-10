@@ -27,6 +27,9 @@ internal sealed class WorksheetWriter
     private string _prefix = "";
     private CellAddress _previous;
 
+    // The rectangle of the sheet's stored cells, or null for an empty sheet.
+    private readonly Area? _used;
+
     private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved)
     {
         _sheet = sheet;
@@ -34,6 +37,8 @@ internal sealed class WorksheetWriter
         _saved = saved;
         _model = sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn).GetEnumerator();
         _hasModel = _model.MoveNext();
+        foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            _used = _used is { } area ? Area.Bounding(area, Area.Cell(cell.Row, cell.Column)) : Area.Cell(cell.Row, cell.Column);
     }
 
     /// <returns>The part written again, or null when no value in it changed.</returns>
@@ -59,6 +64,10 @@ internal sealed class WorksheetWriter
                 if (empty)
                     writer.WriteEndElement();
             }
+            else if (reader.NodeType == XmlNodeType.Element && reader.Depth == 1 && reader.LocalName == "dimension")
+            {
+                Dimension((XElement)XNode.ReadFrom(reader)).WriteTo(writer);
+            }
             else if (reader.NodeType == XmlNodeType.Element && reader.Depth == 1 && reader.LocalName == "sheetData")
             {
                 SheetData(reader, writer);
@@ -69,6 +78,38 @@ internal sealed class WorksheetWriter
             }
         }
     }
+
+    // Widened to the cells the sheet now has; never narrowed (a larger one is also valid).
+    private XElement Dimension(XElement dimension)
+    {
+        if (dimension.Attribute("ref") is { } reference && _used is { } used && TryParseArea(reference.Value, out var area))
+        {
+            var widened = Area.Bounding(area, used);
+            if (widened != area)
+                reference.Value = Format(widened);
+        }
+
+        return dimension;
+    }
+
+    private static bool TryParseArea(string text, out Area area)
+    {
+        var colon = text.IndexOf(':');
+        var first = colon < 0 ? text.AsSpan() : text.AsSpan(0, colon);
+        var last = colon < 0 ? text.AsSpan() : text.AsSpan(colon + 1);
+        if (CellAddress.TryParse(first, out var a) && CellAddress.TryParse(last, out var b))
+        {
+            area = new Area(Math.Min(a.Row, b.Row), Math.Min(a.Column, b.Column), Math.Max(a.Row, b.Row), Math.Max(a.Column, b.Column));
+            return true;
+        }
+
+        area = default;
+        return false;
+    }
+
+    private static string Format(Area area) => area.IsSingleCell
+        ? new CellAddress(area.FirstRow, area.FirstColumn).ToString()
+        : $"{new CellAddress(area.FirstRow, area.FirstColumn)}:{new CellAddress(area.LastRow, area.LastColumn)}";
 
     private void SheetData(XmlReader reader, XmlWriter writer)
     {
@@ -209,8 +250,9 @@ internal sealed class WorksheetWriter
         {
             if (_plan.KeptCells.Contains(new CellKey(_sheet, row, column)))
                 return source;
+            var moved = UpdateSpillRef(source, data, row, column);
             var result = CellEncoding.Storable(data.Value);
-            return !_plan.RewriteAllValues && result.Equals(saved.Value)
+            return !moved && !_plan.RewriteAllValues && result.Equals(saved.Value)
                 ? source
                 : Rewrite(source, result, isFormula: true);
         }
@@ -237,6 +279,18 @@ internal sealed class WorksheetWriter
 
         CheckConstant(data, value, address);
         return Rewrite(source, value, isFormula: false);
+    }
+
+    // A dynamic array formula's ref is the area its result spills over, or just its cell.
+    private bool UpdateSpillRef(XElement cell, CellData data, int row, int column)
+    {
+        if (data.FixedArray is not null || data.IsLegacy || cell.Element(_ns + "f") is not { } formula || (string?)formula.Attribute("t") != "array")
+            return false;
+        var text = Format(data.SpillArea ?? Area.Cell(row, column));
+        if ((string?)formula.Attribute("ref") == text)
+            return false;
+        formula.SetAttributeValue("ref", text);
+        return true;
     }
 
     // A file can hold #SPILL! and #CALC! only as results; a typed one has nothing to stand for.
