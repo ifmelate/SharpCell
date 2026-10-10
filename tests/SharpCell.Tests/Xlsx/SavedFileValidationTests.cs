@@ -26,7 +26,15 @@ public class SavedFileValidationTests
         Assert.True(added.Count == 0, file + ":\n" + string.Join("\n", added.Take(20)));
     }
 
-    private static List<string> Errors(byte[] file)
+    /// <summary>Fails when the saved file has schema errors its source did not have.</summary>
+    internal static void AssertNoNewErrors(byte[] original, byte[] saved)
+    {
+        var known = Errors(original).ToHashSet();
+        var added = Errors(saved).Where(e => !known.Contains(e)).ToList();
+        Assert.True(added.Count == 0, string.Join("\n", added.Take(20)));
+    }
+
+    internal static List<string> Errors(byte[] file)
     {
         using var document = SpreadsheetDocument.Open(new MemoryStream(file, writable: false), isEditable: false);
         return new OpenXmlValidator(FileFormatVersions.Microsoft365).Validate(document)

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -30,6 +31,9 @@ public sealed class TestXlsx
     public string? Theme { get; set; }
 
     public string WorkbookContentType { get; set; } = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
+
+    /// <summary>A calculation chain part (xl/calcChain.xml) listing these cells of the first sheet, or null for none.</summary>
+    public string[]? CalcChain { get; set; }
 
     /// <summary>Use absolute targets ("/xl/...") in the workbook relationships.</summary>
     public bool AbsoluteTargets { get; set; }
@@ -67,7 +71,25 @@ public sealed class TestXlsx
             var types = new StringBuilder("<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">");
             types.Append("<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>");
             types.Append("<Default Extension=\"xml\" ContentType=\"application/xml\"/>");
-            types.Append($"<Override PartName=\"/xl/workbook.xml\" ContentType=\"{WorkbookContentType}\"/></Types>");
+            types.Append($"<Override PartName=\"/xl/workbook.xml\" ContentType=\"{WorkbookContentType}\"/>");
+            const string Ml = "application/vnd.openxmlformats-officedocument.spreadsheetml.";
+            for (var i = 0; i < _sheets.Count; i++)
+            {
+                var kind = _sheets[i].Type.StartsWith("chartsheet") ? "chartsheet" : "worksheet";
+                types.Append($"<Override PartName=\"/xl/{kind}s/sheet{i + 1}.xml\" ContentType=\"{Ml}{kind}+xml\"/>");
+            }
+
+            if (SharedStrings is not null)
+                types.Append($"<Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"{Ml}sharedStrings+xml\"/>");
+            if (Metadata is not null)
+                types.Append($"<Override PartName=\"/xl/metadata.xml\" ContentType=\"{Ml}sheetMetadata+xml\"/>");
+            if (Styles is not null)
+                types.Append($"<Override PartName=\"/xl/styles.xml\" ContentType=\"{Ml}styles+xml\"/>");
+            if (Theme is not null)
+                types.Append("<Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/>");
+            if (CalcChain is not null)
+                types.Append("<Override PartName=\"/xl/calcChain.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml\"/>");
+            types.Append("</Types>");
             Write(zip, "[Content_Types].xml", types.ToString());
             Write(zip, "_rels/.rels",
                 $"<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"{Rel}/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>");
@@ -113,6 +135,13 @@ public sealed class TestXlsx
             {
                 rels.Append($"<Relationship Id=\"rIdTH\" Type=\"{Rel}/theme\" Target=\"{prefix}theme/theme1.xml\"/>");
                 Write(zip, "xl/theme/theme1.xml", Theme);
+            }
+
+            if (CalcChain is not null)
+            {
+                rels.Append($"<Relationship Id=\"rIdCC\" Type=\"{Rel}/calcChain\" Target=\"{prefix}calcChain.xml\"/>");
+                Write(zip, "xl/calcChain.xml", $"<calcChain xmlns=\"{Main}\">"
+                    + string.Concat(CalcChain.Select(cell => $"<c r=\"{cell}\" i=\"1\"/>")) + "</calcChain>");
             }
 
             rels.Append("</Relationships>");

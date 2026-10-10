@@ -6,6 +6,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using SharpCell.Evaluation;
+using SharpCell.Parsing;
 
 namespace SharpCell.Xlsx;
 
@@ -20,7 +21,12 @@ internal sealed class WorksheetWriter
     private readonly Worksheet _sheet;
     private readonly WritePlan _plan;
     private readonly SavedCells _saved;
-    private readonly RichErrors _richErrors;
+    private readonly CellMetadataWriter _metadata;
+    private readonly SheetSource _source;
+
+    // Some formula of the sheet changed: shared formulas are written in full, since the cell
+    // holding a group's text may be the one that changed.
+    private readonly bool _expandShared;
     private readonly IEnumerator<StoredCell> _model;
     private bool _hasModel;
     private bool _changed;
@@ -34,12 +40,14 @@ internal sealed class WorksheetWriter
     // The rectangle of the sheet's stored cells, or null for an empty sheet.
     private readonly Area? _used;
 
-    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved, RichErrors richErrors)
+    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved, CellMetadataWriter metadata)
     {
         _sheet = sheet;
         _plan = plan;
         _saved = saved;
-        _richErrors = richErrors;
+        _metadata = metadata;
+        _source = plan.Source.Sheets[sheet];
+        _expandShared = plan.FormulasChangedIn(sheet);
         _model = sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn).GetEnumerator();
         _hasModel = _model.MoveNext();
         foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
@@ -47,9 +55,9 @@ internal sealed class WorksheetWriter
     }
 
     /// <returns>The part written again, or null when no value in it changed.</returns>
-    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved, RichErrors richErrors)
+    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved, CellMetadataWriter metadata)
     {
-        var writer = new WorksheetWriter(sheet, plan, saved, richErrors);
+        var writer = new WorksheetWriter(sheet, plan, saved, metadata);
         var output = new MemoryStream();
         using (var reader = package.OpenXml(part))
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
@@ -247,14 +255,17 @@ internal sealed class WorksheetWriter
 
     private void Advance() => _hasModel = _model.MoveNext();
 
-    // A stored cell the file does not have: a new constant, or a cell a spill now covers.
+    // A stored cell the file does not have: a new constant or formula, or a cell a spill now covers.
     private XElement? NewCell(StoredCell cell)
     {
+        var address = new CellAddress(cell.Row, cell.Column);
+        if (cell.Data.FormulaText is not null)
+            return WriteFormula(new XElement(_ns + "c", new XAttribute("r", address.ToString())), cell.Data, cell.Row, cell.Column);
+
         var value = CellEncoding.Storable(cell.Data.Value);
         if (value.Kind == CellValueKind.Empty
             || (cell.Data.SpillAnchor is not null && _keptSpills.Exists(area => area.Contains(cell.Row, cell.Column))))
             return null;
-        var address = new CellAddress(cell.Row, cell.Column);
         CheckConstant(cell.Data, value, address);
         // A spilled cell holds its anchor's result, written like a formula's (text as t="str").
         return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: cell.Data.SpillAnchor is not null, cell.Data);
@@ -279,6 +290,11 @@ internal sealed class WorksheetWriter
             return source;
 
         var saved = _saved.Read(source, _sheet, row, column);
+        var sourceFormula = source.Element(_ns + "f");
+        if (data?.FormulaText is not null
+            && (!WritePlan.IsLoadedFormula(data, _source, address) || (_expandShared && (string?)sourceFormula?.Attribute("t") == "shared")))
+            return WriteFormula(source, data, row, column);
+
         if (data?.FormulaText is not null)
         {
             if (_plan.KeptCells.Contains(new CellKey(_sheet, row, column)))
@@ -306,8 +322,12 @@ internal sealed class WorksheetWriter
                 : throw new NotSupportedException($"{_sheet.Name}!{address} is calculated by an Excel data table; its value cannot be changed.");
         }
 
+        // A formula the cell no longer has goes, even when its value stays. Excel saves the cells of a
+        // volatile spill with an empty formula (<f ca="1"/>): those belong to the spill.
+        var formulaRemoved = sourceFormula is not null && data?.SpillAnchor is null;
+
         // A #SPILL! or #CALC! value stays as the file has it: it cannot be written as a constant.
-        if (unchanged && (!_plan.RewriteAllValues || IsRichError(value)))
+        if (unchanged && !formulaRemoved && (!_plan.RewriteAllValues || IsRichError(value)))
             return source;
         if (value.Kind == CellValueKind.Empty)
         {
@@ -322,8 +342,36 @@ internal sealed class WorksheetWriter
         // Excel saves the cells of a volatile spill with an empty formula (<f ca="1"/>): a value typed
         // over one is the user's, without it.
         if (data?.SpillAnchor is null)
+        {
             source.Elements(_ns + "f").Remove();
+            source.Attribute("cm")?.Remove();
+        }
+
         return Rewrite(source, value, isFormula: data?.SpillAnchor is not null, data);
+    }
+
+    // The cell with the model's formula in file syntax and its result.
+    private XElement WriteFormula(XElement cell, CellData data, int row, int column)
+    {
+        cell.Elements(_ns + "f").Remove();
+        cell.Attribute("cm")?.Remove();
+        var origin = new CellAddress(row, column);
+        var text = FormulaPrinter.PrintForFile(data.Formula!, origin, at => _sheet.Workbook.TableAt(_sheet, at.Row, at.Column)?.Name);
+        var formula = new XElement(_ns + "f", text);
+        if (data.FixedArray is { } fixedArea)
+        {
+            formula.Add(new XAttribute("t", "array"), new XAttribute("ref", Format(fixedArea)));
+        }
+        else if (!data.IsLegacy
+                 && (data.SpillArea is not null || data.SpillWatch is not null || !FormulaStorage.IsPlain(data.Formula!, _sheet.Workbook, _sheet)))
+        {
+            // A dynamic array formula: its ref is the area it spills over, or just its cell.
+            formula.Add(new XAttribute("t", "array"), new XAttribute("ref", Format(data.SpillArea ?? Area.Cell(row, column))));
+            cell.SetAttributeValue("cm", _metadata.DynamicArrayCm());
+        }
+
+        cell.AddFirst(formula);
+        return Rewrite(cell, CellEncoding.Storable(data.Value), isFormula: true, data);
     }
 
     // A dynamic array formula's ref is the area its result spills over, or just its cell.
@@ -378,7 +426,7 @@ internal sealed class WorksheetWriter
             // sheet's edge or in a table it has none.
             var error = value.AsError();
             var wanted = isFormula && error == ErrorKind.Spill ? data?.SpillWatch : null;
-            cell.SetAttributeValue("vm", _richErrors.VmOf(error, wanted, wanted is null && isFormula && ReadsError(data!, error)));
+            cell.SetAttributeValue("vm", _metadata.VmOf(error, wanted, wanted is null && isFormula && ReadsError(data!, error)));
         }
 
         if (CellEncoding.ValueElement(_ns, value, isFormula) is { } element)
