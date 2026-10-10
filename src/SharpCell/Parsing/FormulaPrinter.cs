@@ -149,7 +149,7 @@ internal sealed class FormulaPrinter
                 break;
             case FunctionNode f:
                 if (_file)
-                    _sb.Append(IsBound(f.Name) ? "_xlpm." : FutureFunctions.Prefix(f.Name));
+                    _sb.Append(IsBound(f.Name) ? "_xlpm." : FutureFunctions.Prefix(f.Name) is { Length: > 0 } known ? known : f.FilePrefix);
                 _sb.Append(f.Name);
                 WriteArguments(f.Arguments);
                 break;

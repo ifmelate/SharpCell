@@ -78,16 +78,29 @@ internal static class ReferenceShift
     /// <param name="edited">The sheet whose rows or columns changed.</param>
     /// <param name="edit">The change.</param>
     public static FormulaNode Apply(FormulaNode node, Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit edit) =>
-        new Shifter(formulaSheet, oldOrigin, newOrigin, edited, edit).Visit(node);
+        new Shifter(formulaSheet, oldOrigin, newOrigin, edited, edit, null).Visit(node);
 
-    private sealed class Shifter(Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit edit)
+    /// <summary>The formula with references to tables that no longer exist turned into <c>#REF!</c>, as Excel does.</summary>
+    /// <param name="node">The formula.</param>
+    /// <param name="removed">The removed tables' names in upper case.</param>
+    /// <param name="edited">The sheet the tables were on.</param>
+    public static FormulaNode BreakTables(FormulaNode node, IReadOnlySet<string> removed, Worksheet edited) =>
+        new Shifter(null, default, default, edited, null, removed).Visit(node);
+
+    // With an edit, references move; with removed tables, references to them break.
+    private sealed class Shifter(Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit? shift,
+        IReadOnlySet<string>? removedTables)
     {
+        private readonly SheetEdit edit = shift ?? default;
+
         public FormulaNode Visit(FormulaNode node)
         {
             switch (node)
             {
-                case ReferenceNode reference:
+                case ReferenceNode reference when shift is not null:
                     return Reference(reference);
+                case StructuredReferenceNode { Reference.Table: { } table } when removedTables?.Contains(table.ToUpperInvariant()) == true:
+                    return new ErrorNode(ErrorKind.Ref);
                 case UnaryNode unary:
                     return Visit(unary.Operand) is var operand && operand != unary.Operand ? new UnaryNode(unary.Operator, operand) : node;
                 case BinaryNode binary:
@@ -95,7 +108,7 @@ internal static class ReferenceShift
                 case ParenthesesNode parentheses:
                     return Visit(parentheses.Inner) is var inner && inner != parentheses.Inner ? new ParenthesesNode(inner) : node;
                 case FunctionNode function:
-                    return Arguments(function.Arguments) is { } changed ? new FunctionNode(function.Name, changed) : node;
+                    return Arguments(function.Arguments) is { } changed ? new FunctionNode(function.Name, changed, function.FilePrefix) : node;
                 case CallNode call:
                 {
                     var callee = Visit(call.Callee);

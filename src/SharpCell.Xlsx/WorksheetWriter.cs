@@ -51,6 +51,9 @@ internal sealed class WorksheetWriter
     private readonly List<int> _changedRows = [];
     private int _nextChangedRow;
 
+    // Shared groups whose first cell (holding their text) was changed or removed.
+    private readonly HashSet<string> _brokenGroups = new(StringComparer.Ordinal);
+
     // Areas of kept dynamic arrays as the file states them: their spilled cells stay as saved.
     private readonly List<Area> _keptSpills = [];
 
@@ -369,7 +372,7 @@ internal sealed class WorksheetWriter
     }
 
     // Newer conditional formats and validations keep their ranges in xm:sqref and their formulas in xm:f.
-    private XElement Extensions(XElement element)
+    private XElement? Extensions(XElement element)
     {
         foreach (var sqref in element.Descendants().Where(d => d.Name.LocalName == "sqref" && !d.HasElements).ToList())
         {
@@ -389,7 +392,20 @@ internal sealed class WorksheetWriter
                 owner.Remove();
         }
 
-        return element;
+        // Lists left empty go, up to the extension list itself: the schema wants at least one item.
+        foreach (var list in element.Descendants().Where(d => d.Name.LocalName is "conditionalFormattings" or "dataValidations" or "sparklines").ToList())
+        {
+            var count = list.Elements().Count();
+            if (count == 0)
+                list.Remove();
+            else if (list.Attribute("count") is not null)
+                list.SetAttributeValue("count", count);
+        }
+
+        element.Descendants().Where(d => d.Name.LocalName == "sparklineGroup" && !d.Elements().Any(e => e.Name.LocalName == "sparklines")).ToList().ForEach(d => d.Remove());
+        element.Descendants().Where(d => d.Name.LocalName == "sparklineGroups" && !d.HasElements).ToList().ForEach(d => d.Remove());
+        element.Elements().Where(e => e.Name.LocalName == "ext" && !e.HasElements).ToList().ForEach(e => e.Remove());
+        return element.HasElements ? element : null;
     }
 
     private XElement? TableParts(XElement? element)
@@ -963,19 +979,45 @@ internal sealed class WorksheetWriter
         var sourceFormula = source.Element(_ns + "f");
         if (_shifted && saved.IsDataTable)
             throw new NotSupportedException($"{_sheet.Name}!{address} is part of an Excel data table, which SharpCell cannot move; save before inserting or deleting rows or columns there.");
-        if (data?.FormulaText is not null
-            && (_shifted || !WritePlan.IsLoadedFormula(data, _source, sourceAddress) || (_expandShared && (string?)sourceFormula?.Attribute("t") == "shared")))
-            return WriteFormula(source, data, row, column);
-
+        // A shared formula: si names its group, and the group's first cell (with ref) holds the text.
+        var group = (string?)sourceFormula?.Attribute("t") == "shared" ? (string?)sourceFormula!.Attribute("si") : null;
+        var holdsGroup = group is not null && sourceFormula!.Attribute("ref") is not null;
         if (data?.FormulaText is not null)
         {
+            var loaded = !_shifted && WritePlan.IsLoadedFormula(data, _source, sourceAddress);
             if (_plan.KeptCells.Contains(new CellKey(_sheet, row, column)))
             {
-                if (source.Element(_ns + "f") is { } kept && (string?)kept.Attribute("t") == "array"
+                // SharpCell could not calculate it: the formula and the result stay as the file has them,
+                // moved with their cell when rows or columns moved.
+                Area? keptArea = null;
+                if (sourceFormula is { } kept && (string?)kept.Attribute("t") == "array"
                     && (string?)kept.Attribute("ref") is { } reference && TryParseArea(reference, out var spill))
-                    _keptSpills.Add(spill);
-                return source;
+                {
+                    keptArea = _shifted ? _map.Map(_sheet, spill) : spill;
+                    if (keptArea is { } area)
+                        _keptSpills.Add(area);
+                }
+
+                if (loaded)
+                {
+                    if (group is not null && !holdsGroup && _brokenGroups.Contains(group))
+                        throw SharedGroupLost(address);
+                    return source;
+                }
+
+                if (_shifted)
+                    return WriteFormula(source, data, row, column, keepValue: true, keptArea);
             }
+
+            // Changed formulas are written; so are the other cells of shared groups, which may have
+            // lost the cell holding their text.
+            if (!loaded || (_expandShared && group is not null && !holdsGroup))
+            {
+                if (holdsGroup && !loaded)
+                    _brokenGroups.Add(group!);
+                return WriteFormula(source, data, row, column);
+            }
+
             var moved = UpdateSpillRef(source, data, row, column);
             var result = CellEncoding.Storable(data.Value);
             return !moved && !_plan.RewriteAllValues && result.Equals(saved.Value)
@@ -997,6 +1039,8 @@ internal sealed class WorksheetWriter
         // A formula the cell no longer has goes, even when its value stays. Excel saves the cells of a
         // volatile spill with an empty formula (<f ca="1"/>): those belong to the spill.
         var formulaRemoved = sourceFormula is not null && data?.SpillAnchor is null;
+        if (formulaRemoved && holdsGroup)
+            _brokenGroups.Add(group!);
 
         // A #SPILL! or #CALC! value stays as the file has it: it cannot be written as a constant.
         if (unchanged && !formulaRemoved && (!_plan.RewriteAllValues || IsRichError(value)))
@@ -1023,8 +1067,12 @@ internal sealed class WorksheetWriter
         return Rewrite(source, value, isFormula: data?.SpillAnchor is not null, data);
     }
 
-    // The cell with the model's formula in file syntax and its result.
-    private XElement WriteFormula(XElement cell, CellData data, int row, int column)
+    private NotSupportedException SharedGroupLost(CellAddress address) =>
+        new($"{_sheet.Name}!{address} shares the formula of a cell that changed, and SharpCell cannot read that formula to write it out.");
+
+    // The cell with the model's formula in file syntax and its result; with keepValue, the result
+    // the file has (for a formula SharpCell could not calculate), over keptArea if it spilled.
+    private XElement WriteFormula(XElement cell, CellData data, int row, int column, bool keepValue = false, Area? keptArea = null)
     {
         cell.Elements(_ns + "f").Remove();
         cell.Attribute("cm")?.Remove();
@@ -1036,14 +1084,20 @@ internal sealed class WorksheetWriter
             formula.Add(new XAttribute("t", "array"), new XAttribute("ref", Format(fixedArea)));
         }
         else if (!data.IsLegacy
-                 && (data.SpillArea is not null || data.SpillWatch is not null || !FormulaStorage.IsPlain(data.Formula!, _sheet.Workbook, _sheet)))
+                 && (keptArea is not null || data.SpillArea is not null || data.SpillWatch is not null || !FormulaStorage.IsPlain(data.Formula!, _sheet.Workbook, _sheet)))
         {
             // A dynamic array formula: its ref is the area it spills over, or just its cell.
-            formula.Add(new XAttribute("t", "array"), new XAttribute("ref", Format(data.SpillArea ?? Area.Cell(row, column))));
+            formula.Add(new XAttribute("t", "array"), new XAttribute("ref", Format(keptArea ?? data.SpillArea ?? Area.Cell(row, column))));
             cell.SetAttributeValue("cm", _metadata.DynamicArrayCm());
         }
 
         cell.AddFirst(formula);
+        if (keepValue)
+        {
+            _changed = true;
+            return cell;
+        }
+
         return Rewrite(cell, CellEncoding.Storable(data.Value), isFormula: true, data);
     }
 

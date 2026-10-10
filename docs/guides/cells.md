@@ -180,7 +180,11 @@ change either, as in Excel.
 Every formula is calculated again at the next `Workbook.Recalculate`. An edit that would push
 content past the last row or column, split an array formula (Ctrl+Shift+Enter), or remove a
 table's header or totals row without the whole table throws `InvalidOperationException` and changes
-nothing. Inserting or deleting columns inside a table throws `NotSupportedException`. When the
+nothing. Inserting or deleting columns inside a table throws `NotSupportedException`, and so does
+any edit of a sheet that has, or is named by, a formula SharpCell cannot read (such as a link to
+another workbook): its references could not follow. Formulas that name a table whose rows were all
+deleted get `#REF!`. Each edit goes through every formula of the workbook, so insert or delete many
+rows with one call (`InsertRows(5, 100)`) rather than one at a time. When the
 workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
 sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 

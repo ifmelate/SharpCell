@@ -241,6 +241,7 @@ internal sealed class FormulaParser
     {
         var token = Advance();
         var name = NormalizeFunctionName(token.Text!);
+        var prefix = FilePrefix(token.Text!, name);
         var arguments = ParseArguments();
         switch (name)
         {
@@ -249,8 +250,15 @@ internal sealed class FormulaParser
             case "SINGLE":
                 return Limit(new ImplicitIntersectionNode(SingleArgument(arguments, token)));
             default:
-                return Limit(new FunctionNode(name, arguments));
+                return Limit(new FunctionNode(name, arguments, prefix));
         }
+    }
+
+    // The _xlfn./_xlws. part of a prefixed name whose rest is a function name; "" for none.
+    private static string FilePrefix(string written, string normalized)
+    {
+        var prefix = written.Length > normalized.Length ? written[..^normalized.Length] : "";
+        return prefix.StartsWith("_xlfn.", StringComparison.OrdinalIgnoreCase) ? prefix.ToLowerInvariant().Replace("_xlpm.", "", StringComparison.Ordinal) : "";
     }
 
     private static FormulaNode SingleArgument(List<FormulaNode> arguments, Token function)

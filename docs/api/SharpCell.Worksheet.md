@@ -198,7 +198,7 @@ Deletes columns; see [Worksheet.DeleteRows](SharpCell.Worksheet.md#deleterows-in
 
 - `ArgumentOutOfRangeException`: The columns are not all on the sheet.
 - `InvalidOperationException`: The columns hold part of an array formula.
-- `NotSupportedException`: The columns are some but not all of a table's columns.
+- `NotSupportedException`: The columns are some but not all of a table's columns, or a formula on this sheet, or one naming it, cannot be read by SharpCell.
 
 <a id="deleterows-int-int"></a>
 ### DeleteRows(int, int)
@@ -218,6 +218,7 @@ Deletes rows, as Excel's Delete Sheet Rows does: cells below move up. A referenc
 
 - `ArgumentOutOfRangeException`: The rows are not all on the sheet.
 - `InvalidOperationException`: The rows hold part of an array formula, or a table's header or totals row or all its data rows without the whole table.
+- `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell.
 
 <a id="insertcolumns-int-int"></a>
 ### InsertColumns(int, int)
@@ -237,7 +238,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 
 - `ArgumentOutOfRangeException`: The columns would not fit on the sheet.
 - `InvalidOperationException`: Content would be pushed past the last column, or the columns would split an array formula.
-- `NotSupportedException`: The columns would be inserted inside a table.
+- `NotSupportedException`: The columns would be inserted inside a table, or a formula on this sheet, or one naming it, cannot be read by SharpCell.
 
 <a id="insertrows-int-int"></a>
 ### InsertRows(int, int)
@@ -246,7 +247,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 public void InsertRows(int row, int count = 1)
 ```
 
-Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), which reports no change for cells that only moved.
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -257,6 +258,7 @@ Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, style
 
 - `ArgumentOutOfRangeException`: The rows would not fit on the sheet.
 - `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula (Ctrl+Shift+Enter).
+- `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell (such as a link to another workbook), so its references could not follow.
 
 <a id="iscolumnhidden-int"></a>
 ### IsColumnHidden(int)

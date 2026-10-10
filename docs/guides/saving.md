@@ -56,8 +56,10 @@ After rows or columns were inserted or deleted, everything in the file that poin
 follows them, including what SharpCell does not model: conditional formats, data validation,
 hyperlinks, filters, page breaks, print areas, pictures and shapes, comments, chart series and
 pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
-where they were. A sheet holding an Excel data table cannot be saved after its rows or columns moved
-(`NotSupportedException`).
+where they were. A pivot table moves with the rows above it, but rows inserted into it or deleted
+from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
+saved after its rows or columns moved (`NotSupportedException`). Formulas SharpCell cannot read are
+kept as the file has them, with the results Excel saved.
 
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.
@@ -68,6 +70,8 @@ was read from can be the target.
 |---|---|
 | A workbook without sheets | `InvalidOperationException` |
 | A changed cell of an Excel data table, rows or columns moved on a sheet with one, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
+| Rows or columns inserted into or deleted from a pivot table | `NotSupportedException` |
+| A formula SharpCell cannot read changed so that formulas sharing its text would lose it | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
 

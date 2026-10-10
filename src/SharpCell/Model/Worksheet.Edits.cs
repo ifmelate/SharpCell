@@ -19,14 +19,15 @@ public sealed partial class Worksheet
     /// styles, row heights, hidden rows, merged cells and tables below move down, and every
     /// reference to them follows: in formulas of every sheet and in defined names. A range that
     /// spans the new rows grows; a table or merged area they are inserted into grows. Every formula
-    /// is calculated again at the next <see cref="Workbook.Recalculate"/>, which reports no change
-    /// for cells that only moved.
+    /// is calculated again at the next <see cref="Workbook.Recalculate"/>.
     /// </summary>
     /// <param name="row">The row the new rows take the place of, from 1.</param>
     /// <param name="count">How many rows to insert.</param>
     /// <exception cref="ArgumentOutOfRangeException">The rows would not fit on the sheet.</exception>
     /// <exception cref="InvalidOperationException">Content would be pushed past the last row, or the rows
     /// would split an array formula (Ctrl+Shift+Enter).</exception>
+    /// <exception cref="NotSupportedException">A formula on this sheet, or one naming it, cannot be read by
+    /// SharpCell (such as a link to another workbook), so its references could not follow.</exception>
     public void InsertRows(int row, int count = 1) => Edit(new SheetEdit(Rows: true, row, count, Delete: false), nameof(row));
 
     /// <summary>
@@ -40,6 +41,7 @@ public sealed partial class Worksheet
     /// <exception cref="ArgumentOutOfRangeException">The rows are not all on the sheet.</exception>
     /// <exception cref="InvalidOperationException">The rows hold part of an array formula, or a table's header or
     /// totals row or all its data rows without the whole table.</exception>
+    /// <exception cref="NotSupportedException">A formula on this sheet, or one naming it, cannot be read by SharpCell.</exception>
     public void DeleteRows(int row, int count = 1) => Edit(new SheetEdit(Rows: true, row, count, Delete: true), nameof(row));
 
     /// <summary>Inserts empty columns before <paramref name="column"/>; see <see cref="InsertRows"/>.</summary>
@@ -48,7 +50,8 @@ public sealed partial class Worksheet
     /// <exception cref="ArgumentOutOfRangeException">The columns would not fit on the sheet.</exception>
     /// <exception cref="InvalidOperationException">Content would be pushed past the last column, or the columns
     /// would split an array formula.</exception>
-    /// <exception cref="NotSupportedException">The columns would be inserted inside a table.</exception>
+    /// <exception cref="NotSupportedException">The columns would be inserted inside a table, or a formula on this
+    /// sheet, or one naming it, cannot be read by SharpCell.</exception>
     public void InsertColumns(int column, int count = 1) => Edit(new SheetEdit(Rows: false, column, count, Delete: false), nameof(column));
 
     /// <summary>Deletes columns; see <see cref="DeleteRows"/>.</summary>
@@ -56,7 +59,8 @@ public sealed partial class Worksheet
     /// <param name="count">How many columns to delete.</param>
     /// <exception cref="ArgumentOutOfRangeException">The columns are not all on the sheet.</exception>
     /// <exception cref="InvalidOperationException">The columns hold part of an array formula.</exception>
-    /// <exception cref="NotSupportedException">The columns are some but not all of a table's columns.</exception>
+    /// <exception cref="NotSupportedException">The columns are some but not all of a table's columns, or a formula
+    /// on this sheet, or one naming it, cannot be read by SharpCell.</exception>
     public void DeleteColumns(int column, int count = 1) => Edit(new SheetEdit(Rows: false, column, count, Delete: true), nameof(column));
 
     private void Edit(SheetEdit edit, string parameter)
@@ -75,6 +79,22 @@ public sealed partial class Worksheet
     // Everything that would make the edit fail is found before anything changes.
     private void Check(SheetEdit edit, int max)
     {
+        // A formula SharpCell cannot parse (a link to another workbook) could not follow the cells.
+        foreach (var sheet in Workbook.Sheets)
+        {
+            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            {
+                if (cell.Data.Formula is UnsupportedNode unsupported && (sheet == this || Mentions(unsupported.Text)))
+                    throw new NotSupportedException($"{sheet.Name}!{new CellAddress(cell.Row, cell.Column)} has a formula SharpCell cannot read; its references would not follow the moved cells.");
+            }
+        }
+
+        foreach (var name in Workbook.Names.All)
+        {
+            if (name.Formula is UnsupportedNode unsupported && (name.Scope == this || Mentions(unsupported.Text)))
+                throw new NotSupportedException($"The name '{name.Spelling}' has a formula SharpCell cannot read; its references would not follow the moved cells.");
+        }
+
         if (!edit.Delete)
         {
             var last = max - edit.Count;
@@ -118,6 +138,8 @@ public sealed partial class Worksheet
             bool Inside(int row) => row >= edit.At && row <= end;
         }
     }
+
+    private bool Mentions(string formula) => formula.Contains(Name, StringComparison.OrdinalIgnoreCase);
 
     // Inserting strictly inside a span, or deleting some but not all of it.
     private static bool Splits(SheetEdit edit, int first, int last) => edit.Delete
@@ -189,7 +211,38 @@ public sealed partial class Worksheet
                 _merged.RemoveAt(i);
         }
 
+        var before = Workbook.Tables.Where(table => table.Worksheet == this).Select(table => table.Name.ToUpperInvariant()).ToList();
         Workbook.MoveTables(this, table => edit.Map(table.Area));
+        var removed = before.Where(name => !Workbook.TryGetTable(name, out _)).ToHashSet(StringComparer.Ordinal);
+        if (removed.Count > 0)
+            BreakTableReferences(removed);
+    }
+
+    // Formulas naming a table whose rows were all deleted get #REF!, as in Excel.
+    private void BreakTableReferences(HashSet<string> removed)
+    {
+        var origin = new CellAddress(1, 1);
+        foreach (var sheet in Workbook.Sheets)
+        {
+            foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+            {
+                if (cell.Data.Formula is not { } formula || formula is UnsupportedNode)
+                    continue;
+                var broken = ReferenceShift.BreakTables(formula, removed, this);
+                if (broken != formula)
+                {
+                    cell.Data.Formula = broken;
+                    cell.Data.FormulaText = "=" + FormulaPrinter.Print(broken, new CellAddress(cell.Row, cell.Column));
+                }
+            }
+        }
+
+        foreach (var name in Workbook.Names.All.ToList())
+        {
+            var broken = ReferenceShift.BreakTables(name.Formula, removed, this);
+            if (broken != name.Formula)
+                Workbook.Names.Set(new NameDefinition(name.Name, name.Spelling, "=" + FormulaPrinter.Print(broken, origin), broken, name.Scope));
+        }
     }
 
     private void MoveKeys<T>(Dictionary<CellAddress, T> map, SheetEdit edit)

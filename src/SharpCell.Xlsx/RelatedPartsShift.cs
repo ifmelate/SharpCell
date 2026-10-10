@@ -204,10 +204,17 @@ internal static class RelatedPartsShift
         }
     }
 
+    // A pivot table moves with its rows, but Excel does not let rows or columns be inserted into it
+    // or deleted from it: its definition would no longer fit its place.
     private static void PivotLocation(XElement root, SheetEditMap map, Worksheet sheet)
     {
-        if (root.Elements().FirstOrDefault(e => e.Name.LocalName == "location") is { } location
-            && (string?)location.Attribute("ref") is { } reference && map.MapSqref(sheet, reference) is { } moved)
-            location.SetAttributeValue("ref", moved);
+        if (root.Elements().FirstOrDefault(e => e.Name.LocalName == "location") is not { } location
+            || (string?)location.Attribute("ref") is not { } reference
+            || !ReferenceSyntax.TryParseA1Area(reference, new CellAddress(1, 1), out var parsed))
+            return;
+        var area = SharpCell.Evaluation.Area.Resolve(parsed, new CellAddress(1, 1));
+        if (map.Map(sheet, area) is not { } moved || moved.Rows != area.Rows || moved.Columns != area.Columns)
+            throw new NotSupportedException($"Rows or columns were inserted into or deleted from pivot table '{(string?)root.Attribute("name")}' on sheet '{sheet.Name}'; Excel does not allow that.");
+        location.SetAttributeValue("ref", WorksheetParts.Format(moved));
     }
 }

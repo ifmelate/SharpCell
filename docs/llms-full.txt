@@ -471,7 +471,11 @@ change either, as in Excel.
 Every formula is calculated again at the next `Workbook.Recalculate`. An edit that would push
 content past the last row or column, split an array formula (Ctrl+Shift+Enter), or remove a
 table's header or totals row without the whole table throws `InvalidOperationException` and changes
-nothing. Inserting or deleting columns inside a table throws `NotSupportedException`. When the
+nothing. Inserting or deleting columns inside a table throws `NotSupportedException`, and so does
+any edit of a sheet that has, or is named by, a formula SharpCell cannot read (such as a link to
+another workbook): its references could not follow. Formulas that name a table whose rows were all
+deleted get `#REF!`. Each edit goes through every formula of the workbook, so insert or delete many
+rows with one call (`InsertRows(5, 100)`) rather than one at a time. When the
 workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
 sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
@@ -921,8 +925,10 @@ After rows or columns were inserted or deleted, everything in the file that poin
 follows them, including what SharpCell does not model: conditional formats, data validation,
 hyperlinks, filters, page breaks, print areas, pictures and shapes, comments, chart series and
 pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
-where they were. A sheet holding an Excel data table cannot be saved after its rows or columns moved
-(`NotSupportedException`).
+where they were. A pivot table moves with the rows above it, but rows inserted into it or deleted
+from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
+saved after its rows or columns moved (`NotSupportedException`). Formulas SharpCell cannot read are
+kept as the file has them, with the results Excel saved.
 
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.
@@ -933,6 +939,8 @@ was read from can be the target.
 |---|---|
 | A workbook without sheets | `InvalidOperationException` |
 | A changed cell of an Excel data table, rows or columns moved on a sheet with one, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
+| Rows or columns inserted into or deleted from a pivot table | `NotSupportedException` |
+| A formula SharpCell cannot read changed so that formulas sharing its text would lose it | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
 
@@ -3399,7 +3407,7 @@ Deletes columns; see [Worksheet.DeleteRows](SharpCell.Worksheet.md#deleterows-in
 
 - `ArgumentOutOfRangeException`: The columns are not all on the sheet.
 - `InvalidOperationException`: The columns hold part of an array formula.
-- `NotSupportedException`: The columns are some but not all of a table's columns.
+- `NotSupportedException`: The columns are some but not all of a table's columns, or a formula on this sheet, or one naming it, cannot be read by SharpCell.
 
 <a id="deleterows-int-int"></a>
 ### DeleteRows(int, int)
@@ -3419,6 +3427,7 @@ Deletes rows, as Excel's Delete Sheet Rows does: cells below move up. A referenc
 
 - `ArgumentOutOfRangeException`: The rows are not all on the sheet.
 - `InvalidOperationException`: The rows hold part of an array formula, or a table's header or totals row or all its data rows without the whole table.
+- `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell.
 
 <a id="insertcolumns-int-int"></a>
 ### InsertColumns(int, int)
@@ -3438,7 +3447,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 
 - `ArgumentOutOfRangeException`: The columns would not fit on the sheet.
 - `InvalidOperationException`: Content would be pushed past the last column, or the columns would split an array formula.
-- `NotSupportedException`: The columns would be inserted inside a table.
+- `NotSupportedException`: The columns would be inserted inside a table, or a formula on this sheet, or one naming it, cannot be read by SharpCell.
 
 <a id="insertrows-int-int"></a>
 ### InsertRows(int, int)
@@ -3447,7 +3456,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 public void InsertRows(int row, int count = 1)
 ```
 
-Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), which reports no change for cells that only moved.
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -3458,6 +3467,7 @@ Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, style
 
 - `ArgumentOutOfRangeException`: The rows would not fit on the sheet.
 - `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula (Ctrl+Shift+Enter).
+- `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell (such as a link to another workbook), so its references could not follow.
 
 <a id="iscolumnhidden-int"></a>
 ### IsColumnHidden(int)
