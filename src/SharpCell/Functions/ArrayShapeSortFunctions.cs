@@ -18,7 +18,7 @@ internal static class ArrayShapeSortFunctions
 
     // Sorting order: numbers, text (ignoring case), booleans, errors (by code); descending
     // reverses that, but empty cells always come last. Equal keys keep their order.
-    private static int CompareForSort(CellValue a, CellValue b, bool descending, CultureInfo culture)
+    internal static int CompareForSort(CellValue a, CellValue b, bool descending, CultureInfo culture)
     {
         var emptyA = a.Kind is CellValueKind.Empty or CellValueKind.Missing;
         var emptyB = b.Kind is CellValueKind.Empty or CellValueKind.Missing;

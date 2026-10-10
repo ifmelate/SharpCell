@@ -1,6 +1,6 @@
 {
-  "cells": 76153,
-  "passed": 76151,
+  "cells": 77026,
+  "passed": 77024,
   "widened": 38,
   "files": [
     {
@@ -25,6 +25,19 @@
       "widened": 0,
       "comparedCells": {
         "F": "F1:F3 F5 F9:F11 F13:F15 F17 F21:F23 F25:F26 F29 F33 F37:F39 F41 F45:F47 F49:F51 F53:F55 F57 F61 F65:F67 F69 F73 F77 F81 F85 F89 F93 F97:F99 F101 F105 F109 G5 G25:G26 G41 H41"
+      },
+      "failingCells": {}
+    },
+    {
+      "file": "excel-web/groupby.xlsx",
+      "cells": 873,
+      "passed": 873,
+      "skipped": 0,
+      "widened": 0,
+      "comparedCells": {
+        "G": "B1:B3 B26:B29 B51:B53 B76:B80 B101:B104 B126:B128 B151:B160 B176:B183 B201:B207 B226:B233 B251:B260 B276:B283 B301 B326:B328 B351:B353 B376:B378 B401:B408 B426 B451:B452 B476:B483 B501 B526:B528 B551:B553 B576:B578 B601:B603 B626:B628 B651:B654 B676:B678 B701:B703 B726:B730 B751:B755 B776 B801 B826 B851 B876 B901 B926 C1:C3 C26:C29 C51:C53 C76:C80 C101:C104 C126:C128 C151:C160 C176:C183 C201:C207 C226:C233 C251:C260 C276:C283 C326:C328 C351:C353 C376:C378 C401:C408 C451:C452 C476:C483 C526:C528 C551:C553 C576:C578 C601:C603 C626:C628 C651:C654 C676:C678 C701:C703 C726:C730 C751:C755 D151:D160 D176:D183 D201:D207 D226:D233 D251:D260 D276:D283 D401:D408 D476:D483 D651:D654 D701:D703",
+        "P": "B1:B4 B26:B30 B51:B54 B76:B82 B101:B106 B126:B128 B151:B154 B176 B201:B204 B226:B229 B251:B254 B276:B279 B301:B304 B326:B329 B351:B354 B376:B379 B401:B404 B426:B428 B451 B476:B484 B501:B504 B526 B551 C1:C4 C26:C30 C51:C54 C76:C82 C101:C106 C126:C128 C151:C154 C201:C204 C226:C229 C251:C254 C276:C279 C301:C304 C326:C329 C351:C354 C376:C379 C401:C404 C426:C428 C476:C484 C501:C504 D1:D4 D26:D30 D51:D54 D76:D82 D101:D106 D126:D128 D151:D154 D201:D204 D226:D229 D251:D254 D276:D279 D301:D304 D326:D329 D351:D354 D376:D379 D401:D404 D426:D428 D476:D484 D501:D504 E1:E4 E26:E30 E51:E54 E76:E82 E101:E106 E126:E128 E151:E154 E201:E204 E226:E229 E251:E254 E276:E279 E301:E304 E326:E329 E351:E354 E376:E379 E401:E404 E426:E428 E476:E484 E501:E504 F1:F4 F26:F30 F51:F54 F76:F82 F101:F106 F126:F128 F151:F154 F201:F204 F226:F229 F251:F254 F276:F279 F301:F304 F326:F329 F351:F354 F376:F379 F401:F404 F426:F428 F476:F484 F501:F504 G1:G4 G26:G30 G51:G54 G76:G82 G101:G106 G126:G128 G151:G154 G226:G229 G251:G254 G276:G279 G301:G304 G326:G329 G351:G354 G376:G379 G401:G404 G426:G428 G501:G504 H26:H30 H76:H82",
+        "Pct": "B1 B26 B51 B76 B101 B126"
       },
       "failingCells": {}
     },
@@ -3949,6 +3962,12 @@
       "passed": 30
     },
     {
+      "name": "GROUPBY",
+      "status": "implemented",
+      "cases": 354,
+      "passed": 354
+    },
+    {
       "name": "GROWTH",
       "status": "implemented",
       "cases": 19,
@@ -3999,8 +4018,8 @@
     {
       "name": "HSTACK",
       "status": "implemented",
-      "cases": 37,
-      "passed": 37
+      "cases": 49,
+      "passed": 49
     },
     {
       "name": "HYPGEOM.DIST",
@@ -4342,8 +4361,8 @@
     {
       "name": "LAMBDA",
       "status": "implemented",
-      "cases": 62,
-      "passed": 62
+      "cases": 68,
+      "passed": 68
     },
     {
       "name": "LARGE",
@@ -4474,8 +4493,8 @@
     {
       "name": "MAX",
       "status": "implemented",
-      "cases": 86,
-      "passed": 86
+      "cases": 92,
+      "passed": 92
     },
     {
       "name": "MAXA",
@@ -4522,8 +4541,8 @@
     {
       "name": "MIN",
       "status": "implemented",
-      "cases": 37,
-      "passed": 37
+      "cases": 43,
+      "passed": 43
     },
     {
       "name": "MINA",
@@ -4822,8 +4841,8 @@
     {
       "name": "PERCENTOF",
       "status": "implemented",
-      "cases": 0,
-      "passed": 0
+      "cases": 6,
+      "passed": 6
     },
     {
       "name": "PERCENTRANK",
@@ -4866,6 +4885,13 @@
       "status": "implemented",
       "cases": 110,
       "passed": 110
+    },
+    {
+      "name": "PIVOTBY",
+      "status": "known deviation",
+      "deviation": "Several functions at once, such as HSTACK(SUM,AVERAGE), give #VALUE! instead of a column for each.",
+      "cases": 513,
+      "passed": 513
     },
     {
       "name": "PMT",

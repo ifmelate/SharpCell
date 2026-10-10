@@ -8,6 +8,17 @@ internal static class GroupByFunctions
     public static void Register(FunctionRegistry registry)
     {
         registry.Add(new FunctionInfo("PERCENTOF", 2, 2, [ArgumentKind.Any, ArgumentKind.Any], PercentOf));
+        registry.Add(new FunctionInfo("GROUPBY", 3, 8,
+            [ArgumentKind.ArrayContext, ArgumentKind.ArrayContext, ArgumentKind.Any, ArgumentKind.Value, ArgumentKind.Value,
+             ArgumentKind.Any, ArgumentKind.ArrayContext, ArgumentKind.Value], Grouping.GroupBy));
+        registry.Add(new FunctionInfo("PIVOTBY", 4, 11,
+            [ArgumentKind.ArrayContext, ArgumentKind.ArrayContext, ArgumentKind.ArrayContext, ArgumentKind.Any, ArgumentKind.Value,
+             ArgumentKind.Value, ArgumentKind.Any, ArgumentKind.Value, ArgumentKind.Any, ArgumentKind.ArrayContext, ArgumentKind.Value],
+            Grouping.PivotBy)
+        {
+            Status = FunctionStatus.KnownDeviation,
+            Deviation = "Several functions at once, such as HSTACK(SUM,AVERAGE), give #VALUE! instead of a column for each.",
+        });
     }
 
     // PERCENTOF(data_subset, data_all): SUM(data_subset) / SUM(data_all). An error inside either
