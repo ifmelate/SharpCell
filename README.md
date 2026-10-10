@@ -12,7 +12,7 @@ Status: 0.x. The API may change between minor versions until 1.0.
 ## Install
 
 ```bash
-dotnet add package SharpCell.Xlsx   # reads .xlsx; brings SharpCell with it
+dotnet add package SharpCell.Xlsx   # reads and saves .xlsx; brings SharpCell with it
 dotnet add package SharpCell        # the engine alone, for workbooks built in code
 ```
 
@@ -41,7 +41,7 @@ workbook.Recalculate();
 CellValue result = sheet["A2"].Value;   // 6
 ```
 
-A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `SharpCell.Xlsx` reads `.xlsx` files (not `.xls`, `.xlsm` or `.xlsb`); SharpCell does not write files.
+A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `SharpCell.Xlsx` reads `.xlsx` files (not `.xls`, `.xlsm` or `.xlsb`) and saves recalculated values back into them ([Saving .xlsx files](docs/guides/saving.md)).
 
 ## Documentation
 

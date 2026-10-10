@@ -16,6 +16,10 @@ namespace SharpCell.Xlsx;
 /// parse (for example a link to another workbook) does not fail the load; once calculated it is
 /// <c>#NAME?</c> and listed in <see cref="Workbook.Diagnostics"/>.
 /// </para>
+/// <para>
+/// The workbook keeps the file's bytes in memory, so <see cref="XlsxWriter"/> can write new values
+/// into the same file.
+/// </para>
 /// </summary>
 public static class XlsxReader
 {
@@ -27,8 +31,7 @@ public static class XlsxReader
     public static Workbook Load(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
-        using var stream = File.OpenRead(path);
-        return Load(stream);
+        return Load(File.ReadAllBytes(path), XlsxLimits.Default);
     }
 
     /// <summary>Reads a workbook from a stream, which is left open.</summary>
@@ -42,10 +45,20 @@ public static class XlsxReader
 
     internal static Workbook Load(Stream stream, XlsxLimits limits)
     {
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return Load(copy.ToArray(), limits);
+    }
+
+    // The file stays in memory with the workbook: XlsxWriter writes new values into it.
+    internal static Workbook Load(byte[] bytes, XlsxLimits limits)
+    {
         try
         {
-            using var package = Package.Open(stream, limits);
-            return WorkbookReader.Read(package);
+            using var package = Package.Open(new MemoryStream(bytes, writable: false), limits);
+            var workbook = WorkbookReader.Read(package, out var workbookPart, out var sheetParts);
+            workbook.Source = XlsxSource.Capture(bytes, limits, workbookPart, workbook, sheetParts);
+            return workbook;
         }
         catch (XmlException ex)
         {
@@ -60,10 +73,10 @@ internal static class WorkbookReader
 
     private sealed record NameEntry(string Name, int? LocalSheet, string Formula);
 
-    public static Workbook Read(Package package)
+    public static Workbook Read(Package package, out string workbookPart, out Dictionary<Worksheet, string> sheetParts)
     {
         var root = package.ReadRelationships("");
-        var workbookPart = FirstOfType(root, "officeDocument")?.Target
+        workbookPart = FirstOfType(root, "officeDocument")?.Target
             ?? throw new InvalidDataException("The package has no workbook part.");
         CheckContentType(package, workbookPart);
 
@@ -100,19 +113,16 @@ internal static class WorkbookReader
         foreach (var name in names)
             DefineName(workbook, name, byIndex);
 
-        var sharedStringsPart = FirstOfType(relationships, "sharedStrings")?.Target;
-        var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
-            ? SharedStrings.Read(package, sharedStringsPart)
-            : [];
-        var rich = RichValues.Read(package,
-            FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
-            FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
-        var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
+        var saved = ReadSavedCells(package, relationships);
 
+        sheetParts = new Dictionary<Worksheet, string>();
         foreach (var entry in byIndex)
         {
             if (entry is { } sheet)
-                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, sharedStrings, metadata);
+            {
+                WorksheetReader.Read(package, sheet.Part, sheet.Sheet, saved);
+                sheetParts[sheet.Sheet] = sheet.Part;
+            }
         }
 
         return workbook;
@@ -234,7 +244,21 @@ internal static class WorkbookReader
         return id;
     }
 
-    private static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)
+    /// <summary>The parts cells point into: shared strings, and the metadata behind dynamic arrays and newer errors.</summary>
+    internal static SavedCells ReadSavedCells(Package package, Dictionary<string, Relationship> relationships)
+    {
+        var sharedStringsPart = FirstOfType(relationships, "sharedStrings")?.Target;
+        var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
+            ? SharedStrings.Read(package, sharedStringsPart)
+            : [];
+        var rich = RichValues.Read(package,
+            FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
+            FirstOfType(relationships, "rdRichValueStructure")?.Target ?? "xl/richData/rdrichvaluestructure.xml");
+        var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
+        return new SavedCells(sharedStrings, metadata);
+    }
+
+    internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)
     {
         Relationship? first = null;
         foreach (var relationship in relationships.Values)

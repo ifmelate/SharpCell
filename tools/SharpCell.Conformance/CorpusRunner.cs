@@ -50,7 +50,8 @@ internal static class CorpusRunner
     private static readonly HashSet<string> RandomFunctions = new(StringComparer.Ordinal) { "RAND", "RANDBETWEEN", "RANDARRAY" };
     private static readonly HashSet<string> ClockFunctions = new(StringComparer.Ordinal) { "NOW", "TODAY" };
 
-    public static FileResult Run(string path, string name, TimeSpan timeout, CorpusOverrides? overrides = null)
+    public static FileResult Run(string path, string name, TimeSpan timeout, CorpusOverrides? overrides = null,
+        Func<Workbook, Workbook>? afterCalculation = null)
     {
         overrides ??= CorpusOverrides.Empty;
         Workbook workbook;
@@ -107,6 +108,20 @@ internal static class CorpusRunner
             return new FileResult(name, [], 0, $"Calculation failed: {ex.GetType().Name}: {ex.Message}");
         }
 
+        // A round trip compares what a saved and reloaded workbook holds instead of the calculated one.
+        var read = workbook;
+        if (afterCalculation is not null)
+        {
+            try
+            {
+                read = afterCalculation(workbook);
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                return new FileResult(name, [], 0, $"Round trip failed: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
         var cells = new List<CellOutcome>();
         var skipped = 0;
         foreach (var (key, formula, functions, before) in expected)
@@ -118,7 +133,9 @@ internal static class CorpusRunner
                 continue;
             }
 
-            var actual = key.Data?.Value ?? CellValue.Empty;
+            var actual = ReferenceEquals(read, workbook)
+                ? key.Data?.Value ?? CellValue.Empty
+                : read[key.Sheet.Name][key.Row, key.Column].Value;
             var byKind = functions.Overlaps(RandomFunctions) || (!clockFixed && functions.Overlaps(ClockFunctions));
             var passed = byKind ? before.Kind == actual.Kind : Matches(before, actual, tolerance);
             var widened = !passed && !byKind && overrides.For(name, key.Sheet.Name, key.Address) is { } rule

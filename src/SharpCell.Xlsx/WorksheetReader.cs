@@ -14,7 +14,7 @@ internal static class WorksheetReader
     // A parsed shared formula, or why it could not be parsed; every cell of the group uses it.
     private sealed record SharedFormula(FormulaNode? Node, string Text, string? Reason);
 
-    private struct CellXml
+    internal struct CellXml
     {
         public string? Type;
         public int? Cm;
@@ -27,11 +27,10 @@ internal static class WorksheetReader
         public string? InlineText;
     }
 
-    public static void Read(Package package, string part, Worksheet sheet, IReadOnlyList<string> sharedStrings, CellMetadata? metadata)
+    public static void Read(Package package, string part, Worksheet sheet, SavedCells saved)
     {
         var loader = new SheetLoader(sheet);
         var shared = new Dictionary<string, SharedFormula>(StringComparer.Ordinal);
-        var dateSystem = sheet.Workbook.DateSystem;
         using var reader = package.OpenXml(part);
         var row = 0;
         var column = 0;
@@ -107,11 +106,9 @@ internal static class WorksheetReader
             var origin = new CellAddress(row, column);
             if (sheet.Store.Get(row, column) is not null)
                 throw new InvalidDataException($"Cell {sheet.Name}!{origin} appears twice in '{part}'.");
-            var cached = CachedValue(cell, sharedStrings, dateSystem, sheet, origin);
-            if (cached.IsError && cell.Vm is { } vm && metadata?.RichError(vm) is { } richError)
-                cached = CellValue.Error(richError);
+            var cached = SavedValue(cell, saved, sheet, origin);
             if (cell.FormulaType != "dataTable" && (cell.FormulaText is { Length: > 0 } || cell.FormulaType == "shared"))
-                LoadFormula(loader, cell, origin, cached, metadata, shared);
+                LoadFormula(loader, cell, origin, cached, saved.Metadata, shared);
             else
                 loader.SetValue(row, column, cached);
         }
@@ -205,7 +202,7 @@ internal static class WorksheetReader
     }
 
     // Reads one <c> element and leaves the reader after it.
-    private static CellXml ReadCell(XmlReader reader)
+    internal static CellXml ReadCell(XmlReader reader)
     {
         var cell = new CellXml
         {
@@ -251,6 +248,15 @@ internal static class WorksheetReader
 
         reader.Read();
         return cell;
+    }
+
+    /// <summary>The value a file saved in a cell, the newer errors (#SPILL!, #CALC!) included.</summary>
+    internal static CellValue SavedValue(CellXml cell, SavedCells saved, Worksheet sheet, CellAddress origin)
+    {
+        var cached = CachedValue(cell, saved.SharedStrings, sheet.Workbook.DateSystem, sheet, origin);
+        if (cached.IsError && cell.Vm is { } vm && saved.Metadata?.RichError(vm) is { } richError)
+            cached = CellValue.Error(richError);
+        return cached;
     }
 
     private static CellValue CachedValue(CellXml cell, IReadOnlyList<string> sharedStrings, DateSystem dateSystem, Worksheet sheet, CellAddress origin)

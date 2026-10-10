@@ -1,4 +1,4 @@
-# IronCalc test corpus
+# Excel test corpus
 
 Workbooks calculated by Microsoft Excel, copied from the IronCalc project and used here as
 reference values: SharpCell loads each file, recalculates it and compares every formula result

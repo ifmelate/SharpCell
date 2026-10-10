@@ -48,6 +48,12 @@ internal sealed class Calculation(Workbook workbook)
     /// <summary>Formula evaluations attempted by recalculation, restarts included. For tests.</summary>
     public int EvaluationCount { get; private set; }
 
+    /// <summary>
+    /// Whether some formula waits for recalculation. Cells that Evaluate calculated on the way stay in
+    /// the dirty list but are no longer dirty.
+    /// </summary>
+    public bool HasDirty => _dirty.Exists(key => key.Data is { Formula: not null, IsDirty: true });
+
     public IReadOnlyList<CalculationDiagnostic> Diagnostics
     {
         get

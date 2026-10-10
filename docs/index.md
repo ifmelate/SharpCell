@@ -1,6 +1,6 @@
 # SharpCell
 
-SharpCell is a free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA.
+SharpCell is a free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them, saves the results back and evaluates formulas, including dynamic arrays and LET/LAMBDA.
 
 ## Correctness
 
@@ -11,7 +11,7 @@ Results are compared with workbooks calculated by Microsoft Excel. The [compatib
 | Package | What it does |
 |---|---|
 | `SharpCell` | The engine: parser, values, recalculation and functions. No dependencies. |
-| `SharpCell.Xlsx` | Reads .xlsx files into a SharpCell workbook. |
+| `SharpCell.Xlsx` | Reads .xlsx files into a SharpCell workbook and saves recalculated values back. |
 
 Install from NuGet:
 
@@ -36,6 +36,7 @@ CellValue result = sheet["A2"].Value;   // 6
 - [Formulas and values](guides/formulas.md): syntax, references, dynamic arrays, names and LAMBDA.
 - [Recalculation](guides/recalculation.md): when values update, cancellation, diagnostics, threads.
 - [Reading .xlsx files](guides/xlsx.md): what the reader loads and what it skips.
+- [Saving .xlsx files](guides/saving.md): writing recalculated values back into a template.
 - [Functions](guides/functions.md): function status, criteria, dates.
 - [What SharpCell does not do](guides/limits.md): every known gap.
 - [API reference](api/index.md): every public type and member.

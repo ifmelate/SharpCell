@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace SharpCell.Xlsx;
 
@@ -36,6 +37,52 @@ internal static class XmlText
         }
 
         return sb.Append(text, start, text.Length - start).ToString();
+    }
+
+    /// <summary>
+    /// The inverse of <see cref="Decode"/>: carriage returns and characters XML cannot hold become
+    /// <c>_xHHHH_</c>, and text that reads as such an escape gets its underscore escaped
+    /// (<c>_x0041_</c> becomes <c>_x005F_x0041_</c>). Tabs and line feeds stay as they are.
+    /// </summary>
+    public static string Encode(string text)
+    {
+        StringBuilder? sb = null;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var ch = text[i];
+            var escape = ch == '_' && IsEscape(text, i) ? "_x005F_"
+                : NeedsEscape(text, i) ? "_x" + ((int)ch).ToString("X4", CultureInfo.InvariantCulture) + "_"
+                : null;
+            if (escape is null)
+            {
+                sb?.Append(ch);
+                continue;
+            }
+
+            sb ??= new StringBuilder(text.Length + 16).Append(text, 0, i);
+            sb.Append(escape);
+        }
+
+        return sb?.ToString() ?? text;
+    }
+
+    // "_xHHHH_" at i, which Decode would read as one character.
+    private static bool IsEscape(string text, int i) =>
+        i + 7 <= text.Length && text[i + 1] == 'x' && text[i + 6] == '_'
+        && ushort.TryParse(text.AsSpan(i + 2, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out _);
+
+    private static bool NeedsEscape(string text, int i)
+    {
+        var ch = text[i];
+        if (ch < 0x20)
+            return ch is not ('\t' or '\n');
+        if (ch is '\uFFFE' or '\uFFFF')
+            return true;
+        if (char.IsHighSurrogate(ch))
+            return i + 1 >= text.Length || !char.IsLowSurrogate(text[i + 1]);
+        if (char.IsLowSurrogate(ch))
+            return i == 0 || !char.IsHighSurrogate(text[i - 1]);
+        return false;
     }
 
     /// <summary>
@@ -73,6 +120,23 @@ internal static class XmlText
 
         reader.Read();
         return Decode(sb.ToString());
+    }
+}
+
+/// <summary>What cells of a file point into, and reading a cell element the way the reader does.</summary>
+internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetadata? metadata)
+{
+    public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
+
+    public CellMetadata? Metadata { get; } = metadata;
+
+    /// <summary>The value saved in a &lt;c&gt; element, and whether its formula belongs to an Excel data table.</summary>
+    public (CellValue Value, bool IsDataTable) Read(XElement cell, Worksheet sheet, int row, int column)
+    {
+        using var reader = cell.CreateReader();
+        reader.MoveToContent();
+        var xml = WorksheetReader.ReadCell(reader);
+        return (WorksheetReader.SavedValue(xml, this, sheet, new CellAddress(row, column)), xml.FormulaType == "dataTable");
     }
 }
 

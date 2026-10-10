@@ -211,7 +211,12 @@ internal static class Evaluator
             return context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
         // An array formula (Ctrl+Shift+Enter) counts too: Excel gives A1# its whole fixed area.
         if (anchor?.SpillArea is not { } spill)
-            return CellValue.Error(ErrorKind.Ref);
+        {
+            // An anchor whose spill is blocked passes its #SPILL! on, as in Excel. Reading it also
+            // makes this formula follow the anchor when the spill is unblocked.
+            var value = context.ReadCell(sheet, area.FirstRow, area.FirstColumn);
+            return value.Kind == CellValueKind.Error && value.AsError() == ErrorKind.Spill ? value : CellValue.Error(ErrorKind.Ref);
+        }
 
         var result = new Reference(sheet, spill);
         context.RecordReference(result);
@@ -285,8 +290,22 @@ internal static class Evaluator
 
         var name = EvaluateName(new NameNode(null, node.Name), context);
         if (!name.IsReference && name.Value.Kind == CellValueKind.Error && name.Value.AsError() == ErrorKind.Name)
+        {
+            // Neither a function SharpCell knows nor a defined name: Excel may know it, so the result
+            // is not trustworthy. A defined name that is #NAME? reported its own problem.
+            if (!IsDefinedName(node.Name, context))
+                context.Report(DiagnosticKind.UnsupportedFormula, $"Unknown function {node.Name}.");
             return name;
+        }
+
         return Lambdas.Call(ToValue(name, context), node.Arguments, context);
+    }
+
+    private static bool IsDefinedName(string name, EvaluationContext context)
+    {
+        var upper = name.ToUpperInvariant();
+        var names = context.Workbook.Names;
+        return (context.Sheet is { } sheet && names.TryGet(upper, sheet, out _)) || names.TryGet(upper, null, out _);
     }
 
     // Lookup order: LET names and LAMBDA parameters, the sheet's own names, then workbook names. Relative references inside a name

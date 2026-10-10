@@ -16,6 +16,9 @@ public sealed class TestXlsx
 
     public string WorkbookExtra { get; set; } = "";
 
+    /// <summary>Markup after definedNames, such as calcPr.</summary>
+    public string WorkbookTail { get; set; } = "";
+
     public string? SharedStrings { get; set; }
 
     public string? Metadata { get; set; }
@@ -80,6 +83,7 @@ public sealed class TestXlsx
             workbook.Append("</sheets>");
             if (_definedNames.Length > 0)
                 workbook.Append("<definedNames>").Append(_definedNames).Append("</definedNames>");
+            workbook.Append(WorkbookTail);
             workbook.Append("</workbook>");
             if (SharedStrings is not null)
             {

@@ -1,6 +1,6 @@
 # Excel oracle
 
-Builds SharpCell's own reference workbooks for behaviour the IronCalc corpus does not cover
+Builds SharpCell's own reference workbooks for behaviour the corpus in `tests/corpus/excel` does not cover
 (LET/LAMBDA, the four kinds of "empty", spills, legacy and array formulas, dates, criteria).
 Only Excel's own results count as reference values, so Excel calculates them.
 

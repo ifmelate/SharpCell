@@ -90,12 +90,17 @@ internal sealed class Package : IDisposable
 
     public bool Exists(string part) => _entries.ContainsKey(part);
 
+    /// <summary>The zip entries in the order the file stores them.</summary>
+    public IReadOnlyList<ZipArchiveEntry> Entries => _zip.Entries;
+
+    /// <summary>Opens a part's bytes, counted against the limits.</summary>
+    public Stream Open(string part) => _entries.TryGetValue(part, out var entry)
+        ? new LimitedStream(entry.Open(), this, part)
+        : throw new InvalidDataException($"The package has no part '{part}'.");
+
     /// <summary>Opens a part for reading as XML: no DTDs, no external resources, size limited.</summary>
     public XmlReader OpenXml(string part)
     {
-        if (!_entries.TryGetValue(part, out var entry))
-            throw new InvalidDataException($"The package has no part '{part}'.");
-
         var settings = new XmlReaderSettings
         {
             DtdProcessing = DtdProcessing.Prohibit,
@@ -104,7 +109,7 @@ internal sealed class Package : IDisposable
             IgnoreProcessingInstructions = true,
             CloseInput = true,
         };
-        return XmlReader.Create(new LimitedStream(entry.Open(), this, part), settings);
+        return XmlReader.Create(Open(part), settings);
     }
 
     /// <summary>The relationships of a part (or of the package for ""), keyed by id. External targets are left out.</summary>
@@ -112,7 +117,7 @@ internal sealed class Package : IDisposable
     {
         var slash = part.LastIndexOf('/');
         var folder = slash < 0 ? "" : part[..(slash + 1)];
-        var relsPart = folder + "_rels/" + part[(slash + 1)..] + ".rels";
+        var relsPart = RelationshipsPart(part);
         var result = new Dictionary<string, Relationship>(StringComparer.Ordinal);
         if (!Exists(relsPart))
             return result;
@@ -134,6 +139,13 @@ internal sealed class Package : IDisposable
         }
 
         return result;
+    }
+
+    /// <summary>The part holding a part's relationships: xl/workbook.xml → xl/_rels/workbook.xml.rels.</summary>
+    public static string RelationshipsPart(string part)
+    {
+        var slash = part.LastIndexOf('/');
+        return (slash < 0 ? "" : part[..(slash + 1)]) + "_rels/" + part[(slash + 1)..] + ".rels";
     }
 
     /// <summary>The content type the package declares for a part, or null.</summary>

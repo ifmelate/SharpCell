@@ -127,6 +127,9 @@ public sealed class Worksheet
 
     private readonly HashSet<int> _hiddenRows = [];
 
+    /// <summary>The hidden rows, in no particular order.</summary>
+    internal IReadOnlyCollection<int> HiddenRows => _hiddenRows;
+
     /// <summary>Whether a row is hidden.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
     public bool IsRowHidden(int row)
