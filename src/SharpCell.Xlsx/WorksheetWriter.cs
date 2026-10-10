@@ -22,12 +22,13 @@ internal sealed class WorksheetWriter
     private readonly WritePlan _plan;
     private readonly SavedCells _saved;
     private readonly CellMetadataWriter _metadata;
+    private readonly StylesWriter _styles;
     private readonly SheetSource _source;
 
     // Some formula of the sheet changed: shared formulas are written in full, since the cell
     // holding a group's text may be the one that changed.
     private readonly bool _expandShared;
-    private readonly IEnumerator<StoredCell> _model;
+    private readonly IEnumerator<ModelCell> _model;
     private bool _hasModel;
     private bool _changed;
     private XNamespace _ns = XNamespace.None;
@@ -40,24 +41,26 @@ internal sealed class WorksheetWriter
     // The rectangle of the sheet's stored cells, or null for an empty sheet.
     private readonly Area? _used;
 
-    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved, CellMetadataWriter metadata)
+    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved, CellMetadataWriter metadata, StylesWriter styles)
     {
         _sheet = sheet;
         _plan = plan;
         _saved = saved;
         _metadata = metadata;
+        _styles = styles;
         _source = plan.Source.Sheets[sheet];
         _expandShared = plan.FormulasChangedIn(sheet);
-        _model = sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn).GetEnumerator();
+        _model = ModelCells(sheet).GetEnumerator();
         _hasModel = _model.MoveNext();
-        foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+        foreach (var cell in ModelCells(sheet))
             _used = _used is { } area ? Area.Bounding(area, Area.Cell(cell.Row, cell.Column)) : Area.Cell(cell.Row, cell.Column);
     }
 
     /// <returns>The part written again, or null when no value in it changed.</returns>
-    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved, CellMetadataWriter metadata)
+    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved,
+        CellMetadataWriter metadata, StylesWriter styles)
     {
-        var writer = new WorksheetWriter(sheet, plan, saved, metadata);
+        var writer = new WorksheetWriter(sheet, plan, saved, metadata, styles);
         var output = new MemoryStream();
         using (var reader = package.OpenXml(part))
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
@@ -255,24 +258,106 @@ internal sealed class WorksheetWriter
 
     private void Advance() => _hasModel = _model.MoveNext();
 
-    // A stored cell the file does not have: a new constant or formula, or a cell a spill now covers.
-    private XElement? NewCell(StoredCell cell)
+    // The sheet's stored cells merged with the positions that have only a style or a number format,
+    // in row and column order.
+    private static IEnumerable<ModelCell> ModelCells(Worksheet sheet)
     {
-        var address = new CellAddress(cell.Row, cell.Column);
-        if (cell.Data.FormulaText is not null)
-            return WriteFormula(new XElement(_ns + "c", new XAttribute("r", address.ToString())), cell.Data, cell.Row, cell.Column);
+        var extras = new List<CellAddress>();
+        foreach (var address in sheet.Styles.Keys)
+        {
+            if (sheet.Store.Get(address.Row, address.Column) is null)
+                extras.Add(address);
+        }
 
-        var value = CellEncoding.Storable(cell.Data.Value);
-        if (value.Kind == CellValueKind.Empty
-            || (cell.Data.SpillAnchor is not null && _keptSpills.Exists(area => area.Contains(cell.Row, cell.Column))))
+        foreach (var address in sheet.Formats.Keys)
+        {
+            if (sheet.Store.Get(address.Row, address.Column) is null && sheet.StyleAt(address.Row, address.Column) is null)
+                extras.Add(address);
+        }
+
+        extras.Sort((a, b) => a.Row != b.Row ? a.Row.CompareTo(b.Row) : a.Column.CompareTo(b.Column));
+        var next = 0;
+        foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
+        {
+            while (next < extras.Count && (extras[next].Row < cell.Row || (extras[next].Row == cell.Row && extras[next].Column < cell.Column)))
+            {
+                yield return new ModelCell(extras[next].Row, extras[next].Column, null);
+                next++;
+            }
+
+            yield return new ModelCell(cell.Row, cell.Column, cell.Data);
+        }
+
+        for (; next < extras.Count; next++)
+            yield return new ModelCell(extras[next].Row, extras[next].Column, null);
+    }
+
+    private readonly record struct ModelCell(int Row, int Column, CellData? Data);
+
+    // A cell the file does not have: a new constant or formula, a cell a spill now covers, or a
+    // cell with only a style or a number format.
+    private XElement? NewCell(ModelCell cell) => Styled(NewContent(cell), null, cell.Row, cell.Column);
+
+    private XElement? NewContent(ModelCell cell)
+    {
+        if (cell.Data is not { } data)
             return null;
-        CheckConstant(cell.Data, value, address);
+        var address = new CellAddress(cell.Row, cell.Column);
+        if (data.FormulaText is not null)
+            return WriteFormula(new XElement(_ns + "c", new XAttribute("r", address.ToString())), data, cell.Row, cell.Column);
+
+        var value = CellEncoding.Storable(data.Value);
+        if (value.Kind == CellValueKind.Empty
+            || (data.SpillAnchor is not null && _keptSpills.Exists(area => area.Contains(cell.Row, cell.Column))))
+            return null;
+        CheckConstant(data, value, address);
         // A spilled cell holds its anchor's result, written like a formula's (text as t="str").
-        return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: cell.Data.SpillAnchor is not null, cell.Data);
+        return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: data.SpillAnchor is not null, data);
     }
 
     // The source cell, the cell written again, or null when the cell goes away.
-    private XElement? Cell(XElement source, int row, int column)
+    private XElement? Cell(XElement source, int row, int column) =>
+        Styled(Content(source, row, column), StyleIndex(source), row, column);
+
+    private static int? StyleIndex(XElement cell) =>
+        int.TryParse((string?)cell.Attribute("s"), NumberStyles.None, CultureInfo.InvariantCulture, out var index) ? index : null;
+
+    // The cell with the style index its look and number format need now; a cell left with neither
+    // content nor style goes away.
+    private XElement? Styled(XElement? element, int? sourceStyle, int row, int column)
+    {
+        var target = TargetStyle(sourceStyle, row, column);
+        if (target == sourceStyle)
+            return element;
+        _changed = true;
+        if (element is null)
+        {
+            return target is { } index
+                ? new XElement(_ns + "c", new XAttribute("r", new CellAddress(row, column).ToString()), new XAttribute("s", index))
+                : null;
+        }
+
+        element.SetAttributeValue("s", target);
+        return target is null && !element.HasElements ? null : element;
+    }
+
+    // The style index is kept while the cell looks as it did when read; otherwise the style is found
+    // or made from the cell's old one. Cells without a style of their own show the workbook default.
+    private int? TargetStyle(int? sourceStyle, int row, int column)
+    {
+        var address = new CellAddress(row, column);
+        var style = _sheet.StyleAt(row, column) ?? _sheet.Workbook.DefaultStyle;
+        var code = _sheet.FormatAt(row, column)?.FormatCode ?? "General";
+        var loadedStyle = _source.Styles.TryGetValue(address, out var own) ? own : _plan.Source.DefaultStyle;
+        var loadedCode = _source.Formats.TryGetValue(address, out var format) ? format : "General";
+        if (style == loadedStyle && code == loadedCode)
+            return sourceStyle;
+        var index = _styles.XfFor(sourceStyle ?? 0, style, code);
+        return index == 0 && sourceStyle is null ? null : index;
+    }
+
+    // The source cell with the model's content, or null when it has none.
+    private XElement? Content(XElement source, int row, int column)
     {
         var address = new CellAddress(row, column);
         if (source.Attribute("r") is null)
@@ -336,6 +421,7 @@ internal sealed class WorksheetWriter
                 ? null
                 : new XElement(source.Name, source.Attributes().Where(a => a.Name.LocalName is not ("t" or "vm" or "cm")));
         }
+
 
         CheckConstant(data, value, address);
 

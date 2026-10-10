@@ -12,8 +12,11 @@ namespace SharpCell.Xlsx;
 /// so a save can write new values into the same file and refuse changes it cannot write.
 /// </summary>
 internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workbookPart,
-    IReadOnlyDictionary<Worksheet, SheetSource> sheets, string structure, string presentation) : IWorkbookSource
+    IReadOnlyDictionary<Worksheet, SheetSource> sheets, string structure, string presentation, CellStyle defaultStyle) : IWorkbookSource
 {
+    /// <summary>The workbook's default style as read: cells without a style of their own showed it.</summary>
+    public CellStyle DefaultStyle { get; } = defaultStyle;
+
     public byte[] Bytes { get; } = bytes;
 
     public XlsxLimits Limits { get; } = limits;
@@ -25,7 +28,7 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
     /// <summary>The workbook's structure as read, from <see cref="Xlsx.Structure.Of"/>.</summary>
     public string Structure { get; } = structure;
 
-    /// <summary>The sheets' geometry and the default style as read, from <see cref="Xlsx.Presentation.Of"/>.</summary>
+    /// <summary>The sheets' geometry as read, from <see cref="Xlsx.Presentation.Of"/>.</summary>
     public string Presentation { get; } = presentation;
 
     /// <summary>The same file for a clone of the workbook: the bytes and the per-sheet records are shared.</summary>
@@ -34,7 +37,7 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
         var sheets = new Dictionary<Worksheet, SheetSource>(Sheets.Count);
         foreach (var (sheet, source) in Sheets)
             sheets.Add(map(sheet), source);
-        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Structure, Presentation);
+        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Structure, Presentation, DefaultStyle);
     }
 
     public static XlsxSource Capture(byte[] bytes, XlsxLimits limits, string workbookPart, Workbook workbook,
@@ -56,7 +59,7 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
             sheets[sheet] = new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles));
         }
 
-        return new XlsxSource(bytes, limits, workbookPart, sheets, Xlsx.Structure.Of(workbook), Xlsx.Presentation.Of(workbook));
+        return new XlsxSource(bytes, limits, workbookPart, sheets, Xlsx.Structure.Of(workbook), Xlsx.Presentation.Of(workbook), workbook.DefaultStyle);
     }
 }
 
@@ -115,7 +118,6 @@ internal static class Presentation
     public static string Of(Workbook workbook)
     {
         var text = new StringBuilder();
-        text.Append("default style ").Append(workbook.DefaultStyle).Append('\n');
         foreach (var sheet in workbook.Sheets)
         {
             text.Append("sheet ").Append(sheet.Name)

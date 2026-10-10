@@ -17,13 +17,18 @@ internal static class PackageWriter
         var relationships = package.ReadRelationships(source.WorkbookPart);
         var saved = WorkbookReader.ReadSavedCells(package, relationships);
         var metadata = CellMetadataWriter.Open(edit, source.WorkbookPart, relationships);
+        var styles = StylesWriter.Open(edit, source.WorkbookPart, relationships);
+        var workbook = plan.Workbook;
+        if (workbook.DefaultStyle != source.DefaultStyle)
+            styles.SetDefault(workbook.DefaultStyle);
         foreach (var (sheet, sheetSource) in source.Sheets)
         {
-            if (WorksheetWriter.Write(package, sheetSource.Part, sheet, plan, saved, metadata) is { } bytes)
+            if (WorksheetWriter.Write(package, sheetSource.Part, sheet, plan, saved, metadata, styles) is { } bytes)
                 edit.Parts[sheetSource.Part] = bytes;
         }
 
         metadata.Save();
+        styles.Save();
 
         // Excel trusts the calculation chain; one that lists cells without formulas makes it repair the file.
         if (plan.AnyFormulaChanged && WorkbookReader.FirstOfType(relationships, "calcChain")?.Target is { } chain)
