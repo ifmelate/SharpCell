@@ -15,12 +15,15 @@ internal static class PackageWriter
         using var package = Package.Open(new MemoryStream(source.Bytes, writable: false), source.Limits);
         var relationships = package.ReadRelationships(source.WorkbookPart);
         var saved = WorkbookReader.ReadSavedCells(package, relationships);
+        var richErrors = RichErrors.Open(package, source.WorkbookPart, relationships);
         var parts = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         foreach (var (sheet, sheetSource) in source.Sheets)
         {
-            if (WorksheetWriter.Write(package, sheetSource.Part, sheet, plan, saved) is { } bytes)
+            if (WorksheetWriter.Write(package, sheetSource.Part, sheet, plan, saved, richErrors) is { } bytes)
                 parts[sheetSource.Part] = bytes;
         }
+
+        richErrors.Save(parts);
 
         if (plan.FullCalcOnLoad)
             parts[source.WorkbookPart] = WorkbookPartWriter.WithFullCalcOnLoad(package, source.WorkbookPart);

@@ -117,7 +117,7 @@ internal sealed class Package : IDisposable
     {
         var slash = part.LastIndexOf('/');
         var folder = slash < 0 ? "" : part[..(slash + 1)];
-        var relsPart = folder + "_rels/" + part[(slash + 1)..] + ".rels";
+        var relsPart = RelationshipsPart(part);
         var result = new Dictionary<string, Relationship>(StringComparer.Ordinal);
         if (!Exists(relsPart))
             return result;
@@ -139,6 +139,13 @@ internal sealed class Package : IDisposable
         }
 
         return result;
+    }
+
+    /// <summary>The part holding a part's relationships: xl/workbook.xml → xl/_rels/workbook.xml.rels.</summary>
+    public static string RelationshipsPart(string part)
+    {
+        var slash = part.LastIndexOf('/');
+        return (slash < 0 ? "" : part[..(slash + 1)]) + "_rels/" + part[(slash + 1)..] + ".rels";
     }
 
     /// <summary>The content type the package declares for a part, or null.</summary>

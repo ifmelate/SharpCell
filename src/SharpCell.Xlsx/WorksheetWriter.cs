@@ -20,6 +20,7 @@ internal sealed class WorksheetWriter
     private readonly Worksheet _sheet;
     private readonly WritePlan _plan;
     private readonly SavedCells _saved;
+    private readonly RichErrors _richErrors;
     private readonly IEnumerator<StoredCell> _model;
     private bool _hasModel;
     private bool _changed;
@@ -33,11 +34,12 @@ internal sealed class WorksheetWriter
     // The rectangle of the sheet's stored cells, or null for an empty sheet.
     private readonly Area? _used;
 
-    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved)
+    private WorksheetWriter(Worksheet sheet, WritePlan plan, SavedCells saved, RichErrors richErrors)
     {
         _sheet = sheet;
         _plan = plan;
         _saved = saved;
+        _richErrors = richErrors;
         _model = sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn).GetEnumerator();
         _hasModel = _model.MoveNext();
         foreach (var cell in sheet.Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn))
@@ -45,9 +47,9 @@ internal sealed class WorksheetWriter
     }
 
     /// <returns>The part written again, or null when no value in it changed.</returns>
-    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved)
+    public static byte[]? Write(Package package, string part, Worksheet sheet, WritePlan plan, SavedCells saved, RichErrors richErrors)
     {
-        var writer = new WorksheetWriter(sheet, plan, saved);
+        var writer = new WorksheetWriter(sheet, plan, saved, richErrors);
         var output = new MemoryStream();
         using (var reader = package.OpenXml(part))
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
@@ -231,7 +233,7 @@ internal sealed class WorksheetWriter
             return null;
         var address = new CellAddress(cell.Row, cell.Column);
         CheckConstant(cell.Data, value, address);
-        return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: false);
+        return Rewrite(new XElement(_ns + "c", new XAttribute("r", address.ToString())), value, isFormula: false, cell.Data);
     }
 
     // The source cell, the cell written again, or null when the cell goes away.
@@ -265,7 +267,7 @@ internal sealed class WorksheetWriter
             var result = CellEncoding.Storable(data.Value);
             return !moved && !_plan.RewriteAllValues && result.Equals(saved.Value)
                 ? source
-                : Rewrite(source, result, isFormula: true);
+                : Rewrite(source, result, isFormula: true, data);
         }
 
         var value = data is null ? CellValue.Empty : CellEncoding.Storable(data.Value);
@@ -289,7 +291,7 @@ internal sealed class WorksheetWriter
         }
 
         CheckConstant(data, value, address);
-        return Rewrite(source, value, isFormula: false);
+        return Rewrite(source, value, isFormula: false, data);
     }
 
     // A dynamic array formula's ref is the area its result spills over, or just its cell.
@@ -311,7 +313,7 @@ internal sealed class WorksheetWriter
             throw new NotSupportedException($"{_sheet.Name}!{address} holds {value} as a value; files store #SPILL! and #CALC! only as formula results.");
     }
 
-    private XElement Rewrite(XElement cell, CellValue value, bool isFormula)
+    private XElement Rewrite(XElement cell, CellValue value, bool isFormula, CellData? data)
     {
         _changed = true;
         cell.Attribute("t")?.Remove();
@@ -320,6 +322,14 @@ internal sealed class WorksheetWriter
         cell.Elements(_ns + "is").Remove();
         if (CellEncoding.TypeOf(value, isFormula) is { } type)
             cell.SetAttributeValue("t", type);
+        if (value.Kind == CellValueKind.Error && CellEncoding.IsRichError(value.AsError()))
+        {
+            // A #SPILL! anchor that cells block remembers the area it wanted (SpillWatch); at the
+            // sheet's edge or in a table it has none.
+            var wanted = isFormula && value.AsError() == ErrorKind.Spill ? data?.SpillWatch : null;
+            cell.SetAttributeValue("vm", _richErrors.VmOf(value.AsError(), wanted));
+        }
+
         if (CellEncoding.ValueElement(_ns, value, isFormula) is { } element)
         {
             if (cell.Element(_ns + "f") is { } formula)
