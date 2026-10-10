@@ -65,9 +65,10 @@ public sealed class CellRange : IEquatable<CellRange>
     }
 
     /// <summary>
-    /// Sets the value of every cell, as assigning <see cref="Cell.Value"/> one by one would:
-    /// formulas are replaced and <see cref="CellValue.Empty"/> clears a cell. Everything is checked
-    /// before the first cell is written, so an exception leaves the sheet unchanged.
+    /// Sets the value of every cell, as assigning <see cref="Cell.Value"/> would: formulas are
+    /// replaced and <see cref="CellValue.Empty"/> clears a cell. Everything is checked before the
+    /// first cell is written, so an exception leaves the sheet unchanged; a cell of an array formula
+    /// other than its top-left cell is refused even when the range covers the whole array.
     /// </summary>
     /// <param name="values">Values indexed <c>[row, column]</c>, exactly as large as the range.</param>
     /// <exception cref="ArgumentException">The array's size differs from the range's, or it holds a

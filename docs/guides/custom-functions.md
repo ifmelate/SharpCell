@@ -75,7 +75,8 @@ lambda results are `#VALUE!`.
 
 An exception thrown by the body makes the cell `#VALUE!` and adds a diagnostic of kind
 `DiagnosticKind.CustomFunctionFailure`, naming the function and the exception. The rest of the
-workbook calculates as usual. Cancelling `Recalculate` through its token still cancels.
+workbook calculates as usual. An `OperationCanceledException` cancels the calculation only when
+its token was cancelled; otherwise it is a failure like any other exception.
 
 ## Rules for the body
 
@@ -87,6 +88,12 @@ workbook calculates as usual. Cancelling `Recalculate` through its token still c
   calling `Recalculate` or `Evaluate` from inside a body throw `InvalidOperationException`, which
   turns into `#VALUE!` and a diagnostic.
 - **Keep the arguments to the call.** `FunctionArguments` is valid only while the body runs.
+  An array it gives is a copy, which the body may change.
+- **Expect extra calls.** When a formula's inputs are out of date, SharpCell may call the body
+  before calculating them, with stand-in values, and throw that result away. A body without side
+  effects does not notice; one that calls a service should cache or tolerate it.
+- **Stop when cancelled.** `args.CancellationToken` is the token given to `Recalculate`; a slow
+  body can throw `OperationCanceledException` through it to cancel the calculation.
 - **Clones share the body.** `Workbook.Clone` copies the delegate, not what it captures: a body
   used by clones on several threads must be thread-safe.
 

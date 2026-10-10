@@ -21,6 +21,15 @@ public Cell? Caller { get; }
 
 The cell whose formula makes the call; null when the formula was given to [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string).
 
+<a id="cancellationtoken"></a>
+### CancellationToken
+
+```csharp
+public CancellationToken CancellationToken { get; }
+```
+
+The token passed to [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) or [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string-cancellationtoken), for a slow function to stop early: an `OperationCanceledException` it throws once the token is cancelled cancels the calculation.
+
 <a id="count"></a>
 ### Count
 
@@ -55,7 +64,7 @@ The workbook's date system, for reading date arguments with [CellValue.AsDateTim
 public CellValue this[int index] { get; }
 ```
 
-The argument's value: a single cell's value, a range as an [CellValueKind.Array](SharpCell.CellValueKind.md#array), an error as an error value, and [CellValue.Missing](SharpCell.CellValue.md#missing) for an argument left out, as the middle one of `F(1,,2)`.
+The argument's value: a single cell's value, a range as an [CellValueKind.Array](SharpCell.CellValueKind.md#array), an error as an error value, and [CellValue.Missing](SharpCell.CellValue.md#missing) for an argument left out, as the middle one of `F(1,,2)`. An array is a copy the function may change.
 
 **Exceptions**
 

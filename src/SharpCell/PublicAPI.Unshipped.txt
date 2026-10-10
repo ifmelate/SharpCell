@@ -27,6 +27,7 @@ SharpCell.DiagnosticKind.CustomFunctionFailure = 4 -> SharpCell.DiagnosticKind
 SharpCell.FunctionArguments
 SharpCell.FunctionArguments.Boolean(int index) -> SharpCell.CellValue
 SharpCell.FunctionArguments.Caller.get -> SharpCell.Cell?
+SharpCell.FunctionArguments.CancellationToken.get -> System.Threading.CancellationToken
 SharpCell.FunctionArguments.Count.get -> int
 SharpCell.FunctionArguments.Culture.get -> System.Globalization.CultureInfo!
 SharpCell.FunctionArguments.DateSystem.get -> SharpCell.DateSystem

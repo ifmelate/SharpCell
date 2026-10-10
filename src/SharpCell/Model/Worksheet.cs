@@ -92,6 +92,8 @@ public sealed class Worksheet
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(range);
+        // Before HeaderText, which may calculate.
+        Workbook.ThrowIfInCustomFunction();
         // A single cell is a table of one data cell, without a header row.
         if (!ReferenceSyntax.TryParseA1Area(range, new CellAddress(1, 1), out var parsed) || parsed.Kind is not (AreaKind.Range or AreaKind.Cell))
             throw new ArgumentException($"'{range}' is not a range such as A1:D10.", nameof(range));

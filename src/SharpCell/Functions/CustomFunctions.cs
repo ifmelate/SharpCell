@@ -253,7 +253,7 @@ public sealed class FunctionArguments
     /// <summary>
     /// The argument's value: a single cell's value, a range as an <see cref="CellValueKind.Array"/>,
     /// an error as an error value, and <see cref="CellValue.Missing"/> for an argument left out, as
-    /// the middle one of <c>F(1,,2)</c>.
+    /// the middle one of <c>F(1,,2)</c>. An array is a copy the function may change.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">There is no such argument.</exception>
     public CellValue this[int index]
@@ -261,7 +261,12 @@ public sealed class FunctionArguments
         get
         {
             CheckIndex(index);
-            return Call.IsMissing(index) ? CellValue.Missing : Call.Value(index);
+            if (Call.IsMissing(index))
+                return CellValue.Missing;
+
+            // An array constant is the formula's own, shared with clones of the workbook.
+            var value = Call.Value(index);
+            return value.Kind == CellValueKind.Array ? CellValue.Array((CellValue[,])value.AsArray().Clone()) : value;
         }
     }
 
@@ -311,6 +316,13 @@ public sealed class FunctionArguments
 
     /// <summary>The workbook's culture, as used for converting between text and numbers.</summary>
     public CultureInfo Culture => Call.Context.Culture;
+
+    /// <summary>
+    /// The token passed to <see cref="Workbook.Recalculate"/> or <see cref="Workbook.Evaluate(string, System.Threading.CancellationToken)"/>,
+    /// for a slow function to stop early: an <see cref="OperationCanceledException"/> it throws once
+    /// the token is cancelled cancels the calculation.
+    /// </summary>
+    public System.Threading.CancellationToken CancellationToken => Call.Context.CancellationToken;
 
     internal void Close() => _call = null;
 

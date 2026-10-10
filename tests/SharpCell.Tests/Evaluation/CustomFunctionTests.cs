@@ -349,4 +349,58 @@ public class CustomFunctionTests
 
         Assert.Equal(CellValue.Error(ErrorKind.Name), second.Evaluate("=TWICE(1)"));
     }
+
+    [Fact]
+    public void Adding_a_table_from_a_function_is_refused_before_anything_is_calculated()
+    {
+        var (workbook, sheet) = NewSheet();
+        Exception? caught = null;
+        workbook.Functions.Add("HOOK", _ =>
+        {
+            try { sheet.AddTable("T", "A1:A2"); } catch (Exception ex) { caught = ex; }
+            return 5;
+        });
+        sheet["A1"].Formula = "=C1+1";
+        sheet["C1"].Formula = "=HOOK()";
+        workbook.Recalculate();
+
+        Assert.IsType<InvalidOperationException>(caught);
+        Assert.Equal(N(6), sheet["A1"].Value);
+        Assert.Empty(workbook.Diagnostics);
+    }
+
+    [Fact]
+    public void An_array_argument_is_a_copy_the_function_may_change()
+    {
+        var template = new Workbook();
+        var sheet = template.AddSheet("S");
+        sheet["A1"].Formula = "=LET(x, {1,2}, IFERROR(MUT(x), 0) + SUM(x))";
+        template.Recalculate();
+        var clone = template.Clone();
+        clone.Functions.Add("MUT", a => { a[0].AsArray()[0, 0] = CellValue.Number(99); return 0; });
+        clone.Recalculate();
+
+        template.Culture = System.Globalization.CultureInfo.InvariantCulture;   // calculates again without parsing again
+        template.Recalculate();
+
+        Assert.Equal(N(3), sheet["A1"].Value);
+        Assert.Equal(N(3), clone["S"]["A1"].Value);
+    }
+
+    [Fact]
+    public void A_function_sees_the_cancellation_token_of_the_calculation()
+    {
+        var (workbook, sheet) = NewSheet();
+        using var cancel = new CancellationTokenSource();
+        workbook.Functions.Add("SLOW", args =>
+        {
+            cancel.Cancel();
+            args.CancellationToken.ThrowIfCancellationRequested();
+            return 1;
+        });
+        sheet["A1"].Formula = "=SLOW()";
+
+        Assert.ThrowsAny<OperationCanceledException>(() => workbook.Recalculate(cancel.Token));
+        Assert.Empty(workbook.Diagnostics);
+    }
 }

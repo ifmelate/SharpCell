@@ -43,10 +43,10 @@ workbook.Recalculate();
 `[row, column]` from the top-left cell. A whole column has 1,048,576 cells and the array has as
 many elements; for sparse data use `UsedRange` or `Cells`.
 
-`SetValues` writes the way assigning `Cell.Value` one cell at a time would: formulas are replaced
-and `CellValue.Empty` clears a cell. It checks everything first (the array's size, values a cell
-cannot hold, cells inside an array formula other than its top-left cell) and writes nothing when
-a check fails. As with any change, formulas see the new values after `Workbook.Recalculate`.
+`SetValues` writes the way assigning `Cell.Value` does: formulas are replaced and
+`CellValue.Empty` clears a cell. It checks everything first (the array's size, values a cell
+cannot hold, cells inside an array formula other than its top-left cell, even when the range
+covers the whole array) and writes nothing when a check fails. As with any change, formulas see the new values after `Workbook.Recalculate`.
 
 ## Dates
 

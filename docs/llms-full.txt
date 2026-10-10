@@ -334,10 +334,10 @@ workbook.Recalculate();
 `[row, column]` from the top-left cell. A whole column has 1,048,576 cells and the array has as
 many elements; for sparse data use `UsedRange` or `Cells`.
 
-`SetValues` writes the way assigning `Cell.Value` one cell at a time would: formulas are replaced
-and `CellValue.Empty` clears a cell. It checks everything first (the array's size, values a cell
-cannot hold, cells inside an array formula other than its top-left cell) and writes nothing when
-a check fails. As with any change, formulas see the new values after `Workbook.Recalculate`.
+`SetValues` writes the way assigning `Cell.Value` does: formulas are replaced and
+`CellValue.Empty` clears a cell. It checks everything first (the array's size, values a cell
+cannot hold, cells inside an array formula other than its top-left cell, even when the range
+covers the whole array) and writes nothing when a check fails. As with any change, formulas see the new values after `Workbook.Recalculate`.
 
 ## Dates
 
@@ -630,7 +630,8 @@ lambda results are `#VALUE!`.
 
 An exception thrown by the body makes the cell `#VALUE!` and adds a diagnostic of kind
 `DiagnosticKind.CustomFunctionFailure`, naming the function and the exception. The rest of the
-workbook calculates as usual. Cancelling `Recalculate` through its token still cancels.
+workbook calculates as usual. An `OperationCanceledException` cancels the calculation only when
+its token was cancelled; otherwise it is a failure like any other exception.
 
 ## Rules for the body
 
@@ -642,6 +643,12 @@ workbook calculates as usual. Cancelling `Recalculate` through its token still c
   calling `Recalculate` or `Evaluate` from inside a body throw `InvalidOperationException`, which
   turns into `#VALUE!` and a diagnostic.
 - **Keep the arguments to the call.** `FunctionArguments` is valid only while the body runs.
+  An array it gives is a copy, which the body may change.
+- **Expect extra calls.** When a formula's inputs are out of date, SharpCell may call the body
+  before calculating them, with stand-in values, and throw that result away. A body without side
+  effects does not notice; one that calls a service should cache or tolerate it.
+- **Stop when cancelled.** `args.CancellationToken` is the token given to `Recalculate`; a slow
+  body can throw `OperationCanceledException` through it to cancel the calculation.
 - **Clones share the body.** `Workbook.Clone` copies the delegate, not what it captures: a body
   used by clones on several threads must be thread-safe.
 
@@ -1272,7 +1279,7 @@ The value of every cell, empty ones included, indexed `[row, column]` from the r
 public void SetValues(CellValue[,] values)
 ```
 
-Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value) one by one would: formulas are replaced and [CellValue.Empty](SharpCell.CellValue.md#empty) clears a cell. Everything is checked before the first cell is written, so an exception leaves the sheet unchanged.
+Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value) would: formulas are replaced and [CellValue.Empty](SharpCell.CellValue.md#empty) clears a cell. Everything is checked before the first cell is written, so an exception leaves the sheet unchanged; a cell of an array formula other than its top-left cell is refused even when the range covers the whole array.
 
 **Parameters**
 
@@ -1836,6 +1843,15 @@ public Cell? Caller { get; }
 
 The cell whose formula makes the call; null when the formula was given to [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string).
 
+<a id="cancellationtoken"></a>
+### CancellationToken
+
+```csharp
+public CancellationToken CancellationToken { get; }
+```
+
+The token passed to [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) or [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string-cancellationtoken), for a slow function to stop early: an `OperationCanceledException` it throws once the token is cancelled cancels the calculation.
+
 <a id="count"></a>
 ### Count
 
@@ -1870,7 +1886,7 @@ The workbook's date system, for reading date arguments with [CellValue.AsDateTim
 public CellValue this[int index] { get; }
 ```
 
-The argument's value: a single cell's value, a range as an [CellValueKind.Array](SharpCell.CellValueKind.md#array), an error as an error value, and [CellValue.Missing](SharpCell.CellValue.md#missing) for an argument left out, as the middle one of `F(1,,2)`.
+The argument's value: a single cell's value, a range as an [CellValueKind.Array](SharpCell.CellValueKind.md#array), an error as an error value, and [CellValue.Missing](SharpCell.CellValue.md#missing) for an argument left out, as the middle one of `F(1,,2)`. An array is a copy the function may change.
 
 **Exceptions**
 

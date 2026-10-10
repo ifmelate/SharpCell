@@ -124,7 +124,7 @@ The value of every cell, empty ones included, indexed `[row, column]` from the r
 public void SetValues(CellValue[,] values)
 ```
 
-Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value) one by one would: formulas are replaced and [CellValue.Empty](SharpCell.CellValue.md#empty) clears a cell. Everything is checked before the first cell is written, so an exception leaves the sheet unchanged.
+Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value) would: formulas are replaced and [CellValue.Empty](SharpCell.CellValue.md#empty) clears a cell. Everything is checked before the first cell is written, so an exception leaves the sheet unchanged; a cell of an array formula other than its top-left cell is refused even when the range covers the whole array.
 
 **Parameters**
 
