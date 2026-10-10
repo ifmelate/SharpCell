@@ -30,6 +30,9 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [ErrorKind](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKind.md): Excel error values.
 - [ErrorKinds](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKinds.md): Conversion between ErrorKind and its literal text (`#DIV/0!`).
 - [FormulaParseException](https://ifmelate.github.io/SharpCell/api/SharpCell.FormulaParseException.md): Thrown when formula text cannot be parsed.
+- [FunctionArguments](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionArguments.md): The arguments of one call of a function added through Workbook.Functions.
+- [FunctionCollection](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionCollection.md): The functions a workbook's formulas can call besides Excel's: add one with FunctionCollection.Add, and formulas calling it by name (ignoring case) use it from the next calculation on.
+- [FunctionOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionOptions.md): How a function added through Workbook.Functions takes its arguments.
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.

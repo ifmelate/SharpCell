@@ -83,8 +83,8 @@ public class HiddenRowTests
     [Fact]
     public void Subtotal_and_aggregate_are_no_longer_deviations()
     {
-        Assert.True(_wb.Functions.TryGet("SUBTOTAL", out var subtotal));
-        Assert.True(_wb.Functions.TryGet("AGGREGATE", out var aggregate));
+        Assert.True(_wb.Registry.TryGet("SUBTOTAL", out var subtotal));
+        Assert.True(_wb.Registry.TryGet("AGGREGATE", out var aggregate));
         Assert.Equal(FunctionStatus.Implemented, subtotal!.Status);
         Assert.Equal(FunctionStatus.Implemented, aggregate!.Status);
     }

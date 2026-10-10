@@ -168,6 +168,7 @@ public sealed class Worksheet
     public void SetRowHidden(int row, bool hidden)
     {
         CheckRow(row);
+        Workbook.ThrowIfInCustomFunction();
         if (hidden)
             _hiddenRows.Add(row);
         else
@@ -179,7 +180,17 @@ public sealed class Worksheet
     /// then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips
     /// them as well; without a filter it counts them. AGGREGATE does not look at it.
     /// </summary>
-    public bool FilterMode { get; set; }
+    public bool FilterMode
+    {
+        get => _filterMode;
+        set
+        {
+            Workbook.ThrowIfInCustomFunction();
+            _filterMode = value;
+        }
+    }
+
+    private bool _filterMode;
 
     private static void CheckRow(int row)
     {

@@ -76,6 +76,7 @@ public sealed class CellRange : IEquatable<CellRange>
     public void SetValues(CellValue[,] values)
     {
         ArgumentNullException.ThrowIfNull(values);
+        Worksheet.Workbook.ThrowIfInCustomFunction();
         if (values.GetLength(0) != Area.Rows || values.GetLength(1) != Area.Columns)
             throw new ArgumentException(
                 $"The array is {values.GetLength(0)}x{values.GetLength(1)}; {this} is {Area.Rows}x{Area.Columns}.", nameof(values));

@@ -43,6 +43,7 @@ public sealed class Cell
             if (value.Kind is CellValueKind.Missing or CellValueKind.Array or CellValueKind.Lambda)
                 throw new ArgumentException($"A cell cannot hold a {value.Kind} value.", nameof(value));
 
+            Worksheet.Workbook.ThrowIfInCustomFunction();
             EnsureNotArrayMember();
             var key = Key;
             var calculation = Worksheet.Workbook.Calculation;
@@ -88,6 +89,7 @@ public sealed class Cell
     /// <param name="value">Formula text, or null to remove the formula.</param>
     internal void SetFormula(string? value, bool legacy)
     {
+        Worksheet.Workbook.ThrowIfInCustomFunction();
         EnsureNotArrayMember();
         var key = Key;
         var calculation = Worksheet.Workbook.Calculation;

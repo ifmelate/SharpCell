@@ -20,7 +20,34 @@ SharpCell.DefinedName.Formula.get -> string!
 SharpCell.DefinedName.Name.get -> string!
 SharpCell.DefinedName.Scope.get -> SharpCell.Worksheet?
 override SharpCell.DefinedName.ToString() -> string!
+SharpCell.DiagnosticKind.CustomFunctionFailure = 4 -> SharpCell.DiagnosticKind
+SharpCell.FunctionArguments
+SharpCell.FunctionArguments.Boolean(int index) -> SharpCell.CellValue
+SharpCell.FunctionArguments.Caller.get -> SharpCell.Cell?
+SharpCell.FunctionArguments.Count.get -> int
+SharpCell.FunctionArguments.Culture.get -> System.Globalization.CultureInfo!
+SharpCell.FunctionArguments.DateSystem.get -> SharpCell.DateSystem
+SharpCell.FunctionArguments.IsMissing(int index) -> bool
+SharpCell.FunctionArguments.Number(int index) -> SharpCell.CellValue
+SharpCell.FunctionArguments.Text(int index) -> SharpCell.CellValue
+SharpCell.FunctionArguments.this[int index].get -> SharpCell.CellValue
+SharpCell.FunctionCollection
+SharpCell.FunctionCollection.Add(string! name, System.Func<SharpCell.FunctionArguments!, SharpCell.CellValue>! body, SharpCell.FunctionOptions? options = null) -> void
+SharpCell.FunctionCollection.Contains(string! name) -> bool
+SharpCell.FunctionCollection.Names.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+SharpCell.FunctionCollection.Remove(string! name) -> bool
+SharpCell.FunctionOptions
+SharpCell.FunctionOptions.FunctionOptions() -> void
+SharpCell.FunctionOptions.IsVolatile.get -> bool
+SharpCell.FunctionOptions.IsVolatile.init -> void
+SharpCell.FunctionOptions.MaxArguments.get -> int
+SharpCell.FunctionOptions.MaxArguments.init -> void
+SharpCell.FunctionOptions.MinArguments.get -> int
+SharpCell.FunctionOptions.MinArguments.init -> void
+SharpCell.FunctionOptions.ScalarParameters.get -> System.Collections.Generic.IReadOnlyList<int>!
+SharpCell.FunctionOptions.ScalarParameters.init -> void
 SharpCell.Workbook.DefinedNames.get -> System.Collections.Generic.IReadOnlyList<SharpCell.DefinedName!>!
+SharpCell.Workbook.Functions.get -> SharpCell.FunctionCollection!
 SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
 SharpCell.Worksheet.Range(string! address) -> SharpCell.CellRange!
 SharpCell.Worksheet.UsedRange.get -> SharpCell.CellRange?

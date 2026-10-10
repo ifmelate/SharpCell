@@ -1404,6 +1404,7 @@ What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
 | <a id="functionfailure"></a>`FunctionFailure` | 1 | A function failed unexpectedly; the cell got `#VALUE!`. |
 | <a id="unsupportedformula"></a>`UnsupportedFormula` | 2 | A formula uses something SharpCell cannot evaluate, such as a function it does not know or (in a file) a link to another workbook; the cell got `#NAME?`. |
 | <a id="limitexceeded"></a>`LimitExceeded` | 3 | A result was larger than a limit allows, such as the cells all spills of a workbook may cover together; the cell got an error. |
+| <a id="customfunctionfailure"></a>`CustomFunctionFailure` | 4 | A function added through [Workbook.Functions](SharpCell.Workbook.md#functions) threw an exception; the cell got `#VALUE!`. The message names the function and the exception. |
 
 ---
 
@@ -1507,6 +1508,238 @@ public int Position { get; }
 ```
 
 Zero-based index in the formula text where the problem was found.
+
+---
+
+<!-- page: api/SharpCell.FunctionArguments.md -->
+
+# FunctionArguments
+
+```csharp
+public sealed class FunctionArguments
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The arguments of one call of a function added through [Workbook.Functions](SharpCell.Workbook.md#functions). Valid only while the function runs.
+
+## Properties
+
+<a id="caller"></a>
+### Caller
+
+```csharp
+public Cell? Caller { get; }
+```
+
+The cell whose formula makes the call; null when the formula was given to [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string).
+
+<a id="count"></a>
+### Count
+
+```csharp
+public int Count { get; }
+```
+
+How many arguments the call has, omitted ones included.
+
+<a id="culture"></a>
+### Culture
+
+```csharp
+public CultureInfo Culture { get; }
+```
+
+The workbook's culture, as used for converting between text and numbers.
+
+<a id="datesystem"></a>
+### DateSystem
+
+```csharp
+public DateSystem DateSystem { get; }
+```
+
+The workbook's date system, for reading date arguments with [CellValue.AsDateTime](SharpCell.CellValue.md#asdatetime-datesystem).
+
+<a id="item-int"></a>
+### this[int]
+
+```csharp
+public CellValue this[int index] { get; }
+```
+
+The argument's value: a single cell's value, a range as an [CellValueKind.Array](SharpCell.CellValueKind.md#array), an error as an error value, and [CellValue.Missing](SharpCell.CellValue.md#missing) for an argument left out, as the middle one of `F(1,,2)`.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: There is no such argument.
+
+## Methods
+
+<a id="boolean-int"></a>
+### Boolean(int)
+
+```csharp
+public CellValue Boolean(int index)
+```
+
+The argument converted to a logical value as Excel converts it: TRUE or FALSE, or the error to return.
+
+<a id="ismissing-int"></a>
+### IsMissing(int)
+
+```csharp
+public bool IsMissing(int index)
+```
+
+Whether the argument was left out, as the middle one of `F(1,,2)`.
+
+<a id="number-int"></a>
+### Number(int)
+
+```csharp
+public CellValue Number(int index)
+```
+
+The argument converted to a number as Excel converts it (text such as `"2"` included; an omitted argument is 0): a number, or the error to return, such as `#VALUE!` for `"abc"`.
+
+<a id="text-int"></a>
+### Text(int)
+
+```csharp
+public CellValue Text(int index)
+```
+
+The argument converted to text as Excel converts it: text, or the error to return.
+
+---
+
+<!-- page: api/SharpCell.FunctionCollection.md -->
+
+# FunctionCollection
+
+```csharp
+public sealed class FunctionCollection
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The functions a workbook's formulas can call besides Excel's: add one with [FunctionCollection.Add](SharpCell.FunctionCollection.md#add-string-func-functionarguments-cellvalue-functionoptions), and formulas calling it by name (ignoring case) use it from the next calculation on.
+
+## Properties
+
+<a id="names"></a>
+### Names
+
+```csharp
+public IReadOnlyCollection<string> Names { get; }
+```
+
+The names of the added functions, as they were added.
+
+## Methods
+
+<a id="add-string-func-functionarguments-cellvalue-functionoptions"></a>
+### Add(string, Func<FunctionArguments, CellValue>, FunctionOptions)
+
+```csharp
+public void Add(string name, Func<FunctionArguments, CellValue> body, FunctionOptions? options = null)
+```
+
+Adds a function. Formulas that call the name, and were `#NAME?` so far, are calculated again by the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken). Calls written `_xll.NAME(...)` or `_xludf.NAME(...)`, as Excel stores calls of add-in functions in files, find it too.
+
+**Parameters**
+
+- `name`: Letters, digits, `.` and `_`, starting with a letter or `_`; not the name of a function SharpCell implements. A name Excel knows but SharpCell does not implement, such as `WEBSERVICE`, is allowed.
+- `body`: Calculates the result from the arguments. It must not change the workbook, and it should read cells only through its arguments: cells it reads otherwise are not dependencies, so it is not calculated again when they change. An exception it throws makes the cell `#VALUE!` with a [DiagnosticKind.CustomFunctionFailure](SharpCell.DiagnosticKind.md#customfunctionfailure) diagnostic.
+- `options`: Argument counts, which parameters are scalar, and whether the function is volatile; null for any number of arguments passed as they are.
+
+**Exceptions**
+
+- `ArgumentException`: The name is not a function name, is built in, or was added already; or the options are not consistent.
+
+<a id="contains-string"></a>
+### Contains(string)
+
+```csharp
+public bool Contains(string name)
+```
+
+Whether a function of that name was added, ignoring case.
+
+<a id="remove-string"></a>
+### Remove(string)
+
+```csharp
+public bool Remove(string name)
+```
+
+Removes a function. Formulas calling it become `#NAME?` at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Returns:** Whether a function of that name was there.
+
+---
+
+<!-- page: api/SharpCell.FunctionOptions.md -->
+
+# FunctionOptions
+
+```csharp
+public sealed class FunctionOptions
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a function added through [Workbook.Functions](SharpCell.Workbook.md#functions) takes its arguments.
+
+## Constructors
+
+<a id="ctor"></a>
+### FunctionOptions()
+
+```csharp
+public FunctionOptions()
+```
+
+Options for any number of arguments, all passed as they are, and a function that is not volatile.
+
+## Properties
+
+<a id="isvolatile"></a>
+### IsVolatile
+
+```csharp
+public bool IsVolatile { get; init; }
+```
+
+Whether the function is calculated on every [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken), like `NOW`, instead of only when its arguments change.
+
+<a id="maxarguments"></a>
+### MaxArguments
+
+```csharp
+public int MaxArguments { get; init; }
+```
+
+The most arguments a call may have, up to 255 as in Excel; more make the call `#VALUE!`. Default 255.
+
+<a id="minarguments"></a>
+### MinArguments
+
+```csharp
+public int MinArguments { get; init; }
+```
+
+The fewest arguments a call may have; fewer make the call `#VALUE!`. Default 0.
+
+<a id="scalarparameters"></a>
+### ScalarParameters
+
+```csharp
+public IReadOnlyList<int> ScalarParameters { get; init; }
+```
+
+The 0-based positions of scalar parameters. A scalar parameter receives one value: given a range or an array, the function is called once per element and the results spill, as with Excel's own functions such as `LEN(A1:A10)`. Other parameters receive the argument as it is: a range as an array of its values.
 
 ---
 
@@ -1665,6 +1898,15 @@ public IReadOnlyList<CalculationDiagnostic> Diagnostics { get; }
 ```
 
 Current calculation problems: circular references and failing functions. An entry of a cell disappears when the cell is edited or calculated without the problem; entries from [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) last until the next call of it.
+
+<a id="functions"></a>
+### Functions
+
+```csharp
+public FunctionCollection Functions { get; }
+```
+
+Functions of your own that formulas of this workbook can call, besides Excel's.
 
 <a id="sheets"></a>
 ### Sheets

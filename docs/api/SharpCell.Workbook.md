@@ -59,6 +59,15 @@ public IReadOnlyList<CalculationDiagnostic> Diagnostics { get; }
 
 Current calculation problems: circular references and failing functions. An entry of a cell disappears when the cell is edited or calculated without the problem; entries from [Workbook.Evaluate](SharpCell.Workbook.md#evaluate-string) last until the next call of it.
 
+<a id="functions"></a>
+### Functions
+
+```csharp
+public FunctionCollection Functions { get; }
+```
+
+Functions of your own that formulas of this workbook can call, besides Excel's.
+
 <a id="sheets"></a>
 ### Sheets
 

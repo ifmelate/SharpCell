@@ -57,6 +57,9 @@ internal sealed class FunctionInfo(string name, int minArguments, int maxArgumen
 
     public bool IsVolatile { get; init; }
 
+    /// <summary>Added through <see cref="Workbook.Functions"/>, not one of Excel's.</summary>
+    public bool IsCustom { get; init; }
+
     public FunctionStatus Status { get; init; } = FunctionStatus.Implemented;
 
     public string? Deviation { get; init; }

@@ -285,8 +285,14 @@ internal static class Evaluator
         if (context.Scope is { } scope && scope.TryFind(node.Name, out var binding))
             return Lambdas.Call(ToValue(Lambdas.Read(binding!, context), context), node.Arguments, context);
 
-        if (context.Workbook.Functions.TryGet(node.Name, out _))
-            return FunctionInvoker.Invoke(node, context);
+        if (context.Workbook.TryGetFunction(node.Name, out var function))
+        {
+            // Adding or removing a custom function of this name changes what the call does: the
+            // name read makes the formula a reader of it. Built-in functions never change.
+            if (function!.Status == FunctionStatus.NotImplemented || function.IsCustom)
+                context.RecordName(node.Name);
+            return FunctionInvoker.Invoke(node, function, context);
+        }
 
         var name = EvaluateName(new NameNode(null, node.Name), context);
         if (!name.IsReference && name.Value.Kind == CellValueKind.Error && name.Value.AsError() == ErrorKind.Name)

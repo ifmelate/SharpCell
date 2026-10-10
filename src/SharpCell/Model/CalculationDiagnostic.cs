@@ -20,6 +20,12 @@ public enum DiagnosticKind
     /// cover together; the cell got an error.
     /// </summary>
     LimitExceeded,
+
+    /// <summary>
+    /// A function added through <see cref="Workbook.Functions"/> threw an exception; the cell got
+    /// <c>#VALUE!</c>. The message names the function and the exception.
+    /// </summary>
+    CustomFunctionFailure,
 }
 
 /// <summary>Something calculation noticed that is not visible in cell values alone.</summary>

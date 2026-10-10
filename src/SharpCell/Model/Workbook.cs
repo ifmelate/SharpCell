@@ -22,6 +22,7 @@ public sealed class Workbook
     public Workbook()
     {
         Calculation = new Calculation(this);
+        Functions = new FunctionCollection(this);
     }
 
     private readonly List<Table> _tables = [];
@@ -55,6 +56,7 @@ public sealed class Workbook
 
     internal Table RegisterTable(Table table)
     {
+        ThrowIfInCustomFunction();
         var upper = table.Name.ToUpperInvariant();
         if (_tablesByName.ContainsKey(upper) || Names.ContainsInAnyScope(upper))
             throw new ArgumentException($"The name '{table.Name}' is already used by a table or a defined name.", "name");
@@ -89,6 +91,7 @@ public sealed class Workbook
         get => _culture;
         set
         {
+            ThrowIfInCustomFunction();
             _culture = value ?? throw new ArgumentNullException(nameof(value));
             Calculation.InvalidateAll();
         }
@@ -100,6 +103,7 @@ public sealed class Workbook
         get => _dateSystem;
         set
         {
+            ThrowIfInCustomFunction();
             _dateSystem = value;
             Calculation.InvalidateAll();
         }
@@ -131,7 +135,37 @@ public sealed class Workbook
 
     internal Calculation Calculation { get; }
 
-    internal FunctionRegistry Functions { get; set; } = FunctionRegistry.Default;
+    /// <summary>Excel's functions as SharpCell implements them; replaced in tests.</summary>
+    internal FunctionRegistry Registry { get; set; } = FunctionRegistry.Default;
+
+    /// <summary>Functions of your own that formulas of this workbook can call, besides Excel's.</summary>
+    public FunctionCollection Functions { get; }
+
+    /// <summary>How deep calls of custom functions are nested right now; while above 0 the workbook cannot change.</summary>
+    internal int CustomFunctionDepth { get; set; }
+
+    internal void ThrowIfInCustomFunction()
+    {
+        if (CustomFunctionDepth > 0)
+            throw new InvalidOperationException("A custom function cannot change or calculate the workbook it is called from.");
+    }
+
+    /// <summary>
+    /// The function a call names: one SharpCell implements, else a custom one, else an Excel
+    /// function SharpCell does not implement (which gives #NAME?).
+    /// </summary>
+    internal bool TryGetFunction(string upperName, out FunctionInfo? function)
+    {
+        if (Registry.TryGet(upperName, out function) && function!.Status != FunctionStatus.NotImplemented)
+            return true;
+        if (Functions.Find(upperName) is { } custom)
+        {
+            function = custom;
+            return true;
+        }
+
+        return function is not null;
+    }
 
     /// <summary>Clock for NOW and TODAY; replaced in tests.</summary>
     internal TimeProvider Clock { get; set; } = TimeProvider.System;
@@ -177,6 +211,7 @@ public sealed class Workbook
     /// <exception cref="ArgumentException">The name is not a valid sheet name, or a sheet with that name exists.</exception>
     public Worksheet AddSheet(string name)
     {
+        ThrowIfInCustomFunction();
         ValidateSheetName(name);
         if (TryGetSheet(name, out _))
             throw new ArgumentException($"A sheet named '{name}' already exists.", nameof(name));
@@ -194,6 +229,7 @@ public sealed class Workbook
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(formula);
+        ThrowIfInCustomFunction();
         if (!IsValidName(name))
             throw new ArgumentException($"'{name}' is not a valid name.", nameof(name));
         if (_tablesByName.ContainsKey(name.ToUpperInvariant()))
@@ -222,7 +258,11 @@ public sealed class Workbook
     /// calculation and those using volatile functions (NOW, RAND).
     /// </summary>
     /// <exception cref="OperationCanceledException">The token was cancelled; finished cells keep their new values.</exception>
-    public void Recalculate(CancellationToken cancellationToken = default) => Calculation.Recalculate(cancellationToken);
+    public void Recalculate(CancellationToken cancellationToken = default)
+    {
+        ThrowIfInCustomFunction();
+        Calculation.Recalculate(cancellationToken);
+    }
 
     /// <summary>
     /// Evaluates a formula that belongs to no cell, as if it were in cell A1 of the first sheet.
@@ -238,6 +278,7 @@ public sealed class Workbook
     public CellValue Evaluate(string formula, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(formula);
+        ThrowIfInCustomFunction();
         var origin = new CellAddress(1, 1);
         var node = FormulaParser.Parse(formula, origin);
         return Calculation.EvaluateDetached(node, _sheets.Count > 0 ? _sheets[0] : null, origin, cancellationToken);

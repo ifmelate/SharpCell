@@ -116,7 +116,7 @@ public class ReviewRegressionTests
         var registry = new SharpCell.Functions.FunctionRegistry();
         registry.Add(new SharpCell.Functions.FunctionInfo("BOOM", 0, 0, [SharpCell.Functions.ArgumentKind.Value],
             _ => throw new InvalidOperationException("kaboom")));
-        _wb.Functions = registry;
+        _wb.Registry = registry;
         _s["A1"].Formula = "=A1";
         _wb.Recalculate();
         Assert.Single(_wb.Diagnostics);
