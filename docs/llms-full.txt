@@ -471,7 +471,9 @@ change either, as in Excel.
 Every formula is calculated again at the next `Workbook.Recalculate`. An edit that would push
 content past the last row or column, split an array formula (Ctrl+Shift+Enter), or remove a
 table's header or totals row without the whole table throws `InvalidOperationException` and changes
-nothing. Inserting or deleting columns inside a table throws `NotSupportedException`.
+nothing. Inserting or deleting columns inside a table throws `NotSupportedException`. When the
+workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
+sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
 ## Defined names
 
@@ -915,6 +917,13 @@ are saved holding the column names as text, as Excel requires. When formulas cha
 calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are saved the way Excel
 saves them, so Excel shows them before it recalculates.
 
+After rows or columns were inserted or deleted, everything in the file that points at cells
+follows them, including what SharpCell does not model: conditional formats, data validation,
+hyperlinks, filters, page breaks, print areas, pictures and shapes, comments, chart series and
+pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
+where they were. A sheet holding an Excel data table cannot be saved after its rows or columns moved
+(`NotSupportedException`).
+
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.
 
@@ -923,7 +932,7 @@ was read from can be the target.
 | Situation | Exception |
 |---|---|
 | A workbook without sheets | `InvalidOperationException` |
-| A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
+| A changed cell of an Excel data table, rows or columns moved on a sheet with one, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
 
@@ -1077,7 +1086,7 @@ Every known gap in one list, so you can decide before you start.
 
 - **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures, conditional formats or data validation, or remove or rename sheets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
-- **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
+- **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
 - **Styles are partly read.** Fonts, solid fills, borders, alignment and number formats are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).

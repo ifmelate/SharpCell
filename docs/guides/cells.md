@@ -180,7 +180,9 @@ change either, as in Excel.
 Every formula is calculated again at the next `Workbook.Recalculate`. An edit that would push
 content past the last row or column, split an array formula (Ctrl+Shift+Enter), or remove a
 table's header or totals row without the whole table throws `InvalidOperationException` and changes
-nothing. Inserting or deleting columns inside a table throws `NotSupportedException`.
+nothing. Inserting or deleting columns inside a table throws `NotSupportedException`. When the
+workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
+sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
 ## Defined names
 

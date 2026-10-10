@@ -52,6 +52,13 @@ are saved holding the column names as text, as Excel requires. When formulas cha
 calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are saved the way Excel
 saves them, so Excel shows them before it recalculates.
 
+After rows or columns were inserted or deleted, everything in the file that points at cells
+follows them, including what SharpCell does not model: conditional formats, data validation,
+hyperlinks, filters, page breaks, print areas, pictures and shapes, comments, chart series and
+pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
+where they were. A sheet holding an Excel data table cannot be saved after its rows or columns moved
+(`NotSupportedException`).
+
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.
 
@@ -60,7 +67,7 @@ was read from can be the target.
 | Situation | Exception |
 |---|---|
 | A workbook without sheets | `InvalidOperationException` |
-| A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
+| A changed cell of an Excel data table, rows or columns moved on a sheet with one, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
 | Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
 | Formulas SharpCell cannot calculate | `XlsxWriteException` |
 

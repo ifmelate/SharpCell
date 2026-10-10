@@ -88,6 +88,7 @@ internal static class PackageWriter
 
         metadata.Save();
         styles.Save();
+        RelatedPartsShift.Apply(edit, plan);
 
         // Excel trusts the calculation chain; one that lists cells without formulas makes it repair the file.
         if (plan.AnyFormulaChanged && WorkbookReader.FirstOfType(relationships, "calcChain")?.Target is { } chain)
