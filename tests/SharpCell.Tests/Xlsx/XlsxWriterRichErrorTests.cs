@@ -27,8 +27,11 @@ public class XlsxWriterRichErrorTests
         Assert.Contains("<c r=\"A1\" cm=\"1\" t=\"e\" vm=\"1\"><f t=\"array\" ref=\"A1\">_xlfn.SEQUENCE(3)</f><v>#VALUE!</v></c>", sheet);
         Assert.Contains("<c r=\"B1\" t=\"e\" vm=\"2\"><f>A1</f><v>#VALUE!</v></c>", sheet);
         Assert.Contains("<rv s=\"0\"><v>0</v><v>8</v><v>2</v><v>1</v></rv>", Part(file, "xl/richData/rdrichvalue.xml"));
-        Assert.Contains("<rv s=\"1\"><v>8</v><v>0</v></rv>", Part(file, "xl/richData/rdrichvalue.xml"));
+        // B1 passes A1's error on: Excel marks such a value as propagated (excel-web/spill-blocked.xlsx).
+        Assert.Contains("<rv s=\"1\"><v>8</v><v>1</v></rv>", Part(file, "xl/richData/rdrichvalue.xml"));
         Assert.Contains("<k n=\"colOffset\" t=\"i\" /><k n=\"errorType\" t=\"i\" /><k n=\"rwOffset\" t=\"i\" /><k n=\"subType\" t=\"i\" />",
+            Part(file, "xl/richData/rdrichvaluestructure.xml"));
+        Assert.Contains("<s t=\"_error\"><k n=\"errorType\" t=\"i\" /><k n=\"propagated\" t=\"b\" /></s>",
             Part(file, "xl/richData/rdrichvaluestructure.xml"));
         Assert.Contains("/xl/richData/rdrichvalue.xml", Part(file, "[Content_Types].xml"));
         Assert.Contains("relationships/rdRichValue\"", Part(file, "xl/_rels/workbook.xml.rels"));
@@ -69,6 +72,23 @@ public class XlsxWriterRichErrorTests
             .Part("xl/richData/rdrichvalue.xml", "<rvData xmlns=\"" + RichData + "\" count=\"1\"><rv s=\"0\"><v>13</v><v>0</v></rv></rvData>")
             .Part("xl/richData/rdrichvaluestructure.xml", "<rvStructures xmlns=\"" + RichData + "\" count=\"1\"><s t=\"_error\"><k n=\"errorType\" t=\"i\"/><k n=\"subType\" t=\"i\"/></s></rvStructures>")
             .Sheet("S", sheetData);
+    }
+
+    [Fact]
+    public void A_calc_error_read_from_another_cell_is_propagated()
+    {
+        var workbook = Load(new TestXlsx().Sheet("S",
+            "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"B1\"><f>_xlfn._xlws.FILTER(A1,A1&gt;C1)</f><v>1</v></c>"
+            + "<c r=\"C1\"><v>0</v></c><c r=\"D1\"><f>B1</f><v>1</v></c></row>"));
+        workbook["S"]["C1"].Value = 100;
+        workbook.Recalculate();
+
+        var file = Save(workbook);
+
+        Assert.Contains("<c r=\"B1\" t=\"e\" vm=\"1\">", Part(file, Sheet1));
+        Assert.Contains("<c r=\"D1\" t=\"e\" vm=\"2\">", Part(file, Sheet1));
+        Assert.Contains("<rv s=\"0\"><v>13</v><v>0</v></rv><rv s=\"1\"><v>13</v><v>1</v></rv>", Part(file, "xl/richData/rdrichvalue.xml"));
+        Assert.Equal(ErrorKind.Calc, Reload(file)["S"]["D1"].Value.AsError());
     }
 
     [Fact]

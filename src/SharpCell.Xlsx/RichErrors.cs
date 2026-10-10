@@ -88,16 +88,17 @@ internal sealed class RichErrors
     /// <summary>The 1-based vm attribute for a cell showing the error.</summary>
     /// <param name="kind">#SPILL! or #CALC!.</param>
     /// <param name="intendedSpill">For a #SPILL! anchor that cells block, the area it wanted; otherwise null.</param>
-    public int VmOf(ErrorKind kind, Area? intendedSpill)
+    /// <param name="propagated">Whether the cell passes on an error it read from another cell.</param>
+    public int VmOf(ErrorKind kind, Area? intendedSpill, bool propagated)
     {
         Load();
-        var entry = Entry(kind, intendedSpill);
+        var entry = Entry(kind, intendedSpill, propagated);
         var key = Key(entry.Select(e => e.Key), entry.Select(e => e.Value.ToString(CultureInfo.InvariantCulture)));
         if (_vmByKey.TryGetValue(key, out var vm))
             return vm;
 
         _changed = true;
-        var structure = StructureIndex(entry.Select(e => e.Key).ToArray());
+        var structure = StructureIndex(entry.Select(e => (e.Key, e.Type)).ToArray());
         var value = Append(_values!.Root!, new XElement(RichData + "rv", new XAttribute("s", structure),
             entry.Select(e => new XElement(RichData + "v", e.Value.ToString(CultureInfo.InvariantCulture)))));
 
@@ -141,12 +142,15 @@ internal sealed class RichErrors
         parts[rels] = WithRelationships(rels, created);
     }
 
-    private static (string Key, int Value)[] Entry(ErrorKind kind, Area? intendedSpill)
+    // Keys in the order Excel writes them, with their values and types (i: integer, b: boolean).
+    private static (string Key, int Value, string Type)[] Entry(ErrorKind kind, Area? intendedSpill, bool propagated)
     {
         var errorType = (int)kind - 1;   // the ERROR.TYPE code minus one, as RichValues reads it
-        return kind == ErrorKind.Spill && intendedSpill is { } area
-            ? [("colOffset", area.Columns - 1), ("errorType", errorType), ("rwOffset", area.Rows - 1), ("subType", 1)]
-            : [("errorType", errorType), ("subType", 0)];
+        if (kind == ErrorKind.Spill && intendedSpill is { } area)
+            return [("colOffset", area.Columns - 1, "i"), ("errorType", errorType, "i"), ("rwOffset", area.Rows - 1, "i"), ("subType", 1, "i")];
+        return propagated
+            ? [("errorType", errorType, "i"), ("propagated", 1, "b")]
+            : [("errorType", errorType, "i"), ("subType", 0, "i")];
     }
 
     private static string Key(IEnumerable<string> keys, IEnumerable<string> values) =>
@@ -199,18 +203,18 @@ internal sealed class RichErrors
     }
 
     // The index of an _error structure with these keys, added if the file has none.
-    private int StructureIndex(string[] keys)
+    private int StructureIndex((string Key, string Type)[] keys)
     {
         var structures = _structures!.Root!.Elements(RichData + "s").ToList();
         for (var i = 0; i < structures.Count; i++)
         {
             if ((string?)structures[i].Attribute("t") == "_error"
-                && structures[i].Elements(RichData + "k").Select(k => (string?)k.Attribute("n")).SequenceEqual(keys))
+                && structures[i].Elements(RichData + "k").Select(k => (string?)k.Attribute("n")).SequenceEqual(keys.Select(k => k.Key)))
                 return i;
         }
 
         return Append(_structures.Root!, new XElement(RichData + "s", new XAttribute("t", "_error"),
-            keys.Select(k => new XElement(RichData + "k", new XAttribute("n", k), new XAttribute("t", "i")))));
+            keys.Select(k => new XElement(RichData + "k", new XAttribute("n", k.Key), new XAttribute("t", k.Type)))));
     }
 
     // The 1-based index of the XLRICHVALUE metadata type, added if the file has none.

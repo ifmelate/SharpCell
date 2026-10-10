@@ -309,6 +309,22 @@ internal sealed class WorksheetWriter
         return true;
     }
 
+    // Whether the formula read a cell holding the error: then it passes the error on rather than
+    // causing it, which Excel records as a propagated error.
+    private static bool ReadsError(CellData data, ErrorKind error)
+    {
+        foreach (var (sheet, area) in data.Registered?.Areas ?? [])
+        {
+            foreach (var cell in sheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
+            {
+                if (cell.Data.Value.Kind == CellValueKind.Error && cell.Data.Value.AsError() == error)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool IsRichError(CellValue value) => value.Kind == CellValueKind.Error && CellEncoding.IsRichError(value.AsError());
 
     // A file can hold #SPILL! and #CALC! only as results; a typed one has nothing to stand for.
@@ -331,8 +347,9 @@ internal sealed class WorksheetWriter
         {
             // A #SPILL! anchor that cells block remembers the area it wanted (SpillWatch); at the
             // sheet's edge or in a table it has none.
-            var wanted = isFormula && value.AsError() == ErrorKind.Spill ? data?.SpillWatch : null;
-            cell.SetAttributeValue("vm", _richErrors.VmOf(value.AsError(), wanted));
+            var error = value.AsError();
+            var wanted = isFormula && error == ErrorKind.Spill ? data?.SpillWatch : null;
+            cell.SetAttributeValue("vm", _richErrors.VmOf(error, wanted, wanted is null && isFormula && ReadsError(data!, error)));
         }
 
         if (CellEncoding.ValueElement(_ns, value, isFormula) is { } element)
