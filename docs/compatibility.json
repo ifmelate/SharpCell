@@ -1,6 +1,6 @@
 {
-  "cells": 76099,
-  "passed": 76097,
+  "cells": 76132,
+  "passed": 76130,
   "widened": 38,
   "files": [
     {
@@ -25,6 +25,17 @@
       "widened": 0,
       "comparedCells": {
         "Spike": "D50:D53 D55:D58 D60:D63 D65:D68 D70:D73"
+      },
+      "failingCells": {}
+    },
+    {
+      "file": "excel-web/number-formats.xlsx",
+      "cells": 33,
+      "passed": 33,
+      "skipped": 0,
+      "widened": 0,
+      "comparedCells": {
+        "Formats": "A30 B1:B31 C30"
       },
       "failingCells": {}
     },
@@ -5451,8 +5462,8 @@
       "name": "TEXT",
       "status": "known deviation",
       "deviation": "Calendar and era codes (B1, B2, e, g, [DBNum]) are not interpreted, and month names and separators come from the workbook culture, not from [$-xxxx] locale tags.",
-      "cases": 464,
-      "passed": 464
+      "cases": 495,
+      "passed": 495
     },
     {
       "name": "TEXTAFTER",
