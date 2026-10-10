@@ -14,6 +14,7 @@ public class ExactCorpusTests
         "excel-web/hidden-rows.xlsx",
         "excel-web/filter-mode.xlsx",
         "excel-web/spill-blocked.xlsx",
+        "excel-web/function-values.xlsx",
     ];
 
     [Theory]

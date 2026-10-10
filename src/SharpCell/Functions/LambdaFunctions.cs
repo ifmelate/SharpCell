@@ -1,3 +1,4 @@
+using SharpCell.Parsing;
 using System;
 using SharpCell.Evaluation;
 
@@ -30,7 +31,7 @@ internal static class LambdaFunctions
         if (!TryGetLambda(call, count, out var lambda, out var error))
             return error;
         if (!Lambdas.Takes(lambda, count, call.Context))
-            return CellValue.Error(ErrorKind.Value);
+            return CountMismatch(lambda);
 
         var arrays = new CellValue[count][,];
         int rows = 1, columns = 1;
@@ -78,7 +79,7 @@ internal static class LambdaFunctions
         if (!TryGetLambda(call, 2, out var lambda, out var error))
             return error;
         if (!Lambdas.Takes(lambda, 2, call.Context))
-            return CellValue.Error(ErrorKind.Value);
+            return CountMismatch(lambda);
 
         var accumulator = call.IsMissing(0) ? CellValue.Missing : call.Value(0);
         var input = call.Value(1);
@@ -113,7 +114,7 @@ internal static class LambdaFunctions
         if (!TryGetLambda(call, 1, out var lambda, out var error))
             return error;
         if (!Lambdas.Takes(lambda, 1, call.Context))
-            return CellValue.Error(ErrorKind.Value);
+            return CountMismatch(lambda);
 
         var input = call[0];
         Operand[] lines;
@@ -185,7 +186,7 @@ internal static class LambdaFunctions
         if (!TryGetLambda(call, 2, out var lambda, out var error))
             return error;
         if (!Lambdas.Takes(lambda, 2, call.Context))
-            return CellValue.Error(ErrorKind.Value);
+            return CountMismatch(lambda);
 
         var rowsValue = Coercion.ToNumber(call.Value(0), call.Context.Culture, call.Context.DateSystem);
         var columnsValue = Coercion.ToNumber(call.Value(1), call.Context.Culture, call.Context.DateSystem);
@@ -229,8 +230,18 @@ internal static class LambdaFunctions
 
         lambda = null!;
         error = value.IsError ? value : CellValue.Error(ErrorKind.Value);
+
+        // A name that is no function at all, where a function is expected: Excel gives #VALUE!.
+        if (value.IsError && value.AsError() == ErrorKind.Name && call.NodeAt(index) is NameNode { Sheet: null } name
+            && !call.Context.Workbook.TryGetFunction(name.Name.ToUpperInvariant(), out _))
+            error = CellValue.Error(ErrorKind.Value);
         return false;
     }
+
+    // A LAMBDA with the wrong number of parameters is #VALUE!; a function passed as a value that
+    // cannot take that many arguments is #CALC!, as in Excel.
+    private static CellValue CountMismatch(LambdaValue lambda) =>
+        CellValue.Error(lambda is BuiltInFunction ? ErrorKind.Calc : ErrorKind.Value);
 
     private static CellValue Element(LambdaValue lambda, Operand[] arguments, FunctionCall call, int index)
     {

@@ -71,6 +71,9 @@ internal sealed class FunctionCall
     /// <summary>Whether the argument was left empty, as the middle one in <c>IF(A1,,B1)</c>.</summary>
     public bool IsMissing(int index) => _nodes[index] is MissingNode;
 
+    /// <summary>The formula node of an argument, as written.</summary>
+    public FormulaNode NodeAt(int index) => _nodes[index];
+
     /// <summary>Whether the call has the argument and it was not left empty.</summary>
     public bool Has(int index) => index < Count && !IsMissing(index);
 
