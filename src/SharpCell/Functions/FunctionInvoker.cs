@@ -72,6 +72,42 @@ internal static class FunctionInvoker
         return lifted is null ? Run(function, call) : RunElementWise(function, call, lifted);
     }
 
+    /// <summary>
+    /// Calls a function with arguments already evaluated, as a function value passed to MAP or
+    /// called through a LET name is: the same checks and argument rules as a call by name.
+    /// </summary>
+    public static Operand InvokeWithOperands(FunctionInfo function, IReadOnlyList<Operand> arguments, EvaluationContext context)
+    {
+        if (function.Status == FunctionStatus.NotImplemented)
+            return CellValue.Error(ErrorKind.Name);
+        if (arguments.Count < function.MinArguments || arguments.Count > function.MaxArguments)
+            return CellValue.Error(ErrorKind.Value);
+        if (function.IsVolatile)
+            context.UsedVolatile = true;
+
+        var call = new FunctionCall(context, arguments);
+        List<int>? lifted = null;
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            switch (function.KindAt(i))
+            {
+                case ArgumentKind.Value:
+                    var value = Evaluator.ToValue(Evaluator.LegacyScalar(arguments[i], context), context);
+                    call.Set(i, value);
+                    if (value.Kind == CellValueKind.Array)
+                        (lifted ??= []).Add(i);
+                    break;
+                case ArgumentKind.ScalarAny:
+                    call.Set(i, Evaluator.LegacyScalar(arguments[i], context));
+                    break;
+            }
+        }
+
+        if (call.MetPendingInput)
+            return EvaluationContext.PendingPlaceholder;
+        return lifted is null ? Run(function, call) : RunElementWise(function, call, lifted);
+    }
+
     // A scalar parameter given an array: call once per element. Arrays broadcast as in operators,
     // and an element-wise result that is itself an array contributes its matching element.
     private static Operand RunElementWise(FunctionInfo function, FunctionCall call, List<int> lifted)

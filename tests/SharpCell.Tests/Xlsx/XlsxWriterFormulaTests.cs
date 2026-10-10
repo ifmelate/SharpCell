@@ -159,4 +159,25 @@ public class XlsxWriterFormulaTests
         using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(file));
         return zip.GetEntry(name) is null ? null : Part(file, name);
     }
+
+    [Fact]
+    public void A_function_passed_as_a_value_is_saved_with_its_prefix()
+    {
+        // Excel stores BYROW(A1:B1,SUM) as BYROW(A1:B1,_xleta.SUM); without the prefix SUM reads as a name.
+        var (_, saved, reloaded) = Edit(Book(), s =>
+        {
+            s["C1"].Formula = "=BYROW(A1:B1,SUM)";
+            s["C2"].Formula = "=LET(f,LEN,f(\"abc\"))";
+            s.Workbook.DefineName("Twice", "=LAMBDA(x,x*2)");
+            s["C3"].Formula = "=MAP(A1:A2,Twice)";
+        });
+
+        var sheet = Part(saved, "xl/worksheets/sheet1.xml");
+        Assert.Contains("_xlfn.BYROW(A1:B1,_xleta.SUM)", sheet);
+        Assert.Contains("_xlfn.LET(_xlpm.f,_xleta.LEN,_xlpm.F(\"abc\"))", sheet);
+        Assert.Contains("_xlfn.MAP(A1:A2,Twice)", sheet);
+        Assert.Equal(9, reloaded["S"]["C1"].Value.AsNumber());
+        reloaded.Recalculate();
+        Assert.Equal((9.0, 3.0), (reloaded["S"]["C1"].Value.AsNumber(), reloaded["S"]["C2"].Value.AsNumber()));
+    }
 }

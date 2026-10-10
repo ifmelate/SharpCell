@@ -20,6 +20,26 @@ internal sealed class FunctionCall
         _pendingAtStart = context.PendingReads;
     }
 
+    /// <summary>A call whose arguments are already evaluated, as a function value receives them.</summary>
+    public FunctionCall(EvaluationContext context, IReadOnlyList<Operand> arguments)
+    {
+        Context = context;
+        var nodes = new FormulaNode[arguments.Count];
+        _arguments = new Operand?[arguments.Count];
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            var missing = !arguments[i].IsReference && arguments[i].Value.Kind == CellValueKind.Missing;
+            nodes[i] = missing ? MissingNode.Instance : Evaluated;
+            _arguments[i] = arguments[i];
+        }
+
+        _nodes = nodes;
+        _pendingAtStart = context.PendingReads;
+    }
+
+    // Stands for an argument that was evaluated before the call; never evaluated again.
+    private static readonly FormulaNode Evaluated = new NumberNode(0);
+
     /// <summary>Whether this call has read a dirty cell; its result will be discarded.</summary>
     public bool MetPendingInput => Context.PendingReads > _pendingAtStart;
 
@@ -50,6 +70,9 @@ internal sealed class FunctionCall
 
     /// <summary>Whether the argument was left empty, as the middle one in <c>IF(A1,,B1)</c>.</summary>
     public bool IsMissing(int index) => _nodes[index] is MissingNode;
+
+    /// <summary>The formula node of an argument, as written.</summary>
+    public FormulaNode NodeAt(int index) => _nodes[index];
 
     /// <summary>Whether the call has the argument and it was not left empty.</summary>
     public bool Has(int index) => index < Count && !IsMissing(index);

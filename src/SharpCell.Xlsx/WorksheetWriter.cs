@@ -1077,7 +1077,8 @@ internal sealed class WorksheetWriter
         cell.Elements(_ns + "f").Remove();
         cell.Attribute("cm")?.Remove();
         var origin = new CellAddress(row, column);
-        var text = FormulaPrinter.PrintForFile(data.Formula!, origin, at => _sheet.Workbook.TableAt(_sheet, at.Row, at.Column)?.Name);
+        var text = FormulaPrinter.PrintForFile(data.Formula!, origin, at => _sheet.Workbook.TableAt(_sheet, at.Row, at.Column)?.Name,
+            name => FunctionValues.IsFunction(_sheet.Workbook, _sheet, name));
         var formula = new XElement(_ns + "f", text);
         if (data.FixedArray is { } fixedArea)
         {

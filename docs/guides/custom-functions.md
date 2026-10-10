@@ -22,7 +22,7 @@ workbook.Recalculate();
 ```
 
 `Workbook.Functions.Add` takes a name, a body and options. Formulas call the function ignoring
-case. Formulas that were `#NAME?` because the function was missing are calculated again by the
+case, and can pass it as a value where a LAMBDA is expected, as in `MAP(A1:A9, VAT)`. Formulas that were `#NAME?` because the function was missing are calculated again by the
 next `Recalculate`; `Remove` turns its calls back into `#NAME?`. Each workbook has its own
 functions, and `Workbook.Clone` copies them.
 

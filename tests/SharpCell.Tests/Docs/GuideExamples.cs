@@ -145,6 +145,50 @@ public class GuideExamples
     }
 
     [Fact]
+    public void Functions_as_values()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+        sheet["A1"].Value = 1;
+        sheet["B1"].Value = 2;
+        sheet["A2"].Value = 3;
+        sheet["B2"].Value = 4;
+
+        // snippet: function-values
+        sheet["D1"].Formula = "=BYROW(A1:B2, SUM)";            // 3 and 7: SUM is passed as a function
+        sheet["E1"].Formula = "=LET(size, LEN, size(\"abc\"))";  // 3
+        workbook.Recalculate();
+        // end-snippet
+
+        Assert.Equal(7, sheet["D2"].Value.AsNumber());
+        Assert.Equal(3, sheet["E1"].Value.AsNumber());
+    }
+
+    [Fact]
+    public void Group_by()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+        string[] regions = ["North", "South", "North"];
+        double[] units = [10, 20, 30];
+        for (var i = 0; i < 3; i++)
+        {
+            sheet[i + 1, 1].Value = regions[i];
+            sheet[i + 1, 2].Value = units[i];
+        }
+
+        // snippet: groupby
+        sheet["D1"].Formula = "=GROUPBY(A1:A3, B1:B3, SUM)";   // North 40, South 20, Total 60
+        sheet["G1"].Formula = "=GROUPBY(A1:A3, B1:B3, HSTACK(SUM, MAX))";   // a header row SUM, MAX, then one column each
+        workbook.Recalculate();
+        // end-snippet
+
+        Assert.Equal(("North", 40.0), (sheet["D1"].Value.AsText(), sheet["E1"].Value.AsNumber()));
+        Assert.Equal(60, sheet["E3"].Value.AsNumber());
+        Assert.Equal("MAX", sheet["I1"].Value.AsText());
+    }
+
+    [Fact]
     public void Evaluate_without_a_cell()
     {
         var workbook = new Workbook();

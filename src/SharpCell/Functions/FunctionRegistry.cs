@@ -37,6 +37,7 @@ internal sealed class FunctionRegistry
         LookupFunctions.Register(registry);
         ArrayShapeFunctions.Register(registry);
         ArrayShapeSortFunctions.Register(registry);
+        GroupByFunctions.Register(registry);
         ConditionalFunctions.Register(registry);
         DatabaseFunctions.Register(registry);
         EngineeringFunctions.Register(registry);

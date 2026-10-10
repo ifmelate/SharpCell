@@ -307,6 +307,20 @@ internal static class Evaluator
         return Lambdas.Call(ToValue(name, context), node.Arguments, context);
     }
 
+    // Files write a function passed as a value with the _xleta. prefix: _xlfn.BYROW(A1:B3,_xleta.SUM).
+    // LET and LAMBDA are syntax, not functions, and a function SharpCell does not implement stays #NAME?.
+    private static CellValue? FunctionValue(string upperName, EvaluationContext context)
+    {
+        var name = upperName.StartsWith("_XLETA.", System.StringComparison.Ordinal) ? upperName["_XLETA.".Length..] : upperName;
+        if (name is "LET" or "LAMBDA")
+            return null;
+        if (name.Length != upperName.Length)
+            context.RecordName(name);
+        return context.Workbook.TryGetFunction(name, out var function) && function!.Status != FunctionStatus.NotImplemented
+            ? CellValue.Lambda(new BuiltInFunction(name))
+            : (CellValue?)null;
+    }
+
     private static bool IsDefinedName(string name, EvaluationContext context)
     {
         var upper = name.ToUpperInvariant();
@@ -334,6 +348,10 @@ internal static class Evaluator
             // A table name alone is its data rows: SUM(Sales) is SUM(Sales[]).
             if (node.Sheet is null && workbook.TryGetTable(upper, out _))
                 return EvaluateStructured(new StructuredReference(node.Name, TableRows.Data, null, null), context);
+
+            // A function's name alone is the function as a value: BYROW(A1:B3, SUM).
+            if (node.Sheet is null && FunctionValue(upper, context) is { } function)
+                return function;
             return CellValue.Error(ErrorKind.Name);
         }
 

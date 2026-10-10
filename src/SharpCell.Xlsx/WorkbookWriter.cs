@@ -98,7 +98,7 @@ internal static class WorkbookWriter
             }
             var definition = model[key];
             if (!look.Names.TryGetValue(key, out var text) || text != definition.Text)
-                element.Value = FileText(definition);
+                element.Value = FileText(definition, workbook);
         }
 
         foreach (var (key, definition) in model)
@@ -109,13 +109,15 @@ internal static class WorkbookWriter
             var element = new XElement(ns + "definedName", new XAttribute("name", definition.Spelling));
             if (definition.Scope is { } sheet)
                 element.Add(new XAttribute("localSheetId", sheetNames.FindIndex(n => n.Equals(sheet.Name, StringComparison.OrdinalIgnoreCase))));
-            element.Add(FileText(definition));
+            element.Add(FileText(definition, workbook));
             section.Add(element);
         }
     }
 
-    private static string FileText(NameDefinition name) =>
-        name.Formula is UnsupportedNode unsupported ? unsupported.Text : FormulaPrinter.PrintForFile(name.Formula, new CellAddress(1, 1), _ => null);
+    private static string FileText(NameDefinition name, Workbook workbook) =>
+        name.Formula is UnsupportedNode unsupported
+            ? unsupported.Text
+            : FormulaPrinter.PrintForFile(name.Formula, new CellAddress(1, 1), _ => null, n => FunctionValues.IsFunction(workbook, name.Scope, n));
 
     // A child of the workbook, created where the schema puts it when the part has none.
     private static XElement Section(XElement root, string name)

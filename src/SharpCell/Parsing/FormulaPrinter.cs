@@ -34,14 +34,17 @@ internal sealed class FormulaPrinter
     // operators files do not know become the functions they stand for.
     private readonly bool _file;
     private readonly Func<CellAddress, string?>? _tableAt;
+    private readonly Func<string, bool>? _isFunction;
     private readonly List<string> _bound = [];
 
-    private FormulaPrinter(CellAddress origin, ReferenceStyle style, bool file = false, Func<CellAddress, string?>? tableAt = null)
+    private FormulaPrinter(CellAddress origin, ReferenceStyle style, bool file = false, Func<CellAddress, string?>? tableAt = null,
+        Func<string, bool>? isFunction = null)
     {
         _origin = origin;
         _style = style;
         _file = file;
         _tableAt = tableAt;
+        _isFunction = isFunction;
     }
 
     /// <param name="origin">The cell the formula belongs to; relative references are printed from it.</param>
@@ -65,10 +68,12 @@ internal sealed class FormulaPrinter
     /// <param name="origin">The cell the formula belongs to.</param>
     /// <param name="tableAt">The name of the table containing a cell, or null: a table reference without
     /// a table name refers to the table of the formula's cell.</param>
-    public static string PrintForFile(FormulaNode node, CellAddress origin, Func<CellAddress, string?> tableAt)
+    /// <param name="isFunction">Whether a name means a function passed as a value (BYROW(A1:B2, SUM)),
+    /// which files write with <c>_xleta.</c>.</param>
+    public static string PrintForFile(FormulaNode node, CellAddress origin, Func<CellAddress, string?> tableAt, Func<string, bool>? isFunction = null)
     {
         ArgumentNullException.ThrowIfNull(node);
-        var printer = new FormulaPrinter(origin, ReferenceStyle.A1, file: true, tableAt);
+        var printer = new FormulaPrinter(origin, ReferenceStyle.A1, file: true, tableAt, isFunction);
         printer.Write(node, 0, unionAllowed: false);
         return printer._sb.ToString();
     }
@@ -119,6 +124,9 @@ internal sealed class FormulaPrinter
                 break;
             case NameNode n when _file && n.Sheet is null && IsBound(n.Name):
                 _sb.Append("_xlpm.").Append(n.Name);
+                break;
+            case NameNode n when _file && n.Sheet is null && _isFunction?.Invoke(n.Name) == true:
+                _sb.Append("_xleta.").Append(n.Name.ToUpperInvariant());
                 break;
             case NameNode n:
                 WriteSheet(n.Sheet);
