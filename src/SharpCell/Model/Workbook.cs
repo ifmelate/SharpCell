@@ -84,6 +84,23 @@ public sealed class Workbook
     public IReadOnlyList<Worksheet> Sheets => _sheets;
 
     /// <summary>
+    /// The style of every cell without one of its own: the Normal style of a file read with
+    /// SharpCell.Xlsx, <see cref="CellStyle.Default"/> for a new workbook.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">The style is null.</exception>
+    public CellStyle DefaultStyle
+    {
+        get => _defaultStyle;
+        set
+        {
+            ThrowIfInCustomFunction();
+            _defaultStyle = value ?? throw new ArgumentNullException(nameof(value));
+        }
+    }
+
+    private CellStyle _defaultStyle = CellStyle.Default;
+
+    /// <summary>
     /// Culture for text-to-number conversion, number-to-text conversion and text ordering.
     /// The process culture is never used. Defaults to the invariant culture.
     /// </summary>
@@ -220,6 +237,7 @@ public sealed class Workbook
         var clone = new Workbook
         {
             _culture = _culture,
+            _defaultStyle = _defaultStyle,
             _dateSystem = _dateSystem,
             _iteration = _iteration,
             Registry = Registry,
