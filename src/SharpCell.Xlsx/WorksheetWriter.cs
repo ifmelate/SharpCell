@@ -271,16 +271,19 @@ internal sealed class WorksheetWriter
         }
 
         var value = data is null ? CellValue.Empty : CellEncoding.Storable(data.Value);
+        var unchanged = value.Equals(saved.Value);
 
-        // A data table: Excel calculates it and the reader takes its value as a constant.
-        if (saved.HasFormula)
+        // A formula the reader takes as a value: a data table, which Excel calculates. A spilled cell
+        // Excel saved with an empty formula belongs to its spill and gets the spill's value.
+        if (saved.HasFormula && data?.SpillAnchor is null)
         {
-            return value.Equals(saved.Value)
+            return unchanged
                 ? source
                 : throw new NotSupportedException($"{_sheet.Name}!{address} is calculated by an Excel data table; its value cannot be changed.");
         }
 
-        if (!_plan.RewriteAllValues && value.Equals(saved.Value))
+        // A #SPILL! or #CALC! value stays as the file has it: it cannot be written as a constant.
+        if (unchanged && (!_plan.RewriteAllValues || IsRichError(value)))
             return source;
         if (value.Kind == CellValueKind.Empty)
         {
@@ -305,6 +308,8 @@ internal sealed class WorksheetWriter
         formula.SetAttributeValue("ref", text);
         return true;
     }
+
+    private static bool IsRichError(CellValue value) => value.Kind == CellValueKind.Error && CellEncoding.IsRichError(value.AsError());
 
     // A file can hold #SPILL! and #CALC! only as results; a typed one has nothing to stand for.
     private void CheckConstant(CellData? data, CellValue value, CellAddress address)

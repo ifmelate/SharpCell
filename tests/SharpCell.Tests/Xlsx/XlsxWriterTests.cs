@@ -231,6 +231,23 @@ public class XlsxWriterTests
         Assert.Throws<NotSupportedException>(() => Save(workbook));
     }
 
+    // Excel saves the cells of some spills with an empty formula; they are the spill's, not a data table's.
+    [Fact]
+    public void A_spilled_cell_saved_with_an_empty_formula_gets_its_new_value()
+    {
+        var xlsx = new TestXlsx { Metadata = TestXlsx.DynamicArrayMetadata }.Sheet("S",
+            "<row r=\"1\"><c r=\"A1\" cm=\"1\"><f t=\"array\" ref=\"A1:A2\">_xlfn.SEQUENCE(2,1,B1)</f><v>1</v></c><c r=\"B1\"><v>1</v></c></row>"
+            + "<row r=\"2\"><c r=\"A2\"><f ca=\"1\"/><v>2</v></c></row>");
+        var workbook = Load(xlsx);
+        workbook["S"]["B1"].Value = 5;
+        workbook.Recalculate();
+
+        var file = Save(workbook);
+
+        Assert.Contains("<c r=\"A2\"><f ca=\"1\" /><v>6</v></c>", Part(file, Sheet1));
+        Assert.Equal(6, Reload(file)["S"]["A2"].Value.AsNumber());
+    }
+
     [Fact]
     public void A_typed_spill_or_calc_error_cannot_be_saved()
     {

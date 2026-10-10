@@ -57,19 +57,25 @@ public class XlsxWriterRichErrorTests
         Assert.Equal(ErrorKind.Calc, Reload(file)["S"]["B1"].Value.AsError());
     }
 
-    [Fact]
-    public void A_rich_value_the_file_has_is_reused()
+    // A file whose rich value 1 is #CALC! (errorType 13, subType 0), as ERROR.TYPE.xlsx in the corpus.
+    private static TestXlsx WithCalcRichValue(string sheetData)
     {
         const string RichData = "http://schemas.microsoft.com/office/spreadsheetml/2017/richdata";
         var metadata = "<metadata xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:xlrd=\"" + RichData + "\">"
             + "<metadataTypes count=\"1\"><metadataType name=\"XLRICHVALUE\" minSupportedVersion=\"120000\"/></metadataTypes>"
             + "<futureMetadata name=\"XLRICHVALUE\" count=\"1\"><bk><extLst><ext uri=\"{3e2802c4-a4d2-4d8b-9148-e3be6c30e623}\"><xlrd:rvb i=\"0\"/></ext></extLst></bk></futureMetadata>"
             + "<valueMetadata count=\"1\"><bk><rc t=\"1\" v=\"0\"/></bk></valueMetadata></metadata>";
-        var xlsx = new TestXlsx { Metadata = metadata }
+        return new TestXlsx { Metadata = metadata }
             .Part("xl/richData/rdrichvalue.xml", "<rvData xmlns=\"" + RichData + "\" count=\"1\"><rv s=\"0\"><v>13</v><v>0</v></rv></rvData>")
             .Part("xl/richData/rdrichvaluestructure.xml", "<rvStructures xmlns=\"" + RichData + "\" count=\"1\"><s t=\"_error\"><k n=\"errorType\" t=\"i\"/><k n=\"subType\" t=\"i\"/></s></rvStructures>")
-            .Sheet("S", "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"B1\"><f>_xlfn._xlws.FILTER(A1,A1&gt;C1)</f><v>1</v></c><c r=\"C1\"><v>0</v></c></row>");
-        var workbook = Load(xlsx);
+            .Sheet("S", sheetData);
+    }
+
+    [Fact]
+    public void A_rich_value_the_file_has_is_reused()
+    {
+        var workbook = Load(WithCalcRichValue(
+            "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"B1\"><f>_xlfn._xlws.FILTER(A1,A1&gt;C1)</f><v>1</v></c><c r=\"C1\"><v>0</v></c></row>"));
         workbook["S"]["C1"].Value = 100;
         workbook.Recalculate();
 
@@ -77,6 +83,20 @@ public class XlsxWriterRichErrorTests
 
         Assert.Contains("<c r=\"B1\" t=\"e\" vm=\"1\">", Part(file, Sheet1));
         Assert.Contains("count=\"1\"", Part(file, "xl/richData/rdrichvalue.xml"));
+    }
+
+    // Such values exist in files (ERROR.TYPE.xlsx); only typing one is refused.
+    [Fact]
+    public void A_saved_calc_value_stays_when_every_value_is_written_again()
+    {
+        var workbook = Load(WithCalcRichValue(
+            "<row r=\"1\"><c r=\"A1\" t=\"e\" vm=\"1\"><v>#VALUE!</v></c><c r=\"B1\"><v>1</v></c></row>"));
+        workbook["S"]["B1"].Value = 2;
+        workbook.Recalculate();
+
+        var file = Save(workbook, new XlsxWriteOptions { RewriteAllValues = true });
+
+        Assert.Contains("<c r=\"A1\" t=\"e\" vm=\"1\"><v>#VALUE!</v></c>", Part(file, Sheet1));
     }
 
     [Fact]
