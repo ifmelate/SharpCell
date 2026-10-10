@@ -86,6 +86,28 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Typing_into_cells()
+    {
+        var workbook = new Workbook { Culture = System.Globalization.CultureInfo.GetCultureInfo("en-US") };
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-input
+        sheet["A1"].Input = "12.5%";          // 0.125, and the format 0.00%
+        sheet["A2"].Input = "10/11/2026";     // a date in the workbook's culture, and its short date format
+        sheet["A3"].Input = "=A1*2";          // a formula
+        sheet["A4"].Input = "'0123";          // text, kept as typed
+        string edit = sheet["A1"].Input;       // "12.5%", as Excel shows it to edit
+        // end-snippet
+
+        Assert.Equal(0.125, sheet["A1"].Value.AsNumber());
+        Assert.Equal("0.00%", sheet["A1"].NumberFormat);
+        Assert.Equal("m/d/yyyy", sheet["A2"].NumberFormat);
+        Assert.Equal("=A1*2", sheet["A3"].Formula);
+        Assert.Equal(CellValue.Text("0123"), sheet["A4"].Value);
+        Assert.Equal("12.5%", edit);
+    }
+
+    [Fact]
     public void Cell_styles()
     {
         var workbook = new Workbook();

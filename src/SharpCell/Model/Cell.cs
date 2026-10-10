@@ -10,7 +10,7 @@ namespace SharpCell;
 /// A handle to one cell position. Creating a handle does not create the cell; storage is
 /// allocated only when a value or formula is set.
 /// </summary>
-public sealed class Cell
+public sealed partial class Cell
 {
     internal Cell(Worksheet worksheet, int row, int column)
     {

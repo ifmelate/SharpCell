@@ -93,6 +93,31 @@ workbook's culture for separators and month names: dates come out as dates, perc
 Column width plays no part, so a long number is never cut to `####`. A format is no content: it
 does not block a spill and is not listed by `Cells`. `XlsxWriter` saves formats with the cells.
 
+## Typing into cells
+
+```csharp snippet=cells-input
+sheet["A1"].Input = "12.5%";          // 0.125, and the format 0.00%
+sheet["A2"].Input = "10/11/2026";     // a date in the workbook's culture, and its short date format
+sheet["A3"].Input = "=A1*2";          // a formula
+sheet["A4"].Input = "'0123";          // text, kept as typed
+string edit = sheet["A1"].Input;       // "12.5%", as Excel shows it to edit
+```
+
+`Cell.Input` is what a person types into a cell in Excel. Setting it does what typing and
+pressing Enter does: `=` starts a formula, `'` keeps the rest as text, `TRUE`, `FALSE` and error
+literals are those values, and numbers, percentages, currency, grouped digits, dates and times are
+read in `Workbook.Culture` by the same rules as text meeting arithmetic and `DATEVALUE`; anything
+else stays text, and an empty string clears the cell. A cell in the General format takes a format
+from what was typed: `12%` gives `0%`, `1,250.50` gives `#,##0.00`, `$5` a currency format, a date
+the culture's short date, a time `h:mm` with seconds and AM/PM when they were typed. A cell with a
+format of its own keeps it.
+
+Getting `Input` gives the text Excel shows to edit the cell: the formula, a number in full, a
+percentage as one, a date or time as the culture writes it, and text with an apostrophe in front
+when it would read as something else. Typed back, it gives the same content. A format taken from
+typing is saved with the cell by `XlsxWriter`. The formats Excel gives typed currency and dates are
+not yet compared with Excel's.
+
 ## Styles
 
 ```csharp snippet=cells-styles

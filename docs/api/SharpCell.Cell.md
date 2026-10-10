@@ -56,6 +56,22 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="input"></a>
+### Input
+
+```csharp
+public string Input { get; set; }
+```
+
+The cell as typed in Excel. Setting it does what typing the text and pressing Enter does: `=` starts a formula; `'` keeps the rest as text; `TRUE`, `FALSE` and error literals such as `#N/A` are those values; numbers, percentages, currency and grouped digits, dates and times are read in the workbook's [Workbook.Culture](SharpCell.Workbook.md#culture), as Excel reads them in arithmetic and DATEVALUE (a date without a year is in the current year); anything else is text; an empty string clears the cell's content. A cell in the General format takes a format from what was typed, as in Excel: `12%` gives `0%`, `1,250.50` gives `#,##0.00`, `$5` a currency format, a date the culture's short date, a time `h:mm` with seconds and AM/PM when they were typed. A cell with a format of its own keeps it.
+
+Getting it gives the text Excel shows to edit the cell, which set again gives the same content: the formula, a number in full (a percentage as one, a date or time as the culture writes it), text with an apostrophe in front when it would read as something else.
+
+**Exceptions**
+
+- `FormulaParseException`: The text starts with `=` but is not a formula; the cell is unchanged.
+- `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
+
 <a id="numberformat"></a>
 ### NumberFormat
 
