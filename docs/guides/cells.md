@@ -141,8 +141,21 @@ Hidden columns change no result, as in Excel; hidden rows do (see
 [Tables and hidden rows](tables.md)). `Merge` keeps the values of the cells it covers, where
 Excel's Merge command would clear all but the top-left one.
 
-Styles, sizes and merged cells are not saved: `XlsxWriter` copies them from the file and refuses
-a workbook in which they changed.
+## Frozen panes and gridlines
+
+```csharp snippet=cells-view
+sheet.FrozenRows = 1;          // the header row stays in place while the rest scrolls
+sheet.FrozenColumns = 1;       // and so does column A
+sheet.ShowGridlines = false;   // as View > Gridlines turned off in Excel
+```
+
+`FrozenRows` and `FrozenColumns` are the rows at the top and the columns on the left that Excel's
+Freeze Panes keeps in place; `ShowGridlines` is whether Excel draws gridlines on the sheet.
+`XlsxReader` takes them from the sheet's first view. A plain split that is not frozen reads as no
+frozen panes. None of them changes a result.
+
+Styles, sizes, merged cells, frozen panes and gridlines are not saved: `XlsxWriter` copies them
+from the file and refuses a workbook in which they changed.
 
 ## Defined names
 
