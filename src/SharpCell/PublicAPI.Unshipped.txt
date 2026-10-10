@@ -1,1 +1,2 @@
 #nullable enable
+SharpCell.Worksheet.LoadRows<T>(string! topLeft, System.Collections.Generic.IEnumerable<T>! rows, params (string! Header, System.Func<T, object?>! Value)[]! columns) -> SharpCell.CellRange!

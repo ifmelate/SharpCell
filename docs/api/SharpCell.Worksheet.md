@@ -286,6 +286,41 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loadrows-string-ienumerable-t-valuetuple-string-func-t-object"></a>
+### LoadRows(string, IEnumerable<T>, ValueTuple<string, Func<T, object>>[])
+
+```csharp
+public CellRange LoadRows(string topLeft, IEnumerable<T?> rows, ValueTuple<string, Func<T?, object?>>[] columns)
+```
+
+Writes a header row and then one row per item of a collection, starting at a cell, and returns the range written (the header row included). The collection is enumerated once and nothing is written unless every value could be converted. Columns are lambdas, so no reflection is needed.
+
+Values are converted like this:
+
+- `null` and `DBNull` are empty and clear the cell; a [CellValue](SharpCell.CellValue.md) is stored as it is.
+- A `String` or `Char` is text, never a formula: `"=1+1"` stays text.
+- A `Boolean` is a logical value.
+- Every integer type, `Single`, `Double` and `Decimal` is a number; NaN and infinities are rejected.
+- A `DateTime` is a date serial in the workbook's date system, shown in the culture's short date and, with a time of day, hours and minutes. `DateOnly` is a date at midnight; `DateTimeOffset` is the clock time it states.
+- A `TimeOnly` is a fraction of a day with a time format; a `TimeSpan` is a number of days shown as `[h]:mm:ss`.
+- An enum is its name; anything else is its `IFormattable` text in the workbook's culture, or its `ToString()`.
+
+Number cells keep the format they had; date and time cells take a format.
+
+**Parameters**
+
+- `topLeft`: The cell of the first header, such as `B2`.
+- `rows`: The items; one row each.
+- `columns`: The header of each column and how to get its value from an item.
+
+**Returns:** The range written, header row included.
+
+**Exceptions**
+
+- `ArgumentNullException`: An argument or a header is null.
+- `ArgumentException`: There are no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).
+- `ArgumentOutOfRangeException`: The data runs past the last row or column, or a date is before the date system starts.
+
 <a id="merge-string"></a>
 ### Merge(string)
 
