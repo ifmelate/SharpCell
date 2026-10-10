@@ -166,6 +166,34 @@ public class XlsxWriterTests
         Assert.Equal(12, saved["A2"].Value.AsNumber());
     }
 
+    // The reader takes a cell's row from its r when the row has none; so must the writer.
+    [Fact]
+    public void Rows_without_positions_take_them_from_their_cells()
+    {
+        var xlsx = new TestXlsx().Sheet("S",
+            "<row><c r=\"A1\"><v>1</v></c></row><row><c r=\"A3\" s=\"2\"><v>3</v></c></row>");
+        var workbook = Load(xlsx);
+        workbook["S"]["A1"].Value = 10;
+        workbook["S"]["B3"].Value = 4;
+        workbook.Recalculate();
+
+        var sheet = Part(Save(workbook), Sheet1);
+
+        Assert.Contains("<row r=\"1\"><c r=\"A1\"><v>10</v></c></row><row r=\"3\"><c r=\"A3\" s=\"2\"><v>3</v></c><c r=\"B3\"><v>4</v></c></row>", sheet);
+    }
+
+    [Theory]
+    [InlineData("<row r=\"1\"><c r=\"A2\"><v>1</v></c></row>")]
+    [InlineData("<row r=\"3\"><c r=\"A3\"><v>3</v></c></row><row r=\"2\"><c r=\"A2\"><v>2</v></c></row>")]
+    public void Rows_a_writer_cannot_merge_safely_refuse_the_save(string sheetData)
+    {
+        var workbook = Load(new TestXlsx().Sheet("S", sheetData));
+        workbook["S"]["B1"].Value = 1;
+        workbook.Recalculate();
+
+        Assert.Throws<InvalidDataException>(() => Save(workbook));
+    }
+
     [Fact]
     public void Only_changed_sheets_are_written_again()
     {

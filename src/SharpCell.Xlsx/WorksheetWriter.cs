@@ -128,11 +128,23 @@ internal sealed class WorksheetWriter
         {
             while (!(reader.NodeType == XmlNodeType.EndElement && reader.Depth == depth))
             {
-                if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "row")
+                if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "row" && reader.GetAttribute("r") is { } r)
                 {
-                    row = reader.GetAttribute("r") is { } r ? ParseRow(r) : row + 1;
+                    row = ParseRow(r);
                     NewRowsBefore(row, writer);
                     Row(reader, writer, row);
+                }
+                else if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "row")
+                {
+                    // Without its own number a row takes its first cell's, as the reader does (or
+                    // follows the previous row): read it whole to find out before writing it.
+                    var element = (XElement)XNode.ReadFrom(reader);
+                    var first = element.Elements(_ns + "c").Select(c => (string?)c.Attribute("r")).FirstOrDefault(a => a is not null);
+                    row = first is not null && CellAddress.TryParse(first, out var address) ? address.Row : row + 1;
+                    NewRowsBefore(row, writer);
+                    using var rowReader = element.CreateReader();
+                    rowReader.MoveToContent();
+                    Row(rowReader, writer, row);
                 }
                 else
                 {
@@ -164,7 +176,17 @@ internal sealed class WorksheetWriter
                 if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "c")
                 {
                     var source = (XElement)XNode.ReadFrom(reader);
-                    column = source.Attribute("r") is { } r && CellAddress.TryParse(r.Value, out var address) ? address.Column : column + 1;
+                    if (source.Attribute("r") is { } r && CellAddress.TryParse(r.Value, out var address))
+                    {
+                        if (address.Row != row)
+                            throw new InvalidDataException($"Cell {address} of sheet '{_sheet.Name}' lies in row {row}; the file cannot be written back.");
+                        column = address.Column;
+                    }
+                    else
+                    {
+                        column++;
+                    }
+
                     CheckOrder(row, column);
                     NewCellsBefore(row, column, writer);
                     Cell(source, row, column)?.WriteTo(writer);
