@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using SharpCell.Evaluation;
 
 namespace SharpCell;
@@ -86,18 +87,91 @@ public sealed partial class Worksheet
             converted.Add(line);
         }
 
-        var values = new CellValue[converted.Count, columns.Length];
+        return WriteLoaded(start, converted, columns.Length, firstDataRow: 1);
+    }
+
+    /// <summary>
+    /// Writes the rows of a <see cref="DataTable"/> starting at a cell, optionally under a header row of
+    /// its column names, and returns the range written. Nothing is written unless every value could be
+    /// converted. <see cref="DBNull"/> is an empty cell; other values are converted as
+    /// <see cref="LoadRows{T}"/> does.
+    /// </summary>
+    /// <param name="topLeft">The cell of the first header (or of the first value without headers), such as <c>B2</c>.</param>
+    /// <param name="table">The table to write; it needs at least one column.</param>
+    /// <param name="headers"><c>true</c> to write the column names as a header row first.</param>
+    /// <returns>The range written, header row included.</returns>
+    /// <exception cref="ArgumentNullException">An argument is null.</exception>
+    /// <exception cref="ArgumentException">The table has no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The data runs past the last row or column, or a date is before the date system starts.</exception>
+    public CellRange LoadDataTable(string topLeft, DataTable table, bool headers = true)
+    {
+        ArgumentNullException.ThrowIfNull(topLeft);
+        ArgumentNullException.ThrowIfNull(table);
+        var columnCount = table.Columns.Count;
+        if (columnCount == 0)
+            throw new ArgumentException("The table has no columns.", nameof(table));
+
+        if (!CellAddress.TryParse(topLeft, out var start))
+            throw new ArgumentException($"'{topLeft}' is not a cell address.", nameof(topLeft));
+        if (start.Column + columnCount - 1 > CellAddress.MaxColumn)
+            throw new ArgumentOutOfRangeException(nameof(table), columnCount, "The columns run past the last column of the sheet.");
+        Workbook.ThrowIfInCustomFunction();
+
+        var converted = new List<(CellValue Value, string? Format)[]>();
+        if (headers)
+        {
+            var header = new (CellValue, string?)[columnCount];
+            for (var c = 0; c < columnCount; c++)
+                header[c] = (CellValue.Text(table.Columns[c].ColumnName), null);
+            converted.Add(header);
+        }
+
+        foreach (DataRow dataRow in table.Rows)
+        {
+            var row = start.Row + converted.Count;
+            if (row > CellAddress.MaxRow)
+                throw new ArgumentOutOfRangeException(nameof(table), "The rows run past the last row of the sheet.");
+            var items = dataRow.ItemArray;
+            var line = new (CellValue, string?)[columnCount];
+            for (var c = 0; c < columnCount; c++)
+            {
+                try
+                {
+                    line[c] = (ObjectValues.Convert(items[c], Workbook, out var format), format);
+                }
+                catch (ArgumentOutOfRangeException ex)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(table), ex.ActualValue, $"{new CellAddress(row, start.Column + c)}: {ex.Message}");
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new ArgumentException($"{new CellAddress(row, start.Column + c)}: {ex.Message}", nameof(table), ex);
+                }
+            }
+
+            converted.Add(line);
+        }
+
+        if (converted.Count == 0)
+            throw new ArgumentException("The table has no rows to write; use headers or add rows.", nameof(table));
+        return WriteLoaded(start, converted, columnCount, headers ? 1 : 0);
+    }
+
+    // Writes converted rows in one go (values first, then the formats of the data rows).
+    private CellRange WriteLoaded(CellAddress start, List<(CellValue Value, string? Format)[]> converted, int columnCount, int firstDataRow)
+    {
+        var values = new CellValue[converted.Count, columnCount];
         for (var r = 0; r < converted.Count; r++)
         {
-            for (var c = 0; c < columns.Length; c++)
+            for (var c = 0; c < columnCount; c++)
                 values[r, c] = converted[r][c].Value;
         }
 
-        var range = new CellRange(this, new Area(start.Row, start.Column, start.Row + converted.Count - 1, start.Column + columns.Length - 1));
+        var range = new CellRange(this, new Area(start.Row, start.Column, start.Row + converted.Count - 1, start.Column + columnCount - 1));
         range.SetValues(values);
-        for (var r = 1; r < converted.Count; r++)
+        for (var r = firstDataRow; r < converted.Count; r++)
         {
-            for (var c = 0; c < columns.Length; c++)
+            for (var c = 0; c < columnCount; c++)
             {
                 if (converted[r][c].Format is { } format)
                     this[start.Row + r, start.Column + c].NumberFormat = format;

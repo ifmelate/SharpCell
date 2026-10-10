@@ -3622,6 +3622,29 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loaddatatable-string-datatable-bool"></a>
+### LoadDataTable(string, DataTable, bool)
+
+```csharp
+public CellRange LoadDataTable(string topLeft, DataTable table, bool headers = true)
+```
+
+Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [Worksheet.LoadRows``1](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
+
+**Parameters**
+
+- `topLeft`: The cell of the first header (or of the first value without headers), such as `B2`.
+- `table`: The table to write; it needs at least one column.
+- `headers`: `true` to write the column names as a header row first.
+
+**Returns:** The range written, header row included.
+
+**Exceptions**
+
+- `ArgumentNullException`: An argument is null.
+- `ArgumentException`: The table has no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).
+- `ArgumentOutOfRangeException`: The data runs past the last row or column, or a date is before the date system starts.
+
 <a id="loadrows-string-ienumerable-t-string-func-t-object"></a>
 ### LoadRows<T>(string, IEnumerable<T>, (string, Func<T, object>)[])
 

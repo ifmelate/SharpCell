@@ -1,3 +1,4 @@
+using System.Data;
 using System.Globalization;
 
 namespace SharpCell.Tests.Model;
@@ -170,6 +171,84 @@ public class LoadRowsTests
         var items = Enumerable.Range(0, 1_048_576);
 
         Assert.Throws<ArgumentOutOfRangeException>(() => sheet.LoadRows("A2", items, ("N", n => n)));
+        Assert.Null(sheet.UsedRange);
+    }
+
+    private static DataTable OrdersTable()
+    {
+        var table = new DataTable();
+        table.Columns.Add("Customer", typeof(string));
+        table.Columns.Add("Units", typeof(int));
+        table.Columns.Add("Shipped", typeof(DateTime));
+        table.Columns.Add("Note", typeof(string));
+        table.Rows.Add("Ann", 3, new DateTime(2026, 3, 14), "rush");
+        table.Rows.Add("Bob", DBNull.Value, new DateTime(2026, 3, 15, 9, 30, 0), DBNull.Value);
+        return table;
+    }
+
+    [Fact]
+    public void A_data_table_is_written_under_its_column_names()
+    {
+        var sheet = NewSheet();
+        sheet["C4"].Value = CellValue.Text("old");
+        sheet["E4"].Value = CellValue.Text("old");
+        var range = sheet.LoadDataTable("B2", OrdersTable());
+
+        Assert.Equal("B2:E4", range.Address);
+        Assert.Equal("Customer", sheet["B2"].Text);
+        Assert.Equal("Note", sheet["E2"].Text);
+        Assert.Equal("Ann", sheet["B3"].Text);
+        Assert.Equal(3, sheet["C3"].Value.AsNumber());
+        Assert.Equal(CellValueKind.Empty, sheet["C4"].Value.Kind);
+        Assert.Equal(CellValueKind.Empty, sheet["E4"].Value.Kind);
+        Assert.Equal("3/14/2026", sheet["D3"].Text);
+        Assert.Equal("m/d/yyyy", sheet["D3"].NumberFormat);
+        Assert.Equal("m/d/yyyy h:mm", sheet["D4"].NumberFormat);
+    }
+
+    [Fact]
+    public void A_data_table_without_headers_writes_data_only()
+    {
+        var sheet = NewSheet();
+        var range = sheet.LoadDataTable("B2", OrdersTable(), headers: false);
+
+        Assert.Equal("B2:E3", range.Address);
+        Assert.Equal("Ann", sheet["B2"].Text);
+        Assert.Equal("m/d/yyyy", sheet["D2"].NumberFormat);
+        Assert.Equal("Bob", sheet["B3"].Text);
+    }
+
+    [Fact]
+    public void A_data_table_without_rows_writes_the_header_only()
+    {
+        var sheet = NewSheet();
+        var table = new DataTable();
+        table.Columns.Add("A");
+        table.Columns.Add("B");
+
+        Assert.Equal("A1:B1", sheet.LoadDataTable("A1", table).Address);
+    }
+
+    [Fact]
+    public void A_data_table_without_columns_is_rejected()
+    {
+        var sheet = NewSheet();
+
+        Assert.Throws<ArgumentException>(() => sheet.LoadDataTable("A1", new DataTable()));
+        Assert.Throws<ArgumentNullException>(() => sheet.LoadDataTable("A1", null!));
+        Assert.Null(sheet.UsedRange);
+    }
+
+    [Fact]
+    public void A_data_table_value_that_cannot_be_stored_writes_nothing()
+    {
+        var sheet = NewSheet();
+        var table = new DataTable();
+        table.Columns.Add("N", typeof(double));
+        table.Rows.Add(1.0);
+        table.Rows.Add(double.NaN);
+
+        Assert.Throws<ArgumentException>(() => sheet.LoadDataTable("A1", table));
         Assert.Null(sheet.UsedRange);
     }
 }
