@@ -783,7 +783,8 @@ results are calculated by SharpCell, so `KeepUncalculated` is not needed.
 
 # Reading .xlsx files
 
-What `XlsxReader` loads, what it skips, and how saved results and streams behave.
+What `XlsxReader` loads, what it skips, and how saved results and streams behave. It reads
+.xlsx files and macro-enabled .xlsm and .xltm files; macros are kept for saving and never run.
 
 ## What is read
 
@@ -807,7 +808,7 @@ Pattern and gradient fills, styles of whole rows and columns, conditional format
 
 | File | Result |
 |---|---|
-| .xls, .xlsm, .xlsb, encrypted files | `NotSupportedException` |
+| .xls, .xlsb, encrypted files | `NotSupportedException` |
 | A damaged or non-xlsx file | `InvalidDataException` |
 
 ## Saved results
@@ -1023,7 +1024,7 @@ Dates and times are numbers: serial days, with the time of day as the fraction. 
 Every known gap in one list, so you can decide before you start.
 
 - **Writing files.** `XlsxWriter` saves changed values into the file a workbook was read from (see [Saving .xlsx files](saving.md)). It cannot create a file from a workbook built in code, or save new formulas, sheets, names, tables or styles.
-- **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
+- **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
@@ -1073,7 +1074,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread (clones of one template included).
 - Call `Workbook.Recalculate()` before `XlsxWriter.Save`; only cell values can be saved, into the file the workbook was read from.
-- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsm/.xlsb, localized function names.
+- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsb, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```
@@ -3470,7 +3471,7 @@ public static class XlsxReader
 
 Namespace `SharpCell.Xlsx` · package `SharpCell.Xlsx`
 
-Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines. Charts, pivot tables and macros are not read.
+Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines, from .xlsx and macro-enabled .xlsm files. Charts, pivot tables and macros are not read (a save keeps them; macros never run).
 
 Every formula is out of date after loading: [Cell.Value](SharpCell.Cell.md#value) shows the value cached in the file until [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) calculates it. A formula SharpCell cannot parse (for example a link to another workbook) does not fail the load; once calculated it is `#NAME?` and listed in [Workbook.Diagnostics](SharpCell.Workbook.md#diagnostics).
 
@@ -3496,7 +3497,7 @@ Reads a workbook from a stream, which is left open.
 **Exceptions**
 
 - `InvalidDataException`: The file is not a well-formed .xlsx workbook.
-- `NotSupportedException`: The file is .xls, .xlsm, .xlsb or encrypted.
+- `NotSupportedException`: The file is .xls, .xlsb or encrypted.
 
 <a id="load-string"></a>
 ### Load(string)
@@ -3516,7 +3517,7 @@ Reads a workbook from a file.
 **Exceptions**
 
 - `InvalidDataException`: The file is not a well-formed .xlsx workbook.
-- `NotSupportedException`: The file is .xls, .xlsm, .xlsb or encrypted.
+- `NotSupportedException`: The file is .xls, .xlsb or encrypted.
 
 ---
 

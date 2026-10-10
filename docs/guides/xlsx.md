@@ -1,6 +1,7 @@
 # Reading .xlsx files
 
-What `XlsxReader` loads, what it skips, and how saved results and streams behave.
+What `XlsxReader` loads, what it skips, and how saved results and streams behave. It reads
+.xlsx files and macro-enabled .xlsm and .xltm files; macros are kept for saving and never run.
 
 ## What is read
 
@@ -24,7 +25,7 @@ Pattern and gradient fills, styles of whole rows and columns, conditional format
 
 | File | Result |
 |---|---|
-| .xls, .xlsm, .xlsb, encrypted files | `NotSupportedException` |
+| .xls, .xlsb, encrypted files | `NotSupportedException` |
 | A damaged or non-xlsx file | `InvalidDataException` |
 
 ## Saved results

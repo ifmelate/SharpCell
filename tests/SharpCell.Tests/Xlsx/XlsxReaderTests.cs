@@ -287,14 +287,26 @@ public class XlsxReaderTests
         Assert.Throws<NotSupportedException>(() => XlsxReader.Load(stream));
     }
 
-    [Theory]
-    [InlineData("application/vnd.ms-excel.sheet.macroEnabled.main+xml")]
-    [InlineData("application/vnd.ms-excel.sheet.binary.macroEnabled.main")]
-    public void Rejects_macro_enabled_and_binary_workbooks(string contentType)
+    [Fact]
+    public void Rejects_binary_workbooks()
     {
-        var file = new TestXlsx { WorkbookContentType = contentType }.Sheet("S", "");
+        var file = new TestXlsx { WorkbookContentType = "application/vnd.ms-excel.sheet.binary.macroEnabled.main" }.Sheet("S", "");
 
         Assert.Throws<NotSupportedException>(() => Load(file));
+    }
+
+    [Theory]
+    [InlineData("application/vnd.ms-excel.sheet.macroEnabled.main+xml")]
+    [InlineData("application/vnd.ms-excel.template.macroEnabled.main+xml")]
+    public void Reads_macro_enabled_workbooks(string contentType)
+    {
+        var file = new TestXlsx { WorkbookContentType = contentType }
+            .Sheet("S", "<row r=\"1\"><c r=\"A1\"><v>2</v></c><c r=\"B1\"><f>A1*3</f></c></row>");
+
+        var workbook = Load(file);
+        workbook.Recalculate();
+
+        Assert.Equal(6, workbook["S"]["B1"].Value.AsNumber());
     }
 
     [Fact]

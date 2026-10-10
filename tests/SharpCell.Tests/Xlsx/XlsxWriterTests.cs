@@ -336,4 +336,22 @@ public class XlsxWriterTests
 
         Assert.Throws<NotSupportedException>(() => Save(workbook));
     }
+
+    [Fact]
+    public void A_macro_enabled_workbook_keeps_its_macros_and_content_type()
+    {
+        byte[] macros = [(byte)'V', (byte)'B', (byte)'A', 1, 2, 3];   // ASCII: TestXlsx writes parts as text
+        var file = new TestXlsx { WorkbookContentType = "application/vnd.ms-excel.sheet.macroEnabled.main+xml" }
+            .Sheet("S", "<row r=\"1\"><c r=\"A1\"><v>2</v></c><c r=\"B1\"><f>A1*3</f><v>6</v></c></row>")
+            .Part("xl/vbaProject.bin", System.Text.Encoding.ASCII.GetString(macros));
+        var workbook = Load(file);
+        workbook["S"]["A1"].Value = 5;
+        workbook.Recalculate();
+
+        var saved = Save(workbook);
+
+        Assert.Equal(macros, PartBytes(saved, "xl/vbaProject.bin"));
+        Assert.Contains("application/vnd.ms-excel.sheet.macroEnabled.main+xml", Part(saved, "[Content_Types].xml"));
+        Assert.Equal(15, Reload(saved)["S"]["B1"].Value.AsNumber());
+    }
 }
