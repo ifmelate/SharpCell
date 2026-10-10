@@ -3,6 +3,11 @@ namespace SharpCell.Xlsx;
 /// <summary>Options for <c>XlsxWriter</c>.</summary>
 public sealed class XlsxWriteOptions
 {
+    /// <summary>The defaults: a save is refused when some formulas cannot be calculated.</summary>
+    public XlsxWriteOptions()
+    {
+    }
+
     /// <summary>
     /// What to do with formulas SharpCell cannot calculate, such as calls of functions it does not
     /// know or links to other workbooks. False (the default) refuses to save with an
