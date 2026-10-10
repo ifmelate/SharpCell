@@ -60,7 +60,7 @@ public class FunctionValueTests
     {
         _s["F1"].Formula = "=MAP(S!A1:A2,TWICE)";
         _wb.Recalculate();
-        Assert.Equal(CellValue.Error(ErrorKind.Name), _s["F1"].Value);
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _s["F1"].Value);   // no such function yet
 
         _wb.Functions.Add("TWICE", a => a.Number(0).AsNumber() * 2);
         _wb.Recalculate();
@@ -68,13 +68,29 @@ public class FunctionValueTests
     }
 
     [Theory]
-    [InlineData("=BYROW(S!A1:B2,NOSUCHFN)")]
     [InlineData("=LET(f,LET,f(1))")]
     [InlineData("=LET(f,LAMBDA,f(1))")]
-    [InlineData("=BYROW(S!A1:B2,WEBSERVICE)")]
     public void Names_that_are_not_callable_functions_stay_name_errors(string formula)
     {
         Assert.Equal(CellValue.Error(ErrorKind.Name), _wb.Evaluate(formula));
+    }
+
+    [Fact]
+    public void A_name_that_is_no_function_where_one_is_expected_is_a_value_error()
+    {
+        // Excel for the web: BYROW(A1:B3,NOSUCHFN) is #VALUE!, though NOSUCHFN alone is #NAME?.
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _wb.Evaluate("=BYROW(S!A1:B2,NOSUCHFN)"));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _wb.Evaluate("=MAP(S!A1:A2,NOSUCHFN)"));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _wb.Evaluate("=BYROW(S!A1:B2,WEBSERVICE)"));   // not one SharpCell has
+    }
+
+    [Fact]
+    public void A_function_that_cannot_take_the_arguments_a_lambda_function_passes_is_a_calc_error()
+    {
+        // Excel for the web: BYROW(A1:B3,IF) is #CALC! (IF needs two arguments); a direct call with
+        // the wrong count, LET(f,ABS,f(1,2)), is #VALUE!.
+        Assert.Equal(CellValue.Error(ErrorKind.Calc), _wb.Evaluate("=BYROW(S!A1:B2,IF)"));
+        Assert.Equal(CellValue.Error(ErrorKind.Value), _wb.Evaluate("=LET(f,ABS,f(1,2))"));
     }
 
     [Theory]

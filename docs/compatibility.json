@@ -1,6 +1,6 @@
 {
-  "cells": 76099,
-  "passed": 76097,
+  "cells": 76153,
+  "passed": 76151,
   "widened": 38,
   "files": [
     {
@@ -14,6 +14,17 @@
         "ActiveTableFilter": "D9 D40:D41 D43:D44",
         "FilterHidesNothing": "D9 D40:D41",
         "NoFilter": "D40:D41"
+      },
+      "failingCells": {}
+    },
+    {
+      "file": "excel-web/function-values.xlsx",
+      "cells": 54,
+      "passed": 54,
+      "skipped": 0,
+      "widened": 0,
+      "comparedCells": {
+        "F": "F1:F3 F5 F9:F11 F13:F15 F17 F21:F23 F25:F26 F29 F33 F37:F39 F41 F45:F47 F49:F51 F53:F55 F57 F61 F65:F67 F69 F73 F77 F81 F85 F89 F93 F97:F99 F101 F105 F109 G5 G25:G26 G41 H41"
       },
       "failingCells": {}
     },
@@ -3104,14 +3115,14 @@
     {
       "name": "BYCOL",
       "status": "implemented",
-      "cases": 3,
-      "passed": 3
+      "cases": 5,
+      "passed": 5
     },
     {
       "name": "BYROW",
       "status": "implemented",
-      "cases": 2,
-      "passed": 2
+      "cases": 17,
+      "passed": 17
     },
     {
       "name": "CEILING",
@@ -4241,8 +4252,8 @@
     {
       "name": "ISERROR",
       "status": "implemented",
-      "cases": 22,
-      "passed": 22
+      "cases": 23,
+      "passed": 23
     },
     {
       "name": "ISEVEN",
@@ -4295,8 +4306,8 @@
     {
       "name": "ISOMITTED",
       "status": "implemented",
-      "cases": 3,
-      "passed": 3
+      "cases": 4,
+      "passed": 4
     },
     {
       "name": "ISOWEEKNUM",
@@ -4331,8 +4342,8 @@
     {
       "name": "LAMBDA",
       "status": "implemented",
-      "cases": 59,
-      "passed": 59
+      "cases": 62,
+      "passed": 62
     },
     {
       "name": "LARGE",
@@ -4373,8 +4384,8 @@
     {
       "name": "LET",
       "status": "implemented",
-      "cases": 516,
-      "passed": 516
+      "cases": 521,
+      "passed": 521
     },
     {
       "name": "LINEST",
@@ -4445,14 +4456,14 @@
     {
       "name": "MAKEARRAY",
       "status": "implemented",
-      "cases": 9,
-      "passed": 9
+      "cases": 13,
+      "passed": 13
     },
     {
       "name": "MAP",
       "status": "implemented",
-      "cases": 6,
-      "passed": 6
+      "cases": 24,
+      "passed": 24
     },
     {
       "name": "MATCH",
@@ -5009,8 +5020,8 @@
     {
       "name": "REDUCE",
       "status": "implemented",
-      "cases": 1,
-      "passed": 1
+      "cases": 3,
+      "passed": 3
     },
     {
       "name": "REGEXEXTRACT",
@@ -5114,8 +5125,8 @@
     {
       "name": "SCAN",
       "status": "implemented",
-      "cases": 9,
-      "passed": 9
+      "cases": 12,
+      "passed": 12
     },
     {
       "name": "SEARCH",
@@ -5306,8 +5317,8 @@
     {
       "name": "SUM",
       "status": "implemented",
-      "cases": 169,
-      "passed": 169
+      "cases": 172,
+      "passed": 172
     },
     {
       "name": "SUMIF",
@@ -5571,8 +5582,8 @@
     {
       "name": "TYPE",
       "status": "implemented",
-      "cases": 8,
-      "passed": 8
+      "cases": 9,
+      "passed": 9
     },
     {
       "name": "UNICHAR",
