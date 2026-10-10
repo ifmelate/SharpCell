@@ -3622,11 +3622,11 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
-<a id="loadrows-string-ienumerable-t-valuetuple-string-func-t-object"></a>
-### LoadRows(string, IEnumerable<T>, ValueTuple<string, Func<T, object>>[])
+<a id="loadrows-string-ienumerable-t-string-func-t-object"></a>
+### LoadRows<T>(string, IEnumerable<T>, (string, Func<T, object>)[])
 
 ```csharp
-public CellRange LoadRows(string topLeft, IEnumerable<T?> rows, ValueTuple<string, Func<T?, object?>>[] columns)
+public CellRange LoadRows<T>(string topLeft, IEnumerable<T> rows, params (string Header, Func<T, object?> Value)[] columns)
 ```
 
 Writes a header row and then one row per item of a collection, starting at a cell, and returns the range written (the header row included). The collection is enumerated once and nothing is written unless every value could be converted. Columns are lambdas, so no reflection is needed.
