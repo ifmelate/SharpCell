@@ -9,7 +9,7 @@ namespace SharpCell.AotSmoke;
 /// <summary>
 /// A handful of formulas through every part of the engine that reflection or trimming could break:
 /// the function registry, dynamic arrays, LAMBDA, number formats, regular expressions, cultures
-/// and the xlsx reader. Exit code 0 when every result is as expected.
+/// the xlsx reader and writer. Exit code 0 when every result is as expected.
 /// </summary>
 internal static class Program
 {
@@ -42,6 +42,13 @@ internal static class Program
             var budget = XlsxReader.Load(stream);
             budget.Recalculate();
             Expect("xlsx", budget["Budget"]["B6"].Value, "1810");
+
+            budget["Budget"]["B2"].Value = 1350;
+            budget.Recalculate();
+            var saved = new MemoryStream();
+            XlsxWriter.Save(budget, saved);
+            saved.Position = 0;
+            Expect("xlsx save", XlsxReader.Load(saved)["Budget"]["B6"].Value, "1960");
         }
 
         Console.WriteLine(_failures == 0 ? "AOT smoke test passed." : $"AOT smoke test: {_failures} failure(s).");

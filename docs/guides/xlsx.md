@@ -41,4 +41,4 @@ The stream does not have to be seekable; a stream that is not is copied into mem
 
 ## Writing
 
-SharpCell does not write files.
+`XlsxWriter` saves new values into the file a workbook was read from; see [Saving .xlsx files](saving.md).

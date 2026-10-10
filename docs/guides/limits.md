@@ -2,7 +2,7 @@
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** SharpCell reads .xlsx and keeps the workbook in memory; it does not save.
+- **Writing files.** `XlsxWriter` saves changed values into the file a workbook was read from (see [Saving .xlsx files](saving.md)). It cannot create a file from a workbook built in code, or save new formulas, sheets, names, tables or styles.
 - **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
 - **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.

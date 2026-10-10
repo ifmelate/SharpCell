@@ -1,8 +1,8 @@
 # SharpCell
 
-> A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays, LET/LAMBDA and tables with structured references. Results are checked against workbooks calculated by Microsoft Excel.
+> A free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them, saves the results back and evaluates formulas, including dynamic arrays, LET/LAMBDA and tables with structured references. Results are checked against workbooks calculated by Microsoft Excel.
 
-Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.
+Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads .xlsx and saves values back). Namespaces: `SharpCell`, `SharpCell.Xlsx`. Call `Workbook.Recalculate()` after changing cells; values do not update on assignment. Excel errors are values, not exceptions. A `Workbook` is not thread-safe.
 
 ---
 
@@ -10,7 +10,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 
 # SharpCell
 
-SharpCell is a free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them and evaluates formulas, including dynamic arrays and LET/LAMBDA.
+SharpCell is a free (MIT) Excel formula engine for .NET 8 and later: it reads .xlsx files, recalculates them, saves the results back and evaluates formulas, including dynamic arrays and LET/LAMBDA.
 
 ## Correctness
 
@@ -21,7 +21,7 @@ Results are compared with workbooks calculated by Microsoft Excel. The [compatib
 | Package | What it does |
 |---|---|
 | `SharpCell` | The engine: parser, values, recalculation and functions. No dependencies. |
-| `SharpCell.Xlsx` | Reads .xlsx files into a SharpCell workbook. |
+| `SharpCell.Xlsx` | Reads .xlsx files into a SharpCell workbook and saves recalculated values back. |
 
 Install from NuGet:
 
@@ -46,6 +46,7 @@ CellValue result = sheet["A2"].Value;   // 6
 - [Formulas and values](guides/formulas.md): syntax, references, dynamic arrays, names and LAMBDA.
 - [Recalculation](guides/recalculation.md): when values update, cancellation, diagnostics, threads.
 - [Reading .xlsx files](guides/xlsx.md): what the reader loads and what it skips.
+- [Saving .xlsx files](guides/saving.md): writing recalculated values back into a template.
 - [Functions](guides/functions.md): function status, criteria, dates.
 - [What SharpCell does not do](guides/limits.md): every known gap.
 - [API reference](api/index.md): every public type and member.
@@ -421,7 +422,64 @@ The stream does not have to be seekable; a stream that is not is copied into mem
 
 ## Writing
 
-SharpCell does not write files.
+`XlsxWriter` saves new values into the file a workbook was read from; see [Saving .xlsx files](saving.md).
+
+---
+
+<!-- page: guides/saving.md -->
+
+# Saving .xlsx files
+
+`XlsxWriter` saves a workbook back into the file it was read from, with the values SharpCell
+calculated. It is made for templates: read a workbook, change input cells, recalculate, save.
+
+```csharp snippet=save-template
+Workbook workbook = XlsxReader.Load(templatePath);
+workbook["Budget"]["B2"].Value = 1350;   // an input
+workbook.Recalculate();                  // required before saving
+XlsxWriter.Save(workbook, resultPath);   // styles, charts and other cells stay as they were
+```
+
+## What is written
+
+Only cell values. Everything else in the file is copied unchanged: styles, number formats, column
+widths, charts, pivot tables, comments, data validation, macros and parts SharpCell does not know.
+A cell whose value did not change is copied as it was. New text goes into the cell itself, not into
+the shared string table.
+
+Dynamic arrays that grow or shrink get their new cells and area. `#SPILL!` and `#CALC!` are saved the
+way Excel saves them, so Excel shows them before it recalculates.
+
+Saving a workbook with no changed values writes the original file byte for byte. Saving to a path
+writes a new file next to the target and then replaces it, so the file the workbook was read from can
+be the target.
+
+## What cannot be saved
+
+| Situation | Exception |
+|---|---|
+| A workbook built in code, not read by `XlsxReader` | `NotSupportedException` |
+| A formula added, removed or changed, or a value typed over a formula | `NotSupportedException` |
+| Sheets, defined names, tables, hidden rows, filters or the date system changed | `NotSupportedException` |
+| A changed cell of an Excel data table, or `#SPILL!`/`#CALC!` typed as a value | `NotSupportedException` |
+| Formulas not calculated since the last change (or since loading) | `InvalidOperationException` |
+| Formulas SharpCell cannot calculate | `XlsxWriteException` |
+
+Nothing is written when a save is refused.
+
+## Formulas SharpCell cannot calculate
+
+A formula that calls a function SharpCell does not know, or links to another workbook, has no
+trustworthy result. By default `Save` refuses with an `XlsxWriteException`; its `Problems` list the
+cells. With `new XlsxWriteOptions { KeepUncalculated = true }` those cells keep the result Excel saved,
+and the file asks Excel to recalculate every formula when it opens it. Until then, programs that read
+saved results (pandas, openpyxl, `XlsxReader`) see what SharpCell calculated for the cells that read
+such a formula.
+
+## Memory
+
+A workbook read by `XlsxReader` keeps the file's bytes in memory for saving: count the file's size on
+top of the workbook.
 
 ---
 
@@ -555,7 +613,7 @@ Dates and times are numbers: serial days, with the time of day as the fraction. 
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** SharpCell reads .xlsx and keeps the workbook in memory; it does not save.
+- **Writing files.** `XlsxWriter` saves changed values into the file a workbook was read from (see [Saving .xlsx files](saving.md)). It cannot create a file from a workbook built in code, or save new formulas, sheets, names, tables or styles.
 - **Other file formats.** .xls, .xlsm, .xlsb and encrypted files throw `NotSupportedException`.
 - **Tables do not change.** Tables cannot be resized, renamed or removed, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
@@ -591,7 +649,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 ```markdown
 ## SharpCell (Excel formula engine)
 
-- Packages: `SharpCell` (engine) and `SharpCell.Xlsx` (reads .xlsx). Namespaces `SharpCell`, `SharpCell.Xlsx`.
+- Packages: `SharpCell` (engine) and `SharpCell.Xlsx` (reads .xlsx, saves values back). Namespaces `SharpCell`, `SharpCell.Xlsx`.
 - Load: `Workbook workbook = XlsxReader.Load(path);` Build in code: `new Workbook()`, `AddSheet`, `sheet["A1"].Value`, `sheet["A2"].Formula = "=A1*3"`.
 - Call `workbook.Recalculate()` after changing values or formulas. Values do not update on assignment.
 - `workbook.Evaluate("=SUM(1,2)")` evaluates a formula that lives in no cell.
@@ -600,7 +658,8 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Formulas use Excel's file syntax: English function names, commas between arguments, dot decimals; the leading `=` is optional.
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread.
-- Not supported: writing files, .xls/.xlsm/.xlsb, iterative calculation, localized function names.
+- Call `Workbook.Recalculate()` before `XlsxWriter.Save`; only cell values can be saved, into the file the workbook was read from.
+- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsm/.xlsb, iterative calculation, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```

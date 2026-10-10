@@ -17,7 +17,7 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 ```markdown
 ## SharpCell (Excel formula engine)
 
-- Packages: `SharpCell` (engine) and `SharpCell.Xlsx` (reads .xlsx). Namespaces `SharpCell`, `SharpCell.Xlsx`.
+- Packages: `SharpCell` (engine) and `SharpCell.Xlsx` (reads .xlsx, saves values back). Namespaces `SharpCell`, `SharpCell.Xlsx`.
 - Load: `Workbook workbook = XlsxReader.Load(path);` Build in code: `new Workbook()`, `AddSheet`, `sheet["A1"].Value`, `sheet["A2"].Formula = "=A1*3"`.
 - Call `workbook.Recalculate()` after changing values or formulas. Values do not update on assignment.
 - `workbook.Evaluate("=SUM(1,2)")` evaluates a formula that lives in no cell.
@@ -26,7 +26,8 @@ Paste this into the file your agent reads: `AGENTS.md`, `CLAUDE.md`, `.cursor/ru
 - Formulas use Excel's file syntax: English function names, commas between arguments, dot decimals; the leading `=` is optional.
 - Dates are numbers (serial days). Text-to-number conversion uses `workbook.Culture`, invariant by default.
 - A `Workbook` is not thread-safe; use one per thread.
-- Not supported: writing files, .xls/.xlsm/.xlsb, iterative calculation, localized function names.
+- Call `Workbook.Recalculate()` before `XlsxWriter.Save`; only cell values can be saved, into the file the workbook was read from.
+- Not supported: creating files from code, saving new formulas or styles, .xls/.xlsm/.xlsb, iterative calculation, localized function names.
 - Before relying on a function, check its status in compatibility.json: https://ifmelate.github.io/SharpCell/compatibility.json
 - Docs for agents: https://ifmelate.github.io/SharpCell/llms.txt
 ```

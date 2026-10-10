@@ -24,6 +24,30 @@ public class GuideExamples
         Assert.Equal(6, result.AsNumber());
     }
 
+    [Fact]
+    public void Save_a_template_with_new_inputs()
+    {
+        var folder = Directory.CreateTempSubdirectory().FullName;
+        var templatePath = Path.Combine(folder, "budget.xlsx");
+        var resultPath = Path.Combine(folder, "result.xlsx");
+        File.Copy(SampleTests.BudgetPath, templatePath);
+        try
+        {
+            // snippet: save-template
+            Workbook workbook = XlsxReader.Load(templatePath);
+            workbook["Budget"]["B2"].Value = 1350;   // an input
+            workbook.Recalculate();                  // required before saving
+            XlsxWriter.Save(workbook, resultPath);   // styles, charts and other cells stay as they were
+            // end-snippet
+
+            Assert.Equal(1960, XlsxReader.Load(resultPath)["Budget"]["B6"].Value.AsNumber());
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     // snippet: read-values
     static string Describe(CellValue value) => value.Kind switch
     {
