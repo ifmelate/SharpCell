@@ -29,7 +29,7 @@ A link to `target`, with an optional tooltip.
 **Exceptions**
 
 - `ArgumentNullException`: The target is null.
-- `ArgumentException`: The target is empty, or the tooltip is longer than 255 characters.
+- `ArgumentException`: The target is empty or only `#`, or the tooltip is longer than 255 characters.
 
 ## Properties
 
@@ -50,6 +50,8 @@ public string Target { get; }
 ```
 
 Where the link goes, as given to the constructor.
+
+An empty fragment is dropped when the link is saved: `https://example.com/#` reads back as `https://example.com/`.
 
 <a id="tooltip"></a>
 ### Tooltip

@@ -46,6 +46,17 @@ public class XmlDocsTests
     }
 
     [Fact]
+    public void A_generic_method_cref_is_shown_with_its_type_parameter()
+    {
+        var docs = XmlDocs.Parse("""
+            <doc><members><member name="M:N.A.Run">
+              <summary>See <see cref="M:N.A.Load``1"/> and <see cref="M:N.A.Pair``2(System.String)"/>.</summary>
+            </member></members></doc>
+            """);
+        Assert.Equal("See `A.Load<T>` and `A.Pair<T1, T2>`.", docs.Summary("M:N.A.Run", _ => null));
+    }
+
+    [Fact]
     public void Inheritdoc_fills_what_the_member_does_not_say_itself()
     {
         var docs = XmlDocs.Parse(Xml);

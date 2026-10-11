@@ -251,4 +251,43 @@ public class LoadRowsTests
         Assert.Throws<ArgumentException>(() => sheet.LoadDataTable("A1", table));
         Assert.Null(sheet.UsedRange);
     }
+
+    [Fact]
+    public void A_deleted_data_table_row_is_not_written()
+    {
+        var sheet = NewSheet();
+        var table = new DataTable();
+        table.Columns.Add("N", typeof(int));
+        table.Rows.Add(1);
+        table.Rows.Add(2);
+        table.Rows.Add(3);
+        table.AcceptChanges();
+        table.Rows[1].Delete();
+
+        Assert.Equal("A1:A3", sheet.LoadDataTable("A1", table).Address);
+        Assert.Equal(1.0, sheet["A2"].Value.AsNumber());
+        Assert.Equal(3.0, sheet["A3"].Value.AsNumber());
+    }
+
+    [Fact]
+    public void A_conversion_failure_names_the_cell_once()
+    {
+        var sheet = NewSheet();
+        var items = new[] { new DateTime(2026, 1, 1), new DateTime(1850, 1, 1) };
+
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => sheet.LoadRows("A1", items, ("D", d => d)));
+        Assert.Equal("rows", ex.ParamName);
+        Assert.Contains("A3: ", ex.Message);
+        Assert.Equal(1, ex.Message.Split("A3: ").Length - 1);
+        Assert.DoesNotContain("Actual value was", ex.Message.Split("Actual value was")[0]);
+        Assert.True(ex.Message.Split("Actual value was").Length <= 2, ex.Message);
+        Assert.True(ex.Message.Split("(Parameter").Length <= 2, ex.Message);
+
+        var table = new DataTable();
+        table.Columns.Add("N", typeof(double));
+        table.Rows.Add(double.NaN);
+        var bad = Assert.Throws<ArgumentException>(() => sheet.LoadDataTable("C1", table, headers: false));
+        Assert.StartsWith("C1: ", bad.Message);
+        Assert.True(bad.Message.Split("(Parameter").Length <= 2, bad.Message);
+    }
 }

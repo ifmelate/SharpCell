@@ -18,10 +18,12 @@ public sealed class Hyperlink : IEquatable<Hyperlink>
     /// </param>
     /// <param name="tooltip">Excel's ScreenTip, shown when the pointer rests on the cell; at most 255 characters, or null for none.</param>
     /// <exception cref="ArgumentNullException">The target is null.</exception>
-    /// <exception cref="ArgumentException">The target is empty, or the tooltip is longer than 255 characters.</exception>
+    /// <exception cref="ArgumentException">The target is empty or only <c>#</c>, or the tooltip is longer than 255 characters.</exception>
     public Hyperlink(string target, string? tooltip = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(target);
+        if (target == "#")
+            throw new ArgumentException("A link to a place in the workbook needs a location after '#'.", nameof(target));
         if (tooltip is { Length: > MaxTooltipLength })
             throw new ArgumentException($"A tooltip is at most {MaxTooltipLength} characters.", nameof(tooltip));
         Target = target;
@@ -29,6 +31,7 @@ public sealed class Hyperlink : IEquatable<Hyperlink>
     }
 
     /// <summary>Where the link goes, as given to the constructor.</summary>
+    /// <remarks>An empty fragment is dropped when the link is saved: <c>https://example.com/#</c> reads back as <c>https://example.com/</c>.</remarks>
     public string Target { get; }
 
     /// <summary>The ScreenTip, or null for none.</summary>

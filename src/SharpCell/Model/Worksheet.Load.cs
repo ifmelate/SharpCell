@@ -76,11 +76,11 @@ public sealed partial class Worksheet
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(rows), ex.ActualValue, $"{new CellAddress(row, start.Column + c)}: {ex.Message}");
+                    throw new ArgumentOutOfRangeException(nameof(rows), ex.ActualValue, $"{new CellAddress(row, start.Column + c)}: {PlainMessage(ex)}");
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new ArgumentException($"{new CellAddress(row, start.Column + c)}: {ex.Message}", nameof(rows), ex);
+                    throw new ArgumentException($"{new CellAddress(row, start.Column + c)}: {PlainMessage(ex)}", nameof(rows), ex);
                 }
             }
 
@@ -128,6 +128,8 @@ public sealed partial class Worksheet
 
         foreach (DataRow dataRow in table.Rows)
         {
+            if (dataRow.RowState == DataRowState.Deleted)
+                continue;
             var row = start.Row + converted.Count;
             if (row > CellAddress.MaxRow)
                 throw new ArgumentOutOfRangeException(nameof(table), "The rows run past the last row of the sheet.");
@@ -141,11 +143,11 @@ public sealed partial class Worksheet
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(table), ex.ActualValue, $"{new CellAddress(row, start.Column + c)}: {ex.Message}");
+                    throw new ArgumentOutOfRangeException(nameof(table), ex.ActualValue, $"{new CellAddress(row, start.Column + c)}: {PlainMessage(ex)}");
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new ArgumentException($"{new CellAddress(row, start.Column + c)}: {ex.Message}", nameof(table), ex);
+                    throw new ArgumentException($"{new CellAddress(row, start.Column + c)}: {PlainMessage(ex)}", nameof(table), ex);
                 }
             }
 
@@ -155,6 +157,15 @@ public sealed partial class Worksheet
         if (converted.Count == 0)
             throw new ArgumentException("The table has no rows to write; use headers or add rows.", nameof(table));
         return WriteLoaded(start, converted, columnCount, headers ? 1 : 0);
+    }
+
+    // The message without what ArgumentException appends ("(Parameter 'x')" and "Actual value was ..."), as the
+    // rethrown exception adds its own.
+    private static string PlainMessage(ArgumentException ex)
+    {
+        var message = ex.Message;
+        var suffix = message.IndexOf(" (Parameter '", StringComparison.Ordinal);
+        return suffix >= 0 ? message[..suffix] : message;
     }
 
     // Writes converted rows in one go (values first, then the formats of the data rows).

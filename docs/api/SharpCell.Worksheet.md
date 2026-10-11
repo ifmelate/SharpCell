@@ -350,7 +350,7 @@ Whether a row is hidden.
 public CellRange LoadDataTable(string topLeft, DataTable table, bool headers = true)
 ```
 
-Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [Worksheet.LoadRows``1](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
+Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [`Worksheet.LoadRows<T>`](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
 
 **Parameters**
 

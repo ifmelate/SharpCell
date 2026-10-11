@@ -57,6 +57,8 @@ public class HyperlinkTests
     public void An_empty_target_or_a_tooltip_over_255_characters_is_refused()
     {
         Assert.Throws<ArgumentException>(() => new Hyperlink(""));
+        Assert.Throws<ArgumentException>(() => new Hyperlink("#"));
+        Assert.Equal("#A1", new Hyperlink("#A1").Target);
         Assert.Throws<ArgumentNullException>(() => new Hyperlink(null!));
         Assert.Throws<ArgumentException>(() => new Hyperlink("a", new string('x', 256)));
         Assert.Equal(255, new Hyperlink("a", new string('x', 255)).Tooltip!.Length);

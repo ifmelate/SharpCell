@@ -942,10 +942,11 @@ Everything SharpCell models:
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
+- Hyperlinks, data validation, sheet and workbook protection, and locked and hidden cells.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
-file: charts, pivot tables, comments, conditional formats, data validation, pictures, macros,
+file: charts, pivot tables, comments, conditional formats, pictures, macros,
 pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
 and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
 pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
@@ -957,8 +958,7 @@ calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are
 saves them, so Excel shows them before it recalculates.
 
 After rows or columns were inserted or deleted, everything in the file that points at cells
-follows them, including what SharpCell does not model: conditional formats, data validation,
-hyperlinks, filters, page breaks, print areas, pictures and shapes, comments, chart series and
+follows them, including what SharpCell does not model: conditional formats, filters, page breaks, print areas, pictures and shapes, comments, chart series and
 pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
 where they were. A pivot table moves with the rows above it, but rows inserted into it or deleted
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
@@ -1145,12 +1145,16 @@ several functions at once give `#VALUE!`.
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures, conditional formats or data validation, or remove or rename sheets; a file's own are kept as they are.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures or conditional formats, or remove or rename sheets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
-- **Styles are partly read.** Fonts, solid fills, borders, alignment and number formats are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
+- **Styles are partly read.** Fonts, solid fills, borders, alignment, number formats and cell protection (locked, hidden) are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
+- **Protection is not enforced.** Sheet and workbook protection is read, set and saved, but code may still change a protected sheet, as Excel's object model can when given the password.
+- **Data validation is stored, not evaluated.** Rules are read, set and saved; nothing checks a value against them. Validations in `extLst` (`x14`) are not modelled, and neither is the `imeMode` attribute: it is lost when a sheet's rules are rewritten, which includes any row or column insert or delete on that sheet.
+- **Large hyperlinks.** A hyperlink covering more than 10,000 cells, or more than 100,000 linked cells on a sheet, is kept in the file but not read into the model.
+- **Hyperlink style.** Setting a hyperlink does not apply Excel's blue underlined Hyperlink style; style the cell yourself.
 - **Localized function names.** Formulas use English names, as in the file format.
 - **Links to other workbooks.** They evaluate to `#NAME?`.
 - **Cube, real-time data and web functions.** `CUBE*`, `RTD` and `WEBSERVICE` are not available.
@@ -3229,7 +3233,7 @@ A link to `target`, with an optional tooltip.
 **Exceptions**
 
 - `ArgumentNullException`: The target is null.
-- `ArgumentException`: The target is empty, or the tooltip is longer than 255 characters.
+- `ArgumentException`: The target is empty or only `#`, or the tooltip is longer than 255 characters.
 
 ## Properties
 
@@ -3250,6 +3254,8 @@ public string Target { get; }
 ```
 
 Where the link goes, as given to the constructor.
+
+An empty fragment is dropped when the link is saved: `https://example.com/#` reads back as `https://example.com/`.
 
 <a id="tooltip"></a>
 ### Tooltip
@@ -4430,7 +4436,7 @@ Whether a row is hidden.
 public CellRange LoadDataTable(string topLeft, DataTable table, bool headers = true)
 ```
 
-Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [Worksheet.LoadRows``1](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
+Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [`Worksheet.LoadRows<T>`](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
 
 **Parameters**
 

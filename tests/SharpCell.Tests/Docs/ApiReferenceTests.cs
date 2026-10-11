@@ -75,4 +75,12 @@ public class ApiReferenceTests
     {
         Assert.Contains("[CellValue](SharpCell.CellValue.md)", Page("docs/api/SharpCell.Cell.md"));
     }
+
+    [Fact]
+    public void A_cref_to_a_generic_method_is_shown_and_linked_by_its_type_parameter()
+    {
+        var page = Page("docs/api/SharpCell.Worksheet.md");
+        Assert.DoesNotContain("LoadRows``1", page);
+        Assert.Matches(@"\[`Worksheet\.LoadRows<T>`\]\(SharpCell\.Worksheet\.md#loadrows[^)]*\)", page);
+    }
 }

@@ -126,7 +126,8 @@ internal sealed partial class XmlDocs
     private static string Link(string cref, string text, Func<string, string?> link)
     {
         var label = text.Length > 0 ? text : Display(cref);
-        return link(cref) is { } url ? $"[{label}]({url})" : $"`{label}`";
+        // A label with <T> is code, or Markdown would take it for a tag.
+        return link(cref) is { } url ? $"[{(label.Contains('<', StringComparison.Ordinal) ? $"`{label}`" : label)}]({url})" : $"`{label}`";
     }
 
     /// <summary><c>T:N.Type</c> as <c>Type</c>, <c>M:N.Type.Member(...)</c> as <c>Type.Member</c>.</summary>
@@ -139,7 +140,17 @@ internal sealed partial class XmlDocs
         var parts = body.Split('.');
         if (cref.StartsWith("T:", StringComparison.Ordinal) || parts.Length < 2)
             return parts[^1];
-        return parts[^1] == "#ctor" ? parts[^2] : parts[^2] + "." + parts[^1];
+        return parts[^1] == "#ctor" ? parts[^2] : parts[^2] + "." + GenericDisplay(parts[^1]);
+    }
+
+    // A generic method is written Name``1 in a cref; show it as Name<T> (Name<T1, T2> for several).
+    private static string GenericDisplay(string name)
+    {
+        var tick = name.IndexOf("``", StringComparison.Ordinal);
+        if (tick < 0 || !int.TryParse(name[(tick + 2)..], out var count) || count < 1)
+            return name;
+        var arguments = count == 1 ? "T" : string.Join(", ", Enumerable.Range(1, count).Select(i => "T" + i));
+        return $"{name[..tick]}<{arguments}>";
     }
 
     private static string Dedent(string code)
