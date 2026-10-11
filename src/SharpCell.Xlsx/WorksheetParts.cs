@@ -43,6 +43,7 @@ internal sealed class SheetLook
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
+        Validations = [.. sheet.ValidationRules.Select(rule => ((IReadOnlyList<Area>)rule.Areas.ToArray(), rule.Validation))];
         FrozenRows = sheet.FrozenRows;
         FrozenColumns = sheet.FrozenColumns;
         ShowGridlines = sheet.ShowGridlines;
@@ -68,6 +69,10 @@ internal sealed class SheetLook
         }
 
         Hyperlinks = hyperlinks;
+
+        // Not moved: the rules of a sheet whose rows or columns moved are always written again, and
+        // moving them here would mean moving their formulas as the model does.
+        Validations = look.Validations;
         FrozenRows = look.FrozenRows;
         FrozenColumns = look.FrozenColumns;
         ShowGridlines = look.ShowGridlines;
@@ -104,6 +109,9 @@ internal sealed class SheetLook
     /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
     public IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks { get; }
 
+    /// <summary>The data validation rules in order, with their ranges, as read; not moved by edits.</summary>
+    public IReadOnlyList<(IReadOnlyList<Area> Areas, DataValidation Validation)> Validations { get; }
+
     public int FrozenRows { get; }
 
     public int FrozenColumns { get; }
@@ -133,6 +141,20 @@ internal sealed class SheetLook
     public bool HyperlinksChanged(Worksheet sheet) =>
         Hyperlinks.Count != sheet.Hyperlinks.Count
         || Hyperlinks.Any(pair => !sheet.Hyperlinks.TryGetValue(pair.Key, out var link) || !link.Equals(pair.Value));
+
+    public bool ValidationsChanged(Worksheet sheet)
+    {
+        var rules = sheet.ValidationRules;
+        if (rules.Count != Validations.Count)
+            return true;
+        for (var i = 0; i < rules.Count; i++)
+        {
+            if (!rules[i].Areas.SequenceEqual(Validations[i].Areas) || !rules[i].Validation.Equals(Validations[i].Validation))
+                return true;
+        }
+
+        return false;
+    }
 
     public bool PanesChanged(Worksheet sheet) => FrozenRows != sheet.FrozenRows || FrozenColumns != sheet.FrozenColumns;
 

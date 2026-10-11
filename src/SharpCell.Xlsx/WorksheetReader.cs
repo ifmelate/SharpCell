@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using System.Xml.Linq;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
@@ -64,6 +65,13 @@ internal static class WorksheetReader
                 if (Size(reader.GetAttribute("ht"), MaxRowHeight) is { } height && row <= CellAddress.MaxRow)
                     sheet.SetRowHeight(row, height);
                 reader.Read();
+                continue;
+            }
+
+            // Only the sheet's own element: newer rules (x14) in the extension list stay as the file has them.
+            if (reader.Depth == 1 && reader.LocalName == "dataValidations")
+            {
+                ValidationElements.Read((XElement)XNode.ReadFrom(reader), sheet);
                 continue;
             }
 

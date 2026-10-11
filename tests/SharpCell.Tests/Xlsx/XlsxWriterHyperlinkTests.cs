@@ -236,7 +236,7 @@ public class XlsxWriterHyperlinkTests
     }
 
     // Entries whose bytes differ between the files, or that only one of them has.
-    private static List<string> ChangedParts(byte[] a, byte[] b)
+    internal static List<string> ChangedParts(byte[] a, byte[] b)
     {
         var first = Entries(a);
         var second = Entries(b);

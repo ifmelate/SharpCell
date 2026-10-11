@@ -44,6 +44,11 @@ internal sealed class WorksheetWriter
     private readonly bool _defaultsChanged;
     private readonly bool _filterChanged;
 
+    // The data validation rules are written from the model when they changed, and always on a sheet
+    // whose rows or columns moved: the model's rules have followed the edits, so the file's element is
+    // never moved (rules the reader skipped as damaged go rather than stay where they no longer belong).
+    private readonly bool _validationsChanged;
+
     // Elements to add where the schema puts them when the part has none.
     private readonly List<string> _pending = [];
 
@@ -106,6 +111,7 @@ internal sealed class WorksheetWriter
         _viewChanged = _look.ViewChanged(sheet);
         _defaultsChanged = _look.DefaultsChanged(sheet);
         _filterChanged = _look.FilterChanged(sheet);
+        _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
         if (_filterChanged && sheet.FilterMode)
             _pending.Add("sheetPr");
         if (_viewChanged)
@@ -116,6 +122,8 @@ internal sealed class WorksheetWriter
             _pending.Add("cols");
         if (_mergesChanged)
             _pending.Add("mergeCells");
+        if (_validationsChanged)
+            _pending.Add("dataValidations");
         if (hyperlinks is not null)
             _pending.Add("hyperlinks");
         if (_rowsChanged)
@@ -196,7 +204,6 @@ internal sealed class WorksheetWriter
                     case "ignoredErrors" when _shifted:
                     case "protectedRanges" when _shifted:
                     case "conditionalFormatting" when _map.Any:
-                    case "dataValidations" when _map.Any:
                     case "extLst" when _map.Any:
                         Shifted((XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
                         break;
@@ -206,6 +213,7 @@ internal sealed class WorksheetWriter
                     case "sheetFormatPr" when _defaultsChanged:
                     case "cols" when _columnsChanged:
                     case "mergeCells" when _mergesChanged:
+                    case "dataValidations" when _validationsChanged:
                     case "hyperlinks" when _hyperlinks is not null:
                         _pending.Remove(name);
                         _changed = true;
@@ -251,6 +259,7 @@ internal sealed class WorksheetWriter
         "sheetFormatPr" => SheetFormat(source),
         "cols" => Columns(source),
         "tableParts" => TableParts(source),
+        "dataValidations" => ValidationElements.Element(_ns, _sheet, source),
         "hyperlinks" => Hyperlinks(),
         _ => MergeCells(),
     };
@@ -267,7 +276,6 @@ internal sealed class WorksheetWriter
             "autoFilter" => AutoFilter(element),
             "sheetViews" => Selections(element),
             "conditionalFormatting" => Ranged(element),
-            "dataValidations" => List(element, "dataValidation", Ranged),
             "hyperlinks" => List(element, "hyperlink", e => MapAttribute(e, "ref")),
             "ignoredErrors" => List(element, "ignoredError", e => MapAttribute(e, "sqref")),
             "protectedRanges" => List(element, "protectedRange", e => MapAttribute(e, "sqref")),
@@ -293,8 +301,8 @@ internal sealed class WorksheetWriter
         return element;
     }
 
-    // An element with a sqref and formulas relative to its first cell (a conditional format, a
-    // data validation): the formulas follow the references, then the sqref moves.
+    // An element with a sqref and formulas relative to its first cell (a conditional format): the
+    // formulas follow the references, then the sqref moves.
     private XElement? Ranged(XElement element)
     {
         var sqref = (string?)element.Attribute("sqref");
