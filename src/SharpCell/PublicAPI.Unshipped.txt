@@ -118,3 +118,7 @@ SharpCell.CellStyle.FormulaHidden.get -> bool
 SharpCell.CellStyle.FormulaHidden.init -> void
 SharpCell.CellStyle.Locked.get -> bool
 SharpCell.CellStyle.Locked.init -> void
+SharpCell.Workbook.IsStructureProtected.get -> bool
+SharpCell.Workbook.IsWindowsProtected.get -> bool
+SharpCell.Workbook.Protect(string? password = null, bool structure = true, bool windows = false) -> void
+SharpCell.Workbook.Unprotect() -> void

@@ -56,6 +56,9 @@ internal sealed class WorkbookLook
         DefaultStyle = workbook.DefaultStyle;
         DateSystem = workbook.DateSystem;
         Iteration = workbook.Iteration;
+        StructureProtected = workbook.IsStructureProtected;
+        WindowsProtected = workbook.IsWindowsProtected;
+        ProtectionPassword = workbook.ProtectionPassword;
         foreach (var name in workbook.Names.All)
             Names[Key(name)] = name.Text;
         Tables = workbook.Tables.Select(t => t.Name.ToUpperInvariant()).ToHashSet(StringComparer.Ordinal);
@@ -69,6 +72,16 @@ internal sealed class WorkbookLook
     public DateSystem DateSystem { get; }
 
     public IterationSettings Iteration { get; }
+
+    public bool StructureProtected { get; }
+
+    public bool WindowsProtected { get; }
+
+    public ProtectionPassword? ProtectionPassword { get; }
+
+    public bool ProtectionChanged(Workbook workbook) =>
+        workbook.IsStructureProtected != StructureProtected || workbook.IsWindowsProtected != WindowsProtected
+        || !Equals(workbook.ProtectionPassword, ProtectionPassword);
 
     /// <summary>Each defined name's formula text, by scope (the sheet's name, or "") and upper-case name.</summary>
     public Dictionary<(string Scope, string Name), string> Names { get; } = [];
@@ -132,6 +145,8 @@ internal static class Structure
         var text = new StringBuilder();
         text.Append("dates ").Append(workbook.DateSystem).Append('\n');
         text.Append("iteration ").Append(workbook.Iteration).Append('\n');
+        text.Append("protection ").Append(workbook.IsStructureProtected).Append(' ').Append(workbook.IsWindowsProtected).Append(' ')
+            .Append(workbook.ProtectionPassword?.HashValue ?? workbook.ProtectionPassword?.LegacyHash).Append('\n');
         foreach (var sheet in workbook.Sheets)
         {
             text.Append("sheet ").Append(sheet.Name).Append(" filter ").Append(sheet.FilterMode).Append(" hidden");

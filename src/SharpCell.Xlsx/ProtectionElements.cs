@@ -14,6 +14,11 @@ internal sealed record PasswordAttributes(string AlgorithmName, string HashValue
 {
     public static PasswordAttributes Sheet { get; } = new("algorithmName", "hashValue", "saltValue", "spinCount", "password");
 
+    public static PasswordAttributes Workbook { get; } = new("workbookAlgorithmName", "workbookHashValue", "workbookSaltValue", "workbookSpinCount", "workbookPassword");
+
+    /// <summary>The names of all the attributes holding a password.</summary>
+    public string[] Names => [AlgorithmName, HashValue, SaltValue, SpinCount, Legacy];
+
     /// <summary>The password the attributes hold, as read; null when they hold none.</summary>
     public ProtectionPassword? Read(Func<string, string?> attribute)
     {

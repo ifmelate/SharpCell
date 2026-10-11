@@ -18,6 +18,9 @@ public sealed class Workbook
     private CultureInfo _culture = CultureInfo.InvariantCulture;
     private DateSystem _dateSystem;
     private IterationSettings _iteration = new();
+    private bool _structureProtected;
+    private bool _windowsProtected;
+    private ProtectionPassword? _protectionPassword;
 
     /// <summary>An empty workbook with no sheets, the invariant culture and the 1900 date system.</summary>
     public Workbook()
@@ -173,6 +176,50 @@ public sealed class Workbook
         }
     }
 
+    /// <summary>Whether the workbook's structure is locked: Excel then refuses adding, deleting, renaming, moving and hiding sheets.</summary>
+    public bool IsStructureProtected => _structureProtected;
+
+    /// <summary>Whether the workbook's windows are locked: Excel then refuses moving and resizing them.</summary>
+    public bool IsWindowsProtected => _windowsProtected;
+
+    /// <summary>The hash of the workbook protection's password, as made by <see cref="Protect"/> or read from a file; null for none.</summary>
+    internal ProtectionPassword? ProtectionPassword => _protectionPassword;
+
+    /// <summary>
+    /// Protects the workbook as Excel's Protect Workbook does. SharpCell itself does not enforce
+    /// protection: code may still add, remove and rename sheets, as Excel's object model may with the
+    /// password. Protecting a protected workbook replaces its locks and password.
+    /// </summary>
+    /// <param name="password">
+    /// The password Excel asks for to unprotect the workbook, or null (or empty) for none. Only its hash
+    /// is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+    /// </param>
+    /// <param name="structure">Whether to lock the structure: adding, deleting, renaming, moving and hiding sheets.</param>
+    /// <param name="windows">Whether to lock the windows' position and size.</param>
+    /// <exception cref="ArgumentException">Both <paramref name="structure"/> and <paramref name="windows"/> are false.</exception>
+    public void Protect(string? password = null, bool structure = true, bool windows = false)
+    {
+        if (!structure && !windows)
+            throw new ArgumentException("Protect at least the structure or the windows.", nameof(structure));
+        ThrowIfInCustomFunction();
+        SetProtection(structure, windows, string.IsNullOrEmpty(password) ? null : ProtectionPassword.Create(password));
+    }
+
+    /// <summary>Removes the workbook's protection and its password, as Excel's Unprotect Workbook does once the password is given.</summary>
+    public void Unprotect()
+    {
+        ThrowIfInCustomFunction();
+        SetProtection(false, false, null);
+    }
+
+    /// <summary>Sets the locks and the password as they are, for the reader.</summary>
+    internal void SetProtection(bool structure, bool windows, ProtectionPassword? password)
+    {
+        _structureProtected = structure;
+        _windowsProtected = windows;
+        _protectionPassword = password;
+    }
+
     /// <summary>
     /// Current calculation problems: circular references and failing functions. An entry of a cell
     /// disappears when the cell is edited or calculated without the problem; entries from
@@ -269,6 +316,9 @@ public sealed class Workbook
             _defaultStyle = _defaultStyle,
             _dateSystem = _dateSystem,
             _iteration = _iteration,
+            _structureProtected = _structureProtected,
+            _windowsProtected = _windowsProtected,
+            _protectionPassword = _protectionPassword,
             Registry = Registry,
             Clock = Clock,
             Random = Random,

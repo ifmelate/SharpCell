@@ -179,4 +179,66 @@ public class ProtectionTests
         Assert.NotNull(sheet.Protection);
         Assert.Null(sheet.ProtectionPassword);
     }
+
+    [Fact]
+    public void A_workbook_is_unprotected_until_protected()
+    {
+        var workbook = new Workbook();
+
+        Assert.False(workbook.IsStructureProtected);
+        Assert.False(workbook.IsWindowsProtected);
+        Assert.Null(workbook.ProtectionPassword);
+    }
+
+    [Fact]
+    public void Protecting_a_workbook_locks_its_structure_and_hashes_the_password()
+    {
+        var workbook = new Workbook();
+
+        workbook.Protect("secret");
+
+        Assert.True(workbook.IsStructureProtected);
+        Assert.False(workbook.IsWindowsProtected);
+        Assert.True(workbook.ProtectionPassword!.Verify("secret"));
+        Assert.False(workbook.ProtectionPassword.Verify("Secret"));
+    }
+
+    [Fact]
+    public void A_workbook_can_lock_its_windows_instead_of_its_structure()
+    {
+        var workbook = new Workbook();
+
+        workbook.Protect(structure: false, windows: true);
+
+        Assert.False(workbook.IsStructureProtected);
+        Assert.True(workbook.IsWindowsProtected);
+        Assert.Null(workbook.ProtectionPassword);
+        Assert.Throws<ArgumentException>(() => workbook.Protect(structure: false, windows: false));
+    }
+
+    [Fact]
+    public void Unprotecting_a_workbook_removes_the_locks_and_the_password()
+    {
+        var workbook = new Workbook();
+        workbook.Protect("secret", windows: true);
+
+        workbook.Unprotect();
+
+        Assert.False(workbook.IsStructureProtected);
+        Assert.False(workbook.IsWindowsProtected);
+        Assert.Null(workbook.ProtectionPassword);
+    }
+
+    [Fact]
+    public void A_clone_keeps_the_workbook_protection()
+    {
+        var workbook = new Workbook();
+        workbook.Protect("secret", windows: true);
+
+        var clone = workbook.Clone();
+
+        Assert.True(clone.IsStructureProtected);
+        Assert.True(clone.IsWindowsProtected);
+        Assert.True(clone.ProtectionPassword!.Verify("secret"));
+    }
 }

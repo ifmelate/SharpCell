@@ -3898,6 +3898,24 @@ public FunctionCollection Functions { get; }
 
 Functions of your own that formulas of this workbook can call, besides Excel's.
 
+<a id="isstructureprotected"></a>
+### IsStructureProtected
+
+```csharp
+public bool IsStructureProtected { get; }
+```
+
+Whether the workbook's structure is locked: Excel then refuses adding, deleting, renaming, moving and hiding sheets.
+
+<a id="iswindowsprotected"></a>
+### IsWindowsProtected
+
+```csharp
+public bool IsWindowsProtected { get; }
+```
+
+Whether the workbook's windows are locked: Excel then refuses moving and resizing them.
+
 <a id="iteration"></a>
 ### Iteration
 
@@ -3993,6 +4011,25 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 
 - `OperationCanceledException`: The token was cancelled.
 
+<a id="protect-string-bool-bool"></a>
+### Protect(string, bool, bool)
+
+```csharp
+public void Protect(string? password = null, bool structure = true, bool windows = false)
+```
+
+Protects the workbook as Excel's Protect Workbook does. SharpCell itself does not enforce protection: code may still add, remove and rename sheets, as Excel's object model may with the password. Protecting a protected workbook replaces its locks and password.
+
+**Parameters**
+
+- `password`: The password Excel asks for to unprotect the workbook, or null (or empty) for none. Only its hash is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+- `structure`: Whether to lock the structure: adding, deleting, renaming, moving and hiding sheets.
+- `windows`: Whether to lock the windows' position and size.
+
+**Exceptions**
+
+- `ArgumentException`: Both `structure` and `windows` are false.
+
 <a id="recalculate-cancellationtoken"></a>
 ### Recalculate(CancellationToken)
 
@@ -4029,6 +4066,15 @@ public bool TryGetTable(string name, out Table? table)
 Finds a table by name, ignoring case.
 
 **Returns:** Whether the table exists.
+
+<a id="unprotect"></a>
+### Unprotect()
+
+```csharp
+public void Unprotect()
+```
+
+Removes the workbook's protection and its password, as Excel's Unprotect Workbook does once the password is given.
 
 ---
 

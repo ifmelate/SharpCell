@@ -82,13 +82,14 @@ internal static class WorkbookReader
             ?? throw new InvalidDataException("The package has no workbook part.");
         CheckContentType(package, workbookPart);
 
-        var (date1904, iteration, sheets, names) = ReadWorkbookPart(package, workbookPart);
+        var (date1904, iteration, sheets, names, protection) = ReadWorkbookPart(package, workbookPart);
         var relationships = package.ReadRelationships(workbookPart);
 
         var workbook = new Workbook { MaxSpillCells = package.Limits.MaxSpillCells };
         if (date1904)
             workbook.DateSystem = DateSystem.Date1904;
         workbook.Iteration = iteration;
+        workbook.SetProtection(protection.Structure, protection.Windows, protection.Password);
 
         // Chart sheets and other non-worksheets hold no cells, but they count in sheet indexes.
         var byIndex = new List<(Worksheet Sheet, string Part)?>();
@@ -143,12 +144,13 @@ internal static class WorkbookReader
             throw new NotSupportedException("The file is a binary workbook (.xlsb); only .xlsx and .xlsm files can be read.");
     }
 
-    private static (bool Date1904, IterationSettings Iteration, List<SheetEntry> Sheets, List<NameEntry> Names) ReadWorkbookPart(Package package, string part)
+    private static (bool Date1904, IterationSettings Iteration, List<SheetEntry> Sheets, List<NameEntry> Names, (bool Structure, bool Windows, ProtectionPassword? Password) Protection) ReadWorkbookPart(Package package, string part)
     {
         var date1904 = false;
         var iteration = new IterationSettings();
         var sheets = new List<SheetEntry>();
         var names = new List<NameEntry>();
+        var protection = (Structure: false, Windows: false, Password: (ProtectionPassword?)null);
         using var reader = package.OpenXml(part);
         reader.Read();
         while (!reader.EOF)
@@ -163,6 +165,10 @@ internal static class WorkbookReader
             {
                 case "workbookPr":
                     date1904 = CellMetadata.IsTrue(reader.GetAttribute("date1904"));
+                    break;
+                case "workbookProtection":
+                    protection = (CellMetadata.IsTrue(reader.GetAttribute("lockStructure")), CellMetadata.IsTrue(reader.GetAttribute("lockWindows")),
+                        PasswordAttributes.Workbook.Read(reader.GetAttribute));
                     break;
                 case "calcPr":
                     iteration = ReadIteration(reader);
@@ -180,7 +186,7 @@ internal static class WorkbookReader
             reader.Read();
         }
 
-        return (date1904, iteration, sheets, names);
+        return (date1904, iteration, sheets, names, protection);
     }
 
     // calcPr's defaults are Excel's: iterate false, iterateCount 100, iterateDelta 0.001.
