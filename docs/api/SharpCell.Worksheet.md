@@ -118,6 +118,15 @@ public CellRange? UsedRange { get; }
 
 The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.
 
+<a id="validations"></a>
+### Validations
+
+```csharp
+public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
+```
+
+The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
+
 <a id="workbook"></a>
 ### Workbook
 
@@ -166,6 +175,45 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 **Exceptions**
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
+
+<a id="addvalidation-string-datavalidation"></a>
+### AddValidation(string, DataValidation)
+
+```csharp
+public void AddValidation(string range, DataValidation validation)
+```
+
+Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+
+**Parameters**
+
+- `range`: The cells, such as `B2:B10`.
+- `validation`: The rule.
+
+**Exceptions**
+
+- `ArgumentNullException`: The validation is null.
+- `ArgumentException`: The range is not an A1 range; or a rule other than [ValidationType.Any](SharpCell.ValidationType.md#any) has no [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); or a comparing rule (whole number, decimal, date, time, text length) with [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) or [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween) has no [DataValidation.Formula2](SharpCell.DataValidation.md#formula2).
+- `FormulaParseException`: A formula cannot be parsed; nothing is added.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
+
+<a id="clearvalidation-string"></a>
+### ClearValidation(string)
+
+```csharp
+public void ClearValidation(string range)
+```
+
+Takes the cells of a range out of every data validation rule; a rule left without cells is removed. A rule that loses its first cell keeps its formulas relative to its new first cell, so every remaining cell is checked as before.
+
+**Parameters**
+
+- `range`: The cells, such as `A1:Z100`.
+
+**Exceptions**
+
+- `ArgumentException`: The range is not an A1 range.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
 <a id="columnwidth-int"></a>
 ### ColumnWidth(int)

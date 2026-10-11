@@ -1486,6 +1486,15 @@ public string Text { get; }
 
 The cell as Excel shows it: the value formatted by [Cell.NumberFormat](SharpCell.Cell.md#numberformat) with the workbook's culture and date system. Column width plays no part, so a number that fits no width is never cut short; a date format on a number that is no date shows `#######`. Errors show as `#DIV/0!` and the like, logical values as `TRUE` and `FALSE`, an empty cell as an empty string.
 
+<a id="validation"></a>
+### Validation
+
+```csharp
+public DataValidation? Validation { get; }
+```
+
+The data validation rule of the cell, or null for none. Its formulas are relative to the first cell of the rule's first range, not to this cell. Rules are set with [Worksheet.AddValidation](SharpCell.Worksheet.md#addvalidation-string-datavalidation).
+
 <a id="value"></a>
 ### Value
 
@@ -2460,6 +2469,256 @@ Where a cell's text sits from top to bottom of the cell.
 
 ---
 
+<!-- page: api/SharpCell.DataValidation.md -->
+
+# DataValidation
+
+```csharp
+public sealed class DataValidation
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A data validation rule: what the cells of a range accept and the messages Excel shows for them. Set properties in an initializer, or start from [DataValidation.List](SharpCell.DataValidation.md#list-string), [DataValidation.ListFrom](SharpCell.DataValidation.md#listfrom-string) or [DataValidation.Custom](SharpCell.DataValidation.md#custom-string). SharpCell keeps the rule with the cells and saves it; it does not check values.
+
+## Constructors
+
+<a id="ctor"></a>
+### DataValidation()
+
+```csharp
+public DataValidation()
+```
+
+A rule allowing any value; set properties in an initializer.
+
+## Properties
+
+<a id="allowblank"></a>
+### AllowBlank
+
+```csharp
+public bool AllowBlank { get; init; }
+```
+
+Whether an empty cell is accepted; true unless set.
+
+<a id="errormessage"></a>
+### ErrorMessage
+
+```csharp
+public string? ErrorMessage { get; init; }
+```
+
+The error message, at most 255 characters, or null for Excel's own.
+
+**Exceptions**
+
+- `ArgumentException`: The message is longer than 255 characters.
+
+<a id="errorstyle"></a>
+### ErrorStyle
+
+```csharp
+public ValidationErrorStyle ErrorStyle { get; init; }
+```
+
+What Excel does with a value that breaks the rule; [ValidationErrorStyle.Stop](SharpCell.ValidationErrorStyle.md#stop) unless set.
+
+<a id="errortitle"></a>
+### ErrorTitle
+
+```csharp
+public string? ErrorTitle { get; init; }
+```
+
+The title of the error message, at most 32 characters, or null for Excel's own.
+
+**Exceptions**
+
+- `ArgumentException`: The title is longer than 32 characters.
+
+<a id="formula1"></a>
+### Formula1
+
+```csharp
+public string? Formula1 { get; init; }
+```
+
+The first formula, with a leading `=` (added if missing) as [Cell.Formula](SharpCell.Cell.md#formula) takes it, or null: the low end or the value compared with, the list (`="Yes,No"` or `=$H$1:$H$5`) or the custom condition (`=A1>0`). Relative references are relative to the first cell of the rule's first range. It is parsed when the rule is added to a sheet.
+
+<a id="formula2"></a>
+### Formula2
+
+```csharp
+public string? Formula2 { get; init; }
+```
+
+The second formula, the high end for [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) and [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween), written like [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); null for none.
+
+<a id="inputmessage"></a>
+### InputMessage
+
+```csharp
+public string? InputMessage { get; init; }
+```
+
+The input message, at most 255 characters, or null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The message is longer than 255 characters.
+
+<a id="inputtitle"></a>
+### InputTitle
+
+```csharp
+public string? InputTitle { get; init; }
+```
+
+The title of the input message, at most 32 characters, or null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The title is longer than 32 characters.
+
+<a id="operator"></a>
+### Operator
+
+```csharp
+public ValidationOperator Operator { get; init; }
+```
+
+How a value is compared with [DataValidation.Formula1](SharpCell.DataValidation.md#formula1) and [DataValidation.Formula2](SharpCell.DataValidation.md#formula2); [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) unless set. Lists and custom rules ignore it.
+
+<a id="showdropdown"></a>
+### ShowDropDown
+
+```csharp
+public bool ShowDropDown { get; init; }
+```
+
+Whether Excel shows the drop-down of a list rule; true unless set.
+
+<a id="showerrormessage"></a>
+### ShowErrorMessage
+
+```csharp
+public bool ShowErrorMessage { get; init; }
+```
+
+Whether Excel shows the error message when a value breaks the rule; true unless set.
+
+<a id="showinputmessage"></a>
+### ShowInputMessage
+
+```csharp
+public bool ShowInputMessage { get; init; }
+```
+
+Whether Excel shows the input message when a cell of the rule is selected; true unless set.
+
+<a id="type"></a>
+### Type
+
+```csharp
+public ValidationType Type { get; init; }
+```
+
+What the cells may hold; [ValidationType.Any](SharpCell.ValidationType.md#any) unless set.
+
+## Methods
+
+<a id="custom-string"></a>
+### Custom(string)
+
+```csharp
+public static DataValidation Custom(string formula)
+```
+
+A rule accepting a value when the formula is true, such as `Custom("=A1>0")`.
+
+**Parameters**
+
+- `formula`: The condition, relative to the first cell of the rule's first range.
+
+**Exceptions**
+
+- `ArgumentException`: The formula is null or empty.
+
+<a id="equals-datavalidation"></a>
+### Equals(DataValidation)
+
+```csharp
+public bool Equals(DataValidation? other)
+```
+
+Whether the other rule has the same settings; texts are compared ordinally.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is a rule with the same settings.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [DataValidation.Equals](SharpCell.DataValidation.md#equals-datavalidation).
+
+<a id="list-string"></a>
+### List(string[])
+
+```csharp
+public static DataValidation List(params string[] items)
+```
+
+A drop-down list of the given items, kept in the rule as one quoted literal: `List("Yes", "No")` has the formula `="Yes,No"`.
+
+**Parameters**
+
+- `items`: The items, in order. An item cannot hold a comma, which separates them.
+
+**Exceptions**
+
+- `ArgumentNullException`: The items or one of them is null.
+- `ArgumentException`: There are no items, an item holds a comma, or the items with their commas are longer than 255 characters, Excel's limit.
+
+<a id="listfrom-string"></a>
+### ListFrom(string)
+
+```csharp
+public static DataValidation ListFrom(string range)
+```
+
+A drop-down list of the values of a range, such as `ListFrom("$H$1:$H$5")` or a defined name.
+
+**Parameters**
+
+- `range`: The range or name, with or without a leading `=`.
+
+**Exceptions**
+
+- `ArgumentException`: The range is null or empty.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The type, the operator of a comparing type, and the formulas, such as `WholeNumber Between =1 =10`.
+
+---
+
 <!-- page: api/SharpCell.DateSystem.md -->
 
 # DateSystem
@@ -3228,6 +3487,82 @@ The table name.
 
 ---
 
+<!-- page: api/SharpCell.ValidationErrorStyle.md -->
+
+# ValidationErrorStyle
+
+```csharp
+public enum ValidationErrorStyle
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What Excel does when a value breaks a rule.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="stop"></a>`Stop` | 0 | Refuses the value. |
+| <a id="warning"></a>`Warning` | 1 | Asks whether to keep the value. |
+| <a id="information"></a>`Information` | 2 | Tells the user and keeps the value. |
+
+---
+
+<!-- page: api/SharpCell.ValidationOperator.md -->
+
+# ValidationOperator
+
+```csharp
+public enum ValidationOperator
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a value is compared with a rule's formulas; lists and custom rules do not compare.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="between"></a>`Between` | 0 | From the first formula to the second, both included. |
+| <a id="notbetween"></a>`NotBetween` | 1 | Less than the first formula or greater than the second. |
+| <a id="equal"></a>`Equal` | 2 | Equal to the first formula. |
+| <a id="notequal"></a>`NotEqual` | 3 | Not equal to the first formula. |
+| <a id="greaterthan"></a>`GreaterThan` | 4 | Greater than the first formula. |
+| <a id="lessthan"></a>`LessThan` | 5 | Less than the first formula. |
+| <a id="greaterthanorequal"></a>`GreaterThanOrEqual` | 6 | Greater than or equal to the first formula. |
+| <a id="lessthanorequal"></a>`LessThanOrEqual` | 7 | Less than or equal to the first formula. |
+
+---
+
+<!-- page: api/SharpCell.ValidationType.md -->
+
+# ValidationType
+
+```csharp
+public enum ValidationType
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="any"></a>`Any` | 0 | Any value: the rule only shows its input message. |
+| <a id="wholenumber"></a>`WholeNumber` | 1 | A whole number compared with the formulas. |
+| <a id="decimal"></a>`Decimal` | 2 | A number compared with the formulas. |
+| <a id="list"></a>`List` | 3 | One of the items of a list, given as a quoted literal or a range; Excel shows them in a drop-down. |
+| <a id="date"></a>`Date` | 4 | A date compared with the formulas. |
+| <a id="time"></a>`Time` | 5 | A time compared with the formulas. |
+| <a id="textlength"></a>`TextLength` | 6 | Text whose length is compared with the formulas. |
+| <a id="custom"></a>`Custom` | 7 | Any value for which the formula is true. |
+
+---
+
 <!-- page: api/SharpCell.Workbook.md -->
 
 # Workbook
@@ -3565,6 +3900,15 @@ public CellRange? UsedRange { get; }
 
 The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.
 
+<a id="validations"></a>
+### Validations
+
+```csharp
+public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
+```
+
+The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
+
 <a id="workbook"></a>
 ### Workbook
 
@@ -3613,6 +3957,45 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 **Exceptions**
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
+
+<a id="addvalidation-string-datavalidation"></a>
+### AddValidation(string, DataValidation)
+
+```csharp
+public void AddValidation(string range, DataValidation validation)
+```
+
+Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+
+**Parameters**
+
+- `range`: The cells, such as `B2:B10`.
+- `validation`: The rule.
+
+**Exceptions**
+
+- `ArgumentNullException`: The validation is null.
+- `ArgumentException`: The range is not an A1 range; or a rule other than [ValidationType.Any](SharpCell.ValidationType.md#any) has no [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); or a comparing rule (whole number, decimal, date, time, text length) with [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) or [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween) has no [DataValidation.Formula2](SharpCell.DataValidation.md#formula2).
+- `FormulaParseException`: A formula cannot be parsed; nothing is added.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
+
+<a id="clearvalidation-string"></a>
+### ClearValidation(string)
+
+```csharp
+public void ClearValidation(string range)
+```
+
+Takes the cells of a range out of every data validation rule; a rule left without cells is removed. A rule that loses its first cell keeps its formulas relative to its new first cell, so every remaining cell is checked as before.
+
+**Parameters**
+
+- `range`: The cells, such as `A1:Z100`.
+
+**Exceptions**
+
+- `ArgumentException`: The range is not an A1 range.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
 <a id="columnwidth-int"></a>
 ### ColumnWidth(int)

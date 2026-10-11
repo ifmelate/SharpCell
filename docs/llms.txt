@@ -35,6 +35,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
 - [CellVerticalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellVerticalAlignment.md): Where a cell's text sits from top to bottom of the cell.
+- [DataValidation](https://ifmelate.github.io/SharpCell/api/SharpCell.DataValidation.md): A data validation rule: what the cells of a range accept and the messages Excel shows for them.
 - [DateSystem](https://ifmelate.github.io/SharpCell/api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
 - [DefinedName](https://ifmelate.github.io/SharpCell/api/SharpCell.DefinedName.md): A defined name as Workbook.DefinedNames lists it.
 - [DiagnosticKind](https://ifmelate.github.io/SharpCell/api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
@@ -49,6 +50,9 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
 - [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
+- [ValidationErrorStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationErrorStyle.md): What Excel does when a value breaks a rule.
+- [ValidationOperator](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationOperator.md): How a value is compared with a rule's formulas; lists and custom rules do not compare.
+- [ValidationType](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationType.md): What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.
 - [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines, from .xlsx and macro-enabled .xlsm files.

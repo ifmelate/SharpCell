@@ -134,6 +134,15 @@ public string Text { get; }
 
 The cell as Excel shows it: the value formatted by [Cell.NumberFormat](SharpCell.Cell.md#numberformat) with the workbook's culture and date system. Column width plays no part, so a number that fits no width is never cut short; a date format on a number that is no date shows `#######`. Errors show as `#DIV/0!` and the like, logical values as `TRUE` and `FALSE`, an empty cell as an empty string.
 
+<a id="validation"></a>
+### Validation
+
+```csharp
+public DataValidation? Validation { get; }
+```
+
+The data validation rule of the cell, or null for none. Its formulas are relative to the first cell of the rule's first range, not to this cell. Rules are set with [Worksheet.AddValidation](SharpCell.Worksheet.md#addvalidation-string-datavalidation).
+
 <a id="value"></a>
 ### Value
 

@@ -252,6 +252,12 @@ public sealed partial class Cell
     }
 
     /// <summary>
+    /// The data validation rule of the cell, or null for none. Its formulas are relative to the first
+    /// cell of the rule's first range, not to this cell. Rules are set with <see cref="Worksheet.AddValidation"/>.
+    /// </summary>
+    public DataValidation? Validation => Worksheet.ValidationAt(Row, Column);
+
+    /// <summary>
     /// The cell as Excel shows it: the value formatted by <see cref="NumberFormat"/> with the
     /// workbook's culture and date system. Column width plays no part, so a number that fits no
     /// width is never cut short; a date format on a number that is no date shows <c>#######</c>.

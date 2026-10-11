@@ -12,3 +12,64 @@ SharpCell.Hyperlink.Tooltip.get -> string?
 override SharpCell.Hyperlink.Equals(object? obj) -> bool
 override SharpCell.Hyperlink.GetHashCode() -> int
 override SharpCell.Hyperlink.ToString() -> string!
+SharpCell.Cell.Validation.get -> SharpCell.DataValidation?
+SharpCell.DataValidation
+SharpCell.DataValidation.AllowBlank.get -> bool
+SharpCell.DataValidation.AllowBlank.init -> void
+SharpCell.DataValidation.DataValidation() -> void
+SharpCell.DataValidation.Equals(SharpCell.DataValidation? other) -> bool
+SharpCell.DataValidation.ErrorMessage.get -> string?
+SharpCell.DataValidation.ErrorMessage.init -> void
+SharpCell.DataValidation.ErrorStyle.get -> SharpCell.ValidationErrorStyle
+SharpCell.DataValidation.ErrorStyle.init -> void
+SharpCell.DataValidation.ErrorTitle.get -> string?
+SharpCell.DataValidation.ErrorTitle.init -> void
+SharpCell.DataValidation.Formula1.get -> string?
+SharpCell.DataValidation.Formula1.init -> void
+SharpCell.DataValidation.Formula2.get -> string?
+SharpCell.DataValidation.Formula2.init -> void
+SharpCell.DataValidation.InputMessage.get -> string?
+SharpCell.DataValidation.InputMessage.init -> void
+SharpCell.DataValidation.InputTitle.get -> string?
+SharpCell.DataValidation.InputTitle.init -> void
+SharpCell.DataValidation.Operator.get -> SharpCell.ValidationOperator
+SharpCell.DataValidation.Operator.init -> void
+SharpCell.DataValidation.ShowDropDown.get -> bool
+SharpCell.DataValidation.ShowDropDown.init -> void
+SharpCell.DataValidation.ShowErrorMessage.get -> bool
+SharpCell.DataValidation.ShowErrorMessage.init -> void
+SharpCell.DataValidation.ShowInputMessage.get -> bool
+SharpCell.DataValidation.ShowInputMessage.init -> void
+SharpCell.DataValidation.Type.get -> SharpCell.ValidationType
+SharpCell.DataValidation.Type.init -> void
+SharpCell.ValidationErrorStyle
+SharpCell.ValidationErrorStyle.Information = 2 -> SharpCell.ValidationErrorStyle
+SharpCell.ValidationErrorStyle.Stop = 0 -> SharpCell.ValidationErrorStyle
+SharpCell.ValidationErrorStyle.Warning = 1 -> SharpCell.ValidationErrorStyle
+SharpCell.ValidationOperator
+SharpCell.ValidationOperator.Between = 0 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.Equal = 2 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.GreaterThan = 4 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.GreaterThanOrEqual = 6 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.LessThan = 5 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.LessThanOrEqual = 7 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.NotBetween = 1 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.NotEqual = 3 -> SharpCell.ValidationOperator
+SharpCell.ValidationType
+SharpCell.ValidationType.Any = 0 -> SharpCell.ValidationType
+SharpCell.ValidationType.Custom = 7 -> SharpCell.ValidationType
+SharpCell.ValidationType.Date = 4 -> SharpCell.ValidationType
+SharpCell.ValidationType.Decimal = 2 -> SharpCell.ValidationType
+SharpCell.ValidationType.List = 3 -> SharpCell.ValidationType
+SharpCell.ValidationType.TextLength = 6 -> SharpCell.ValidationType
+SharpCell.ValidationType.Time = 5 -> SharpCell.ValidationType
+SharpCell.ValidationType.WholeNumber = 1 -> SharpCell.ValidationType
+SharpCell.Worksheet.AddValidation(string! range, SharpCell.DataValidation! validation) -> void
+SharpCell.Worksheet.ClearValidation(string! range) -> void
+SharpCell.Worksheet.Validations.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.CellRange! Range, SharpCell.DataValidation! Validation)>!
+static SharpCell.DataValidation.Custom(string! formula) -> SharpCell.DataValidation!
+static SharpCell.DataValidation.List(params string![]! items) -> SharpCell.DataValidation!
+static SharpCell.DataValidation.ListFrom(string! range) -> SharpCell.DataValidation!
+override SharpCell.DataValidation.Equals(object? obj) -> bool
+override SharpCell.DataValidation.GetHashCode() -> int
+override SharpCell.DataValidation.ToString() -> string!

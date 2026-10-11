@@ -21,6 +21,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
 | [CellVerticalAlignment](SharpCell.CellVerticalAlignment.md) | Where a cell's text sits from top to bottom of the cell. |
+| [DataValidation](SharpCell.DataValidation.md) | A data validation rule: what the cells of a range accept and the messages Excel shows for them. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
 | [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
 | [DiagnosticKind](SharpCell.DiagnosticKind.md) | What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports. |
@@ -35,6 +36,9 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
+| [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |
+| [ValidationOperator](SharpCell.ValidationOperator.md) | How a value is compared with a rule's formulas; lists and custom rules do not compare. |
+| [ValidationType](SharpCell.ValidationType.md) | What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow. |
 | [Workbook](SharpCell.Workbook.md) | A workbook: sheets, defined names and calculation settings. |
 | [Worksheet](SharpCell.Worksheet.md) | A sheet of a [Workbook](SharpCell.Workbook.md). |
 
