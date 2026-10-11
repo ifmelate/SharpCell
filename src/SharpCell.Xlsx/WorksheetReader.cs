@@ -75,6 +75,12 @@ internal static class WorksheetReader
                 continue;
             }
 
+            if (reader.Depth == 1 && reader.LocalName == "sheetProtection")
+            {
+                ProtectionElements.Read((XElement)XNode.ReadFrom(reader), sheet);
+                continue;
+            }
+
             if (reader.Depth == 1)
             {
                 switch (reader.LocalName)

@@ -5,7 +5,7 @@ using SharpCell.Evaluation;
 namespace SharpCell;
 
 // How the sheet looks rather than what it calculates: cell styles, column widths, row heights,
-// hidden columns, merged cells, frozen panes and gridlines. None of it is cell content, and calculation never sees it.
+// hidden columns, merged cells, frozen panes, gridlines and protection. None of it is cell content, and calculation never sees it.
 public sealed partial class Worksheet
 {
     private const double MaxColumnWidth = 255;
@@ -22,6 +22,8 @@ public sealed partial class Worksheet
     private int _frozenRows;
     private int _frozenColumns;
     private bool _showGridlines = true;
+    private SheetProtection? _protection;
+    private ProtectionPassword? _protectionPassword;
 
     /// <summary>
     /// How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes
@@ -63,6 +65,43 @@ public sealed partial class Worksheet
             Workbook.ThrowIfInCustomFunction();
             _showGridlines = value;
         }
+    }
+
+    /// <summary>What users may still do on the sheet when it is protected; null when it is not protected.</summary>
+    public SheetProtection? Protection => _protection;
+
+    /// <summary>The hash of the protection's password, as made by <see cref="Protect"/> or read from a file; null for none.</summary>
+    internal ProtectionPassword? ProtectionPassword => _protectionPassword;
+
+    /// <summary>
+    /// Protects the sheet as Excel's Protect Sheet does: Excel then refuses changes to locked cells
+    /// and allows only the actions <paramref name="allow"/> names. SharpCell itself does not enforce
+    /// protection: code may still change the sheet, as Excel's object model may with the password.
+    /// Protecting a protected sheet replaces its protection and password.
+    /// </summary>
+    /// <param name="password">
+    /// The password Excel asks for to unprotect the sheet, or null (or empty) for none. Only its hash
+    /// is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+    /// </param>
+    /// <param name="allow">What users may still do; null for Excel's defaults, selecting cells only.</param>
+    public void Protect(string? password = null, SheetProtection? allow = null)
+    {
+        Workbook.ThrowIfInCustomFunction();
+        SetProtection(allow ?? new SheetProtection(), string.IsNullOrEmpty(password) ? null : ProtectionPassword.Create(password));
+    }
+
+    /// <summary>Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.</summary>
+    public void Unprotect()
+    {
+        Workbook.ThrowIfInCustomFunction();
+        SetProtection(null, null);
+    }
+
+    /// <summary>Sets the protection and the password as they are, for the reader; null protection leaves the sheet unprotected.</summary>
+    internal void SetProtection(SheetProtection? protection, ProtectionPassword? password)
+    {
+        _protection = protection;
+        _protectionPassword = protection is null ? null : password;
     }
 
     internal CellStyle? StyleAt(int row, int column) =>
@@ -252,6 +291,8 @@ public sealed partial class Worksheet
         _frozenRows = source._frozenRows;
         _frozenColumns = source._frozenColumns;
         _showGridlines = source._showGridlines;
+        _protection = source._protection;
+        _protectionPassword = source._protectionPassword;
     }
 
     private static double CheckSize(double size, double max, string parameter)

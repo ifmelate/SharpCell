@@ -100,6 +100,15 @@ public string Name { get; }
 
 The sheet name.
 
+<a id="protection"></a>
+### Protection
+
+```csharp
+public SheetProtection? Protection { get; }
+```
+
+What users may still do on the sheet when it is protected; null when it is not protected.
+
 <a id="showgridlines"></a>
 ### ShowGridlines
 
@@ -405,6 +414,20 @@ Merges a range of at least two cells into one, as Excel shows it: the top-left c
 
 - `ArgumentException`: The address is not a range of two cells or more, or it overlaps a merged area.
 
+<a id="protect-string-sheetprotection"></a>
+### Protect(string, SheetProtection)
+
+```csharp
+public void Protect(string? password = null, SheetProtection? allow = null)
+```
+
+Protects the sheet as Excel's Protect Sheet does: Excel then refuses changes to locked cells and allows only the actions `allow` names. SharpCell itself does not enforce protection: code may still change the sheet, as Excel's object model may with the password. Protecting a protected sheet replaces its protection and password.
+
+**Parameters**
+
+- `password`: The password Excel asks for to unprotect the sheet, or null (or empty) for none. Only its hash is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+- `allow`: What users may still do; null for Excel's defaults, selecting cells only.
+
 <a id="range-string"></a>
 ### Range(string)
 
@@ -504,3 +527,12 @@ Undoes a merge; the address must be exactly a merged area.
 **Exceptions**
 
 - `ArgumentException`: The address is not a merged area.
+
+<a id="unprotect"></a>
+### Unprotect()
+
+```csharp
+public void Unprotect()
+```
+
+Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.

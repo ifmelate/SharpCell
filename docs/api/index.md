@@ -35,6 +35,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [IterationSettings](SharpCell.IterationSettings.md) | Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0. |
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
+| [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
 | [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |
 | [ValidationOperator](SharpCell.ValidationOperator.md) | How a value is compared with a rule's formulas; lists and custom rules do not compare. |

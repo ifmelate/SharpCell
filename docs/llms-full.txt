@@ -3423,6 +3423,223 @@ The cells whose values calculation changed since the previous [Workbook.Recalcul
 
 ---
 
+<!-- page: api/SharpCell.SheetProtection.md -->
+
+# SheetProtection
+
+```csharp
+public sealed class SheetProtection
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. Set properties in an initializer and pass the object to [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection). Excel enforces the protection; SharpCell only keeps and saves it.
+
+## Constructors
+
+<a id="ctor"></a>
+### SheetProtection()
+
+```csharp
+public SheetProtection()
+```
+
+A protection allowing users to select cells and nothing else; set properties in an initializer.
+
+<a id="ctor-sheetprotection"></a>
+### SheetProtection(SheetProtection)
+
+```csharp
+public SheetProtection(SheetProtection source)
+```
+
+A copy of another protection, so it can be changed in an initializer: `new SheetProtection(sheet.Protection) { Sort = true }`.
+
+**Parameters**
+
+- `source`: The protection to copy.
+
+**Exceptions**
+
+- `ArgumentNullException`: The source is null.
+
+## Properties
+
+<a id="autofilter"></a>
+### AutoFilter
+
+```csharp
+public bool AutoFilter { get; init; }
+```
+
+Whether users may use AutoFilter; false unless set.
+
+<a id="deletecolumns"></a>
+### DeleteColumns
+
+```csharp
+public bool DeleteColumns { get; init; }
+```
+
+Whether users may delete columns; false unless set.
+
+<a id="deleterows"></a>
+### DeleteRows
+
+```csharp
+public bool DeleteRows { get; init; }
+```
+
+Whether users may delete rows; false unless set.
+
+<a id="editobjects"></a>
+### EditObjects
+
+```csharp
+public bool EditObjects { get; init; }
+```
+
+Whether users may edit objects such as shapes and charts; false unless set.
+
+<a id="editscenarios"></a>
+### EditScenarios
+
+```csharp
+public bool EditScenarios { get; init; }
+```
+
+Whether users may edit scenarios; false unless set.
+
+<a id="formatcells"></a>
+### FormatCells
+
+```csharp
+public bool FormatCells { get; init; }
+```
+
+Whether users may format cells; false unless set.
+
+<a id="formatcolumns"></a>
+### FormatColumns
+
+```csharp
+public bool FormatColumns { get; init; }
+```
+
+Whether users may format columns, their widths and hiding included; false unless set.
+
+<a id="formatrows"></a>
+### FormatRows
+
+```csharp
+public bool FormatRows { get; init; }
+```
+
+Whether users may format rows, their heights and hiding included; false unless set.
+
+<a id="insertcolumns"></a>
+### InsertColumns
+
+```csharp
+public bool InsertColumns { get; init; }
+```
+
+Whether users may insert columns; false unless set.
+
+<a id="inserthyperlinks"></a>
+### InsertHyperlinks
+
+```csharp
+public bool InsertHyperlinks { get; init; }
+```
+
+Whether users may insert hyperlinks; false unless set.
+
+<a id="insertrows"></a>
+### InsertRows
+
+```csharp
+public bool InsertRows { get; init; }
+```
+
+Whether users may insert rows; false unless set.
+
+<a id="pivottables"></a>
+### PivotTables
+
+```csharp
+public bool PivotTables { get; init; }
+```
+
+Whether users may use PivotTables and PivotCharts; false unless set.
+
+<a id="selectlockedcells"></a>
+### SelectLockedCells
+
+```csharp
+public bool SelectLockedCells { get; init; }
+```
+
+Whether users may select locked cells; true unless set.
+
+<a id="selectunlockedcells"></a>
+### SelectUnlockedCells
+
+```csharp
+public bool SelectUnlockedCells { get; init; }
+```
+
+Whether users may select unlocked cells; true unless set.
+
+<a id="sort"></a>
+### Sort
+
+```csharp
+public bool Sort { get; init; }
+```
+
+Whether users may sort; false unless set.
+
+## Methods
+
+<a id="equals-sheetprotection"></a>
+### Equals(SheetProtection)
+
+```csharp
+public bool Equals(SheetProtection? other)
+```
+
+Whether the other protection allows the same actions.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is a protection allowing the same actions.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [SheetProtection.Equals](SharpCell.SheetProtection.md#equals-sheetprotection).
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The names of the allowed actions, such as `SelectLockedCells, SelectUnlockedCells`, or `None`.
+
+---
+
 <!-- page: api/SharpCell.Table.md -->
 
 # Table
@@ -3899,6 +4116,15 @@ public string Name { get; }
 
 The sheet name.
 
+<a id="protection"></a>
+### Protection
+
+```csharp
+public SheetProtection? Protection { get; }
+```
+
+What users may still do on the sheet when it is protected; null when it is not protected.
+
 <a id="showgridlines"></a>
 ### ShowGridlines
 
@@ -4204,6 +4430,20 @@ Merges a range of at least two cells into one, as Excel shows it: the top-left c
 
 - `ArgumentException`: The address is not a range of two cells or more, or it overlaps a merged area.
 
+<a id="protect-string-sheetprotection"></a>
+### Protect(string, SheetProtection)
+
+```csharp
+public void Protect(string? password = null, SheetProtection? allow = null)
+```
+
+Protects the sheet as Excel's Protect Sheet does: Excel then refuses changes to locked cells and allows only the actions `allow` names. SharpCell itself does not enforce protection: code may still change the sheet, as Excel's object model may with the password. Protecting a protected sheet replaces its protection and password.
+
+**Parameters**
+
+- `password`: The password Excel asks for to unprotect the sheet, or null (or empty) for none. Only its hash is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+- `allow`: What users may still do; null for Excel's defaults, selecting cells only.
+
 <a id="range-string"></a>
 ### Range(string)
 
@@ -4303,6 +4543,15 @@ Undoes a merge; the address must be exactly a merged area.
 **Exceptions**
 
 - `ArgumentException`: The address is not a merged area.
+
+<a id="unprotect"></a>
+### Unprotect()
+
+```csharp
+public void Unprotect()
+```
+
+Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.
 
 ---
 

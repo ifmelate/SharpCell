@@ -64,6 +64,15 @@
       "failingCells": {}
     },
     {
+      "file": "excel-web/protection.xlsx",
+      "cells": 0,
+      "passed": 0,
+      "skipped": 0,
+      "widened": 0,
+      "comparedCells": {},
+      "failingCells": {}
+    },
+    {
       "file": "excel-web/spill-blocked.xlsx",
       "cells": 17,
       "passed": 17,

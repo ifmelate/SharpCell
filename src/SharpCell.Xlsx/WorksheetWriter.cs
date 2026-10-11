@@ -49,6 +49,9 @@ internal sealed class WorksheetWriter
     // never moved (rules the reader skipped as damaged go rather than stay where they no longer belong).
     private readonly bool _validationsChanged;
 
+    // The protection or its password changed: the element is built from the model, or removed.
+    private readonly bool _protectionChanged;
+
     // Elements to add where the schema puts them when the part has none.
     private readonly List<string> _pending = [];
 
@@ -112,6 +115,7 @@ internal sealed class WorksheetWriter
         _defaultsChanged = _look.DefaultsChanged(sheet);
         _filterChanged = _look.FilterChanged(sheet);
         _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
+        _protectionChanged = _look.ProtectionChanged(sheet);
         if (_filterChanged && sheet.FilterMode)
             _pending.Add("sheetPr");
         if (_viewChanged)
@@ -122,6 +126,8 @@ internal sealed class WorksheetWriter
             _pending.Add("cols");
         if (_mergesChanged)
             _pending.Add("mergeCells");
+        if (_protectionChanged)
+            _pending.Add("sheetProtection");
         if (_validationsChanged)
             _pending.Add("dataValidations");
         if (hyperlinks is not null)
@@ -213,6 +219,7 @@ internal sealed class WorksheetWriter
                     case "sheetFormatPr" when _defaultsChanged:
                     case "cols" when _columnsChanged:
                     case "mergeCells" when _mergesChanged:
+                    case "sheetProtection" when _protectionChanged:
                     case "dataValidations" when _validationsChanged:
                     case "hyperlinks" when _hyperlinks is not null:
                         _pending.Remove(name);
@@ -259,6 +266,7 @@ internal sealed class WorksheetWriter
         "sheetFormatPr" => SheetFormat(source),
         "cols" => Columns(source),
         "tableParts" => TableParts(source),
+        "sheetProtection" => ProtectionElements.Element(_ns, _sheet),
         "dataValidations" => ValidationElements.Element(_ns, _sheet, source),
         "hyperlinks" => Hyperlinks(),
         _ => MergeCells(),

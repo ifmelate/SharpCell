@@ -74,3 +74,43 @@ static SharpCell.DataValidation.ListFrom(string! range) -> SharpCell.DataValidat
 override SharpCell.DataValidation.Equals(object? obj) -> bool
 override SharpCell.DataValidation.GetHashCode() -> int
 override SharpCell.DataValidation.ToString() -> string!
+SharpCell.SheetProtection
+SharpCell.SheetProtection.AutoFilter.get -> bool
+SharpCell.SheetProtection.AutoFilter.init -> void
+SharpCell.SheetProtection.DeleteColumns.get -> bool
+SharpCell.SheetProtection.DeleteColumns.init -> void
+SharpCell.SheetProtection.DeleteRows.get -> bool
+SharpCell.SheetProtection.DeleteRows.init -> void
+SharpCell.SheetProtection.EditObjects.get -> bool
+SharpCell.SheetProtection.EditObjects.init -> void
+SharpCell.SheetProtection.EditScenarios.get -> bool
+SharpCell.SheetProtection.EditScenarios.init -> void
+SharpCell.SheetProtection.Equals(SharpCell.SheetProtection? other) -> bool
+SharpCell.SheetProtection.FormatCells.get -> bool
+SharpCell.SheetProtection.FormatCells.init -> void
+SharpCell.SheetProtection.FormatColumns.get -> bool
+SharpCell.SheetProtection.FormatColumns.init -> void
+SharpCell.SheetProtection.FormatRows.get -> bool
+SharpCell.SheetProtection.FormatRows.init -> void
+SharpCell.SheetProtection.InsertColumns.get -> bool
+SharpCell.SheetProtection.InsertColumns.init -> void
+SharpCell.SheetProtection.InsertHyperlinks.get -> bool
+SharpCell.SheetProtection.InsertHyperlinks.init -> void
+SharpCell.SheetProtection.InsertRows.get -> bool
+SharpCell.SheetProtection.InsertRows.init -> void
+SharpCell.SheetProtection.PivotTables.get -> bool
+SharpCell.SheetProtection.PivotTables.init -> void
+SharpCell.SheetProtection.SelectLockedCells.get -> bool
+SharpCell.SheetProtection.SelectLockedCells.init -> void
+SharpCell.SheetProtection.SelectUnlockedCells.get -> bool
+SharpCell.SheetProtection.SelectUnlockedCells.init -> void
+SharpCell.SheetProtection.SheetProtection() -> void
+SharpCell.SheetProtection.SheetProtection(SharpCell.SheetProtection! source) -> void
+SharpCell.SheetProtection.Sort.get -> bool
+SharpCell.SheetProtection.Sort.init -> void
+SharpCell.Worksheet.Protect(string? password = null, SharpCell.SheetProtection? allow = null) -> void
+SharpCell.Worksheet.Protection.get -> SharpCell.SheetProtection?
+SharpCell.Worksheet.Unprotect() -> void
+override SharpCell.SheetProtection.Equals(object? obj) -> bool
+override SharpCell.SheetProtection.GetHashCode() -> int
+override SharpCell.SheetProtection.ToString() -> string!
