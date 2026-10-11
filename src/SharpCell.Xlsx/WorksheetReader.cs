@@ -130,7 +130,7 @@ internal static class WorksheetReader
 
             if (reader.Depth == 2 && reader.LocalName == "hyperlink")
             {
-                links.Add(new HyperlinkElement(reader.GetAttribute("ref"), WorkbookReader.RelationshipId(reader), reader.GetAttribute("location"), reader.GetAttribute("tooltip")));
+                links.Add(HyperlinkElement.Read(reader));
                 reader.Read();
                 continue;
             }

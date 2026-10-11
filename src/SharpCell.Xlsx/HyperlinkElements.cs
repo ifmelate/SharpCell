@@ -1,11 +1,17 @@
 using System.Collections.Generic;
+using System.Xml;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
 namespace SharpCell.Xlsx;
 
 /// <summary>The attributes of one &lt;hyperlink&gt; element that decide what it means.</summary>
-internal sealed record HyperlinkElement(string? Ref, string? RelationshipId, string? Location, string? Tooltip);
+internal sealed record HyperlinkElement(string? Ref, string? RelationshipId, string? Location, string? Tooltip)
+{
+    /// <summary>The element the reader is on.</summary>
+    public static HyperlinkElement Read(XmlReader reader) =>
+        new(reader.GetAttribute("ref"), WorkbookReader.RelationshipId(reader), reader.GetAttribute("location"), reader.GetAttribute("tooltip"));
+}
 
 /// <summary>A &lt;hyperlink&gt; element the model holds: the cells it covers and the link they get.</summary>
 internal readonly record struct ModelledHyperlink(Area Area, Hyperlink Link);

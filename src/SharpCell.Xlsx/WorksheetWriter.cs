@@ -72,8 +72,12 @@ internal sealed class WorksheetWriter
     // Header cells of new tables, written with their column's name.
     private readonly IReadOnlyDictionary<CellAddress, string> _headers;
 
+    // The links to write when they changed; null when the file's element stays (moved by the edits).
+    private readonly SheetHyperlinks? _hyperlinks;
+
     private WorksheetWriter(Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved, CellMetadataWriter metadata,
-        StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables, IReadOnlyDictionary<CellAddress, string> headers)
+        StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables, IReadOnlyDictionary<CellAddress, string> headers,
+        SheetHyperlinks? hyperlinks)
     {
         _map = plan.Edits;
         _shifted = source.Part is not null && _map.HasEdits(sheet);
@@ -86,6 +90,7 @@ internal sealed class WorksheetWriter
         _source = source;
         _newTables = newTables;
         _headers = headers;
+        _hyperlinks = hyperlinks;
         _expandShared = plan.FormulasChangedIn(sheet);
         if (newTables.Count > 0 || removedTables.Count > 0)
             _pending.Add("tableParts");
@@ -111,6 +116,8 @@ internal sealed class WorksheetWriter
             _pending.Add("cols");
         if (_mergesChanged)
             _pending.Add("mergeCells");
+        if (hyperlinks is not null)
+            _pending.Add("hyperlinks");
         if (_rowsChanged)
         {
             var rows = new SortedSet<int>(_look.RowHeights.Keys);
@@ -132,11 +139,12 @@ internal sealed class WorksheetWriter
     /// <param name="newTables">Relationship ids of table parts to list.</param>
     /// <param name="headers">Header cells of new tables, with their column names.</param>
     /// <param name="removedTables">Relationship ids of table parts to leave out.</param>
+    /// <param name="hyperlinks">The links to write, or null to keep the file's.</param>
     public static byte[]? Write(XmlReader reader, Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved,
         CellMetadataWriter metadata, StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables,
-        IReadOnlyDictionary<CellAddress, string> headers)
+        IReadOnlyDictionary<CellAddress, string> headers, SheetHyperlinks? hyperlinks)
     {
-        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers);
+        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers, hyperlinks);
         var output = new MemoryStream();
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
             writer.Copy(reader, xml);
@@ -182,7 +190,7 @@ internal sealed class WorksheetWriter
                         break;
                     case "sheetViews" when !_viewChanged && _shifted:
                     case "autoFilter" when _shifted:
-                    case "hyperlinks" when _shifted:
+                    case "hyperlinks" when _shifted && _hyperlinks is null:
                     case "rowBreaks" when _shifted:
                     case "colBreaks" when _shifted:
                     case "ignoredErrors" when _shifted:
@@ -198,6 +206,7 @@ internal sealed class WorksheetWriter
                     case "sheetFormatPr" when _defaultsChanged:
                     case "cols" when _columnsChanged:
                     case "mergeCells" when _mergesChanged:
+                    case "hyperlinks" when _hyperlinks is not null:
                         _pending.Remove(name);
                         _changed = true;
                         Build(name, (XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
@@ -242,6 +251,7 @@ internal sealed class WorksheetWriter
         "sheetFormatPr" => SheetFormat(source),
         "cols" => Columns(source),
         "tableParts" => TableParts(source),
+        "hyperlinks" => Hyperlinks(),
         _ => MergeCells(),
     };
 
@@ -566,6 +576,10 @@ internal sealed class WorksheetWriter
             attributes.Add((name, value));
         }
     }
+
+    // The kept elements move with the rows and columns, as the file's element would.
+    private XElement? Hyperlinks() => HyperlinkWriter.Element(_ns, _sheet, _hyperlinks!.Ids,
+        _hyperlinks.Kept.Select(element => MapAttribute(new XElement(element), "ref")).OfType<XElement>());
 
     private XElement? MergeCells()
     {

@@ -42,6 +42,7 @@ internal sealed class SheetLook
         RowHeights = new Dictionary<int, double>(sheet.RowHeights);
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         Merged = [.. sheet.MergedAreaList];
+        Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
         FrozenRows = sheet.FrozenRows;
         FrozenColumns = sheet.FrozenColumns;
         ShowGridlines = sheet.ShowGridlines;
@@ -59,6 +60,14 @@ internal sealed class SheetLook
         RowHeights = Moved(look.RowHeights, row => map.MapRow(sheet, row));
         HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
         Merged = [.. look.Merged.Select(area => map.Map(sheet, area)).OfType<Area>().Where(area => !area.IsSingleCell)];
+        var hyperlinks = new Dictionary<CellAddress, Hyperlink>();
+        foreach (var (address, link) in look.Hyperlinks)
+        {
+            if (map.Map(sheet, address) is { } to)
+                hyperlinks[to] = link;
+        }
+
+        Hyperlinks = hyperlinks;
         FrozenRows = look.FrozenRows;
         FrozenColumns = look.FrozenColumns;
         ShowGridlines = look.ShowGridlines;
@@ -92,6 +101,9 @@ internal sealed class SheetLook
 
     public IReadOnlyList<Area> Merged { get; }
 
+    /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
+    public IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks { get; }
+
     public int FrozenRows { get; }
 
     public int FrozenColumns { get; }
@@ -117,6 +129,10 @@ internal sealed class SheetLook
 
     public bool MergesChanged(Worksheet sheet) =>
         Merged.Count != sheet.MergedAreaList.Count || !Merged.ToHashSet().SetEquals(sheet.MergedAreaList);
+
+    public bool HyperlinksChanged(Worksheet sheet) =>
+        Hyperlinks.Count != sheet.Hyperlinks.Count
+        || Hyperlinks.Any(pair => !sheet.Hyperlinks.TryGetValue(pair.Key, out var link) || !link.Equals(pair.Value));
 
     public bool PanesChanged(Worksheet sheet) => FrozenRows != sheet.FrozenRows || FrozenColumns != sheet.FrozenColumns;
 
