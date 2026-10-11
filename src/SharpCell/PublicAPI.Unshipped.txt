@@ -1,2 +1,1 @@
 #nullable enable
-SharpCell.CellRange.CopyTo(SharpCell.CellRange! destination) -> SharpCell.CellRange!

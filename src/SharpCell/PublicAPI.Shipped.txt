@@ -124,6 +124,7 @@ SharpCell.CellHorizontalAlignment.Right = 3 -> SharpCell.CellHorizontalAlignment
 SharpCell.CellRange
 SharpCell.CellRange.Address.get -> string!
 SharpCell.CellRange.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
+SharpCell.CellRange.CopyTo(SharpCell.CellRange! destination) -> SharpCell.CellRange!
 SharpCell.CellRange.Equals(SharpCell.CellRange? other) -> bool
 SharpCell.CellRange.FirstColumn.get -> int
 SharpCell.CellRange.FirstRow.get -> int
