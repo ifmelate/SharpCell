@@ -79,9 +79,10 @@ internal static class PackageWriter
             using var reader = sheetSource.Part is { } part
                 ? package.OpenXml(part)
                 : System.Xml.XmlReader.Create(new StringReader(NewWorksheet));
+            var hyperlinks = HyperlinkWriter.Plan(edit, sheetSource, parts[sheet], sheet, plan.Edits);
             var bytes = WorksheetWriter.Write(reader, sheet, sheetSource, plan, saved, metadata, styles,
                 tables.TryGetValue(sheet, out var ids) ? ids : [], removedTables.TryGetValue(sheet, out var removed) ? removed : [],
-                headers.TryGetValue(sheet, out var names) ? names : []);
+                headers.TryGetValue(sheet, out var names) ? names : [], hyperlinks);
             if (bytes is not null || sheetSource.Part is null)
                 edit.Parts[parts[sheet]] = bytes ?? Encoding.UTF8.GetBytes(NewWorksheet);
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using System.Xml.Linq;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
@@ -37,6 +38,7 @@ internal static class WorksheetReader
         var column = 0;
         var tableIds = new List<string>();
         var sheetViews = 0;
+        var links = new List<HyperlinkElement>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -63,6 +65,19 @@ internal static class WorksheetReader
                 if (Size(reader.GetAttribute("ht"), MaxRowHeight) is { } height && row <= CellAddress.MaxRow)
                     sheet.SetRowHeight(row, height);
                 reader.Read();
+                continue;
+            }
+
+            // Only the sheet's own element: newer rules (x14) in the extension list stay as the file has them.
+            if (reader.Depth == 1 && reader.LocalName == "dataValidations")
+            {
+                ValidationElements.Read((XElement)XNode.ReadFrom(reader), sheet);
+                continue;
+            }
+
+            if (reader.Depth == 1 && reader.LocalName == "sheetProtection")
+            {
+                ProtectionElements.Read((XElement)XNode.ReadFrom(reader), sheet);
                 continue;
             }
 
@@ -127,6 +142,13 @@ internal static class WorksheetReader
                 continue;
             }
 
+            if (reader.Depth == 2 && reader.LocalName == "hyperlink")
+            {
+                links.Add(HyperlinkElement.Read(reader));
+                reader.Read();
+                continue;
+            }
+
             if (reader.LocalName == "tablePart")
             {
                 tableIds.Add(WorkbookReader.RelationshipId(reader) ?? throw new InvalidDataException($"A table part of '{part}' has no relationship id."));
@@ -178,8 +200,26 @@ internal static class WorksheetReader
         }
 
         loader.Complete();
+        if (links.Count > 0)
+            ReadHyperlinks(package, part, sheet, links);
         if (tableIds.Count > 0)
             ReadTables(package, part, sheet, tableIds);
+    }
+
+    // Like column sizes, links only decorate cells: one that is damaged is skipped, never a reason to refuse the file.
+    private static void ReadHyperlinks(Package package, string part, Worksheet sheet, List<HyperlinkElement> links)
+    {
+        var relationships = links.Exists(link => link.RelationshipId is not null)
+            ? package.ReadRelationships(part, includeExternal: true)
+            : new Dictionary<string, Relationship>();
+        foreach (var modelled in HyperlinkElements.Classify(links, relationships))
+        {
+            if (modelled is not { } link)
+                continue;
+            for (var row = link.Area.FirstRow; row <= link.Area.LastRow; row++)
+                for (var column = link.Area.FirstColumn; column <= link.Area.LastColumn; column++)
+                    sheet.SetHyperlink(row, column, link.Link);
+        }
     }
 
     private const double MaxColumnWidth = 255;

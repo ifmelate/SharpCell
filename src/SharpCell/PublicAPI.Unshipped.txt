@@ -1,1 +1,124 @@
 #nullable enable
+SharpCell.Worksheet.LoadDataTable(string! topLeft, System.Data.DataTable! table, bool headers = true) -> SharpCell.CellRange!
+SharpCell.Worksheet.LoadRows<T>(string! topLeft, System.Collections.Generic.IEnumerable<T>! rows, params (string! Header, System.Func<T, object?>! Value)[]! columns) -> SharpCell.CellRange!
+SharpCell.Cell.Hyperlink.get -> SharpCell.Hyperlink?
+SharpCell.Cell.Hyperlink.set -> void
+SharpCell.Hyperlink
+SharpCell.Hyperlink.Equals(SharpCell.Hyperlink? other) -> bool
+SharpCell.Hyperlink.Hyperlink(string! target, string? tooltip = null) -> void
+SharpCell.Hyperlink.IsInWorkbook.get -> bool
+SharpCell.Hyperlink.Target.get -> string!
+SharpCell.Hyperlink.Tooltip.get -> string?
+override SharpCell.Hyperlink.Equals(object? obj) -> bool
+override SharpCell.Hyperlink.GetHashCode() -> int
+override SharpCell.Hyperlink.ToString() -> string!
+SharpCell.Cell.Validation.get -> SharpCell.DataValidation?
+SharpCell.DataValidation
+SharpCell.DataValidation.AllowBlank.get -> bool
+SharpCell.DataValidation.AllowBlank.init -> void
+SharpCell.DataValidation.DataValidation() -> void
+SharpCell.DataValidation.DataValidation(SharpCell.DataValidation! source) -> void
+SharpCell.DataValidation.Equals(SharpCell.DataValidation? other) -> bool
+SharpCell.DataValidation.ErrorMessage.get -> string?
+SharpCell.DataValidation.ErrorMessage.init -> void
+SharpCell.DataValidation.ErrorStyle.get -> SharpCell.ValidationErrorStyle
+SharpCell.DataValidation.ErrorStyle.init -> void
+SharpCell.DataValidation.ErrorTitle.get -> string?
+SharpCell.DataValidation.ErrorTitle.init -> void
+SharpCell.DataValidation.Formula1.get -> string?
+SharpCell.DataValidation.Formula1.init -> void
+SharpCell.DataValidation.Formula2.get -> string?
+SharpCell.DataValidation.Formula2.init -> void
+SharpCell.DataValidation.InputMessage.get -> string?
+SharpCell.DataValidation.InputMessage.init -> void
+SharpCell.DataValidation.InputTitle.get -> string?
+SharpCell.DataValidation.InputTitle.init -> void
+SharpCell.DataValidation.Operator.get -> SharpCell.ValidationOperator
+SharpCell.DataValidation.Operator.init -> void
+SharpCell.DataValidation.ShowDropDown.get -> bool
+SharpCell.DataValidation.ShowDropDown.init -> void
+SharpCell.DataValidation.ShowErrorMessage.get -> bool
+SharpCell.DataValidation.ShowErrorMessage.init -> void
+SharpCell.DataValidation.ShowInputMessage.get -> bool
+SharpCell.DataValidation.ShowInputMessage.init -> void
+SharpCell.DataValidation.Type.get -> SharpCell.ValidationType
+SharpCell.DataValidation.Type.init -> void
+SharpCell.ValidationErrorStyle
+SharpCell.ValidationErrorStyle.Information = 2 -> SharpCell.ValidationErrorStyle
+SharpCell.ValidationErrorStyle.Stop = 0 -> SharpCell.ValidationErrorStyle
+SharpCell.ValidationErrorStyle.Warning = 1 -> SharpCell.ValidationErrorStyle
+SharpCell.ValidationOperator
+SharpCell.ValidationOperator.Between = 0 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.Equal = 2 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.GreaterThan = 4 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.GreaterThanOrEqual = 6 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.LessThan = 5 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.LessThanOrEqual = 7 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.NotBetween = 1 -> SharpCell.ValidationOperator
+SharpCell.ValidationOperator.NotEqual = 3 -> SharpCell.ValidationOperator
+SharpCell.ValidationType
+SharpCell.ValidationType.Any = 0 -> SharpCell.ValidationType
+SharpCell.ValidationType.Custom = 7 -> SharpCell.ValidationType
+SharpCell.ValidationType.Date = 4 -> SharpCell.ValidationType
+SharpCell.ValidationType.Decimal = 2 -> SharpCell.ValidationType
+SharpCell.ValidationType.List = 3 -> SharpCell.ValidationType
+SharpCell.ValidationType.TextLength = 6 -> SharpCell.ValidationType
+SharpCell.ValidationType.Time = 5 -> SharpCell.ValidationType
+SharpCell.ValidationType.WholeNumber = 1 -> SharpCell.ValidationType
+SharpCell.Worksheet.AddValidation(string! range, SharpCell.DataValidation! validation) -> void
+SharpCell.Worksheet.ClearValidation(string! range) -> void
+SharpCell.Worksheet.Validations.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.CellRange! Range, SharpCell.DataValidation! Validation)>!
+static SharpCell.DataValidation.Custom(string! formula) -> SharpCell.DataValidation!
+static SharpCell.DataValidation.List(params string![]! items) -> SharpCell.DataValidation!
+static SharpCell.DataValidation.ListFrom(string! range) -> SharpCell.DataValidation!
+override SharpCell.DataValidation.Equals(object? obj) -> bool
+override SharpCell.DataValidation.GetHashCode() -> int
+override SharpCell.DataValidation.ToString() -> string!
+SharpCell.SheetProtection
+SharpCell.SheetProtection.AutoFilter.get -> bool
+SharpCell.SheetProtection.AutoFilter.init -> void
+SharpCell.SheetProtection.DeleteColumns.get -> bool
+SharpCell.SheetProtection.DeleteColumns.init -> void
+SharpCell.SheetProtection.DeleteRows.get -> bool
+SharpCell.SheetProtection.DeleteRows.init -> void
+SharpCell.SheetProtection.EditObjects.get -> bool
+SharpCell.SheetProtection.EditObjects.init -> void
+SharpCell.SheetProtection.EditScenarios.get -> bool
+SharpCell.SheetProtection.EditScenarios.init -> void
+SharpCell.SheetProtection.Equals(SharpCell.SheetProtection? other) -> bool
+SharpCell.SheetProtection.FormatCells.get -> bool
+SharpCell.SheetProtection.FormatCells.init -> void
+SharpCell.SheetProtection.FormatColumns.get -> bool
+SharpCell.SheetProtection.FormatColumns.init -> void
+SharpCell.SheetProtection.FormatRows.get -> bool
+SharpCell.SheetProtection.FormatRows.init -> void
+SharpCell.SheetProtection.InsertColumns.get -> bool
+SharpCell.SheetProtection.InsertColumns.init -> void
+SharpCell.SheetProtection.InsertHyperlinks.get -> bool
+SharpCell.SheetProtection.InsertHyperlinks.init -> void
+SharpCell.SheetProtection.InsertRows.get -> bool
+SharpCell.SheetProtection.InsertRows.init -> void
+SharpCell.SheetProtection.PivotTables.get -> bool
+SharpCell.SheetProtection.PivotTables.init -> void
+SharpCell.SheetProtection.SelectLockedCells.get -> bool
+SharpCell.SheetProtection.SelectLockedCells.init -> void
+SharpCell.SheetProtection.SelectUnlockedCells.get -> bool
+SharpCell.SheetProtection.SelectUnlockedCells.init -> void
+SharpCell.SheetProtection.SheetProtection() -> void
+SharpCell.SheetProtection.SheetProtection(SharpCell.SheetProtection! source) -> void
+SharpCell.SheetProtection.Sort.get -> bool
+SharpCell.SheetProtection.Sort.init -> void
+SharpCell.Worksheet.Protect(string? password = null, SharpCell.SheetProtection? allow = null) -> void
+SharpCell.Worksheet.Protection.get -> SharpCell.SheetProtection?
+SharpCell.Worksheet.Unprotect() -> void
+override SharpCell.SheetProtection.Equals(object? obj) -> bool
+override SharpCell.SheetProtection.GetHashCode() -> int
+override SharpCell.SheetProtection.ToString() -> string!
+SharpCell.CellStyle.FormulaHidden.get -> bool
+SharpCell.CellStyle.FormulaHidden.init -> void
+SharpCell.CellStyle.Locked.get -> bool
+SharpCell.CellStyle.Locked.init -> void
+SharpCell.Workbook.IsStructureProtected.get -> bool
+SharpCell.Workbook.IsWindowsProtected.get -> bool
+SharpCell.Workbook.Protect(string? password = null, bool structure = true, bool windows = false) -> void
+SharpCell.Workbook.Unprotect() -> void

@@ -61,8 +61,12 @@ internal sealed class PackageEdit(Package package)
         root.Add(new XElement(ContentTypes + "Override", new XAttribute("PartName", "/" + part), new XAttribute("ContentType", contentType)));
     }
 
+    /// <summary>
+    /// Adds a relationship from <paramref name="source"/> to a part, or with <paramref name="external"/> to an
+    /// address outside the package (a web address, a file), which is written as given.
+    /// </summary>
     /// <returns>The new relationship's id, unique in the source part's relationships.</returns>
-    public string AddRelationship(string source, string relationshipType, string target)
+    public string AddRelationship(string source, string relationshipType, string target, bool external = false)
     {
         var document = RelationshipsDocument(source);
         var ids = document.Root!.Elements(Relationships + "Relationship").Select(r => (string?)r.Attribute("Id")).ToHashSet(StringComparer.Ordinal);
@@ -72,9 +76,14 @@ internal sealed class PackageEdit(Package package)
             id = "rIdSC" + next++.ToString(CultureInfo.InvariantCulture);
         while (ids.Contains(id));
         document.Root.Add(new XElement(Relationships + "Relationship", new XAttribute("Id", id),
-            new XAttribute("Type", relationshipType), new XAttribute("Target", RelativeTarget(source, target))));
+            new XAttribute("Type", relationshipType), new XAttribute("Target", external ? target : RelativeTarget(source, target)),
+            external ? new XAttribute("TargetMode", "External") : null));
         return id;
     }
+
+    /// <summary>Removes one relationship of <paramref name="source"/>, leaving its target alone.</summary>
+    public void RemoveRelationship(string source, string id) =>
+        RelationshipsDocument(source).Root!.Elements(Relationships + "Relationship").Where(r => (string?)r.Attribute("Id") == id).Remove();
 
     /// <summary>Removes a part, its content type override and the relationships to it from <paramref name="source"/>.</summary>
     public void RemovePart(string source, string part)

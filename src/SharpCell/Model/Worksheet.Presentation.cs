@@ -5,13 +5,14 @@ using SharpCell.Evaluation;
 namespace SharpCell;
 
 // How the sheet looks rather than what it calculates: cell styles, column widths, row heights,
-// hidden columns, merged cells, frozen panes and gridlines. None of it is cell content, and calculation never sees it.
+// hidden columns, merged cells, frozen panes, gridlines and protection. None of it is cell content, and calculation never sees it.
 public sealed partial class Worksheet
 {
     private const double MaxColumnWidth = 255;
     private const double MaxRowHeight = 409;
 
     private readonly Dictionary<CellAddress, CellStyle> _styles = [];
+    private readonly Dictionary<CellAddress, Hyperlink> _hyperlinks = [];
     private readonly Dictionary<int, double> _columnWidths = [];
     private readonly Dictionary<int, double> _rowHeights = [];
     private readonly HashSet<int> _hiddenColumns = [];
@@ -21,6 +22,8 @@ public sealed partial class Worksheet
     private int _frozenRows;
     private int _frozenColumns;
     private bool _showGridlines = true;
+    private SheetProtection? _protection;
+    private ProtectionPassword? _protectionPassword;
 
     /// <summary>
     /// How many rows at the top stay in place while the rest scrolls, as Excel's Freeze Panes
@@ -64,6 +67,43 @@ public sealed partial class Worksheet
         }
     }
 
+    /// <summary>What users may still do on the sheet when it is protected; null when it is not protected.</summary>
+    public SheetProtection? Protection => _protection;
+
+    /// <summary>The hash of the protection's password, as made by <see cref="Protect"/> or read from a file; null for none.</summary>
+    internal ProtectionPassword? ProtectionPassword => _protectionPassword;
+
+    /// <summary>
+    /// Protects the sheet as Excel's Protect Sheet does: Excel then refuses changes to locked cells
+    /// and allows only the actions <paramref name="allow"/> names. SharpCell itself does not enforce
+    /// protection: code may still change the sheet, as Excel's object model may with the password.
+    /// Protecting a protected sheet replaces its protection and password.
+    /// </summary>
+    /// <param name="password">
+    /// The password Excel asks for to unprotect the sheet, or null (or empty) for none. Only its hash
+    /// is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+    /// </param>
+    /// <param name="allow">What users may still do; null for Excel's defaults, selecting cells only.</param>
+    public void Protect(string? password = null, SheetProtection? allow = null)
+    {
+        Workbook.ThrowIfInCustomFunction();
+        SetProtection(allow ?? new SheetProtection(), string.IsNullOrEmpty(password) ? null : ProtectionPassword.Create(password));
+    }
+
+    /// <summary>Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.</summary>
+    public void Unprotect()
+    {
+        Workbook.ThrowIfInCustomFunction();
+        SetProtection(null, null);
+    }
+
+    /// <summary>Sets the protection and the password as they are, for the reader; null protection leaves the sheet unprotected.</summary>
+    internal void SetProtection(SheetProtection? protection, ProtectionPassword? password)
+    {
+        _protection = protection;
+        _protectionPassword = protection is null ? null : password;
+    }
+
     internal CellStyle? StyleAt(int row, int column) =>
         _styles.Count != 0 && _styles.TryGetValue(new CellAddress(row, column), out var style) ? style : null;
 
@@ -78,6 +118,21 @@ public sealed partial class Worksheet
 
     /// <summary>The cells with a style of their own, in no particular order.</summary>
     internal IReadOnlyDictionary<CellAddress, CellStyle> Styles => _styles;
+
+    internal Hyperlink? HyperlinkAt(int row, int column) =>
+        _hyperlinks.Count != 0 && _hyperlinks.TryGetValue(new CellAddress(row, column), out var link) ? link : null;
+
+    /// <summary>Sets or (with null) removes the hyperlink of a cell.</summary>
+    internal void SetHyperlink(int row, int column, Hyperlink? link)
+    {
+        if (link is null)
+            _hyperlinks.Remove(new CellAddress(row, column));
+        else
+            _hyperlinks[new CellAddress(row, column)] = link;
+    }
+
+    /// <summary>The cells with a hyperlink, in no particular order.</summary>
+    internal IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks => _hyperlinks;
 
     internal IReadOnlyDictionary<int, double> ColumnWidths => _columnWidths;
 
@@ -223,6 +278,8 @@ public sealed partial class Worksheet
     {
         foreach (var (address, style) in source._styles)
             _styles.Add(address, style);
+        foreach (var (address, link) in source._hyperlinks)
+            _hyperlinks.Add(address, link);
         foreach (var (column, width) in source._columnWidths)
             _columnWidths.Add(column, width);
         foreach (var (row, height) in source._rowHeights)
@@ -234,6 +291,8 @@ public sealed partial class Worksheet
         _frozenRows = source._frozenRows;
         _frozenColumns = source._frozenColumns;
         _showGridlines = source._showGridlines;
+        _protection = source._protection;
+        _protectionPassword = source._protectionPassword;
     }
 
     private static double CheckSize(double size, double max, string parameter)

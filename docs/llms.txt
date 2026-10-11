@@ -17,6 +17,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Tables and hidden rows](https://ifmelate.github.io/SharpCell/guides/tables.md): Structured references such as Sales[Units], tables from .xlsx files and code, hidden rows and filters in SUBTOTAL and AGGREGATE.
 - [Functions](https://ifmelate.github.io/SharpCell/guides/functions.md): Function status, criteria syntax for COUNTIF and friends, dates as numbers, regular expressions.
 - [What SharpCell does not do](https://ifmelate.github.io/SharpCell/guides/limits.md): Every known gap in one list.
+- [Roadmap](https://ifmelate.github.io/SharpCell/roadmap.md): What was released, what is being built now and what comes later.
 - [For AI coding agents](https://ifmelate.github.io/SharpCell/agents.md): llms.txt, llms-full.txt and rules to paste into an agent's instructions.
 
 ## API reference
@@ -29,11 +30,12 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [CellFont](https://ifmelate.github.io/SharpCell/api/SharpCell.CellFont.md): The font of a cell's text.
 - [CellHorizontalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellHorizontalAlignment.md): Where a cell's text sits across the cell.
 - [CellRange](https://ifmelate.github.io/SharpCell/api/SharpCell.CellRange.md): A rectangle of cells on one sheet, such as `A1:C10`.
-- [CellStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellStyle.md): How a cell looks in Excel: font, fill, borders and alignment.
+- [CellStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellStyle.md): How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden).
 - [CellUnderline](https://ifmelate.github.io/SharpCell/api/SharpCell.CellUnderline.md): How a font underlines text.
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
 - [CellVerticalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellVerticalAlignment.md): Where a cell's text sits from top to bottom of the cell.
+- [DataValidation](https://ifmelate.github.io/SharpCell/api/SharpCell.DataValidation.md): A data validation rule: what the cells of a range accept and the messages Excel shows for them.
 - [DateSystem](https://ifmelate.github.io/SharpCell/api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
 - [DefinedName](https://ifmelate.github.io/SharpCell/api/SharpCell.DefinedName.md): A defined name as Workbook.DefinedNames lists it.
 - [DiagnosticKind](https://ifmelate.github.io/SharpCell/api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
@@ -43,10 +45,15 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [FunctionArguments](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionArguments.md): The arguments of one call of a function added through Workbook.Functions.
 - [FunctionCollection](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionCollection.md): The functions a workbook's formulas can call besides Excel's: add one with FunctionCollection.Add, and formulas calling it by name (ignoring case) use it from the next calculation on.
 - [FunctionOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionOptions.md): How a function added through Workbook.Functions takes its arguments.
+- [Hyperlink](https://ifmelate.github.io/SharpCell/api/SharpCell.Hyperlink.md): A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook.
 - [IterationSettings](https://ifmelate.github.io/SharpCell/api/SharpCell.IterationSettings.md): Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0.
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
 - [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
+- [SheetProtection](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetProtection.md): What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
+- [ValidationErrorStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationErrorStyle.md): What Excel does when a value breaks a rule.
+- [ValidationOperator](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationOperator.md): How a value is compared with a rule's formulas; lists and custom rules do not compare.
+- [ValidationType](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationType.md): What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow.
 - [Workbook](https://ifmelate.github.io/SharpCell/api/SharpCell.Workbook.md): A workbook: sheets, defined names and calculation settings.
 - [Worksheet](https://ifmelate.github.io/SharpCell/api/SharpCell.Worksheet.md): A sheet of a Workbook.
 - [XlsxReader](https://ifmelate.github.io/SharpCell/api/SharpCell.Xlsx.XlsxReader.md): Reads .xlsx workbooks: sheets, values, formulas with the results Excel cached, defined names, tables, hidden rows, whether a sheet is filtered, the date system, number formats, cell styles, column widths, row heights, merged cells, frozen panes and gridlines, from .xlsx and macro-enabled .xlsm files.

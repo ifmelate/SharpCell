@@ -16,11 +16,12 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellFont](SharpCell.CellFont.md) | The font of a cell's text. |
 | [CellHorizontalAlignment](SharpCell.CellHorizontalAlignment.md) | Where a cell's text sits across the cell. |
 | [CellRange](SharpCell.CellRange.md) | A rectangle of cells on one sheet, such as `A1:C10`. |
-| [CellStyle](SharpCell.CellStyle.md) | How a cell looks in Excel: font, fill, borders and alignment. |
+| [CellStyle](SharpCell.CellStyle.md) | How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden). |
 | [CellUnderline](SharpCell.CellUnderline.md) | How a font underlines text. |
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
 | [CellVerticalAlignment](SharpCell.CellVerticalAlignment.md) | Where a cell's text sits from top to bottom of the cell. |
+| [DataValidation](SharpCell.DataValidation.md) | A data validation rule: what the cells of a range accept and the messages Excel shows for them. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
 | [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
 | [DiagnosticKind](SharpCell.DiagnosticKind.md) | What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports. |
@@ -30,10 +31,15 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [FunctionArguments](SharpCell.FunctionArguments.md) | The arguments of one call of a function added through [Workbook.Functions](SharpCell.Workbook.md#functions). |
 | [FunctionCollection](SharpCell.FunctionCollection.md) | The functions a workbook's formulas can call besides Excel's: add one with [FunctionCollection.Add](SharpCell.FunctionCollection.md#add-string-func-functionarguments-cellvalue-functionoptions), and formulas calling it by name (ignoring case) use it from the next calculation on. |
 | [FunctionOptions](SharpCell.FunctionOptions.md) | How a function added through [Workbook.Functions](SharpCell.Workbook.md#functions) takes its arguments. |
+| [Hyperlink](SharpCell.Hyperlink.md) | A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook. |
 | [IterationSettings](SharpCell.IterationSettings.md) | Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0. |
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
+| [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
+| [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |
+| [ValidationOperator](SharpCell.ValidationOperator.md) | How a value is compared with a rule's formulas; lists and custom rules do not compare. |
+| [ValidationType](SharpCell.ValidationType.md) | What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow. |
 | [Workbook](SharpCell.Workbook.md) | A workbook: sheets, defined names and calculation settings. |
 | [Worksheet](SharpCell.Worksheet.md) | A sheet of a [Workbook](SharpCell.Workbook.md). |
 

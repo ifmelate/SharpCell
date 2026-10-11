@@ -158,7 +158,7 @@ internal static class CellInput
     }
 
     // The culture's short date as a format code: English Excel's m/d/yyyy for the invariant culture.
-    private static string DateCode(CultureInfo culture)
+    internal static string DateCode(CultureInfo culture)
     {
         if (culture.Name.Length == 0)
             return "m/d/yyyy";
@@ -178,7 +178,7 @@ internal static class CellInput
         return code.ToString();
     }
 
-    private static string TimeCode(CultureInfo culture, bool seconds)
+    internal static string TimeCode(CultureInfo culture, bool seconds)
     {
         var twelveHour = culture.Name.Length == 0 || culture.DateTimeFormat.LongTimePattern.Contains('t', StringComparison.Ordinal);
         return "h:mm" + (seconds ? ":ss" : "") + (twelveHour ? " AM/PM" : "");

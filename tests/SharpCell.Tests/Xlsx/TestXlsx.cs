@@ -67,6 +67,14 @@ public sealed class TestXlsx
 
     private readonly Dictionary<string, string> _extraTypes = [];
 
+    /// <summary>The relationships part of a worksheet added earlier; <paramref name="relationships"/> are the &lt;Relationship&gt; elements.</summary>
+    public TestXlsx SheetRelationships(string sheetName, string relationships)
+    {
+        var index = _sheets.FindIndex(sheet => sheet.Name == sheetName) + 1;
+        return Part($"xl/worksheets/_rels/sheet{index}.xml.rels",
+            $"<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">{relationships}</Relationships>");
+    }
+
     public MemoryStream Build()
     {
         var stream = new MemoryStream();

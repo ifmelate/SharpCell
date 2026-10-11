@@ -33,7 +33,8 @@ internal static class WorkbookWriter
         var part = plan.Source.WorkbookPart;
         var namesChanged = look.NamesChanged(workbook) || plan.Edits.Any;
         var iterationChanged = !workbook.Iteration.Equals(look.Iteration);
-        if (newSheets.Count == 0 && !namesChanged && !iterationChanged && workbook.DateSystem == look.DateSystem && !plan.FullCalcOnLoad)
+        var protectionChanged = look.ProtectionChanged(workbook);
+        if (newSheets.Count == 0 && !namesChanged && !iterationChanged && !protectionChanged && workbook.DateSystem == look.DateSystem && !plan.FullCalcOnLoad)
             return;
 
         var document = edit.ReadXml(part) ?? throw new System.IO.InvalidDataException($"The package has no part '{part}'.");
@@ -41,6 +42,9 @@ internal static class WorkbookWriter
         var ns = root.Name.Namespace;
         if (workbook.DateSystem != look.DateSystem)
             Section(root, "workbookPr").SetAttributeValue("date1904", workbook.DateSystem == DateSystem.Date1904 ? "1" : null);
+
+        if (protectionChanged)
+            WriteProtection(root, workbook);
 
         var sheets = Section(root, "sheets");
         if (newSheets.Count > 0)
@@ -71,6 +75,31 @@ internal static class WorkbookWriter
         }
 
         edit.Parts[part] = XmlParts.Save(document);
+    }
+
+    // The locks and the password are rewritten on the element the file has, which keeps its other
+    // attributes (revision protection); an element left with none is removed.
+    private static void WriteProtection(XElement root, Workbook workbook)
+    {
+        var element = root.Element(root.Name.Namespace + "workbookProtection");
+        var isProtected = workbook.IsStructureProtected || workbook.IsWindowsProtected || workbook.ProtectionPassword is not null;
+        if (element is null)
+        {
+            if (!isProtected)
+                return;
+            element = Section(root, "workbookProtection");
+        }
+
+        var names = PasswordAttributes.Workbook.Names;
+        element.Attributes().Where(a => a.Name.Namespace == XNamespace.None && (names.Contains(a.Name.LocalName)
+            || a.Name.LocalName is "lockStructure" or "lockWindows")).Remove();
+        element.Add(PasswordAttributes.Workbook.Write(workbook.ProtectionPassword));
+        if (workbook.IsStructureProtected)
+            element.SetAttributeValue("lockStructure", "1");
+        if (workbook.IsWindowsProtected)
+            element.SetAttributeValue("lockWindows", "1");
+        if (!element.HasAttributes)
+            element.Remove();
     }
 
     // Names the file has keep their element, with the model's formula where it changed; names

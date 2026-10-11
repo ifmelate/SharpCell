@@ -42,6 +42,10 @@ internal sealed class SheetLook
         RowHeights = new Dictionary<int, double>(sheet.RowHeights);
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         Merged = [.. sheet.MergedAreaList];
+        Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
+        Validations = [.. sheet.ValidationRules.Select(rule => ((IReadOnlyList<Area>)rule.Areas.ToArray(), rule.Validation))];
+        Protection = sheet.Protection;
+        ProtectionPassword = sheet.ProtectionPassword;
         FrozenRows = sheet.FrozenRows;
         FrozenColumns = sheet.FrozenColumns;
         ShowGridlines = sheet.ShowGridlines;
@@ -59,6 +63,20 @@ internal sealed class SheetLook
         RowHeights = Moved(look.RowHeights, row => map.MapRow(sheet, row));
         HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
         Merged = [.. look.Merged.Select(area => map.Map(sheet, area)).OfType<Area>().Where(area => !area.IsSingleCell)];
+        var hyperlinks = new Dictionary<CellAddress, Hyperlink>();
+        foreach (var (address, link) in look.Hyperlinks)
+        {
+            if (map.Map(sheet, address) is { } to)
+                hyperlinks[to] = link;
+        }
+
+        Hyperlinks = hyperlinks;
+
+        // Not moved: the rules of a sheet whose rows or columns moved are always written again, and
+        // moving them here would mean moving their formulas as the model does.
+        Validations = look.Validations;
+        Protection = look.Protection;
+        ProtectionPassword = look.ProtectionPassword;
         FrozenRows = look.FrozenRows;
         FrozenColumns = look.FrozenColumns;
         ShowGridlines = look.ShowGridlines;
@@ -92,6 +110,18 @@ internal sealed class SheetLook
 
     public IReadOnlyList<Area> Merged { get; }
 
+    /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
+    public IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks { get; }
+
+    /// <summary>The data validation rules in order, with their ranges, as read; not moved by edits.</summary>
+    public IReadOnlyList<(IReadOnlyList<Area> Areas, DataValidation Validation)> Validations { get; }
+
+    /// <summary>The sheet's protection as read; null when it was not protected.</summary>
+    public SheetProtection? Protection { get; }
+
+    /// <summary>The protection's password as read; null for none.</summary>
+    public ProtectionPassword? ProtectionPassword { get; }
+
     public int FrozenRows { get; }
 
     public int FrozenColumns { get; }
@@ -117,6 +147,27 @@ internal sealed class SheetLook
 
     public bool MergesChanged(Worksheet sheet) =>
         Merged.Count != sheet.MergedAreaList.Count || !Merged.ToHashSet().SetEquals(sheet.MergedAreaList);
+
+    public bool HyperlinksChanged(Worksheet sheet) =>
+        Hyperlinks.Count != sheet.Hyperlinks.Count
+        || Hyperlinks.Any(pair => !sheet.Hyperlinks.TryGetValue(pair.Key, out var link) || !link.Equals(pair.Value));
+
+    public bool ValidationsChanged(Worksheet sheet)
+    {
+        var rules = sheet.ValidationRules;
+        if (rules.Count != Validations.Count)
+            return true;
+        for (var i = 0; i < rules.Count; i++)
+        {
+            if (!rules[i].Areas.SequenceEqual(Validations[i].Areas) || !rules[i].Validation.Equals(Validations[i].Validation))
+                return true;
+        }
+
+        return false;
+    }
+
+    public bool ProtectionChanged(Worksheet sheet) =>
+        !Equals(Protection, sheet.Protection) || !Equals(ProtectionPassword, sheet.ProtectionPassword);
 
     public bool PanesChanged(Worksheet sheet) => FrozenRows != sheet.FrozenRows || FrozenColumns != sheet.FrozenColumns;
 

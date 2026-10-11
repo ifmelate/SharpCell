@@ -942,10 +942,11 @@ Everything SharpCell models:
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
+- Hyperlinks, data validation, sheet and workbook protection, and locked and hidden cells.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
-file: charts, pivot tables, comments, conditional formats, data validation, pictures, macros,
+file: charts, pivot tables, comments, conditional formats, pictures, macros,
 pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
 and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
 pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
@@ -957,8 +958,7 @@ calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are
 saves them, so Excel shows them before it recalculates.
 
 After rows or columns were inserted or deleted, everything in the file that points at cells
-follows them, including what SharpCell does not model: conditional formats, data validation,
-hyperlinks, filters, page breaks, print areas, pictures and shapes, comments, chart series and
+follows them, including what SharpCell does not model: conditional formats, filters, page breaks, print areas, pictures and shapes, comments, chart series and
 pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
 where they were. A pivot table moves with the rows above it, but rows inserted into it or deleted
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
@@ -1145,18 +1145,80 @@ several functions at once give `#VALUE!`.
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures, conditional formats or data validation, or remove or rename sheets; a file's own are kept as they are.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures or conditional formats, or remove or rename sheets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
-- **Styles are partly read.** Fonts, solid fills, borders, alignment and number formats are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
+- **Styles are partly read.** Fonts, solid fills, borders, alignment, number formats and cell protection (locked, hidden) are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
+- **Protection is not enforced.** Sheet and workbook protection is read, set and saved, but SharpCell does not enforce it: code can still change a protected sheet or workbook.
+- **Data validation is stored, not evaluated.** Rules are read, set and saved; nothing checks a value against them. Validations in `extLst` (`x14`) are not modelled, and neither is the `imeMode` attribute: it is lost when a sheet's rules are rewritten, which includes any row or column insert or delete on that sheet.
+- **Large hyperlinks.** A hyperlink covering more than 10,000 cells, or more than 100,000 linked cells on a sheet, is kept in the file but not read into the model.
+- **Hyperlink style.** Setting a hyperlink does not apply Excel's blue underlined Hyperlink style; style the cell yourself.
 - **Localized function names.** Formulas use English names, as in the file format.
 - **Links to other workbooks.** They evaluate to `#NAME?`.
 - **Cube, real-time data and web functions.** `CUBE*`, `RTD` and `WEBSERVICE` are not available.
 - **Concurrent use.** One `Workbook` must not be used from several threads at once. Separate workbooks are independent, and one workbook may be cloned from several threads while nothing changes it (see [Templates in a service](recalculation.md#templates-in-a-service)).
 
 Each function's status, and every function that differs from Excel in a described way, is in the [compatibility report](../compatibility.md).
+
+---
+
+<!-- page: roadmap.md -->
+
+# Roadmap
+
+Where SharpCell is going, in the order the work is planned. Each step ships when its tests pass
+and its results are checked against Microsoft Excel. Dates are not promised; the project has one
+maintainer.
+
+## Released
+
+| Version | What |
+|---|---|
+| 0.1 | The engine: parser, dependency graph, recalculation, dynamic arrays, LET/LAMBDA, reading .xlsx |
+| 0.2 | Tables and structured references (`Sales[Units]`), hidden rows in `SUBTOTAL` and `AGGREGATE` |
+| 0.3 | Saving recalculated values back into the file a workbook was read from |
+| 0.4 | API for applications: walking and writing cells, custom functions, changed cells, cloning templates |
+| 0.5 | Number formats and `Cell.Text`; iterative calculation of circular references |
+| 0.6 | Cell styles, column widths, row heights, merged cells, frozen panes and gridlines, read from files |
+| 0.7 | Saving everything the model holds, workbooks built in code, .xlsm files, inserting and deleting rows and columns; functions as values, `GROUPBY`, `PIVOTBY`, `PERCENTOF` |
+| 0.8 | `Cell.Input`: a cell as typed in Excel |
+
+## Now: 0.9, building workbooks
+
+The features people reach for EPPlus or ClosedXML to get, so a report can be built in code and
+saved without a template.
+
+- Filling a sheet from a collection or a `DataTable`, columns chosen by lambdas (no reflection, so
+  NativeAOT keeps working).
+- Hyperlinks on cells: web addresses, e-mail and places in the workbook.
+- Data validation: lists, numbers, dates, text length and custom formulas, with input and error
+  messages; read, changed and saved, and moved with inserted and deleted rows.
+- Sheet and workbook protection with a password, and locked and hidden cells in cell styles.
+
+## Next: 0.10, rules on cells
+
+- Conditional formatting: read, added and saved. SharpCell can also tell which cells a rule
+  applies to, since it calculates the formulas Excel would.
+- Comments (notes): read, added and saved.
+- Page setup: orientation, margins, print area, titles and page breaks.
+- Benchmarks against EPPlus and ClosedXML: loading, recalculating and saving large workbooks.
+
+## Later
+
+- Cells that break their data validation, found by calculating the rules (Excel's Circle Invalid Data).
+- Sorting a range, with formulas moving as Excel moves them.
+- Fitting column widths to their contents. This needs font metrics, which the engine does not
+  carry; it may come as a separate package.
+- Resizing and renaming tables, and inserting columns into them.
+- Removing and renaming sheets.
+- Rich text in cells.
+
+## Not planned
+
+Creating charts, pivot tables, pictures or shapes (a file's own are kept when it is saved),
+running macros, .xls and .xlsb files, and encrypted files.
 
 ---
 
@@ -1350,6 +1412,15 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="hyperlink"></a>
+### Hyperlink
+
+```csharp
+public Hyperlink? Hyperlink { get; set; }
+```
+
+The cell's hyperlink; null for none, which setting null also gives. The cell's value is what Excel shows: setting a link neither changes the value nor applies the Hyperlink cell style. A link moves with its cell when rows or columns are inserted, and goes with it when they are deleted.
+
 <a id="input"></a>
 ### Input
 
@@ -1418,6 +1489,15 @@ public string Text { get; }
 ```
 
 The cell as Excel shows it: the value formatted by [Cell.NumberFormat](SharpCell.Cell.md#numberformat) with the workbook's culture and date system. Column width plays no part, so a number that fits no width is never cut short; a date format on a number that is no date shows `#######`. Errors show as `#DIV/0!` and the like, logical values as `TRUE` and `FALSE`, an empty cell as an empty string.
+
+<a id="validation"></a>
+### Validation
+
+```csharp
+public DataValidation? Validation { get; }
+```
+
+The data validation rule of the cell, or null for none. Its formulas are relative to the first cell of the rule's first range, not to this cell. Rules are set with [Worksheet.AddValidation](SharpCell.Worksheet.md#addvalidation-string-datavalidation).
 
 <a id="value"></a>
 ### Value
@@ -1908,7 +1988,7 @@ public sealed class CellStyle
 
 Namespace `SharpCell` · package `SharpCell`
 
-How a cell looks in Excel: font, fill, borders and alignment. The number format is not part of it; see [Cell.NumberFormat](SharpCell.Cell.md#numberformat). Styles play no part in calculation. A record: styles compare by value, and `with` makes a changed copy, such as `style with { Fill = CellColor.FromRgb(0xFFFF00) }`.
+How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden). The number format is not part of it; see [Cell.NumberFormat](SharpCell.Cell.md#numberformat). Styles play no part in calculation. A record: styles compare by value, and `with` makes a changed copy, such as `style with { Fill = CellColor.FromRgb(0xFFFF00) }`.
 
 ## Constructors
 
@@ -1959,6 +2039,15 @@ public CellFont Font { get; init; }
 
 The font.
 
+<a id="formulahidden"></a>
+### FormulaHidden
+
+```csharp
+public bool FormulaHidden { get; init; }
+```
+
+Whether the cell's formula is hidden from the formula bar while its sheet is protected.
+
 <a id="horizontalalignment"></a>
 ### HorizontalAlignment
 
@@ -1989,6 +2078,15 @@ public CellBorder? LeftBorder { get; init; }
 ```
 
 The left edge of the border; null for none.
+
+<a id="locked"></a>
+### Locked
+
+```csharp
+public bool Locked { get; init; }
+```
+
+Whether the cell is locked: it cannot be changed while its sheet is protected (see [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection)). Excel's default is true; set false for input cells.
 
 <a id="rightborder"></a>
 ### RightBorder
@@ -2390,6 +2488,273 @@ Where a cell's text sits from top to bottom of the cell.
 | <a id="bottom"></a>`Bottom` | 2 | Against the bottom edge, Excel's default. |
 | <a id="justify"></a>`Justify` | 3 | Lines spread to the top and bottom edges. |
 | <a id="distributed"></a>`Distributed` | 4 | Lines spread evenly from top to bottom. |
+
+---
+
+<!-- page: api/SharpCell.DataValidation.md -->
+
+# DataValidation
+
+```csharp
+public sealed class DataValidation
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A data validation rule: what the cells of a range accept and the messages Excel shows for them. Set properties in an initializer, or start from [DataValidation.List](SharpCell.DataValidation.md#list-string), [DataValidation.ListFrom](SharpCell.DataValidation.md#listfrom-string) or [DataValidation.Custom](SharpCell.DataValidation.md#custom-string). SharpCell keeps the rule with the cells and saves it; it does not check values.
+
+## Constructors
+
+<a id="ctor"></a>
+### DataValidation()
+
+```csharp
+public DataValidation()
+```
+
+A rule allowing any value; set properties in an initializer.
+
+<a id="ctor-datavalidation"></a>
+### DataValidation(DataValidation)
+
+```csharp
+public DataValidation(DataValidation source)
+```
+
+A copy of another rule, so a factory's rule can be changed in an initializer: `new DataValidation(DataValidation.List("Yes", "No")) { ErrorMessage = "Choose Yes or No." }`.
+
+**Parameters**
+
+- `source`: The rule to copy.
+
+**Exceptions**
+
+- `ArgumentNullException`: The source is null.
+
+## Properties
+
+<a id="allowblank"></a>
+### AllowBlank
+
+```csharp
+public bool AllowBlank { get; init; }
+```
+
+Whether an empty cell is accepted; true unless set.
+
+<a id="errormessage"></a>
+### ErrorMessage
+
+```csharp
+public string? ErrorMessage { get; init; }
+```
+
+The error message, at most 255 characters, or null for Excel's own.
+
+**Exceptions**
+
+- `ArgumentException`: The message is longer than 255 characters.
+
+<a id="errorstyle"></a>
+### ErrorStyle
+
+```csharp
+public ValidationErrorStyle ErrorStyle { get; init; }
+```
+
+What Excel does with a value that breaks the rule; [ValidationErrorStyle.Stop](SharpCell.ValidationErrorStyle.md#stop) unless set.
+
+<a id="errortitle"></a>
+### ErrorTitle
+
+```csharp
+public string? ErrorTitle { get; init; }
+```
+
+The title of the error message, at most 32 characters, or null for Excel's own.
+
+**Exceptions**
+
+- `ArgumentException`: The title is longer than 32 characters.
+
+<a id="formula1"></a>
+### Formula1
+
+```csharp
+public string? Formula1 { get; init; }
+```
+
+The first formula, with a leading `=` (added if missing) as [Cell.Formula](SharpCell.Cell.md#formula) takes it, or null: the low end or the value compared with, the list (`="Yes,No"` or `=$H$1:$H$5`) or the custom condition (`=A1>0`). Relative references are relative to the first cell of the rule's first range. It is parsed when the rule is added to a sheet.
+
+<a id="formula2"></a>
+### Formula2
+
+```csharp
+public string? Formula2 { get; init; }
+```
+
+The second formula, the high end for [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) and [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween), written like [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); null for none.
+
+<a id="inputmessage"></a>
+### InputMessage
+
+```csharp
+public string? InputMessage { get; init; }
+```
+
+The input message, at most 255 characters, or null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The message is longer than 255 characters.
+
+<a id="inputtitle"></a>
+### InputTitle
+
+```csharp
+public string? InputTitle { get; init; }
+```
+
+The title of the input message, at most 32 characters, or null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The title is longer than 32 characters.
+
+<a id="operator"></a>
+### Operator
+
+```csharp
+public ValidationOperator Operator { get; init; }
+```
+
+How a value is compared with [DataValidation.Formula1](SharpCell.DataValidation.md#formula1) and [DataValidation.Formula2](SharpCell.DataValidation.md#formula2); [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) unless set. Lists and custom rules ignore it.
+
+<a id="showdropdown"></a>
+### ShowDropDown
+
+```csharp
+public bool ShowDropDown { get; init; }
+```
+
+Whether Excel shows the drop-down of a list rule; true unless set.
+
+<a id="showerrormessage"></a>
+### ShowErrorMessage
+
+```csharp
+public bool ShowErrorMessage { get; init; }
+```
+
+Whether Excel shows the error message when a value breaks the rule; true unless set.
+
+<a id="showinputmessage"></a>
+### ShowInputMessage
+
+```csharp
+public bool ShowInputMessage { get; init; }
+```
+
+Whether Excel shows the input message when a cell of the rule is selected; true unless set.
+
+<a id="type"></a>
+### Type
+
+```csharp
+public ValidationType Type { get; init; }
+```
+
+What the cells may hold; [ValidationType.Any](SharpCell.ValidationType.md#any) unless set.
+
+## Methods
+
+<a id="custom-string"></a>
+### Custom(string)
+
+```csharp
+public static DataValidation Custom(string formula)
+```
+
+A rule accepting a value when the formula is true, such as `Custom("=A1>0")`.
+
+**Parameters**
+
+- `formula`: The condition, relative to the first cell of the rule's first range.
+
+**Exceptions**
+
+- `ArgumentException`: The formula is null or empty.
+
+<a id="equals-datavalidation"></a>
+### Equals(DataValidation)
+
+```csharp
+public bool Equals(DataValidation? other)
+```
+
+Whether the other rule has the same settings; texts are compared ordinally.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is a rule with the same settings.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [DataValidation.Equals](SharpCell.DataValidation.md#equals-datavalidation).
+
+<a id="list-string"></a>
+### List(string[])
+
+```csharp
+public static DataValidation List(params string[] items)
+```
+
+A drop-down list of the given items, kept in the rule as one quoted literal: `List("Yes", "No")` has the formula `="Yes,No"`.
+
+**Parameters**
+
+- `items`: The items, in order. An item cannot hold a comma, which separates them.
+
+**Exceptions**
+
+- `ArgumentNullException`: The items or one of them is null.
+- `ArgumentException`: There are no items, an item holds a comma, or the items with their commas are longer than 255 characters, Excel's limit.
+
+<a id="listfrom-string"></a>
+### ListFrom(string)
+
+```csharp
+public static DataValidation ListFrom(string range)
+```
+
+A drop-down list of the values of a range, such as `ListFrom("$H$1:$H$5")` or a defined name.
+
+**Parameters**
+
+- `range`: The range or name, with or without a leading `=`.
+
+**Exceptions**
+
+- `ArgumentException`: The range is null or empty.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The type, the operator of a comparing type, and the formulas, such as `WholeNumber Between =1 =10`.
 
 ---
 
@@ -2837,6 +3202,110 @@ The 0-based positions of scalar parameters. A scalar parameter receives one valu
 
 ---
 
+<!-- page: api/SharpCell.Hyperlink.md -->
+
+# Hyperlink
+
+```csharp
+public sealed class Hyperlink
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook. The cell's value is what Excel shows; the link neither changes it nor applies the Hyperlink cell style.
+
+## Constructors
+
+<a id="ctor-string-string"></a>
+### Hyperlink(string, string)
+
+```csharp
+public Hyperlink(string target, string? tooltip = null)
+```
+
+A link to `target`, with an optional tooltip.
+
+**Parameters**
+
+- `target`: A web or e-mail address or a file (`https://example.com`, `mailto:a@example.com`, `report.pdf`), or a place in the workbook written as Excel's HYPERLINK function takes it: `#Sheet2!A1`, `#'Q1 Sales'!A1` or `#MyName`.
+- `tooltip`: Excel's ScreenTip, shown when the pointer rests on the cell; at most 255 characters, or null for none.
+
+**Exceptions**
+
+- `ArgumentNullException`: The target is null.
+- `ArgumentException`: The target is empty or only `#`, or the tooltip is longer than 255 characters.
+
+## Properties
+
+<a id="isinworkbook"></a>
+### IsInWorkbook
+
+```csharp
+public bool IsInWorkbook { get; }
+```
+
+Whether the link goes to a place in this workbook, that is, the target starts with `#`.
+
+<a id="target"></a>
+### Target
+
+```csharp
+public string Target { get; }
+```
+
+Where the link goes, as given to the constructor.
+
+An empty fragment is dropped when the link is saved: `https://example.com/#` reads back as `https://example.com/`.
+
+<a id="tooltip"></a>
+### Tooltip
+
+```csharp
+public string? Tooltip { get; }
+```
+
+The ScreenTip, or null for none.
+
+## Methods
+
+<a id="equals-hyperlink"></a>
+### Equals(Hyperlink)
+
+```csharp
+public bool Equals(Hyperlink? other)
+```
+
+Whether the other link has the same target and tooltip, compared ordinally.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is the same link.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [Hyperlink.Equals](SharpCell.Hyperlink.md#equals-hyperlink).
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The target.
+
+---
+
 <!-- page: api/SharpCell.IterationSettings.md -->
 
 # IterationSettings
@@ -2978,6 +3447,223 @@ The cells whose values calculation changed since the previous [Workbook.Recalcul
 
 ---
 
+<!-- page: api/SharpCell.SheetProtection.md -->
+
+# SheetProtection
+
+```csharp
+public sealed class SheetProtection
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. Set properties in an initializer and pass the object to [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection). Excel enforces the protection; SharpCell only keeps and saves it.
+
+## Constructors
+
+<a id="ctor"></a>
+### SheetProtection()
+
+```csharp
+public SheetProtection()
+```
+
+A protection allowing users to select cells and nothing else; set properties in an initializer.
+
+<a id="ctor-sheetprotection"></a>
+### SheetProtection(SheetProtection)
+
+```csharp
+public SheetProtection(SheetProtection source)
+```
+
+A copy of another protection, so it can be changed in an initializer: `new SheetProtection(sheet.Protection) { Sort = true }`.
+
+**Parameters**
+
+- `source`: The protection to copy.
+
+**Exceptions**
+
+- `ArgumentNullException`: The source is null.
+
+## Properties
+
+<a id="autofilter"></a>
+### AutoFilter
+
+```csharp
+public bool AutoFilter { get; init; }
+```
+
+Whether users may use AutoFilter; false unless set.
+
+<a id="deletecolumns"></a>
+### DeleteColumns
+
+```csharp
+public bool DeleteColumns { get; init; }
+```
+
+Whether users may delete columns; false unless set.
+
+<a id="deleterows"></a>
+### DeleteRows
+
+```csharp
+public bool DeleteRows { get; init; }
+```
+
+Whether users may delete rows; false unless set.
+
+<a id="editobjects"></a>
+### EditObjects
+
+```csharp
+public bool EditObjects { get; init; }
+```
+
+Whether users may edit objects such as shapes and charts; false unless set.
+
+<a id="editscenarios"></a>
+### EditScenarios
+
+```csharp
+public bool EditScenarios { get; init; }
+```
+
+Whether users may edit scenarios; false unless set.
+
+<a id="formatcells"></a>
+### FormatCells
+
+```csharp
+public bool FormatCells { get; init; }
+```
+
+Whether users may format cells; false unless set.
+
+<a id="formatcolumns"></a>
+### FormatColumns
+
+```csharp
+public bool FormatColumns { get; init; }
+```
+
+Whether users may format columns, their widths and hiding included; false unless set.
+
+<a id="formatrows"></a>
+### FormatRows
+
+```csharp
+public bool FormatRows { get; init; }
+```
+
+Whether users may format rows, their heights and hiding included; false unless set.
+
+<a id="insertcolumns"></a>
+### InsertColumns
+
+```csharp
+public bool InsertColumns { get; init; }
+```
+
+Whether users may insert columns; false unless set.
+
+<a id="inserthyperlinks"></a>
+### InsertHyperlinks
+
+```csharp
+public bool InsertHyperlinks { get; init; }
+```
+
+Whether users may insert hyperlinks; false unless set.
+
+<a id="insertrows"></a>
+### InsertRows
+
+```csharp
+public bool InsertRows { get; init; }
+```
+
+Whether users may insert rows; false unless set.
+
+<a id="pivottables"></a>
+### PivotTables
+
+```csharp
+public bool PivotTables { get; init; }
+```
+
+Whether users may use PivotTables and PivotCharts; false unless set.
+
+<a id="selectlockedcells"></a>
+### SelectLockedCells
+
+```csharp
+public bool SelectLockedCells { get; init; }
+```
+
+Whether users may select locked cells; true unless set.
+
+<a id="selectunlockedcells"></a>
+### SelectUnlockedCells
+
+```csharp
+public bool SelectUnlockedCells { get; init; }
+```
+
+Whether users may select unlocked cells; true unless set.
+
+<a id="sort"></a>
+### Sort
+
+```csharp
+public bool Sort { get; init; }
+```
+
+Whether users may sort; false unless set.
+
+## Methods
+
+<a id="equals-sheetprotection"></a>
+### Equals(SheetProtection)
+
+```csharp
+public bool Equals(SheetProtection? other)
+```
+
+Whether the other protection allows the same actions.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is a protection allowing the same actions.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [SheetProtection.Equals](SharpCell.SheetProtection.md#equals-sheetprotection).
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The names of the allowed actions, such as `SelectLockedCells, SelectUnlockedCells`, or `None`.
+
+---
+
 <!-- page: api/SharpCell.Table.md -->
 
 # Table
@@ -3056,6 +3742,82 @@ public override string ToString()
 ```
 
 The table name.
+
+---
+
+<!-- page: api/SharpCell.ValidationErrorStyle.md -->
+
+# ValidationErrorStyle
+
+```csharp
+public enum ValidationErrorStyle
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What Excel does when a value breaks a rule.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="stop"></a>`Stop` | 0 | Refuses the value. |
+| <a id="warning"></a>`Warning` | 1 | Asks whether to keep the value. |
+| <a id="information"></a>`Information` | 2 | Tells the user and keeps the value. |
+
+---
+
+<!-- page: api/SharpCell.ValidationOperator.md -->
+
+# ValidationOperator
+
+```csharp
+public enum ValidationOperator
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a value is compared with a rule's formulas; lists and custom rules do not compare.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="between"></a>`Between` | 0 | From the first formula to the second, both included. |
+| <a id="notbetween"></a>`NotBetween` | 1 | Less than the first formula or greater than the second. |
+| <a id="equal"></a>`Equal` | 2 | Equal to the first formula. |
+| <a id="notequal"></a>`NotEqual` | 3 | Not equal to the first formula. |
+| <a id="greaterthan"></a>`GreaterThan` | 4 | Greater than the first formula. |
+| <a id="lessthan"></a>`LessThan` | 5 | Less than the first formula. |
+| <a id="greaterthanorequal"></a>`GreaterThanOrEqual` | 6 | Greater than or equal to the first formula. |
+| <a id="lessthanorequal"></a>`LessThanOrEqual` | 7 | Less than or equal to the first formula. |
+
+---
+
+<!-- page: api/SharpCell.ValidationType.md -->
+
+# ValidationType
+
+```csharp
+public enum ValidationType
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="any"></a>`Any` | 0 | Any value: the rule only shows its input message. |
+| <a id="wholenumber"></a>`WholeNumber` | 1 | A whole number compared with the formulas. |
+| <a id="decimal"></a>`Decimal` | 2 | A number compared with the formulas. |
+| <a id="list"></a>`List` | 3 | One of the items of a list, given as a quoted literal or a range; Excel shows them in a drop-down. |
+| <a id="date"></a>`Date` | 4 | A date compared with the formulas. |
+| <a id="time"></a>`Time` | 5 | A time compared with the formulas. |
+| <a id="textlength"></a>`TextLength` | 6 | Text whose length is compared with the formulas. |
+| <a id="custom"></a>`Custom` | 7 | Any value for which the formula is true. |
 
 ---
 
@@ -3141,6 +3903,24 @@ public FunctionCollection Functions { get; }
 ```
 
 Functions of your own that formulas of this workbook can call, besides Excel's.
+
+<a id="isstructureprotected"></a>
+### IsStructureProtected
+
+```csharp
+public bool IsStructureProtected { get; }
+```
+
+Whether the workbook's structure is locked: Excel then refuses adding, deleting, renaming, moving and hiding sheets.
+
+<a id="iswindowsprotected"></a>
+### IsWindowsProtected
+
+```csharp
+public bool IsWindowsProtected { get; }
+```
+
+Whether the workbook's windows are locked: Excel then refuses moving and resizing them.
 
 <a id="iteration"></a>
 ### Iteration
@@ -3237,6 +4017,25 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 
 - `OperationCanceledException`: The token was cancelled.
 
+<a id="protect-string-bool-bool"></a>
+### Protect(string, bool, bool)
+
+```csharp
+public void Protect(string? password = null, bool structure = true, bool windows = false)
+```
+
+Protects the workbook as Excel's Protect Workbook does. SharpCell itself does not enforce protection: code may still add, remove and rename sheets, as Excel's object model may with the password. Protecting a protected workbook replaces its locks and password.
+
+**Parameters**
+
+- `password`: The password Excel asks for to unprotect the workbook, or null (or empty) for none. Only its hash is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+- `structure`: Whether to lock the structure: adding, deleting, renaming, moving and hiding sheets.
+- `windows`: Whether to lock the windows' position and size.
+
+**Exceptions**
+
+- `ArgumentException`: Both `structure` and `windows` are false.
+
 <a id="recalculate-cancellationtoken"></a>
 ### Recalculate(CancellationToken)
 
@@ -3273,6 +4072,15 @@ public bool TryGetTable(string name, out Table? table)
 Finds a table by name, ignoring case.
 
 **Returns:** Whether the table exists.
+
+<a id="unprotect"></a>
+### Unprotect()
+
+```csharp
+public void Unprotect()
+```
+
+Removes the workbook's protection and its password, as Excel's Unprotect Workbook does once the password is given.
 
 ---
 
@@ -3378,6 +4186,15 @@ public string Name { get; }
 
 The sheet name.
 
+<a id="protection"></a>
+### Protection
+
+```csharp
+public SheetProtection? Protection { get; }
+```
+
+What users may still do on the sheet when it is protected; null when it is not protected.
+
 <a id="showgridlines"></a>
 ### ShowGridlines
 
@@ -3395,6 +4212,15 @@ public CellRange? UsedRange { get; }
 ```
 
 The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.
+
+<a id="validations"></a>
+### Validations
+
+```csharp
+public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
+```
+
+The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
 
 <a id="workbook"></a>
 ### Workbook
@@ -3444,6 +4270,45 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 **Exceptions**
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
+
+<a id="addvalidation-string-datavalidation"></a>
+### AddValidation(string, DataValidation)
+
+```csharp
+public void AddValidation(string range, DataValidation validation)
+```
+
+Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+
+**Parameters**
+
+- `range`: The cells, such as `B2:B10`.
+- `validation`: The rule.
+
+**Exceptions**
+
+- `ArgumentNullException`: The validation is null.
+- `ArgumentException`: The range is not an A1 range; or a rule other than [ValidationType.Any](SharpCell.ValidationType.md#any) has no [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); or a comparing rule (whole number, decimal, date, time, text length) with [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) or [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween) has no [DataValidation.Formula2](SharpCell.DataValidation.md#formula2).
+- `FormulaParseException`: A formula cannot be parsed; nothing is added.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
+
+<a id="clearvalidation-string"></a>
+### ClearValidation(string)
+
+```csharp
+public void ClearValidation(string range)
+```
+
+Takes the cells of a range out of every data validation rule; a rule left without cells is removed. A rule that loses its first cell keeps its formulas relative to its new first cell, so every remaining cell is checked as before.
+
+**Parameters**
+
+- `range`: The cells, such as `A1:Z100`.
+
+**Exceptions**
+
+- `ArgumentException`: The range is not an A1 range.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
 <a id="columnwidth-int"></a>
 ### ColumnWidth(int)
@@ -3525,7 +4390,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 public void InsertRows(int row, int count = 1)
 ```
 
-Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells, tables and data validation below move down, and every reference to them follows: in formulas of every sheet, in defined names and in data validation. A range that spans the new rows grows; a table, merged area or validated range they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -3564,6 +4429,64 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loaddatatable-string-datatable-bool"></a>
+### LoadDataTable(string, DataTable, bool)
+
+```csharp
+public CellRange LoadDataTable(string topLeft, DataTable table, bool headers = true)
+```
+
+Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [`Worksheet.LoadRows<T>`](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
+
+**Parameters**
+
+- `topLeft`: The cell of the first header (or of the first value without headers), such as `B2`.
+- `table`: The table to write; it needs at least one column.
+- `headers`: `true` to write the column names as a header row first.
+
+**Returns:** The range written, header row included.
+
+**Exceptions**
+
+- `ArgumentNullException`: An argument is null.
+- `ArgumentException`: The table has no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).
+- `ArgumentOutOfRangeException`: The data runs past the last row or column, or a date is before the date system starts.
+
+<a id="loadrows-string-ienumerable-t-string-func-t-object"></a>
+### LoadRows<T>(string, IEnumerable<T>, (string, Func<T, object>)[])
+
+```csharp
+public CellRange LoadRows<T>(string topLeft, IEnumerable<T> rows, params (string Header, Func<T, object?> Value)[] columns)
+```
+
+Writes a header row and then one row per item of a collection, starting at a cell, and returns the range written (the header row included). The collection is enumerated once and nothing is written unless every value could be converted. Columns are lambdas, so no reflection is needed.
+
+Values are converted like this:
+
+- `null` and `DBNull` are empty and clear the cell; a [CellValue](SharpCell.CellValue.md) is stored as it is.
+- A `String` or `Char` is text, never a formula: `"=1+1"` stays text.
+- A `Boolean` is a logical value.
+- Every integer type, `Single`, `Double` and `Decimal` is a number; NaN and infinities are rejected.
+- A `DateTime` is a date serial in the workbook's date system, shown in the culture's short date and, with a time of day, hours and minutes. `DateOnly` is a date at midnight; `DateTimeOffset` is the clock time it states.
+- A `TimeOnly` is a fraction of a day with a time format; a `TimeSpan` is a number of days shown as `[h]:mm:ss`.
+- An enum is its name; anything else is its `IFormattable` text in the workbook's culture, or its `ToString()`.
+
+Number cells keep the format they had; date and time cells take a format.
+
+**Parameters**
+
+- `topLeft`: The cell of the first header, such as `B2`.
+- `rows`: The items; one row each.
+- `columns`: The header of each column and how to get its value from an item.
+
+**Returns:** The range written, header row included.
+
+**Exceptions**
+
+- `ArgumentNullException`: An argument or a header is null.
+- `ArgumentException`: There are no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).
+- `ArgumentOutOfRangeException`: The data runs past the last row or column, or a date is before the date system starts.
+
 <a id="merge-string"></a>
 ### Merge(string)
 
@@ -3576,6 +4499,20 @@ Merges a range of at least two cells into one, as Excel shows it: the top-left c
 **Exceptions**
 
 - `ArgumentException`: The address is not a range of two cells or more, or it overlaps a merged area.
+
+<a id="protect-string-sheetprotection"></a>
+### Protect(string, SheetProtection)
+
+```csharp
+public void Protect(string? password = null, SheetProtection? allow = null)
+```
+
+Protects the sheet as Excel's Protect Sheet does: Excel then refuses changes to locked cells and allows only the actions `allow` names. SharpCell itself does not enforce protection: code may still change the sheet, as Excel's object model may with the password. Protecting a protected sheet replaces its protection and password.
+
+**Parameters**
+
+- `password`: The password Excel asks for to unprotect the sheet, or null (or empty) for none. Only its hash is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+- `allow`: What users may still do; null for Excel's defaults, selecting cells only.
 
 <a id="range-string"></a>
 ### Range(string)
@@ -3676,6 +4613,15 @@ Undoes a merge; the address must be exactly a merged area.
 **Exceptions**
 
 - `ArgumentException`: The address is not a merged area.
+
+<a id="unprotect"></a>
+### Unprotect()
+
+```csharp
+public void Unprotect()
+```
+
+Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.
 
 ---
 

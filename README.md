@@ -41,7 +41,7 @@ workbook.Recalculate();
 CellValue result = sheet["A2"].Value;   // 6
 ```
 
-A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `SharpCell.Xlsx` reads `.xlsx` and `.xlsm` files (not `.xls` or `.xlsb`) saves them with your changes, and creates new ones ([Saving .xlsx files](docs/guides/saving.md)).
+A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `SharpCell.Xlsx` reads `.xlsx` and `.xlsm` files (not `.xls` or `.xlsb`) saves them with your changes, and creates new ones, with data from objects or a `DataTable`, hyperlinks, data validation and protection ([Saving .xlsx files](docs/guides/saving.md)).
 
 ## Documentation
 
@@ -49,6 +49,7 @@ A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `
 - [Tables and hidden rows](docs/guides/tables.md): structured references, tables from files and code, SUBTOTAL and filters.
 - [Custom functions](docs/guides/custom-functions.md): functions written in C# that formulas call, in place of VBA or add-ins.
 - [Recalculation](docs/guides/recalculation.md): changed cells, precedents and dependents, cloning a template per request.
+- [Roadmap](docs/roadmap.md): what was released and what comes next.
 - [What matches Excel](docs/compatibility.md), also as [JSON](docs/compatibility.json).
 - [For AI coding agents](docs/agents.md): `llms.txt`, `llms-full.txt` and rules to paste into your agent's instructions.
 

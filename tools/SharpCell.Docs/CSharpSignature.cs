@@ -70,7 +70,7 @@ internal static class CSharpSignature
         MethodInfo { Name: "op_Implicit" or "op_Explicit" } conversion =>
             $"{(conversion.Name == "op_Implicit" ? "implicit" : "explicit")} operator {TypeName(conversion.ReturnType)}({ParameterTypes(conversion.GetParameters())})",
         MethodInfo method when Operators.TryGetValue(method.Name, out var symbol) => $"operator {symbol}({ParameterTypes(method.GetParameters())})",
-        MethodInfo method => $"{method.Name}({ParameterTypes(method.GetParameters())})",
+        MethodInfo method => $"{method.Name}{TypeParameters(method)}({ParameterTypes(method.GetParameters())})",
         PropertyInfo property when property.GetIndexParameters().Length > 0 => $"this[{ParameterTypes(property.GetIndexParameters())}]",
         _ => member.Name,
     };
@@ -88,23 +88,50 @@ internal static class CSharpSignature
         return Slug(string.Join(" ", parameters.Select(p => TypeName(p.ParameterType)).Prepend(name)));
     }
 
-    public static string TypeName(Type type, NullabilityInfo? nullability = null)
+    // The names of tuple elements in the order the compiler records them (TupleElementNamesAttribute):
+    // a tuple takes its elements' names where it is met, before the tuples inside it.
+    private sealed class TupleNames(IList<string?> names)
     {
+        private int _next;
+
+        public string? Take() => _next < names.Count ? names[_next++] : null;
+    }
+
+    private static bool IsTuple(Type type) =>
+        type.IsGenericType && type.GetGenericTypeDefinition().FullName?.StartsWith("System.ValueTuple`", StringComparison.Ordinal) == true;
+
+    private static TupleNames? NamesOf(ICustomAttributeProvider? provider) =>
+        (provider as MemberInfo)?.GetCustomAttribute<TupleElementNamesAttribute>() is { } attribute ? new TupleNames(attribute.TransformNames)
+        : (provider as ParameterInfo)?.GetCustomAttribute<TupleElementNamesAttribute>() is { } parameter ? new TupleNames(parameter.TransformNames)
+        : null;
+
+    public static string TypeName(Type type, NullabilityInfo? nullability = null) => TypeName(type, nullability, null);
+
+    private static string TypeName(Type type, NullabilityInfo? nullability, TupleNames? tupleNames)
+    {
+        if (type.IsGenericParameter)
+            return type.Name;
         if (type.IsByRef)
-            return TypeName(type.GetElementType()!, nullability);
+            return TypeName(type.GetElementType()!, nullability, tupleNames);
         if (Nullable.GetUnderlyingType(type) is { } underlying)
             return TypeName(underlying) + "?";
 
         string name;
         if (type.IsArray)
-            name = TypeName(type.GetElementType()!, nullability?.ElementType) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
+            name = TypeName(type.GetElementType()!, nullability?.ElementType, tupleNames) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
         else if (Keywords.TryGetValue(type, out var keyword))
             name = keyword;
+        else if (IsTuple(type))
+        {
+            var names = type.GetGenericArguments().Select(_ => tupleNames?.Take()).ToList();
+            name = "(" + string.Join(", ", type.GetGenericArguments().Select((a, i) =>
+                TypeName(a, nullability?.GenericTypeArguments.ElementAtOrDefault(i), tupleNames) + (names[i] is { } n ? " " + n : ""))) + ")";
+        }
         else if (type.IsGenericType)
         {
             var arguments = type.GetGenericArguments();
             name = type.Name[..type.Name.IndexOf('`', StringComparison.Ordinal)] + "<"
-                + string.Join(", ", arguments.Select((a, i) => TypeName(a, nullability?.GenericTypeArguments.ElementAtOrDefault(i)))) + ">";
+                + string.Join(", ", arguments.Select((a, i) => TypeName(a, nullability?.GenericTypeArguments.ElementAtOrDefault(i), tupleNames))) + ">";
         }
         else
             name = type.Name;
@@ -119,10 +146,10 @@ internal static class CSharpSignature
         var parameters = Parameters(method.GetParameters(), method.IsDefined(typeof(ExtensionAttribute), false));
         if (method.Name is "op_Implicit" or "op_Explicit")
             return $"{modifiers}{(method.Name == "op_Implicit" ? "implicit" : "explicit")} operator {TypeName(method.ReturnType)}({parameters})";
-        var returns = TypeName(method.ReturnType, Nullability.Create(method.ReturnParameter));
+        var returns = TypeName(method.ReturnType, Nullability.Create(method.ReturnParameter), NamesOf(method.ReturnParameter));
         return Operators.TryGetValue(method.Name, out var symbol)
             ? $"{modifiers}{returns} operator {symbol}({parameters})"
-            : $"{modifiers}{returns} {method.Name}({parameters})";
+            : $"{modifiers}{returns} {method.Name}{TypeParameters(method)}({parameters})";
     }
 
     private static string Property(PropertyInfo property)
@@ -148,7 +175,9 @@ internal static class CSharpSignature
     private static string Parameter(ParameterInfo parameter)
     {
         var prefix = parameter.IsOut ? "out " : parameter.ParameterType.IsByRef ? "ref " : "";
-        var text = $"{prefix}{TypeName(parameter.ParameterType, Nullability.Create(parameter))} {parameter.Name}";
+        if (parameter.IsDefined(typeof(ParamArrayAttribute), false))
+            prefix = "params ";
+        var text = $"{prefix}{TypeName(parameter.ParameterType, Nullability.Create(parameter), NamesOf(parameter))} {parameter.Name}";
         return parameter.HasDefaultValue ? text + " = " + DefaultValue(parameter) : text;
     }
 
@@ -161,6 +190,9 @@ internal static class CSharpSignature
         IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
         var other => other.ToString() ?? "default",
     };
+
+    private static string TypeParameters(MethodInfo method) =>
+        method.IsGenericMethodDefinition ? "<" + string.Join(", ", method.GetGenericArguments().Select(a => a.Name)) + ">" : "";
 
     private static string ParameterTypes(ParameterInfo[] parameters) => string.Join(", ", parameters.Select(p => TypeName(p.ParameterType)));
 

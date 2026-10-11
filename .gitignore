@@ -6,3 +6,4 @@ obj/
 BenchmarkDotNet.Artifacts/
 .claude/worktrees/
 artifacts/
+.DS_Store

@@ -25,7 +25,7 @@ public class CellStyleReaderTests
             <border><left/><right/><top/><bottom/><diagonal/></border>
             <border><left style="thin"><color indexed="64"/></left><right style="medium"><color rgb="FF0000FF"/></right><top style="dashDotDot"/><bottom style="double"><color auto="1"/></bottom><diagonal/></border>
           </borders>
-          <cellXfs count="7">
+          <cellXfs count="10">
             <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
             <xf numFmtId="4" fontId="1" fillId="2" borderId="1"/>
             <xf numFmtId="0" fontId="2" fillId="1" borderId="0"><alignment horizontal="center" vertical="top" wrapText="1" indent="3"/></xf>
@@ -33,6 +33,9 @@ public class CellStyleReaderTests
             <xf numFmtId="0" fontId="9" fillId="9" borderId="9"><alignment horizontal="nonsense" indent="999"/></xf>
             <xf numFmtId="0" fontId="0" fillId="4" borderId="0"/>
             <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+            <xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyProtection="1"><protection locked="0"/></xf>
+            <xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyProtection="1"><protection hidden="1"/></xf>
+            <xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyAlignment="1" applyProtection="1"><alignment horizontal="left"/><protection locked="0" hidden="1"/></xf>
           </cellXfs>
         </styleSheet>
         """;
@@ -104,6 +107,22 @@ public class CellStyleReaderTests
         Assert.Equal(3, style.Indent);
         Assert.Equal(CellHorizontalAlignment.CenterContinuous, StyleOf(3).HorizontalAlignment);
         Assert.Equal(CellVerticalAlignment.Center, StyleOf(3).VerticalAlignment);
+    }
+
+    [Fact]
+    public void Protection_is_read_and_defaults_to_locked_and_visible()
+    {
+        Assert.True(StyleOf(0).Locked);
+        Assert.False(StyleOf(0).FormulaHidden);
+        Assert.False(StyleOf(7).Locked);
+        Assert.False(StyleOf(7).FormulaHidden);
+        Assert.True(StyleOf(8).Locked);
+        Assert.True(StyleOf(8).FormulaHidden);
+        var both = StyleOf(9);
+        Assert.False(both.Locked);
+        Assert.True(both.FormulaHidden);
+        Assert.Equal(CellHorizontalAlignment.Left, both.HorizontalAlignment);
+        Assert.Equal(CellStyle.Default, StyleOf(0) with { Font = CellFont.Default });
     }
 
     [Fact]

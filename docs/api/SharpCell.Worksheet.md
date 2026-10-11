@@ -100,6 +100,15 @@ public string Name { get; }
 
 The sheet name.
 
+<a id="protection"></a>
+### Protection
+
+```csharp
+public SheetProtection? Protection { get; }
+```
+
+What users may still do on the sheet when it is protected; null when it is not protected.
+
 <a id="showgridlines"></a>
 ### ShowGridlines
 
@@ -117,6 +126,15 @@ public CellRange? UsedRange { get; }
 ```
 
 The smallest range holding every non-empty cell of the sheet; null when the sheet is empty.
+
+<a id="validations"></a>
+### Validations
+
+```csharp
+public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
+```
+
+The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
 
 <a id="workbook"></a>
 ### Workbook
@@ -166,6 +184,45 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 **Exceptions**
 
 - `ArgumentException`: The name is not valid or is taken, the range is not an area, overlaps another table or has no row for data.
+
+<a id="addvalidation-string-datavalidation"></a>
+### AddValidation(string, DataValidation)
+
+```csharp
+public void AddValidation(string range, DataValidation validation)
+```
+
+Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+
+**Parameters**
+
+- `range`: The cells, such as `B2:B10`.
+- `validation`: The rule.
+
+**Exceptions**
+
+- `ArgumentNullException`: The validation is null.
+- `ArgumentException`: The range is not an A1 range; or a rule other than [ValidationType.Any](SharpCell.ValidationType.md#any) has no [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); or a comparing rule (whole number, decimal, date, time, text length) with [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) or [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween) has no [DataValidation.Formula2](SharpCell.DataValidation.md#formula2).
+- `FormulaParseException`: A formula cannot be parsed; nothing is added.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
+
+<a id="clearvalidation-string"></a>
+### ClearValidation(string)
+
+```csharp
+public void ClearValidation(string range)
+```
+
+Takes the cells of a range out of every data validation rule; a rule left without cells is removed. A rule that loses its first cell keeps its formulas relative to its new first cell, so every remaining cell is checked as before.
+
+**Parameters**
+
+- `range`: The cells, such as `A1:Z100`.
+
+**Exceptions**
+
+- `ArgumentException`: The range is not an A1 range.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
 <a id="columnwidth-int"></a>
 ### ColumnWidth(int)
@@ -247,7 +304,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 public void InsertRows(int row, int count = 1)
 ```
 
-Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells, tables and data validation below move down, and every reference to them follows: in formulas of every sheet, in defined names and in data validation. A range that spans the new rows grows; a table, merged area or validated range they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -286,6 +343,64 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loaddatatable-string-datatable-bool"></a>
+### LoadDataTable(string, DataTable, bool)
+
+```csharp
+public CellRange LoadDataTable(string topLeft, DataTable table, bool headers = true)
+```
+
+Writes the rows of a `DataTable` starting at a cell, optionally under a header row of its column names, and returns the range written. Nothing is written unless every value could be converted. `DBNull` is an empty cell; other values are converted as [`Worksheet.LoadRows<T>`](SharpCell.Worksheet.md#loadrows-string-ienumerable-t-string-func-t-object) does.
+
+**Parameters**
+
+- `topLeft`: The cell of the first header (or of the first value without headers), such as `B2`.
+- `table`: The table to write; it needs at least one column.
+- `headers`: `true` to write the column names as a header row first.
+
+**Returns:** The range written, header row included.
+
+**Exceptions**
+
+- `ArgumentNullException`: An argument is null.
+- `ArgumentException`: The table has no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).
+- `ArgumentOutOfRangeException`: The data runs past the last row or column, or a date is before the date system starts.
+
+<a id="loadrows-string-ienumerable-t-string-func-t-object"></a>
+### LoadRows<T>(string, IEnumerable<T>, (string, Func<T, object>)[])
+
+```csharp
+public CellRange LoadRows<T>(string topLeft, IEnumerable<T> rows, params (string Header, Func<T, object?> Value)[] columns)
+```
+
+Writes a header row and then one row per item of a collection, starting at a cell, and returns the range written (the header row included). The collection is enumerated once and nothing is written unless every value could be converted. Columns are lambdas, so no reflection is needed.
+
+Values are converted like this:
+
+- `null` and `DBNull` are empty and clear the cell; a [CellValue](SharpCell.CellValue.md) is stored as it is.
+- A `String` or `Char` is text, never a formula: `"=1+1"` stays text.
+- A `Boolean` is a logical value.
+- Every integer type, `Single`, `Double` and `Decimal` is a number; NaN and infinities are rejected.
+- A `DateTime` is a date serial in the workbook's date system, shown in the culture's short date and, with a time of day, hours and minutes. `DateOnly` is a date at midnight; `DateTimeOffset` is the clock time it states.
+- A `TimeOnly` is a fraction of a day with a time format; a `TimeSpan` is a number of days shown as `[h]:mm:ss`.
+- An enum is its name; anything else is its `IFormattable` text in the workbook's culture, or its `ToString()`.
+
+Number cells keep the format they had; date and time cells take a format.
+
+**Parameters**
+
+- `topLeft`: The cell of the first header, such as `B2`.
+- `rows`: The items; one row each.
+- `columns`: The header of each column and how to get its value from an item.
+
+**Returns:** The range written, header row included.
+
+**Exceptions**
+
+- `ArgumentNullException`: An argument or a header is null.
+- `ArgumentException`: There are no columns, the address is not a cell, or a value cannot be stored (NaN, infinity).
+- `ArgumentOutOfRangeException`: The data runs past the last row or column, or a date is before the date system starts.
+
 <a id="merge-string"></a>
 ### Merge(string)
 
@@ -298,6 +413,20 @@ Merges a range of at least two cells into one, as Excel shows it: the top-left c
 **Exceptions**
 
 - `ArgumentException`: The address is not a range of two cells or more, or it overlaps a merged area.
+
+<a id="protect-string-sheetprotection"></a>
+### Protect(string, SheetProtection)
+
+```csharp
+public void Protect(string? password = null, SheetProtection? allow = null)
+```
+
+Protects the sheet as Excel's Protect Sheet does: Excel then refuses changes to locked cells and allows only the actions `allow` names. SharpCell itself does not enforce protection: code may still change the sheet, as Excel's object model may with the password. Protecting a protected sheet replaces its protection and password.
+
+**Parameters**
+
+- `password`: The password Excel asks for to unprotect the sheet, or null (or empty) for none. Only its hash is kept, made as Excel makes it (SHA-512, a random salt, 100,000 spins); it cannot be read back.
+- `allow`: What users may still do; null for Excel's defaults, selecting cells only.
 
 <a id="range-string"></a>
 ### Range(string)
@@ -398,3 +527,12 @@ Undoes a merge; the address must be exactly a merged area.
 **Exceptions**
 
 - `ArgumentException`: The address is not a merged area.
+
+<a id="unprotect"></a>
+### Unprotect()
+
+```csharp
+public void Unprotect()
+```
+
+Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.

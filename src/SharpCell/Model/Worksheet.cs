@@ -213,7 +213,7 @@ public sealed partial class Worksheet
 
     private bool _filterMode;
 
-    /// <summary>Copies the cells, hidden rows and filter mode of a sheet of another workbook into this new sheet.</summary>
+    /// <summary>Copies the cells, hidden rows, filter mode, presentation and validation rules of a sheet of another workbook into this new sheet.</summary>
     internal void CopyFrom(Worksheet source, Func<Worksheet, Worksheet> map)
     {
         Store.CopyFrom(source.Store, data => data.CopyFor(map));
@@ -223,6 +223,7 @@ public sealed partial class Worksheet
         _filterMode = source._filterMode;
         _edits.AddRange(source._edits);
         CopyPresentationFrom(source);
+        CopyValidationsFrom(source);
     }
 
     private static void CheckRow(int row)

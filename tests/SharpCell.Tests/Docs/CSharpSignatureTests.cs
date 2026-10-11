@@ -68,4 +68,13 @@ public class CSharpSignatureTests
             CSharpSignature.Anchor(typeof(CellValue).GetMethod("op_Inequality")!));
         Assert.Equal("Workbook()", CSharpSignature.Heading(typeof(Workbook).GetConstructor(Type.EmptyTypes)!));
     }
+
+    [Fact]
+    public void A_generic_method_shows_its_type_parameters_params_and_tuple_names()
+    {
+        var method = typeof(Worksheet).GetMethod("LoadRows")!;
+        Assert.Equal("public CellRange LoadRows<T>(string topLeft, IEnumerable<T> rows, params (string Header, Func<T, object?> Value)[] columns)",
+            CSharpSignature.Of(method));
+        Assert.Equal("LoadRows<T>(string, IEnumerable<T>, (string, Func<T, object>)[])", CSharpSignature.Heading(method));
+    }
 }

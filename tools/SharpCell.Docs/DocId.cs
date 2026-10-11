@@ -11,7 +11,7 @@ internal static class DocId
     {
         Type type => "T:" + Name(type),
         ConstructorInfo constructor => $"M:{Name(constructor.DeclaringType!)}.#ctor{Parameters(constructor.GetParameters())}",
-        MethodInfo method => $"M:{Name(method.DeclaringType!)}.{method.Name}{Parameters(method.GetParameters())}"
+        MethodInfo method => $"M:{Name(method.DeclaringType!)}.{method.Name}{(method.IsGenericMethodDefinition ? "``" + method.GetGenericArguments().Length : "")}{Parameters(method.GetParameters())}"
             + (method.Name is "op_Implicit" or "op_Explicit" ? "~" + Name(method.ReturnType) : ""),
         PropertyInfo property => $"P:{Name(property.DeclaringType!)}.{property.Name}{Parameters(property.GetIndexParameters())}",
         FieldInfo field => $"F:{Name(field.DeclaringType!)}.{field.Name}",
@@ -24,6 +24,9 @@ internal static class DocId
 
     private static string Name(Type type)
     {
+        // A type parameter is numbered: `n for the type's, ``n for the method's.
+        if (type.IsGenericParameter)
+            return (type.DeclaringMethod is not null ? "``" : "`") + type.GenericParameterPosition;
         if (type.IsByRef)
             return Name(type.GetElementType()!) + "@";
         if (type.IsArray)

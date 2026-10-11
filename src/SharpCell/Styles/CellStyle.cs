@@ -3,7 +3,7 @@ using System;
 namespace SharpCell;
 
 /// <summary>
-/// How a cell looks in Excel: font, fill, borders and alignment. The number format is not part of
+/// How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden). The number format is not part of
 /// it; see <see cref="Cell.NumberFormat"/>. Styles play no part in calculation. A record: styles
 /// compare by value, and <c>with</c> makes a changed copy, such as
 /// <c>style with { Fill = CellColor.FromRgb(0xFFFF00) }</c>.
@@ -54,6 +54,15 @@ public sealed record CellStyle
 
     /// <summary>Whether text wraps onto more lines inside the cell.</summary>
     public bool WrapText { get; init; }
+
+    /// <summary>
+    /// Whether the cell is locked: it cannot be changed while its sheet is protected
+    /// (see <see cref="Worksheet.Protect"/>). Excel's default is true; set false for input cells.
+    /// </summary>
+    public bool Locked { get; init; } = true;
+
+    /// <summary>Whether the cell's formula is hidden from the formula bar while its sheet is protected.</summary>
+    public bool FormulaHidden { get; init; }
 
     /// <summary>The indent, in steps of the width of three characters of the default font; 0 to 250.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The indent is outside 0 to 250.</exception>

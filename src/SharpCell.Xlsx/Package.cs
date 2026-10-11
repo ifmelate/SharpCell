@@ -6,8 +6,8 @@ using System.Xml;
 
 namespace SharpCell.Xlsx;
 
-/// <summary>A relationship from one part to another; targets are resolved to part names.</summary>
-internal sealed record Relationship(string Id, string Type, string Target)
+/// <summary>A relationship from one part to another; targets are resolved to part names, except external ones (a web address, a file path), which stay as written.</summary>
+internal sealed record Relationship(string Id, string Type, string Target, bool IsExternal = false)
 {
     /// <summary>Relationship types differ between transitional and strict files only in their base URI.</summary>
     public bool Is(string kind) => Type.EndsWith("/" + kind, StringComparison.Ordinal);
@@ -112,8 +112,8 @@ internal sealed class Package : IDisposable
         return XmlReader.Create(Open(part), settings);
     }
 
-    /// <summary>The relationships of a part (or of the package for ""), keyed by id. External targets are left out.</summary>
-    public Dictionary<string, Relationship> ReadRelationships(string part)
+    /// <summary>The relationships of a part (or of the package for ""), keyed by id. External targets are left out unless <paramref name="includeExternal"/>.</summary>
+    public Dictionary<string, Relationship> ReadRelationships(string part, bool includeExternal = false)
     {
         var slash = part.LastIndexOf('/');
         var folder = slash < 0 ? "" : part[..(slash + 1)];
@@ -127,7 +127,8 @@ internal sealed class Package : IDisposable
         {
             if (reader.NodeType != XmlNodeType.Element || reader.LocalName != "Relationship")
                 continue;
-            if (reader.GetAttribute("TargetMode") is { } mode && mode.Equals("External", StringComparison.OrdinalIgnoreCase))
+            var external = reader.GetAttribute("TargetMode") is { } mode && mode.Equals("External", StringComparison.OrdinalIgnoreCase);
+            if (external && !includeExternal)
                 continue;
 
             var id = reader.GetAttribute("Id");
@@ -135,7 +136,7 @@ internal sealed class Package : IDisposable
             var target = reader.GetAttribute("Target");
             if (id is null || type is null || target is null)
                 continue;
-            result[id] = new Relationship(id, type, ResolveTarget(folder, target));
+            result[id] = new Relationship(id, type, external ? target : ResolveTarget(folder, target), external);
         }
 
         return result;

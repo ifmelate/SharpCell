@@ -16,6 +16,7 @@ returns the uploaded file unchanged, without results.)
 | `spill-blocked.xlsx` | a spill reference (`A3#`) to an anchor whose spill a typed value blocks is `#SPILL!`, not `#REF!` (see below) |
 | `filter-mode.xlsx` | a sheet with a table filter, a sheet filter, a filter that hides nothing, and no filter: on a sheet with any filter criteria, every hidden row counts as filtered |
 | `number-formats.xlsx` | `TEXT(value, code)` next to the same value shown through a cell style with that code: `Cell.Text` of column C must equal Excel's saved `TEXT` result in column B (Excel saves no display text) |
+| `protection.xlsx` | the SHA-512 sheet protection hash Excel writes for the password `sharpcell` (see below) |
 
 The same check run on `../excel/tables.xlsx` with its results removed reproduced all 212
 results saved by desktop Excel.
@@ -33,3 +34,8 @@ without repairing it, and every formula and value matched what SharpCell saved, 
 `XlsxWriterExcelWebTests` builds the same workbooks again and compares them with these copies.
 Excel for the web rewrote the theme's cached system colour and rounded some column widths and row
 heights; neither is compared.
+
+`protection.xlsx` was made on 2026-10-11 by protecting the sheet of an empty workbook in Excel for the
+web with the password `sharpcell` (Review > Manage Protection, default options) and saving it with
+Download a Copy. `XlsxWriterProtectionTests` checks that SharpCell verifies the password against
+the `hashValue`, `saltValue` and `spinCount` Excel wrote.

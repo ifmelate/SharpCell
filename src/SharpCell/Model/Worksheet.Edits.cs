@@ -16,10 +16,11 @@ public sealed partial class Worksheet
 
     /// <summary>
     /// Inserts empty rows before <paramref name="row"/>, as Excel's Insert Sheet Rows does. Cells,
-    /// styles, row heights, hidden rows, merged cells and tables below move down, and every
-    /// reference to them follows: in formulas of every sheet and in defined names. A range that
-    /// spans the new rows grows; a table or merged area they are inserted into grows. Every formula
-    /// is calculated again at the next <see cref="Workbook.Recalculate"/>.
+    /// styles, row heights, hidden rows, merged cells, tables and data validation below move down,
+    /// and every reference to them follows: in formulas of every sheet, in defined names and in
+    /// data validation. A range that spans the new rows grows; a table, merged area or validated
+    /// range they are inserted into grows. Every formula is calculated again at the next
+    /// <see cref="Workbook.Recalculate"/>.
     /// </summary>
     /// <param name="row">The row the new rows take the place of, from 1.</param>
     /// <param name="count">How many rows to insert.</param>
@@ -95,6 +96,18 @@ public sealed partial class Worksheet
                 throw new NotSupportedException($"The name '{name.Spelling}' has a formula SharpCell cannot read; its references would not follow the moved cells.");
         }
 
+        foreach (var sheet in Workbook.Sheets)
+        {
+            foreach (var rule in sheet.ValidationRules)
+            {
+                foreach (var formula in new[] { rule.F1, rule.F2 })
+                {
+                    if (formula is UnsupportedNode unsupported && (sheet == this || Mentions(unsupported.Text)))
+                        throw new NotSupportedException($"A validation rule on {sheet.Name}!{new CellRange(sheet, rule.Areas[0]).Address} has a formula SharpCell cannot read; its references would not follow the moved cells.");
+                }
+            }
+        }
+
         if (!edit.Delete)
         {
             var last = max - edit.Count;
@@ -102,7 +115,9 @@ public sealed partial class Worksheet
             var pushed = Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn)
                     .Any(cell => Index(cell.Row, cell.Column) > last && !(cell.Data.Formula is null && cell.Data.SpillAnchor is not null))
                 || _styles.Keys.Any(a => Index(a.Row, a.Column) > last)
-                || _formats.Keys.Any(a => Index(a.Row, a.Column) > last);
+                || _formats.Keys.Any(a => Index(a.Row, a.Column) > last)
+                || _hyperlinks.Keys.Any(a => Index(a.Row, a.Column) > last)
+                || _validations.Exists(rule => rule.Areas.Exists(a => Index(a.FirstRow, a.FirstColumn) > last));
             if (pushed)
                 throw new InvalidOperationException($"Content in the last {(edit.Rows ? "rows" : "columns")} would be pushed off the sheet.");
         }
@@ -189,9 +204,13 @@ public sealed partial class Worksheet
                 Workbook.Names.Set(new NameDefinition(name.Name, name.Spelling, "=" + FormulaPrinter.Print(formula, origin), formula, name.Scope));
         }
 
+        foreach (var sheet in Workbook.Sheets)
+            sheet.FollowEdit(this, edit);
+
         Store.Move((row, column) => Map(edit, row, column));
         MoveKeys(_styles, edit);
         MoveKeys(_formats, edit);
+        MoveKeys(_hyperlinks, edit);
         if (edit.Rows)
         {
             MoveIndexes(_rowHeights, edit, CellAddress.MaxRow);
