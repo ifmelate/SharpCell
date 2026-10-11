@@ -295,7 +295,7 @@ Inserts empty columns before `column`; see [Worksheet.InsertRows](SharpCell.Work
 public void InsertRows(int row, int count = 1)
 ```
 
-Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells and tables below move down, and every reference to them follows: in formulas of every sheet and in defined names. A range that spans the new rows grows; a table or merged area they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, styles, row heights, hidden rows, merged cells, tables and data validation below move down, and every reference to them follows: in formulas of every sheet, in defined names and in data validation. A range that spans the new rows grows; a table, merged area or validated range they are inserted into grows. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 

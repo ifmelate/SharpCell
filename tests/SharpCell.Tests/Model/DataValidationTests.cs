@@ -297,4 +297,136 @@ public class DataValidationTests
         sheet.ClearValidation("A1:A5");
         Assert.Empty(sheet.Validations);
     }
+
+    [Fact]
+    public void Validations_follow_deleted_rows()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("A5:A10", DataValidation.Custom("=A5>0"));
+
+        sheet.DeleteRows(1, 2);
+
+        var (range, validation) = Assert.Single(sheet.Validations);
+        Assert.Equal("A3:A8", range.Address);
+        Assert.Equal("=A3>0", validation.Formula1);
+        Assert.Equal(validation, sheet["A8"].Validation);
+        Assert.Null(sheet["A9"].Validation);
+
+        sheet.DeleteRows(3, 6);
+        Assert.Empty(sheet.Validations);
+    }
+
+    [Fact]
+    public void Clearing_the_first_cells_moves_the_formulas_with_the_rule()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("A5:A10", DataValidation.Custom("=A5>0"));
+        sheet.DeleteRows(1, 2);
+
+        sheet.ClearValidation("A3:A4");
+
+        var (range, validation) = Assert.Single(sheet.Validations);
+        Assert.Equal("A5:A8", range.Address);
+        Assert.Equal("=A5>0", validation.Formula1);
+    }
+
+    [Fact]
+    public void Inserted_columns_move_the_rule_and_the_list_it_takes_items_from()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("B1:B10", DataValidation.ListFrom("=$H$1:$H$5"));
+
+        sheet.InsertColumns(1);
+
+        var (range, validation) = Assert.Single(sheet.Validations);
+        Assert.Equal("C1:C10", range.Address);
+        Assert.Equal("=$I$1:$I$5", validation.Formula1);
+        Assert.Equal(ValidationType.List, validation.Type);
+        Assert.Null(sheet["B1"].Validation);
+    }
+
+    [Fact]
+    public void A_rule_naming_another_sheets_cells_follows_that_sheets_edits()
+    {
+        var workbook = new Workbook();
+        var form = workbook.AddSheet("Form");
+        var lists = workbook.AddSheet("Lists");
+        form.AddValidation("A1:A5", DataValidation.ListFrom("=Lists!$A$2:$A$4"));
+        form.AddValidation("B2:B5", DataValidation.Custom("=B2<Lists!C2"));
+
+        lists.InsertRows(1, 2);
+        lists.DeleteColumns(1);
+
+        Assert.Equal(["A1:A5", "B2:B5"], Listed(form).Select(v => v.Range));
+        Assert.Equal("=Lists!#REF!", form.Validations[0].Validation.Formula1);
+        Assert.Equal("=B2<Lists!B4", form.Validations[1].Validation.Formula1);
+    }
+
+    [Fact]
+    public void A_rule_whose_first_cells_are_deleted_still_checks_each_cell_as_before()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("A1:A10", DataValidation.Custom("=AND(A1>0,$C$9>A1)"));
+        sheet.AddValidationRule([new(1, 4, 2, 4), new(5, 6, 6, 6)], DataValidation.Custom("=D1<>\"\""));
+
+        sheet.DeleteRows(1, 2);
+
+        Assert.Equal(["A1:A8", "F3:F4"], Listed(sheet).Select(v => v.Range));
+        Assert.Equal("=AND(A1>0,$C$7>A1)", sheet.Validations[0].Validation.Formula1);
+        Assert.Equal("=F3<>\"\"", sheet.Validations[1].Validation.Formula1);
+    }
+
+    [Fact]
+    public void Rows_inserted_inside_a_rule_grow_it_and_rows_above_move_it()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("A2:A5", WholeNumberBetween(1, 10));
+        sheet.AddValidation("C2:C3", DataValidation.Custom("=C2>B2"));
+
+        sheet.InsertRows(3, 2);
+        Assert.Equal(["A2:A7", "C2:C5"], Listed(sheet).Select(v => v.Range));
+        Assert.Equal(WholeNumberBetween(1, 10), sheet.Validations[0].Validation);
+
+        sheet.InsertRows(1);
+        Assert.Equal(["A3:A8", "C3:C6"], Listed(sheet).Select(v => v.Range));
+        Assert.Equal("=C3>B3", sheet.Validations[1].Validation.Formula1);
+    }
+
+    [Fact]
+    public void A_rule_SharpCell_cannot_read_on_the_sheet_or_naming_it_blocks_edits()
+    {
+        var workbook = new Workbook();
+        var data = workbook.AddSheet("Data");
+        var other = workbook.AddSheet("Other");
+        data["A1"].Value = 1;
+        data.AddValidationRule([new(1, 2, 1, 2)], DataValidation.Custom("=SUM("));
+
+        Assert.Throws<NotSupportedException>(() => data.InsertRows(5));
+        Assert.Equal(["B1"], Listed(data).Select(v => v.Range));
+        other.InsertRows(1);
+
+        data.ClearValidation("B1");
+        other.AddValidationRule([new(1, 1, 1, 1)], DataValidation.Custom("=SUM(Data!A1"));
+        Assert.Throws<NotSupportedException>(() => data.DeleteColumns(3));
+        Assert.Equal(1, data["A1"].Value);
+
+        other.AddValidationRule([new(2, 1, 2, 1)], DataValidation.Custom("=SUM("));
+        other.ClearValidation("A1");
+        data.DeleteColumns(3);
+    }
+
+    [Fact]
+    public void A_rule_pushed_past_the_last_row_is_refused_but_a_whole_column_rule_is_cut()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("B1048576", DataValidation.List("x"));
+
+        Assert.Throws<InvalidOperationException>(() => sheet.InsertRows(1));
+        Assert.Equal(["B1048576"], Listed(sheet).Select(v => v.Range));
+
+        sheet.ClearValidation("B1048576");
+        sheet.AddValidation("A2:A1048576", DataValidation.List("y"));
+        sheet.InsertRows(1);
+        Assert.Equal(["A3:A1048576"], Listed(sheet).Select(v => v.Range));
+    }
 }

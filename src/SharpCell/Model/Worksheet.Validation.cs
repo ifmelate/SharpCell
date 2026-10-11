@@ -183,6 +183,60 @@ public sealed partial class Worksheet
         string? Print(FormulaNode? node) => node is null ? null : "=" + FormulaPrinter.Print(node, origin);
     }
 
+    // Rows or columns of a sheet were inserted or deleted. On that sheet the rules' cells move, a
+    // rule whose cells are all deleted is removed, and the formulas are moved to the rule's new first
+    // cell; on every sheet references into the edited sheet follow its cells, as in cell formulas.
+    internal void FollowEdit(Worksheet edited, SheetEdit edit)
+    {
+        for (var i = _validations.Count - 1; i >= 0; i--)
+        {
+            var rule = _validations[i];
+            if (edited != this)
+            {
+                _validations[i] = Shift(rule, rule.Origin, rule.Origin, edited, edit);
+                continue;
+            }
+
+            var areas = new List<Area>(rule.Areas.Count);
+            CellAddress? kept = null;
+            foreach (var area in rule.Areas)
+            {
+                if (edit.Map(area) is not { } moved)
+                    continue;
+                kept ??= FirstKept(area, edit);
+                areas.Add(moved);
+            }
+
+            if (areas.Count == 0)
+                _validations.RemoveAt(i);
+            else
+                _validations[i] = Shift(rule with { Areas = areas }, kept!.Value, new CellAddress(areas[0].FirstRow, areas[0].FirstColumn), edited, edit);
+        }
+    }
+
+    // The first cell of an area that the edit keeps: the one that becomes the area's first cell.
+    private static CellAddress FirstKept(Area area, SheetEdit edit)
+    {
+        var first = edit.Rows ? area.FirstRow : area.FirstColumn;
+        if (edit.Delete && first >= edit.At && first < edit.At + edit.Count)
+            first = edit.At + edit.Count;
+        return edit.Rows ? new CellAddress(first, area.FirstColumn) : new CellAddress(area.FirstRow, first);
+    }
+
+    // The rule's formulas moved by the edit. They are offsets from the rule's first cell, so they are
+    // read as the formulas of the cell that becomes the first cell (from), which moves to its new place
+    // (to): each remaining cell checks the same cells as before, wherever they went.
+    private ValidationRule Shift(ValidationRule rule, CellAddress from, CellAddress to, Worksheet edited, SheetEdit edit)
+    {
+        var f1 = rule.F1 is null ? null : ReferenceShift.Apply(rule.F1, this, from, to, edited, edit);
+        var f2 = rule.F2 is null ? null : ReferenceShift.Apply(rule.F2, this, from, to, edited, edit);
+        if (f1 == rule.F1 && f2 == rule.F2 && from == to)
+            return rule;
+        return rule with { Validation = rule.Validation.WithFormulas(Print(f1), Print(f2)), F1 = f1, F2 = f2 };
+
+        string? Print(FormulaNode? node) => node is null ? null : "=" + FormulaPrinter.Print(node, to);
+    }
+
     private void CopyValidationsFrom(Worksheet source)
     {
         foreach (var rule in source._validations)
