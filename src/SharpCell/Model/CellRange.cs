@@ -9,7 +9,7 @@ namespace SharpCell;
 /// A rectangle of cells on one sheet, such as <c>A1:C10</c>. Like a <see cref="Cell"/>, it is a
 /// handle: creating one allocates no cells.
 /// </summary>
-public sealed class CellRange : IEquatable<CellRange>
+public sealed partial class CellRange : IEquatable<CellRange>
 {
     internal CellRange(Worksheet worksheet, Area area)
     {

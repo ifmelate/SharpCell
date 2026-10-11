@@ -109,7 +109,19 @@ public sealed partial class Cell
         }
 
         var text = value.StartsWith('=') ? value : "=" + value;
-        var node = FormulaParser.Parse(text, new CellAddress(Row, Column));
+        SetFormula(text, FormulaParser.Parse(text, new CellAddress(Row, Column)), legacy);
+    }
+
+    /// <summary>Sets a formula already parsed for this cell.</summary>
+    /// <param name="text">The formula's text, starting with '='.</param>
+    /// <param name="node">The formula parsed for this cell.</param>
+    /// <param name="legacy">The formula predates dynamic arrays.</param>
+    internal void SetFormula(string text, FormulaNode node, bool legacy)
+    {
+        Worksheet.Workbook.ThrowIfInCustomFunction();
+        EnsureNotArrayMember();
+        var key = Key;
+        var calculation = Worksheet.Workbook.Calculation;
         calculation.BeforeChange(key, Worksheet.Store.Get(Row, Column));
         var data = Worksheet.Store.GetOrCreate(Row, Column);
         data.FormulaText = text;

@@ -77,6 +77,27 @@ The sheet the range is on.
 
 ## Methods
 
+<a id="copyto-cellrange"></a>
+### CopyTo(CellRange)
+
+```csharp
+public CellRange CopyTo(CellRange destination)
+```
+
+Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats and styles. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `destination`: Where to copy the cells to.
+
+**Returns:** The cells written to.
+
+**Exceptions**
+
+- `ArgumentException`: The copy would not fit on the sheet.
+- `InvalidOperationException`: A cell written to is part of an array formula other than its top-left cell.
+- `NotSupportedException`: The range holds part of an array formula (Ctrl+Shift+Enter), or a formula SharpCell cannot read (such as a link to another workbook), whose references could not be moved.
+
 <a id="equals-cellrange"></a>
 ### Equals(CellRange)
 
