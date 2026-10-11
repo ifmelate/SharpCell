@@ -195,7 +195,7 @@ public class AppGuideExamples
         // snippet: cells-copy
         sheet["B1"].Formula = "=A1*$A$1";
         sheet.Range("B1").CopyTo(sheet.Range("B2:B3"));   // B2 is =A2*$A$1, B3 is =A3*$A$1
-        sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats and styles
+        sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats, styles, links, validation
         workbook.Recalculate();
         // end-snippet
 

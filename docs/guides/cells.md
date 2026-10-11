@@ -218,14 +218,15 @@ sources in the file move with the cells too (see [Saving .xlsx files](saving.md)
 ```csharp snippet=cells-copy
 sheet["B1"].Formula = "=A1*$A$1";
 sheet.Range("B1").CopyTo(sheet.Range("B2:B3"));   // B2 is =A2*$A$1, B3 is =A3*$A$1
-sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats and styles
+sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats, styles, links, validation
 workbook.Recalculate();
 ```
 
 `CellRange.CopyTo` copies cells as copying and pasting them in Excel does: values, formulas,
-number formats and styles. Relative references in a formula keep their distance from its cell and
+number formats, styles, hyperlinks and data validation. Relative references in a formula keep their distance from its cell and
 absolute ones (`$A$1`) stay; a reference that would point past the sheet's edge becomes `#REF!`.
-Empty cells of the range clear the cells they land on. A destination that is a whole number of
+Data validation formulas keep their distance from each cell in the same way. Empty cells of
+the range clear the cells they land on, their validation and hyperlinks too. A destination that is a whole number of
 times as tall and as wide as the range is filled by repeating it, so one cell copied to `B2:B3`
 fills both; any other destination gets one copy at its top-left cell. The range and the
 destination may overlap, and the destination may be in another workbook, where formulas refer to

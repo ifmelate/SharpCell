@@ -192,11 +192,11 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 public void AddValidation(string range, DataValidation validation)
 ```
 
-Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell; for several ranges, to the first one's.
 
 **Parameters**
 
-- `range`: The cells, such as `B2:B10`.
+- `range`: The cells, such as `B2:B10`, or several ranges separated by spaces as Excel writes them, such as `B2:B10 D2:D10`.
 - `validation`: The rule.
 
 **Exceptions**
@@ -217,7 +217,7 @@ Takes the cells of a range out of every data validation rule; a rule left withou
 
 **Parameters**
 
-- `range`: The cells, such as `A1:Z100`.
+- `range`: The cells, such as `A1:Z100`, or several ranges separated by spaces.
 
 **Exceptions**
 

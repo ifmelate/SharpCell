@@ -519,14 +519,15 @@ sources in the file move with the cells too (see [Saving .xlsx files](saving.md)
 ```csharp snippet=cells-copy
 sheet["B1"].Formula = "=A1*$A$1";
 sheet.Range("B1").CopyTo(sheet.Range("B2:B3"));   // B2 is =A2*$A$1, B3 is =A3*$A$1
-sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats and styles
+sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats, styles, links, validation
 workbook.Recalculate();
 ```
 
 `CellRange.CopyTo` copies cells as copying and pasting them in Excel does: values, formulas,
-number formats and styles. Relative references in a formula keep their distance from its cell and
+number formats, styles, hyperlinks and data validation. Relative references in a formula keep their distance from its cell and
 absolute ones (`$A$1`) stay; a reference that would point past the sheet's edge becomes `#REF!`.
-Empty cells of the range clear the cells they land on. A destination that is a whole number of
+Data validation formulas keep their distance from each cell in the same way. Empty cells of
+the range clear the cells they land on, their validation and hyperlinks too. A destination that is a whole number of
 times as tall and as wide as the range is filled by repeating it, so one cell copied to `B2:B3`
 fills both; any other destination gets one copy at its top-left cell. The range and the
 destination may overlap, and the destination may be in another workbook, where formulas refer to
@@ -1925,7 +1926,7 @@ The sheet the range is on.
 public CellRange CopyTo(CellRange destination)
 ```
 
-Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats and styles. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats, styles, hyperlinks and data validation. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Data validation formulas keep their distance from each cell as cell formulas do. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -1937,7 +1938,7 @@ Copies the range's cells to another range, as copying and pasting them in Excel 
 
 - `ArgumentException`: The copy would not fit on the sheet.
 - `InvalidOperationException`: A cell written to is part of an array formula other than its top-left cell.
-- `NotSupportedException`: The range holds part of an array formula (Ctrl+Shift+Enter), or a formula SharpCell cannot read (such as a link to another workbook), whose references could not be moved.
+- `NotSupportedException`: The range holds part of an array formula (Ctrl+Shift+Enter), or a formula SharpCell cannot read (such as a link to another workbook), in a cell or a data validation rule, whose references could not be moved.
 
 <a id="equals-cellrange"></a>
 ### Equals(CellRange)
@@ -4308,11 +4309,11 @@ Makes a range a table that formulas can refer to by name, as in `Sales[Units]`. 
 public void AddValidation(string range, DataValidation validation)
 ```
 
-Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+Adds a data validation rule to a range. Cells of the range leave the rules they had, as in Excel, where a cell has one rule. The formulas are relative to the range's top-left cell; for several ranges, to the first one's.
 
 **Parameters**
 
-- `range`: The cells, such as `B2:B10`.
+- `range`: The cells, such as `B2:B10`, or several ranges separated by spaces as Excel writes them, such as `B2:B10 D2:D10`.
 - `validation`: The rule.
 
 **Exceptions**
@@ -4333,7 +4334,7 @@ Takes the cells of a range out of every data validation rule; a rule left withou
 
 **Parameters**
 
-- `range`: The cells, such as `A1:Z100`.
+- `range`: The cells, such as `A1:Z100`, or several ranges separated by spaces.
 
 **Exceptions**
 

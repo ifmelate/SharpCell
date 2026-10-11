@@ -10,7 +10,7 @@ public sealed partial class CellRange
 {
     /// <summary>
     /// Copies the range's cells to another range, as copying and pasting them in Excel does: values,
-    /// formulas, number formats and styles. A formula's relative references keep their distance
+    /// formulas, number formats, styles, hyperlinks and data validation. A formula's relative references keep their distance
     /// from its cell, so <c>=A1*2</c> in B1 becomes <c>=A2*2</c> in B2, and a reference that would
     /// point past the sheet's edge becomes <c>#REF!</c>. Empty cells of the range clear the cells
     /// they are copied to. When the destination is a whole number of times as tall and as wide as
@@ -18,7 +18,8 @@ public sealed partial class CellRange
     /// at the destination's. The cells are read before any is written, so the ranges may overlap.
     /// The destination can be in another workbook: formulas then refer to that workbook's sheets
     /// and names. A cell filled by a formula's spill is copied as its value, unless that formula is
-    /// copied too and spills again. Merged cells, column widths and row heights are not copied.
+    /// copied too and spills again. Data validation formulas keep their distance from each cell as
+    /// cell formulas do. Merged cells, column widths and row heights are not copied.
     /// Every formula reading the cells written is calculated again at the next
     /// <see cref="Workbook.Recalculate"/>.
     /// </summary>
@@ -27,7 +28,8 @@ public sealed partial class CellRange
     /// <exception cref="ArgumentException">The copy would not fit on the sheet.</exception>
     /// <exception cref="InvalidOperationException">A cell written to is part of an array formula other than its top-left cell.</exception>
     /// <exception cref="NotSupportedException">The range holds part of an array formula (Ctrl+Shift+Enter), or a formula
-    /// SharpCell cannot read (such as a link to another workbook), whose references could not be moved.</exception>
+    /// SharpCell cannot read (such as a link to another workbook), in a cell or a data validation rule,
+    /// whose references could not be moved.</exception>
     public CellRange CopyTo(CellRange destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
@@ -66,6 +68,8 @@ public sealed partial class CellRange
 
         var styles = Within(Worksheet.Styles, Area);
         var formats = Within(Worksheet.Formats, Area);
+        var links = Within(Worksheet.Hyperlinks, Area);
+        var validations = Worksheet.ValidationsIn(Area);
 
         var targetCalculation = target.Workbook.Calculation;
         foreach (var cell in target.Store.Enumerate(written.FirstRow, written.FirstColumn, written.LastRow, written.LastColumn))
@@ -74,16 +78,25 @@ public sealed partial class CellRange
                 throw new InvalidOperationException($"{new Cell(target, cell.Row, cell.Column)} is part of the array formula at {member}; change the whole array there.");
         }
 
+        var tiles = new List<Area>();
         for (var r = 0; r < down; r++)
         {
             for (var c = 0; c < across; c++)
             {
                 var top = to.FirstRow + r * Area.Rows;
                 var left = to.FirstColumn + c * Area.Columns;
-                Paste(target, new Area(top, left, top + Area.Rows - 1, left + Area.Columns - 1), cells, positions, styles, formats);
+                tiles.Add(new Area(top, left, top + Area.Rows - 1, left + Area.Columns - 1));
             }
         }
 
+        var rules = target.ValidationsPasted(validations, tiles);
+        foreach (var tile in tiles)
+        {
+            Paste(target, tile, cells, positions, styles, formats);
+            Replace(target.Hyperlinks, links, tile, target.SetHyperlink);
+        }
+
+        target.SetValidationRules(rules);
         return new CellRange(target, written);
     }
 
@@ -117,23 +130,22 @@ public sealed partial class CellRange
             }
         }
 
-        foreach (var address in Within(target.Styles, tile).Keys)
+        Replace(target.Styles, styles, tile, target.SetStyle);
+        Replace(target.Formats, formats, tile, target.SetFormat);
+    }
+
+    // What the cells of a tile have of their own, as styles, becomes what the copied cells had.
+    private static void Replace<T>(IReadOnlyDictionary<CellAddress, T> map, Dictionary<(int Row, int Column), T> copied, Area tile, Action<int, int, T?> set)
+        where T : class
+    {
+        foreach (var address in Within(map, tile).Keys)
         {
-            if (!styles.ContainsKey(address))
-                target.SetStyle(tile.FirstRow + address.Row, tile.FirstColumn + address.Column, null);
+            if (!copied.ContainsKey(address))
+                set(tile.FirstRow + address.Row, tile.FirstColumn + address.Column, null);
         }
 
-        foreach (var ((row, column), style) in styles)
-            target.SetStyle(tile.FirstRow + row, tile.FirstColumn + column, style);
-
-        foreach (var address in Within(target.Formats, tile).Keys)
-        {
-            if (!formats.ContainsKey(address))
-                target.SetFormat(tile.FirstRow + address.Row, tile.FirstColumn + address.Column, null);
-        }
-
-        foreach (var ((row, column), format) in formats)
-            target.SetFormat(tile.FirstRow + row, tile.FirstColumn + column, format);
+        foreach (var ((row, column), value) in copied)
+            set(tile.FirstRow + row, tile.FirstColumn + column, value);
     }
 
     // The entries of a map by cell that lie in an area, by their offset from its top-left cell.

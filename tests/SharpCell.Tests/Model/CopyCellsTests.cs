@@ -217,4 +217,64 @@ public class CopyCellsTests
         Assert.Equal(N(7), sheet["C1"].Value);
         Assert.Equal(N(2), sheet["A2"].Value);
     }
+
+    [Fact]
+    public void Hyperlinks_are_copied_and_cells_without_one_clear_theirs()
+    {
+        var (_, sheet) = NewSheet();
+        sheet["A1"].Hyperlink = new Hyperlink("https://example.com");
+        sheet["C2"].Hyperlink = new Hyperlink("#S!A1");
+
+        sheet.Range("A1:A2").CopyTo(sheet.Range("C1"));
+
+        Assert.Equal("https://example.com", sheet["C1"].Hyperlink?.Target);
+        Assert.Null(sheet["C2"].Hyperlink);
+    }
+
+    [Fact]
+    public void Data_validation_is_copied_with_its_formulas_following_the_cells()
+    {
+        var (_, sheet) = NewSheet();
+        sheet.AddValidation("A1:A2", DataValidation.List("Yes", "No"));
+        sheet.AddValidation("B1", DataValidation.Custom("=B1>A1"));
+        sheet.AddValidation("D1:D5", DataValidation.Custom("=D1<>0"));
+
+        sheet.Range("A1:B1").CopyTo(sheet.Range("C3:D4"));
+
+        Assert.Equal(DataValidation.List("Yes", "No"), sheet["C4"].Validation);
+        Assert.Equal("=D3>C3", sheet["D3"].Validation?.Formula1);
+        Assert.Equal("=D4>C4", sheet["D4"].Validation?.Formula1);
+        Assert.Equal("=D1<>0", sheet["D5"].Validation?.Formula1);
+        Assert.Equal(DataValidation.List("Yes", "No"), sheet["A2"].Validation);
+    }
+
+    [Fact]
+    public void Cells_without_validation_clear_it_where_they_are_copied()
+    {
+        var (_, sheet) = NewSheet();
+        sheet.AddValidation("B1:B3", DataValidation.List("Yes", "No"));
+
+        sheet.Range("A1").CopyTo(sheet.Range("B2"));
+
+        Assert.Null(sheet["B2"].Validation);
+        Assert.NotNull(sheet["B1"].Validation);
+        Assert.NotNull(sheet["B3"].Validation);
+    }
+
+    [Fact]
+    public void A_rule_over_several_ranges_is_added_as_Excel_writes_them()
+    {
+        var (_, sheet) = NewSheet();
+
+        sheet.AddValidation("B2:B3 D2:D3", DataValidation.Custom("=B2>0"));
+
+        Assert.Equal(["B2:B3", "D2:D3"], sheet.Validations.Select(v => v.Range.Address));
+        Assert.Same(sheet.Validations[0].Validation, sheet.Validations[1].Validation);
+
+        // Left with D3 alone, the rule's formula is written for D3, its new first cell.
+        sheet.ClearValidation("B2:B3 D2");
+        var (range, rule) = Assert.Single(sheet.Validations);
+        Assert.Equal("D3", range.Address);
+        Assert.Equal("=D3>0", rule.Formula1);
+    }
 }
