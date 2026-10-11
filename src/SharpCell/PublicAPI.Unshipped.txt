@@ -17,6 +17,7 @@ SharpCell.DataValidation
 SharpCell.DataValidation.AllowBlank.get -> bool
 SharpCell.DataValidation.AllowBlank.init -> void
 SharpCell.DataValidation.DataValidation() -> void
+SharpCell.DataValidation.DataValidation(SharpCell.DataValidation! source) -> void
 SharpCell.DataValidation.Equals(SharpCell.DataValidation? other) -> bool
 SharpCell.DataValidation.ErrorMessage.get -> string?
 SharpCell.DataValidation.ErrorMessage.init -> void

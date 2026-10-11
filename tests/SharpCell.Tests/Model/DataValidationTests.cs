@@ -64,6 +64,32 @@ public class DataValidationTests
     }
 
     [Fact]
+    public void A_copy_takes_the_rule_and_the_changes_of_its_initializer()
+    {
+        var rule = new DataValidation(DataValidation.List("Yes", "No")) { ErrorTitle = "Pick one", ErrorMessage = "Choose Yes or No." };
+
+        Assert.Equal(ValidationType.List, rule.Type);
+        Assert.Equal("=\"Yes,No\"", rule.Formula1);
+        Assert.Equal("Pick one", rule.ErrorTitle);
+        Assert.Equal("Choose Yes or No.", rule.ErrorMessage);
+    }
+
+    [Fact]
+    public void A_copy_without_changes_equals_its_source()
+    {
+        var source = new DataValidation
+        {
+            Type = ValidationType.Date, Operator = ValidationOperator.NotBetween, Formula1 = "=1", Formula2 = "=2",
+            AllowBlank = false, ShowDropDown = false, ShowInputMessage = false, InputTitle = "t", InputMessage = "m",
+            ShowErrorMessage = false, ErrorStyle = ValidationErrorStyle.Information, ErrorTitle = "e", ErrorMessage = "x",
+        };
+
+        Assert.Equal(source, new DataValidation(source));
+        Assert.Throws<ArgumentNullException>(() => new DataValidation(null!));
+        Assert.Throws<ArgumentException>(() => new DataValidation(source) { InputTitle = new string('x', 33) });
+    }
+
+    [Fact]
     public void A_title_over_32_or_a_message_over_255_characters_is_refused()
     {
         Assert.Throws<ArgumentException>(() => new DataValidation { InputTitle = new string('x', 33) });

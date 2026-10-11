@@ -94,6 +94,30 @@ public sealed class DataValidation : IEquatable<DataValidation>
     {
     }
 
+    /// <summary>
+    /// A copy of another rule, so a factory's rule can be changed in an initializer:
+    /// <c>new DataValidation(DataValidation.List("Yes", "No")) { ErrorMessage = "Choose Yes or No." }</c>.
+    /// </summary>
+    /// <param name="source">The rule to copy.</param>
+    /// <exception cref="ArgumentNullException">The source is null.</exception>
+    public DataValidation(DataValidation source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        Type = source.Type;
+        Operator = source.Operator;
+        _formula1 = source._formula1;
+        _formula2 = source._formula2;
+        AllowBlank = source.AllowBlank;
+        ShowDropDown = source.ShowDropDown;
+        ShowInputMessage = source.ShowInputMessage;
+        _inputTitle = source._inputTitle;
+        _inputMessage = source._inputMessage;
+        ShowErrorMessage = source.ShowErrorMessage;
+        ErrorStyle = source.ErrorStyle;
+        _errorTitle = source._errorTitle;
+        _errorMessage = source._errorMessage;
+    }
+
     /// <summary>What the cells may hold; <see cref="ValidationType.Any"/> unless set.</summary>
     public ValidationType Type { get; init; }
 
@@ -217,22 +241,7 @@ public sealed class DataValidation : IEquatable<DataValidation>
     }
 
     /// <summary>A copy with other formula texts, for a rule whose first cell moved.</summary>
-    internal DataValidation WithFormulas(string? formula1, string? formula2) => new()
-    {
-        Type = Type,
-        Operator = Operator,
-        Formula1 = formula1,
-        Formula2 = formula2,
-        AllowBlank = AllowBlank,
-        ShowDropDown = ShowDropDown,
-        ShowInputMessage = ShowInputMessage,
-        InputTitle = InputTitle,
-        InputMessage = InputMessage,
-        ShowErrorMessage = ShowErrorMessage,
-        ErrorStyle = ErrorStyle,
-        ErrorTitle = ErrorTitle,
-        ErrorMessage = ErrorMessage,
-    };
+    internal DataValidation WithFormulas(string? formula1, string? formula2) => new(this) { Formula1 = formula1, Formula2 = formula2 };
 
     /// <summary>Whether the other rule has the same settings; texts are compared ordinally.</summary>
     public bool Equals(DataValidation? other) =>

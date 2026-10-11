@@ -2492,6 +2492,23 @@ public DataValidation()
 
 A rule allowing any value; set properties in an initializer.
 
+<a id="ctor-datavalidation"></a>
+### DataValidation(DataValidation)
+
+```csharp
+public DataValidation(DataValidation source)
+```
+
+A copy of another rule, so a factory's rule can be changed in an initializer: `new DataValidation(DataValidation.List("Yes", "No")) { ErrorMessage = "Choose Yes or No." }`.
+
+**Parameters**
+
+- `source`: The rule to copy.
+
+**Exceptions**
+
+- `ArgumentNullException`: The source is null.
+
 ## Properties
 
 <a id="allowblank"></a>
