@@ -118,6 +118,30 @@ public class XlsxWriterValidationTests
     }
 
     [Fact]
+    public void Control_characters_and_escape_like_text_in_messages_round_trip()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("S");
+        sheet.AddValidation("A1", new DataValidation
+        {
+            InputTitle = "_x0041_",
+            InputMessage = "line\r\nbreak\ttab",
+            ErrorTitle = "a\u0001b",
+            ErrorMessage = "\u0002 control _x005F_",
+        });
+        workbook.Recalculate();
+
+        var saved = XlsxWriterTests.Save(workbook);
+
+        var errors = SavedFileValidationTests.Errors(saved);
+        Assert.True(errors.Count == 0, string.Join("\n", errors));
+        var part = XlsxWriterTests.Part(saved, Sheet1);
+        Assert.Contains("errorTitle=\"a_x0001_b\"", part);
+        Assert.Contains("promptTitle=\"_x005F_x0041_\"", part);
+        Assert.Equal(Listed(sheet), Listed(XlsxWriterTests.Reload(saved)["S"]));
+    }
+
+    [Fact]
     public void Changing_a_rule_rewrites_only_the_rules()
     {
         var original = Validated().Build().ToArray();

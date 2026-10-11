@@ -79,7 +79,7 @@ internal static class HyperlinkWriter
                 new XAttribute("ref", cell.ToString()),
                 address is null ? null : new XAttribute(r + "id", ids[address]),
                 location is null ? null : new XAttribute("location", location),
-                link.Tooltip is null ? null : new XAttribute("tooltip", link.Tooltip)));
+                link.Tooltip is null ? null : new XAttribute("tooltip", XmlText.Encode(link.Tooltip))));
         }
 
         if (!element.HasElements)

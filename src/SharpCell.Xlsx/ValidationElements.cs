@@ -51,12 +51,12 @@ internal static class ValidationElements
             AllowBlank = CellMetadata.IsTrue((string?)element.Attribute("allowBlank")),
             ShowDropDown = !CellMetadata.IsTrue((string?)element.Attribute("showDropDown")),
             ShowInputMessage = CellMetadata.IsTrue((string?)element.Attribute("showInputMessage")),
-            InputTitle = Cut((string?)element.Attribute("promptTitle"), MaxTitleLength),
-            InputMessage = Cut((string?)element.Attribute("prompt"), MaxMessageLength),
+            InputTitle = Text(element, "promptTitle", MaxTitleLength),
+            InputMessage = Text(element, "prompt", MaxMessageLength),
             ShowErrorMessage = CellMetadata.IsTrue((string?)element.Attribute("showErrorMessage")),
             ErrorStyle = style,
-            ErrorTitle = Cut((string?)element.Attribute("errorTitle"), MaxTitleLength),
-            ErrorMessage = Cut((string?)element.Attribute("error"), MaxMessageLength),
+            ErrorTitle = Text(element, "errorTitle", MaxTitleLength),
+            ErrorMessage = Text(element, "error", MaxMessageLength),
         });
     }
 
@@ -92,11 +92,14 @@ internal static class ValidationElements
         }
     }
 
-    private static string? Cut(string? text, int max)
+    // A title or message with the characters XML cannot hold decoded (_x0001_), then cut to Excel's
+    // limit, so a cut never splits an escape.
+    private static string? Text(XElement element, string name, int max)
     {
-        if (text is null || text.Length <= max)
-            return text;
-        return text[..(char.IsHighSurrogate(text[max - 1]) ? max - 1 : max)];
+        if ((string?)element.Attribute(name) is not { } raw)
+            return null;
+        var text = XmlText.Decode(raw);
+        return text.Length <= max ? text : text[..(char.IsHighSurrogate(text[max - 1]) ? max - 1 : max)];
     }
 
     /// <summary>The &lt;dataValidations&gt; element of the sheet's rules, with the file element's own attributes; null when there are none.</summary>
@@ -118,10 +121,10 @@ internal static class ValidationElements
                 validation.ShowInputMessage ? new XAttribute("showInputMessage", "1") : null,
                 validation.ShowErrorMessage ? new XAttribute("showErrorMessage", "1") : null,
                 validation.ErrorStyle == ValidationErrorStyle.Stop ? null : new XAttribute("errorStyle", ErrorStyleText(validation.ErrorStyle)),
-                validation.ErrorTitle is { } errorTitle ? new XAttribute("errorTitle", errorTitle) : null,
-                validation.ErrorMessage is { } error ? new XAttribute("error", error) : null,
-                validation.InputTitle is { } promptTitle ? new XAttribute("promptTitle", promptTitle) : null,
-                validation.InputMessage is { } prompt ? new XAttribute("prompt", prompt) : null,
+                validation.ErrorTitle is { } errorTitle ? new XAttribute("errorTitle", XmlText.Encode(errorTitle)) : null,
+                validation.ErrorMessage is { } error ? new XAttribute("error", XmlText.Encode(error)) : null,
+                validation.InputTitle is { } promptTitle ? new XAttribute("promptTitle", XmlText.Encode(promptTitle)) : null,
+                validation.InputMessage is { } prompt ? new XAttribute("prompt", XmlText.Encode(prompt)) : null,
                 new XAttribute("sqref", string.Join(' ', rule.Areas.Select(WorksheetParts.Format))),
                 FormulaElement(ns + "formula1", rule.F1, rule.Origin, sheet),
                 FormulaElement(ns + "formula2", rule.F2, rule.Origin, sheet)));

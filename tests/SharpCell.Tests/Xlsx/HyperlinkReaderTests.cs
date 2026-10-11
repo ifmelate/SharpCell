@@ -47,6 +47,15 @@ public class HyperlinkReaderTests
     }
 
     [Fact]
+    public void Escaped_characters_in_a_tooltip_are_decoded()
+    {
+        var sheet = Load("<hyperlink ref=\"A1\" location=\"B2\" tooltip=\"a_x0001_b\"/><hyperlink ref=\"A2\" location=\"B2\" tooltip=\"_x005F_x0041_\"/>");
+
+        Assert.Equal("a\u0001b", sheet.Hyperlinks[new CellAddress(1, 1)].Tooltip);
+        Assert.Equal("_x0041_", sheet.Hyperlinks[new CellAddress(2, 1)].Tooltip);
+    }
+
+    [Fact]
     public void A_link_inside_the_workbook_has_only_a_location()
     {
         var sheet = Load("<hyperlink ref=\"B2\" location=\"'Q1 Sales'!A1\"/>");

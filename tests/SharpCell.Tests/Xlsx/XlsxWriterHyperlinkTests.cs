@@ -95,6 +95,26 @@ public class XlsxWriterHyperlinkTests
     }
 
     [Fact]
+    public void Control_characters_and_escape_like_text_in_tooltips_round_trip()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("S");
+        sheet["A1"].Hyperlink = new Hyperlink("https://example.com/", "a\u0001b");
+        sheet["A2"].Hyperlink = new Hyperlink("#S!B2", "_x0041_");
+        sheet["A3"].Hyperlink = new Hyperlink("#S!B3", "line\r\nbreak");
+        workbook.Recalculate();
+
+        var saved = XlsxWriterTests.Save(workbook);
+
+        var errors = SavedFileValidationTests.Errors(saved);
+        Assert.True(errors.Count == 0, string.Join("\n", errors));
+        var part = XlsxWriterTests.Part(saved, Sheet1);
+        Assert.Contains("tooltip=\"a_x0001_b\"", part);
+        Assert.Contains("tooltip=\"_x005F_x0041_\"", part);
+        Assert.Equal(Links(sheet), Links(XlsxWriterTests.Reload(saved)["S"]));
+    }
+
+    [Fact]
     public void Changing_a_link_rewrites_only_the_links_and_their_relationships()
     {
         var original = Linked().Build().ToArray();

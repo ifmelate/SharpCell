@@ -72,8 +72,9 @@ internal static class HyperlinkElements
                 target = location is null ? address : address + "#" + location;
             }
 
-            // A ScreenTip over Excel's limit is dropped; the link itself still works.
-            var tooltip = element.Tooltip is { Length: > 0 and <= MaxTooltipLength } text ? text : null;
+            // A ScreenTip over Excel's limit is dropped; the link itself still works. Characters XML
+            // cannot hold are escaped (_x0001_), as in cell text.
+            var tooltip = element.Tooltip is { } raw && XmlText.Decode(raw) is { Length: > 0 and <= MaxTooltipLength } text ? text : null;
             budget -= cells;
             result[i] = new ModelledHyperlink(area, new Hyperlink(target, tooltip));
         }

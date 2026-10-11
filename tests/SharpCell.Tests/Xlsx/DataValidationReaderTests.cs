@@ -130,6 +130,28 @@ public class DataValidationReaderTests
     }
 
     [Fact]
+    public void Escaped_characters_in_titles_and_messages_are_decoded()
+    {
+        var validation = Load("<dataValidation errorTitle=\"a_x0001_b\" error=\"line_x000D_&#10;break\" promptTitle=\"_x005F_x0041_\" prompt=\"_x0041_\" sqref=\"A1\"/>")
+            .Validations.Single().Validation;
+
+        Assert.Equal("a\u0001b", validation.ErrorTitle);
+        Assert.Equal("line\r\nbreak", validation.ErrorMessage);
+        Assert.Equal("_x0041_", validation.InputTitle);
+        Assert.Equal("A", validation.InputMessage);
+    }
+
+    [Fact]
+    public void A_message_is_cut_after_its_escapes_are_decoded()
+    {
+        var validation = Load($"<dataValidation error=\"{new string('e', 254)}_x0041_\" errorTitle=\"{new string('t', 31)}_x0001_xyz\" sqref=\"A1\"/>")
+            .Validations.Single().Validation;
+
+        Assert.Equal(new string('e', 254) + "A", validation.ErrorMessage);
+        Assert.Equal(new string('t', 31) + "\u0001", validation.ErrorTitle);
+    }
+
+    [Fact]
     public void Over_long_titles_and_messages_are_cut_to_Excels_limits()
     {
         var sheet = Load($"<dataValidation errorTitle=\"{new string('t', 40)}\" error=\"{new string('e', 300)}\" promptTitle=\"{new string('p', 33)}\" prompt=\"{new string('m', 256)}\" sqref=\"A1\"/>");
