@@ -184,6 +184,27 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Copy_cells()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+        sheet["A1"].Value = 2;
+        sheet["A2"].Value = 3;
+        sheet["A3"].Value = 4;
+
+        // snippet: cells-copy
+        sheet["B1"].Formula = "=A1*$A$1";
+        sheet.Range("B1").CopyTo(sheet.Range("B2:B3"));   // B2 is =A2*$A$1, B3 is =A3*$A$1
+        sheet.Range("A1:B3").CopyTo(sheet.Range("D1"));   // values, formulas, formats, styles, links, validation
+        workbook.Recalculate();
+        // end-snippet
+
+        Assert.Equal("=A3*$A$1", sheet["B3"].Formula);
+        Assert.Equal("=D3*$A$1", sheet["E3"].Formula);
+        Assert.Equal(8, sheet["E3"].Value.AsNumber());
+    }
+
+    [Fact]
     public void Defined_names()
     {
         var workbook = new Workbook();

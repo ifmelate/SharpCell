@@ -34,9 +34,11 @@ public sealed partial class Worksheet
 
     /// <summary>
     /// Adds a data validation rule to a range. Cells of the range leave the rules they had, as in
-    /// Excel, where a cell has one rule. The formulas are relative to the range's top-left cell.
+    /// Excel, where a cell has one rule. The formulas are relative to the range's top-left cell; for
+    /// several ranges, to the first one's.
     /// </summary>
-    /// <param name="range">The cells, such as <c>B2:B10</c>.</param>
+    /// <param name="range">The cells, such as <c>B2:B10</c>, or several ranges separated by spaces as
+    /// Excel writes them, such as <c>B2:B10 D2:D10</c>.</param>
     /// <param name="validation">The rule.</param>
     /// <exception cref="ArgumentNullException">The validation is null.</exception>
     /// <exception cref="ArgumentException">The range is not an A1 range; or a rule other than
@@ -48,7 +50,8 @@ public sealed partial class Worksheet
     /// SharpCell cannot read, so the formula could not be moved to the rule's new first cell.</exception>
     public void AddValidation(string range, DataValidation validation)
     {
-        var area = Range(range).Area;
+        var areas = Areas(range);
+        var area = areas[0];
         ArgumentNullException.ThrowIfNull(validation);
         if (validation.Type != ValidationType.Any && validation.Formula1 is null)
             throw new ArgumentException($"A {validation.Type} rule needs Formula1.", nameof(validation));
@@ -60,10 +63,25 @@ public sealed partial class Worksheet
         var formula2 = validation.Formula2 is { } text2 ? FormulaParser.Parse(text2, origin) : null;
         Workbook.ThrowIfInCustomFunction();
 
-        var rules = Without(area);
-        rules.Add(new ValidationRule([area], validation, formula1, formula2));
+        var rules = new List<ValidationRule>(_validations);
+        foreach (var part in areas)
+            rules = Without(rules, part);
+        rules.Add(new ValidationRule(areas, validation, formula1, formula2));
         _validations.Clear();
         _validations.AddRange(rules);
+    }
+
+    // One range, or several separated by spaces.
+    private List<Area> Areas(string range)
+    {
+        ArgumentNullException.ThrowIfNull(range);
+        var parts = range.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+            throw new ArgumentException("The range is empty.", nameof(range));
+        var areas = new List<Area>(parts.Length);
+        foreach (var part in parts)
+            areas.Add(Range(part).Area);
+        return areas;
     }
 
     /// <summary>
@@ -71,16 +89,18 @@ public sealed partial class Worksheet
     /// removed. A rule that loses its first cell keeps its formulas relative to its new first cell,
     /// so every remaining cell is checked as before.
     /// </summary>
-    /// <param name="range">The cells, such as <c>A1:Z100</c>.</param>
+    /// <param name="range">The cells, such as <c>A1:Z100</c>, or several ranges separated by spaces.</param>
     /// <exception cref="ArgumentException">The range is not an A1 range.</exception>
     /// <exception cref="NotSupportedException">The range takes the first cell of a rule read from a file whose formula
     /// SharpCell cannot read, so the formula could not be moved to the rule's new first cell.</exception>
     public void ClearValidation(string range)
     {
-        var area = Range(range).Area;
+        var areas = Areas(range);
         Workbook.ThrowIfInCustomFunction();
 
-        var rules = Without(area);
+        var rules = new List<ValidationRule>(_validations);
+        foreach (var area in areas)
+            rules = Without(rules, area);
         _validations.Clear();
         _validations.AddRange(rules);
     }
@@ -127,10 +147,10 @@ public sealed partial class Worksheet
 
     // The rules with the area's cells taken out, built without changing the sheet, so a rule that
     // cannot be moved stops the change before anything happens.
-    private List<ValidationRule> Without(Area cleared)
+    private List<ValidationRule> Without(List<ValidationRule> from, Area cleared)
     {
-        var rules = new List<ValidationRule>(_validations.Count + 1);
-        foreach (var rule in _validations)
+        var rules = new List<ValidationRule>(from.Count + 1);
+        foreach (var rule in from)
         {
             if (!rule.Areas.Exists(area => area.TryIntersect(cleared, out _)))
             {
@@ -236,6 +256,68 @@ public sealed partial class Worksheet
         return rule with { Validation = rule.Validation.WithFormulas(Print(f1), Print(f2)), F1 = f1, F2 = f2 };
 
         string? Print(FormulaNode? node) => node is null ? null : "=" + FormulaPrinter.Print(node, to);
+    }
+
+    /// <summary>
+    /// The rules on the cells of an area, for copying them: each with the parts of its ranges inside
+    /// the area, counted from the area's top-left cell.
+    /// </summary>
+    /// <exception cref="NotSupportedException">A rule on the area has a formula SharpCell cannot read.</exception>
+    internal List<ValidationRule> ValidationsIn(Area area)
+    {
+        var copied = new List<ValidationRule>();
+        foreach (var rule in _validations)
+        {
+            var parts = new List<Area>();
+            foreach (var part in rule.Areas)
+            {
+                if (part.TryIntersect(area, out var inside))
+                    parts.Add(new Area(inside.FirstRow - area.FirstRow, inside.FirstColumn - area.FirstColumn, inside.LastRow - area.FirstRow, inside.LastColumn - area.FirstColumn));
+            }
+
+            if (parts.Count == 0)
+                continue;
+            if (rule.F1 is UnsupportedNode || rule.F2 is UnsupportedNode)
+                throw new NotSupportedException($"A validation rule on {Name}!{new CellRange(this, rule.Areas[0]).Address} has a formula SharpCell cannot read; it could not be copied.");
+            copied.Add(rule with { Areas = parts });
+        }
+
+        return copied;
+    }
+
+    /// <summary>
+    /// The sheet's rules after rules are copied onto areas: their cells leave the rules they had and
+    /// take the copied ones, whose formulas keep their offsets from each cell, as cell formulas do.
+    /// </summary>
+    /// <param name="copied">The rules from <see cref="ValidationsIn"/>.</param>
+    /// <param name="tiles">The areas they are copied onto.</param>
+    /// <exception cref="NotSupportedException">A rule losing its first cell has a formula SharpCell cannot read.</exception>
+    internal List<ValidationRule> ValidationsPasted(List<ValidationRule> copied, IEnumerable<Area> tiles)
+    {
+        var rules = new List<ValidationRule>(_validations);
+        foreach (var tile in tiles)
+        {
+            rules = Without(rules, tile);
+            foreach (var rule in copied)
+            {
+                var areas = rule.Areas.ConvertAll(a => new Area(a.FirstRow + tile.FirstRow, a.FirstColumn + tile.FirstColumn, a.LastRow + tile.FirstRow, a.LastColumn + tile.FirstColumn));
+                var origin = new CellAddress(areas[0].FirstRow, areas[0].FirstColumn);
+                var f1 = rule.F1 is null ? null : ReferenceShift.Copy(rule.F1, origin);
+                var f2 = rule.F2 is null ? null : ReferenceShift.Copy(rule.F2, origin);
+                rules.Add(new ValidationRule(areas, rule.Validation.WithFormulas(Print(f1), Print(f2)), f1, f2));
+
+                string? Print(FormulaNode? node) => node is null ? null : "=" + FormulaPrinter.Print(node, origin);
+            }
+        }
+
+        return rules;
+    }
+
+    /// <summary>Puts rules from <see cref="ValidationsPasted"/> in place of the sheet's.</summary>
+    internal void SetValidationRules(List<ValidationRule> rules)
+    {
+        _validations.Clear();
+        _validations.AddRange(rules);
     }
 
     private void CopyValidationsFrom(Worksheet source)

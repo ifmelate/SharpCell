@@ -87,9 +87,20 @@ internal static class ReferenceShift
     public static FormulaNode BreakTables(FormulaNode node, IReadOnlySet<string> removed, Worksheet edited) =>
         new Shifter(null, default, default, edited, null, removed).Visit(node);
 
+    /// <summary>
+    /// The formula copied from one cell to another, as pasting it in Excel copies it: relative
+    /// references keep their offsets, and one that would point past the sheet's edge from the new
+    /// cell becomes <c>#REF!</c> instead of wrapping around.
+    /// </summary>
+    /// <returns>The formula for the new cell; the same instance when no reference broke.</returns>
+    /// <param name="node">The formula.</param>
+    /// <param name="newOrigin">The cell the formula is copied to.</param>
+    public static FormulaNode Copy(FormulaNode node, CellAddress newOrigin) =>
+        new Shifter(null, newOrigin, newOrigin, null, null, null, copying: true).Visit(node);
+
     // With an edit, references move; with removed tables, references to them break.
-    private sealed class Shifter(Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet edited, SheetEdit? shift,
-        IReadOnlySet<string>? removedTables)
+    private sealed class Shifter(Worksheet? formulaSheet, CellAddress oldOrigin, CellAddress newOrigin, Worksheet? edited, SheetEdit? shift,
+        IReadOnlySet<string>? removedTables, bool copying = false)
     {
         private readonly SheetEdit edit = shift ?? default;
 
@@ -97,6 +108,8 @@ internal static class ReferenceShift
         {
             switch (node)
             {
+                case ReferenceNode reference when copying:
+                    return Copied(reference);
                 case ReferenceNode reference when shift is not null:
                     return Reference(reference);
                 case StructuredReferenceNode { Reference.Table: { } table } when removedTables?.Contains(table.ToUpperInvariant()) == true:
@@ -166,10 +179,28 @@ internal static class ReferenceShift
             return changed;
         }
 
+        // A copied reference stays as it is unless a relative part of it falls off the sheet.
+        private FormulaNode Copied(ReferenceNode node)
+        {
+            var area = node.Area;
+            var fits = area.Kind switch
+            {
+                AreaKind.Rows => Fits(area.First.Row, newOrigin.Row, CellAddress.MaxRow) && Fits(area.Last.Row, newOrigin.Row, CellAddress.MaxRow),
+                AreaKind.Columns => Fits(area.First.Column, newOrigin.Column, CellAddress.MaxColumn) && Fits(area.Last.Column, newOrigin.Column, CellAddress.MaxColumn),
+                _ => Fits(area.First.Row, newOrigin.Row, CellAddress.MaxRow) && Fits(area.First.Column, newOrigin.Column, CellAddress.MaxColumn)
+                    && Fits(area.Last.Row, newOrigin.Row, CellAddress.MaxRow) && Fits(area.Last.Column, newOrigin.Column, CellAddress.MaxColumn),
+            };
+            if (fits)
+                return node;
+            return node.Sheet is null ? new ErrorNode(ErrorKind.Ref) : new RefErrorNode(node.Sheet);
+
+            static bool Fits(AxisRef axis, int origin, int max) => axis.IsAbsolute || (origin + axis.Value >= 1 && origin + axis.Value <= max);
+        }
+
         private FormulaNode Reference(ReferenceNode node)
         {
             var target = node.Sheet is null ? formulaSheet
-                : node.Sheet.Last is null && edited.Workbook.TryGetSheet(node.Sheet.First, out var named) ? named
+                : node.Sheet.Last is null && edited!.Workbook.TryGetSheet(node.Sheet.First, out var named) ? named
                 : null;
             var area = node.Area;
             if (target == edited)
