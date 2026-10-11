@@ -1,3 +1,4 @@
+using System.Linq;
 using SharpCell.Xlsx;
 
 namespace SharpCell.Tests.Xlsx;
@@ -91,5 +92,27 @@ public class HyperlinkReaderTests
         var link = sheet.Hyperlinks[new CellAddress(1, 1)];
         Assert.Equal("#B2", link.Target);
         Assert.Null(link.Tooltip);
+    }
+
+    [Fact]
+    public void Links_stop_being_modelled_once_a_sheet_budget_is_spent()
+    {
+        // Each A1:CV100 covers 10,000 cells; the budget is 100,000, so the eleventh is kept as the file has it.
+        var elements = string.Concat(Enumerable.Range(0, 10).Select(_ => "<hyperlink ref=\"A1:CV100\" location=\"B2\"/>"))
+            + "<hyperlink ref=\"E200\" location=\"B2\"/>";
+        var sheet = Load(elements + "<hyperlink ref=\"A1:CV100\" location=\"Z9\"/>");
+
+        Assert.Equal(10_000, sheet.Hyperlinks.Count);
+        Assert.All(sheet.Hyperlinks.Values, link => Assert.Equal("#B2", link.Target));
+        Assert.False(sheet.Hyperlinks.ContainsKey(new CellAddress(200, 5)));
+    }
+
+    [Fact]
+    public void Where_modelled_links_overlap_the_later_one_wins()
+    {
+        var sheet = Load("<hyperlink ref=\"A1:A2\" location=\"B1\"/><hyperlink ref=\"A2\" location=\"C1\"/>");
+
+        Assert.Equal("#B1", sheet.Hyperlinks[new CellAddress(1, 1)].Target);
+        Assert.Equal("#C1", sheet.Hyperlinks[new CellAddress(2, 1)].Target);
     }
 }

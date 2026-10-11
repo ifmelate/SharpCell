@@ -37,7 +37,7 @@ internal static class WorksheetReader
         var column = 0;
         var tableIds = new List<string>();
         var sheetViews = 0;
-        var links = new List<PendingLink>();
+        var links = new List<HyperlinkElement>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -130,7 +130,7 @@ internal static class WorksheetReader
 
             if (reader.Depth == 2 && reader.LocalName == "hyperlink")
             {
-                links.Add(new PendingLink(reader.GetAttribute("ref"), WorkbookReader.RelationshipId(reader), reader.GetAttribute("location"), reader.GetAttribute("tooltip")));
+                links.Add(new HyperlinkElement(reader.GetAttribute("ref"), WorkbookReader.RelationshipId(reader), reader.GetAttribute("location"), reader.GetAttribute("tooltip")));
                 reader.Read();
                 continue;
             }
@@ -192,47 +192,19 @@ internal static class WorksheetReader
             ReadTables(package, part, sheet, tableIds);
     }
 
-    private sealed record PendingLink(string? Ref, string? RelationshipId, string? Location, string? Tooltip);
-
-    // A link over more cells than this is left out of the model (the writer keeps its element as the file has it).
-    private const long MaxHyperlinkCells = 10_000;
-
     // Like column sizes, links only decorate cells: one that is damaged is skipped, never a reason to refuse the file.
-    private static void ReadHyperlinks(Package package, string part, Worksheet sheet, List<PendingLink> links)
+    private static void ReadHyperlinks(Package package, string part, Worksheet sheet, List<HyperlinkElement> links)
     {
         var relationships = links.Exists(link => link.RelationshipId is not null)
             ? package.ReadRelationships(part, includeExternal: true)
-            : null;
-        foreach (var link in links)
+            : new Dictionary<string, Relationship>();
+        foreach (var modelled in HyperlinkElements.Classify(links, relationships))
         {
-            if (link.Ref is null
-                || !ReferenceSyntax.TryParseA1Area(link.Ref, new CellAddress(1, 1), out var parsed)
-                || parsed.Kind is not (AreaKind.Range or AreaKind.Cell))
+            if (modelled is not { } link)
                 continue;
-            var area = Area.Resolve(parsed, new CellAddress(1, 1));
-            if ((long)(area.LastRow - area.FirstRow + 1) * (area.LastColumn - area.FirstColumn + 1) > MaxHyperlinkCells)
-                continue;
-
-            string? address = null;
-            if (link.RelationshipId is not null)
-            {
-                if (relationships is null || !relationships.TryGetValue(link.RelationshipId, out var relationship)
-                    || !relationship.Is("hyperlink") || relationship.Target.Length == 0)
-                    continue;
-                address = relationship.Target;
-            }
-
-            var location = string.IsNullOrEmpty(link.Location) ? null : link.Location;
-            var target = address is null ? (location is null ? null : "#" + location) : location is null ? address : address + "#" + location;
-            if (target is null)
-                continue;
-
-            // A ScreenTip over Excel's limit is dropped; the link itself still works.
-            var tooltip = link.Tooltip is { Length: > 0 and <= 255 } text ? text : null;
-            var hyperlink = new Hyperlink(target, tooltip);
-            for (var row = area.FirstRow; row <= area.LastRow; row++)
-                for (var column = area.FirstColumn; column <= area.LastColumn; column++)
-                    sheet.SetHyperlink(row, column, hyperlink);
+            for (var row = link.Area.FirstRow; row <= link.Area.LastRow; row++)
+                for (var column = link.Area.FirstColumn; column <= link.Area.LastColumn; column++)
+                    sheet.SetHyperlink(row, column, link.Link);
         }
     }
 
