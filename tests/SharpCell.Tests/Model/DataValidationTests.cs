@@ -377,6 +377,34 @@ public class DataValidationTests
     }
 
     [Fact]
+    public void A_rule_whose_first_range_is_deleted_takes_its_formulas_to_the_next_range()
+    {
+        var columns = NewSheet();
+        columns.AddValidationRule([new(1, 3, 2, 3), new(5, 1, 6, 1)], DataValidation.Custom("=C1>0"));
+        var rows = NewSheet();
+        rows.AddValidationRule([new(10, 1, 11, 1), new(1, 6, 2, 6)], DataValidation.Custom("=A10>0"));
+
+        columns.DeleteColumns(3);
+        rows.DeleteRows(10, 2);
+
+        Assert.Equal([("A5:A6", "=A5>0")], Listed(columns).Select(v => (v.Range, v.Validation.Formula1)));
+        Assert.Equal([("F1:F2", "=F1>0")], Listed(rows).Select(v => (v.Range, v.Validation.Formula1)));
+    }
+
+    [Fact]
+    public void Deleting_a_rules_first_column_moves_its_formulas_to_the_next_column()
+    {
+        var sheet = NewSheet();
+        sheet.AddValidation("B2:D5", DataValidation.Custom("=AND(B2>0,$F$1>B2)"));
+
+        sheet.DeleteColumns(2);
+
+        var (range, validation) = Assert.Single(sheet.Validations);
+        Assert.Equal("B2:C5", range.Address);
+        Assert.Equal("=AND(B2>0,$E$1>B2)", validation.Formula1);
+    }
+
+    [Fact]
     public void Rows_inserted_inside_a_rule_grow_it_and_rows_above_move_it()
     {
         var sheet = NewSheet();

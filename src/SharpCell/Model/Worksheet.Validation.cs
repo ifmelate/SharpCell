@@ -210,7 +210,7 @@ public sealed partial class Worksheet
             if (areas.Count == 0)
                 _validations.RemoveAt(i);
             else
-                _validations[i] = Shift(rule with { Areas = areas }, kept!.Value, new CellAddress(areas[0].FirstRow, areas[0].FirstColumn), edited, edit);
+                _validations[i] = Shift(rule, kept!.Value, new CellAddress(areas[0].FirstRow, areas[0].FirstColumn), edited, edit) with { Areas = areas };
         }
     }
 
@@ -225,12 +225,13 @@ public sealed partial class Worksheet
 
     // The rule's formulas moved by the edit. They are offsets from the rule's first cell, so they are
     // read as the formulas of the cell that becomes the first cell (from), which moves to its new place
-    // (to): each remaining cell checks the same cells as before, wherever they went.
+    // (to): each remaining cell checks the same cells as before, wherever they went. The text is written
+    // again when a formula changed or the rule's first cell is no longer where it was.
     private ValidationRule Shift(ValidationRule rule, CellAddress from, CellAddress to, Worksheet edited, SheetEdit edit)
     {
         var f1 = rule.F1 is null ? null : ReferenceShift.Apply(rule.F1, this, from, to, edited, edit);
         var f2 = rule.F2 is null ? null : ReferenceShift.Apply(rule.F2, this, from, to, edited, edit);
-        if (f1 == rule.F1 && f2 == rule.F2 && from == to)
+        if (f1 == rule.F1 && f2 == rule.F2 && rule.Origin == to)
             return rule;
         return rule with { Validation = rule.Validation.WithFormulas(Print(f1), Print(f2)), F1 = f1, F2 = f2 };
 
