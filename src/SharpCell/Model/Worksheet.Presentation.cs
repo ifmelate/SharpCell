@@ -12,6 +12,7 @@ public sealed partial class Worksheet
     private const double MaxRowHeight = 409;
 
     private readonly Dictionary<CellAddress, CellStyle> _styles = [];
+    private readonly Dictionary<CellAddress, Hyperlink> _hyperlinks = [];
     private readonly Dictionary<int, double> _columnWidths = [];
     private readonly Dictionary<int, double> _rowHeights = [];
     private readonly HashSet<int> _hiddenColumns = [];
@@ -78,6 +79,21 @@ public sealed partial class Worksheet
 
     /// <summary>The cells with a style of their own, in no particular order.</summary>
     internal IReadOnlyDictionary<CellAddress, CellStyle> Styles => _styles;
+
+    internal Hyperlink? HyperlinkAt(int row, int column) =>
+        _hyperlinks.Count != 0 && _hyperlinks.TryGetValue(new CellAddress(row, column), out var link) ? link : null;
+
+    /// <summary>Sets or (with null) removes the hyperlink of a cell.</summary>
+    internal void SetHyperlink(int row, int column, Hyperlink? link)
+    {
+        if (link is null)
+            _hyperlinks.Remove(new CellAddress(row, column));
+        else
+            _hyperlinks[new CellAddress(row, column)] = link;
+    }
+
+    /// <summary>The cells with a hyperlink, in no particular order.</summary>
+    internal IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks => _hyperlinks;
 
     internal IReadOnlyDictionary<int, double> ColumnWidths => _columnWidths;
 
@@ -223,6 +239,8 @@ public sealed partial class Worksheet
     {
         foreach (var (address, style) in source._styles)
             _styles.Add(address, style);
+        foreach (var (address, link) in source._hyperlinks)
+            _hyperlinks.Add(address, link);
         foreach (var (column, width) in source._columnWidths)
             _columnWidths.Add(column, width);
         foreach (var (row, height) in source._rowHeights)

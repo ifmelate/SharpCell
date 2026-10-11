@@ -237,6 +237,21 @@ public sealed partial class Cell
     }
 
     /// <summary>
+    /// The cell's hyperlink; null for none, which setting null also gives. The cell's value is what
+    /// Excel shows: setting a link neither changes the value nor applies the Hyperlink cell style.
+    /// A link moves with its cell when rows or columns are inserted, and goes with it when they are deleted.
+    /// </summary>
+    public Hyperlink? Hyperlink
+    {
+        get => Worksheet.HyperlinkAt(Row, Column);
+        set
+        {
+            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.SetHyperlink(Row, Column, value);
+        }
+    }
+
+    /// <summary>
     /// The cell as Excel shows it: the value formatted by <see cref="NumberFormat"/> with the
     /// workbook's culture and date system. Column width plays no part, so a number that fits no
     /// width is never cut short; a date format on a number that is no date shows <c>#######</c>.

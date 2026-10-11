@@ -56,6 +56,15 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="hyperlink"></a>
+### Hyperlink
+
+```csharp
+public Hyperlink? Hyperlink { get; set; }
+```
+
+The cell's hyperlink; null for none, which setting null also gives. The cell's value is what Excel shows: setting a link neither changes the value nor applies the Hyperlink cell style. A link moves with its cell when rows or columns are inserted, and goes with it when they are deleted.
+
 <a id="input"></a>
 ### Input
 

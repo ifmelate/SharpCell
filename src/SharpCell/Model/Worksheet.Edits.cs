@@ -102,7 +102,8 @@ public sealed partial class Worksheet
             var pushed = Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn)
                     .Any(cell => Index(cell.Row, cell.Column) > last && !(cell.Data.Formula is null && cell.Data.SpillAnchor is not null))
                 || _styles.Keys.Any(a => Index(a.Row, a.Column) > last)
-                || _formats.Keys.Any(a => Index(a.Row, a.Column) > last);
+                || _formats.Keys.Any(a => Index(a.Row, a.Column) > last)
+                || _hyperlinks.Keys.Any(a => Index(a.Row, a.Column) > last);
             if (pushed)
                 throw new InvalidOperationException($"Content in the last {(edit.Rows ? "rows" : "columns")} would be pushed off the sheet.");
         }
@@ -192,6 +193,7 @@ public sealed partial class Worksheet
         Store.Move((row, column) => Map(edit, row, column));
         MoveKeys(_styles, edit);
         MoveKeys(_formats, edit);
+        MoveKeys(_hyperlinks, edit);
         if (edit.Rows)
         {
             MoveIndexes(_rowHeights, edit, CellAddress.MaxRow);

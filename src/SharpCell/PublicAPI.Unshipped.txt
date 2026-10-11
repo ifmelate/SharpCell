@@ -1,3 +1,14 @@
 #nullable enable
 SharpCell.Worksheet.LoadDataTable(string! topLeft, System.Data.DataTable! table, bool headers = true) -> SharpCell.CellRange!
 SharpCell.Worksheet.LoadRows<T>(string! topLeft, System.Collections.Generic.IEnumerable<T>! rows, params (string! Header, System.Func<T, object?>! Value)[]! columns) -> SharpCell.CellRange!
+SharpCell.Cell.Hyperlink.get -> SharpCell.Hyperlink?
+SharpCell.Cell.Hyperlink.set -> void
+SharpCell.Hyperlink
+SharpCell.Hyperlink.Equals(SharpCell.Hyperlink? other) -> bool
+SharpCell.Hyperlink.Hyperlink(string! target, string? tooltip = null) -> void
+SharpCell.Hyperlink.IsInWorkbook.get -> bool
+SharpCell.Hyperlink.Target.get -> string!
+SharpCell.Hyperlink.Tooltip.get -> string?
+override SharpCell.Hyperlink.Equals(object? obj) -> bool
+override SharpCell.Hyperlink.GetHashCode() -> int
+override SharpCell.Hyperlink.ToString() -> string!

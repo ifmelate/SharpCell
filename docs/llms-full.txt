@@ -1408,6 +1408,15 @@ Formula text starting with '=' (added if missing), or null for no formula. The t
 
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="hyperlink"></a>
+### Hyperlink
+
+```csharp
+public Hyperlink? Hyperlink { get; set; }
+```
+
+The cell's hyperlink; null for none, which setting null also gives. The cell's value is what Excel shows: setting a link neither changes the value nor applies the Hyperlink cell style. A link moves with its cell when rows or columns are inserted, and goes with it when they are deleted.
+
 <a id="input"></a>
 ### Input
 
@@ -2892,6 +2901,108 @@ public IReadOnlyList<int> ScalarParameters { get; init; }
 ```
 
 The 0-based positions of scalar parameters. A scalar parameter receives one value: given a range or an array, the function is called once per element and the results spill, as with Excel's own functions such as `LEN(A1:A10)`. Other parameters receive the argument as it is: a range as an array of its values.
+
+---
+
+<!-- page: api/SharpCell.Hyperlink.md -->
+
+# Hyperlink
+
+```csharp
+public sealed class Hyperlink
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook. The cell's value is what Excel shows; the link neither changes it nor applies the Hyperlink cell style.
+
+## Constructors
+
+<a id="ctor-string-string"></a>
+### Hyperlink(string, string)
+
+```csharp
+public Hyperlink(string target, string? tooltip = null)
+```
+
+A link to `target`, with an optional tooltip.
+
+**Parameters**
+
+- `target`: A web or e-mail address or a file (`https://example.com`, `mailto:a@example.com`, `report.pdf`), or a place in the workbook written as Excel's HYPERLINK function takes it: `#Sheet2!A1`, `#'Q1 Sales'!A1` or `#MyName`.
+- `tooltip`: Excel's ScreenTip, shown when the pointer rests on the cell; at most 255 characters, or null for none.
+
+**Exceptions**
+
+- `ArgumentNullException`: The target is null.
+- `ArgumentException`: The target is empty, or the tooltip is longer than 255 characters.
+
+## Properties
+
+<a id="isinworkbook"></a>
+### IsInWorkbook
+
+```csharp
+public bool IsInWorkbook { get; }
+```
+
+Whether the link goes to a place in this workbook, that is, the target starts with `#`.
+
+<a id="target"></a>
+### Target
+
+```csharp
+public string Target { get; }
+```
+
+Where the link goes, as given to the constructor.
+
+<a id="tooltip"></a>
+### Tooltip
+
+```csharp
+public string? Tooltip { get; }
+```
+
+The ScreenTip, or null for none.
+
+## Methods
+
+<a id="equals-hyperlink"></a>
+### Equals(Hyperlink)
+
+```csharp
+public bool Equals(Hyperlink? other)
+```
+
+Whether the other link has the same target and tooltip, compared ordinally.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is the same link.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [Hyperlink.Equals](SharpCell.Hyperlink.md#equals-hyperlink).
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The target.
 
 ---
 
