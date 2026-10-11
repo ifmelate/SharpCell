@@ -16,20 +16,9 @@ maintainer.
 | 0.6 | Cell styles, column widths, row heights, merged cells, frozen panes and gridlines, read from files |
 | 0.7 | Saving everything the model holds, workbooks built in code, .xlsm files, inserting and deleting rows and columns; functions as values, `GROUPBY`, `PIVOTBY`, `PERCENTOF` |
 | 0.8 | `Cell.Input`: a cell as typed in Excel |
+| 0.9 | Building workbooks: filling sheets from collections and `DataTable`s, hyperlinks, data validation, sheet and workbook protection, locked and hidden cells |
 
-## Now: 0.9, building workbooks
-
-The features people reach for EPPlus or ClosedXML to get, so a report can be built in code and
-saved without a template.
-
-- Filling a sheet from a collection or a `DataTable`, columns chosen by lambdas (no reflection, so
-  NativeAOT keeps working).
-- Hyperlinks on cells: web addresses, e-mail and places in the workbook.
-- Data validation: lists, numbers, dates, text length and custom formulas, with input and error
-  messages; read, changed and saved, and moved with inserted and deleted rows.
-- Sheet and workbook protection with a password, and locked and hidden cells in cell styles.
-
-## Next: 0.10, rules on cells
+## Now: 0.10, rules on cells
 
 - Conditional formatting: read, added and saved. SharpCell can also tell which cells a rule
   applies to, since it calculates the formulas Excel would.
