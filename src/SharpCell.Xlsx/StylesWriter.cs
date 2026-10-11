@@ -9,8 +9,8 @@ namespace SharpCell.Xlsx;
 
 /// <summary>
 /// Finds or adds the cell style (<c>cellXfs</c> entry) a cell needs. A new style starts from the
-/// cell's old one and replaces only the font, fill, border, alignment or number format that
-/// differ, so what SharpCell does not model (pattern fills, rotated text, protection) is kept.
+/// cell's old one and replaces only the font, fill, border, alignment, protection or number format that
+/// differ, so what SharpCell does not model (pattern fills, rotated text) is kept.
 /// Fonts, fills, borders, number formats and styles equal to existing ones are reused. The part is
 /// read only when a style changes, and created when the file has none.
 /// </summary>
@@ -155,6 +155,8 @@ internal sealed class StylesWriter
         if ((style.HorizontalAlignment, style.VerticalAlignment, style.WrapText, style.Indent)
             != (was.HorizontalAlignment, was.VerticalAlignment, was.WrapText, was.Indent))
             SetAlignment(xf, style);
+        if ((style.Locked, style.FormulaHidden) != (was.Locked, was.FormulaHidden))
+            SetProtection(xf, style);
         if (formatCode != (old.Format?.FormatCode ?? "General"))
             Set(xf, "numFmtId", NumberFormatId(formatCode), "applyNumberFormat");
     }
@@ -181,6 +183,26 @@ internal sealed class StylesWriter
         if (!alignment.HasAttributes && !alignment.HasElements)
             alignment.Remove();
         xf.SetAttributeValue("applyAlignment", 1);
+    }
+
+    private static void SetProtection(XElement xf, CellStyle style)
+    {
+        var protection = xf.Element(Main + "protection");
+        if (protection is null)
+        {
+            protection = new XElement(Main + "protection");
+            // Schema order: alignment, protection, extLst.
+            if (xf.Element(Main + "alignment") is { } alignment)
+                alignment.AddAfterSelf(protection);
+            else
+                xf.AddFirst(protection);
+        }
+
+        protection.SetAttributeValue("locked", style.Locked ? null : "0");
+        protection.SetAttributeValue("hidden", style.FormulaHidden ? "1" : null);
+        if (!protection.HasAttributes && !protection.HasElements)
+            protection.Remove();
+        xf.SetAttributeValue("applyProtection", 1);
     }
 
     private int Font(CellFont font)

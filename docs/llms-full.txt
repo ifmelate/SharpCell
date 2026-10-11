@@ -1984,7 +1984,7 @@ public sealed class CellStyle
 
 Namespace `SharpCell` · package `SharpCell`
 
-How a cell looks in Excel: font, fill, borders and alignment. The number format is not part of it; see [Cell.NumberFormat](SharpCell.Cell.md#numberformat). Styles play no part in calculation. A record: styles compare by value, and `with` makes a changed copy, such as `style with { Fill = CellColor.FromRgb(0xFFFF00) }`.
+How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden). The number format is not part of it; see [Cell.NumberFormat](SharpCell.Cell.md#numberformat). Styles play no part in calculation. A record: styles compare by value, and `with` makes a changed copy, such as `style with { Fill = CellColor.FromRgb(0xFFFF00) }`.
 
 ## Constructors
 
@@ -2035,6 +2035,15 @@ public CellFont Font { get; init; }
 
 The font.
 
+<a id="formulahidden"></a>
+### FormulaHidden
+
+```csharp
+public bool FormulaHidden { get; init; }
+```
+
+Whether the cell's formula is hidden from the formula bar while its sheet is protected.
+
 <a id="horizontalalignment"></a>
 ### HorizontalAlignment
 
@@ -2065,6 +2074,15 @@ public CellBorder? LeftBorder { get; init; }
 ```
 
 The left edge of the border; null for none.
+
+<a id="locked"></a>
+### Locked
+
+```csharp
+public bool Locked { get; init; }
+```
+
+Whether the cell is locked: it cannot be changed while its sheet is protected (see [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection)). Excel's default is true; set false for input cells.
 
 <a id="rightborder"></a>
 ### RightBorder

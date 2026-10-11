@@ -30,7 +30,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [CellFont](https://ifmelate.github.io/SharpCell/api/SharpCell.CellFont.md): The font of a cell's text.
 - [CellHorizontalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellHorizontalAlignment.md): Where a cell's text sits across the cell.
 - [CellRange](https://ifmelate.github.io/SharpCell/api/SharpCell.CellRange.md): A rectangle of cells on one sheet, such as `A1:C10`.
-- [CellStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellStyle.md): How a cell looks in Excel: font, fill, borders and alignment.
+- [CellStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellStyle.md): How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden).
 - [CellUnderline](https://ifmelate.github.io/SharpCell/api/SharpCell.CellUnderline.md): How a font underlines text.
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.

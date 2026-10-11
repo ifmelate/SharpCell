@@ -114,3 +114,7 @@ SharpCell.Worksheet.Unprotect() -> void
 override SharpCell.SheetProtection.Equals(object? obj) -> bool
 override SharpCell.SheetProtection.GetHashCode() -> int
 override SharpCell.SheetProtection.ToString() -> string!
+SharpCell.CellStyle.FormulaHidden.get -> bool
+SharpCell.CellStyle.FormulaHidden.init -> void
+SharpCell.CellStyle.Locked.get -> bool
+SharpCell.CellStyle.Locked.init -> void

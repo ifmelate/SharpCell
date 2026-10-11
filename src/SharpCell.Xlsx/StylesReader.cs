@@ -176,6 +176,14 @@ internal static class StylesReader
                     Indent = Int(alignment, "indent") is { } indent and <= 250 ? indent : 0,
                 };
             }
+            if (Child(xf, "protection") is { } protection)
+            {
+                style = style with
+                {
+                    Locked = protection.Attribute("locked") is null || IsTrue(protection.Attribute("locked")!.Value),
+                    FormulaHidden = IsTrue(protection.Attribute("hidden")?.Value),
+                };
+            }
 
             // Equal styles share one instance: many cellXfs differ only in their number format.
             if (shared.TryGetValue(style, out var same))

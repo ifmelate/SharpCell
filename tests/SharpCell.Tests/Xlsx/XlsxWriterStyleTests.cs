@@ -53,9 +53,10 @@ public class XlsxWriterStyleTests
             <fill><patternFill patternType="darkGray"><fgColor rgb="FFFF0000"/></patternFill></fill></fills>
           <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
           <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-          <cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+          <cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
             <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
-            <xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment textRotation="45"/></xf></cellXfs>
+            <xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment textRotation="45"/></xf>
+            <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyProtection="1"><protection locked="0"/></xf></cellXfs>
           <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
         </styleSheet>
         """;
@@ -63,7 +64,7 @@ public class XlsxWriterStyleTests
     private static (byte[] Saved, Workbook Reloaded) Edit(Action<Worksheet> change)
     {
         var original = new TestXlsx { Styles = FullStyles }.Sheet("S",
-            "<row r=\"1\"><c r=\"A1\"><v>0.5</v></c><c r=\"B1\" s=\"1\"><v>2</v></c><c r=\"C1\" s=\"2\"><v>3</v></c></row>").Build().ToArray();
+            "<row r=\"1\"><c r=\"A1\"><v>0.5</v></c><c r=\"B1\" s=\"1\"><v>2</v></c><c r=\"C1\" s=\"2\"><v>3</v></c><c r=\"D1\" s=\"3\"><v>4</v></c></row>").Build().ToArray();
         var workbook = XlsxReader.Load(new MemoryStream(original));
         workbook.Recalculate();
         change(workbook["S"]);
@@ -199,5 +200,88 @@ public class XlsxWriterStyleTests
 
         SavedFileValidationTests.AssertNoNewErrors(original, saved);
         Assert.Equal(Header, XlsxWriterTests.Reload(saved)["S"]["A1"].Style);
+    }
+
+    private static System.Xml.Linq.XElement XfOf(byte[] saved, string cell)
+    {
+        var sheet = XlsxWriterTests.Part(saved, "xl/worksheets/sheet1.xml");
+        var index = int.Parse(System.Text.RegularExpressions.Regex.Match(sheet, "<c r=\"" + cell + "\" s=\"(\\d+)\"").Groups[1].Value);
+        return System.Xml.Linq.XDocument.Parse(XlsxWriterTests.Part(saved, "xl/styles.xml")).Root!.Elements()
+            .Single(e => e.Name.LocalName == "cellXfs").Elements().ElementAt(index);
+    }
+
+    [Fact]
+    public void An_unlocked_cell_saves_its_protection_and_reloads()
+    {
+        var unlocked = CellStyle.Default with { Locked = false };
+        var (saved, reloaded) = Edit(s => s["A1"].Style = unlocked);
+
+        var xf = XfOf(saved, "A1");
+        Assert.Equal("1", (string?)xf.Attribute("applyProtection"));
+        var protection = Assert.Single(xf.Elements(), e => e.Name.LocalName == "protection");
+        Assert.Equal("0", (string?)protection.Attribute("locked"));
+        Assert.Null(protection.Attribute("hidden"));
+        Assert.False(reloaded["S"]["A1"].Style.Locked);
+        Assert.False(reloaded["S"]["A1"].Style.FormulaHidden);
+    }
+
+    [Fact]
+    public void A_hidden_formula_saves_its_protection_and_reloads()
+    {
+        var (saved, reloaded) = Edit(s => s["A1"].Style = CellStyle.Default with { FormulaHidden = true });
+
+        var protection = Assert.Single(XfOf(saved, "A1").Elements(), e => e.Name.LocalName == "protection");
+        Assert.Equal("1", (string?)protection.Attribute("hidden"));
+        Assert.Null(protection.Attribute("locked"));
+        Assert.True(reloaded["S"]["A1"].Style.FormulaHidden);
+        Assert.True(reloaded["S"]["A1"].Style.Locked);
+    }
+
+    [Fact]
+    public void Protection_comes_after_alignment()
+    {
+        var (saved, _) = Edit(s => s["A1"].Style = CellStyle.Default with { Locked = false, WrapText = true });
+
+        Assert.Equal(["alignment", "protection"], XfOf(saved, "A1").Elements().Select(e => e.Name.LocalName));
+    }
+
+    [Fact]
+    public void Locking_a_cell_again_removes_the_protection_element()
+    {
+        var (saved, reloaded) = Edit(s => s["D1"].Style = s["D1"].Style with { Locked = true });
+
+        Assert.DoesNotContain(XfOf(saved, "D1").Elements(), e => e.Name.LocalName == "protection");
+        Assert.True(reloaded["S"]["D1"].Style.Locked);
+    }
+
+    [Fact]
+    public void A_change_to_the_font_keeps_the_protection_of_the_old_xf()
+    {
+        var (saved, reloaded) = Edit(s => s["D1"].Style = s["D1"].Style with { Font = CellFont.Default with { Bold = true } });
+
+        var protection = Assert.Single(XfOf(saved, "D1").Elements(), e => e.Name.LocalName == "protection");
+        Assert.Equal("0", (string?)protection.Attribute("locked"));
+        Assert.True(reloaded["S"]["D1"].Style.Font.Bold);
+        Assert.False(reloaded["S"]["D1"].Style.Locked);
+    }
+
+    [Fact]
+    public void Equal_protected_styles_share_one_xf()
+    {
+        var (saved, _) = Edit(s =>
+        {
+            s["A1"].Style = CellStyle.Default with { Locked = false, FormulaHidden = true };
+            s["A2"].Style = CellStyle.Default with { FormulaHidden = true, Locked = false };
+        });
+
+        var sheet = XlsxWriterTests.Part(saved, "xl/worksheets/sheet1.xml");
+        Assert.Equal(System.Text.RegularExpressions.Regex.Match(sheet, "<c r=\"A1\" s=\"(\\d+)\"").Groups[1].Value,
+            System.Text.RegularExpressions.Regex.Match(sheet, "<c r=\"A2\" s=\"(\\d+)\"").Groups[1].Value);
+    }
+
+    [Fact]
+    public void A_style_with_the_defaults_set_explicitly_is_the_default_style()
+    {
+        Assert.Equal(CellStyle.Default, CellStyle.Default with { Locked = true, FormulaHidden = false });
     }
 }

@@ -16,7 +16,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellFont](SharpCell.CellFont.md) | The font of a cell's text. |
 | [CellHorizontalAlignment](SharpCell.CellHorizontalAlignment.md) | Where a cell's text sits across the cell. |
 | [CellRange](SharpCell.CellRange.md) | A rectangle of cells on one sheet, such as `A1:C10`. |
-| [CellStyle](SharpCell.CellStyle.md) | How a cell looks in Excel: font, fill, borders and alignment. |
+| [CellStyle](SharpCell.CellStyle.md) | How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden). |
 | [CellUnderline](SharpCell.CellUnderline.md) | How a font underlines text. |
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
