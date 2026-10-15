@@ -100,6 +100,41 @@ public class XlsxWriterEditTests
     }
 
     [Fact]
+    public void Cells_shifted_down_move_within_their_columns_and_rows_keep_their_heights()
+    {
+        var (sheet, workbook, model, reloaded) = Edit(s => s.Range("A2:A3").Insert(InsertShift.Down));
+
+        Assert.Equal(("=S!A6*2", 8.0), (reloaded["Other"]["A1"].Formula, reloaded["Other"]["A1"].Value.AsNumber()));
+        Assert.Equal(("=SUM(A1:A8)", "=A4*10"), (reloaded["S"]["B1"].Formula, reloaded["S"]["B2"].Formula));
+        Assert.Equal((30.0, true), (model["S"].RowHeight(4)!.Value, model["S"].IsRowHidden(5)));
+        Assert.Contains("<autoFilter ref=\"A1:B6\"", sheet);
+        Assert.Contains("sqref=\"A4:A8 C2\"", sheet);
+        Assert.Contains("<formula>A4&gt;$A$6</formula>", sheet);
+        Assert.Contains("<hyperlink ref=\"A6\"", sheet);
+        Assert.Contains("<ignoredError sqref=\"A5:A6\"", sheet);
+        Assert.Contains("<brk id=\"4\"", sheet);
+        Assert.Contains("activeCell=\"B5\" sqref=\"B5:C6\"", sheet);
+        Assert.Contains(">S!$A$1:$B$6</definedName>", workbook);
+    }
+
+    [Fact]
+    public void Cells_deleted_with_a_shift_up_drop_what_pointed_at_them()
+    {
+        var (sheet, workbook, _, reloaded) = Edit(s => s.Range("A4:B4").Delete(DeleteShift.Up));
+
+        Assert.Equal("=S!#REF!*2", reloaded["Other"]["A1"].Formula);
+        Assert.Equal([5.0, 6], new[] { reloaded["S"]["A4"].Value.AsNumber(), reloaded["S"]["A5"].Value.AsNumber() });
+        Assert.Equal("=SUM(A1:A5)", reloaded["S"]["B1"].Formula);
+        Assert.Contains("<autoFilter ref=\"A1:B5\"", sheet);
+        Assert.Contains("sqref=\"A2:A5 C2\"", sheet);
+        Assert.DoesNotContain("hyperlink", sheet);
+        Assert.Contains("<ignoredError sqref=\"A3\"", sheet);
+        Assert.Contains("<formula2>$A$5</formula2>", sheet);
+        Assert.Contains("<mergeCell ref=\"C2:D3\"", sheet);
+        Assert.Contains(">S!$A$1:$B$5</definedName>", workbook);
+    }
+
+    [Fact]
     public void Inserted_columns_move_widths_and_ranges()
     {
         var (sheet, _, model, _) = Edit(s => s.InsertColumns(2));

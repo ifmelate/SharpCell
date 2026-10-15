@@ -6,20 +6,42 @@ namespace SharpCell.Parsing;
 
 /// <summary>
 /// Rows or columns inserted into or deleted from a sheet: <paramref name="Count"/> of them at
-/// <paramref name="At"/> (1-based).
+/// <paramref name="At"/> (1-based). With a <paramref name="Band"/>, only the cells in those columns
+/// (for rows) or rows (for columns) move, as Excel's "Shift cells down" or "Shift cells left" does.
 /// </summary>
 /// <param name="Rows">Rows; otherwise columns.</param>
 /// <param name="At">The first row or column inserted or deleted.</param>
 /// <param name="Count">How many.</param>
 /// <param name="Delete">Deleted; otherwise inserted.</param>
-internal readonly record struct SheetEdit(bool Rows, int At, int Count, bool Delete)
+/// <param name="Band">The columns (for rows) or rows (for columns) whose cells move; null for whole rows or columns.</param>
+internal readonly record struct SheetEdit(bool Rows, int At, int Count, bool Delete, (int First, int Last)? Band = null)
 {
+    /// <summary>Whether whole rows or columns move, not only the cells of a band.</summary>
+    public bool Whole => Band is null;
+
+    /// <summary>Whether a column (for rows) or row (for columns) is in the band.</summary>
+    public bool InBand(int across) => Band is not { } band || (across >= band.First && across <= band.Last);
+
+    /// <summary>Whether a span across the edit lies wholly in the band.</summary>
+    public bool Covers(int first, int last) => Band is not { } band || (first >= band.First && last <= band.Last);
+
+    /// <summary>Whether a span across the edit lies wholly outside the band.</summary>
+    public bool Misses(int first, int last) => Band is { } band && (last < band.First || first > band.Last);
+
     /// <summary>Where a row or column goes; null when it is deleted or pushed past the sheet's end.</summary>
     public int? Map(int index, int max)
     {
         if (!Delete)
             return index < At ? index : index + Count <= max ? index + Count : null;
         return index < At ? index : index >= At + Count ? index - Count : null;
+    }
+
+    /// <summary>Where a cell goes; null when it is deleted or pushed past the sheet's end.</summary>
+    public CellAddress? Map(CellAddress cell)
+    {
+        if (Rows)
+            return !InBand(cell.Column) ? cell : Map(cell.Row, CellAddress.MaxRow) is { } r ? new CellAddress(r, cell.Column) : null;
+        return !InBand(cell.Row) ? cell : Map(cell.Column, CellAddress.MaxColumn) is { } c ? new CellAddress(cell.Row, c) : null;
     }
 
     /// <summary>
@@ -44,20 +66,66 @@ internal readonly record struct SheetEdit(bool Rows, int At, int Count, bool Del
         return (newFirst, newLast);
     }
 
-    /// <summary>Where an area goes along the edited direction; null when it is gone.</summary>
+    /// <summary>
+    /// Where an area goes along the edited direction, as a reference to it does; null when it is
+    /// gone. An area that is not wholly in the band stays where it is, as Excel leaves a reference
+    /// that only some of the moved cells are in.
+    /// </summary>
     public Area? Map(Area area)
     {
         if (Rows)
         {
+            if (!Covers(area.FirstColumn, area.LastColumn))
+                return area;
             return MapSpan(area.FirstRow, area.LastRow, CellAddress.MaxRow) is { } rows
                 ? area with { FirstRow = rows.First, LastRow = rows.Last }
                 : null;
         }
 
+        if (!Covers(area.FirstRow, area.LastRow))
+            return area;
         return MapSpan(area.FirstColumn, area.LastColumn, CellAddress.MaxColumn) is { } columns
             ? area with { FirstColumn = columns.First, LastColumn = columns.Last }
             : null;
     }
+
+    /// <summary>
+    /// Where the cells of an area go, for something every cell carries (data validation, a
+    /// conditional format): an area across the band's edge is split, the part in the band moving
+    /// and the parts beside it staying. Each part is given as it was and as it is, in the order of
+    /// the area's cells; gone parts are left out.
+    /// </summary>
+    public List<(Area Before, Area After)> MapCells(Area area)
+    {
+        var (first, last) = Across(area);
+        if (Band is not { } band || Covers(first, last) || Misses(first, last))
+            return Map(area) is { } moved ? [(area, moved)] : [];
+        var parts = new List<(Area, Area)>(3);
+        if (first < band.First)
+            parts.Add((WithAcross(area, first, band.First - 1), WithAcross(area, first, band.First - 1)));
+        var inside = WithAcross(area, Math.Max(first, band.First), Math.Min(last, band.Last));
+        if (Map(inside) is { } after)
+            parts.Add((inside, after));
+        if (last > band.Last)
+            parts.Add((WithAcross(area, band.Last + 1, last), WithAcross(area, band.Last + 1, last)));
+        return parts;
+    }
+
+    /// <summary>Whether an area holds cells that move or are deleted.</summary>
+    public bool Touches(Area area)
+    {
+        var (first, last) = Across(area);
+        if (Misses(first, last))
+            return false;
+        var along = Rows ? area.LastRow : area.LastColumn;
+        return along >= At;
+    }
+
+    /// <summary>The area's span across the edit: its columns for rows, its rows for columns.</summary>
+    public (int First, int Last) Across(Area area) => Rows ? (area.FirstColumn, area.LastColumn) : (area.FirstRow, area.LastRow);
+
+    private Area WithAcross(Area area, int first, int last) =>
+        Rows ? area with { FirstColumn = first, LastColumn = last } : area with { FirstRow = first, LastRow = last };
 }
 
 /// <summary>
@@ -225,9 +293,7 @@ internal static class ReferenceShift
                 {
                     var row = area.First.Row.Resolve(oldOrigin.Row, CellAddress.MaxRow);
                     var column = area.First.Column.Resolve(oldOrigin.Column, CellAddress.MaxColumn);
-                    if (edit.Rows)
-                        return edit.Map(row, CellAddress.MaxRow) is { } r ? Absolute(area, r, column, r, column) : null;
-                    return edit.Map(column, CellAddress.MaxColumn) is { } c ? Absolute(area, row, c, row, c) : null;
+                    return edit.Map(new CellAddress(row, column)) is { } moved ? Absolute(area, moved.Row, moved.Column, moved.Row, moved.Column) : null;
                 }
 
                 case AreaKind.Range:
@@ -236,6 +302,9 @@ internal static class ReferenceShift
                     var c1 = area.First.Column.Resolve(oldOrigin.Column, CellAddress.MaxColumn);
                     var r2 = area.Last.Row.Resolve(oldOrigin.Row, CellAddress.MaxRow);
                     var c2 = area.Last.Column.Resolve(oldOrigin.Column, CellAddress.MaxColumn);
+                    // A range only some of the moved cells are in stays, as in Excel.
+                    if (edit.Rows ? !edit.Covers(Math.Min(c1, c2), Math.Max(c1, c2)) : !edit.Covers(Math.Min(r1, r2), Math.Max(r1, r2)))
+                        return Absolute(area, r1, c1, r2, c2);
                     if (edit.Rows)
                     {
                         if (edit.MapSpan(Math.Min(r1, r2), Math.Max(r1, r2), CellAddress.MaxRow) is not { } rows)
@@ -248,7 +317,7 @@ internal static class ReferenceShift
                     return c1 <= c2 ? Absolute(area, r1, columns.First, r2, columns.Last) : Absolute(area, r1, columns.Last, r2, columns.First);
                 }
 
-                case AreaKind.Rows when edit.Rows:
+                case AreaKind.Rows when edit.Rows && edit.Whole:
                 {
                     var r1 = area.First.Row.Resolve(oldOrigin.Row, CellAddress.MaxRow);
                     var r2 = area.Last.Row.Resolve(oldOrigin.Row, CellAddress.MaxRow);
@@ -257,7 +326,7 @@ internal static class ReferenceShift
                     return r1 <= r2 ? Absolute(area, rows.First, 0, rows.Last, 0) : Absolute(area, rows.Last, 0, rows.First, 0);
                 }
 
-                case AreaKind.Columns when !edit.Rows:
+                case AreaKind.Columns when !edit.Rows && edit.Whole:
                 {
                     var c1 = area.First.Column.Resolve(oldOrigin.Column, CellAddress.MaxColumn);
                     var c2 = area.Last.Column.Resolve(oldOrigin.Column, CellAddress.MaxColumn);
@@ -267,7 +336,8 @@ internal static class ReferenceShift
                 }
 
                 default:
-                    // Whole columns do not change when rows move, nor whole rows when columns do.
+                    // Whole columns do not change when rows move, nor whole rows when columns do, nor
+                    // whole rows when only some of their cells move.
                     return Absolute(area,
                         area.Kind == AreaKind.Columns ? 0 : area.First.Row.Resolve(oldOrigin.Row, CellAddress.MaxRow),
                         area.Kind == AreaKind.Rows ? 0 : area.First.Column.Resolve(oldOrigin.Column, CellAddress.MaxColumn),

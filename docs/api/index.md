@@ -24,6 +24,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [DataValidation](SharpCell.DataValidation.md) | A data validation rule: what the cells of a range accept and the messages Excel shows for them. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
 | [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
+| [DeleteShift](SharpCell.DeleteShift.md) | Which cells take the place of deleted cells, as in Excel's Delete dialog. |
 | [DiagnosticKind](SharpCell.DiagnosticKind.md) | What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports. |
 | [ErrorKind](SharpCell.ErrorKind.md) | Excel error values. |
 | [ErrorKinds](SharpCell.ErrorKinds.md) | Conversion between [ErrorKind](SharpCell.ErrorKind.md) and its literal text (`#DIV/0!`). |
@@ -32,6 +33,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [FunctionCollection](SharpCell.FunctionCollection.md) | The functions a workbook's formulas can call besides Excel's: add one with [FunctionCollection.Add](SharpCell.FunctionCollection.md#add-string-func-functionarguments-cellvalue-functionoptions), and formulas calling it by name (ignoring case) use it from the next calculation on. |
 | [FunctionOptions](SharpCell.FunctionOptions.md) | How a function added through [Workbook.Functions](SharpCell.Workbook.md#functions) takes its arguments. |
 | [Hyperlink](SharpCell.Hyperlink.md) | A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook. |
+| [InsertShift](SharpCell.InsertShift.md) | Where the cells beside inserted cells go, as in Excel's Insert dialog. |
 | [IterationSettings](SharpCell.IterationSettings.md) | Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0. |
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |

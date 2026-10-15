@@ -213,6 +213,28 @@ rows with one call (`InsertRows(5, 100)`) rather than one at a time. When the
 workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
 sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
+## Inserting and deleting cells
+
+```csharp snippet=insert-cells
+sheet.Range("A1").Insert(InsertShift.Down);   // A1 and A2 move to A2 and A3; column B stays
+workbook.Recalculate();                        // C1 is =SUM(A2:A3) now
+
+sheet.Range("A1:A2").Delete(DeleteShift.Up);  // A3 moves up to A1; a formula reading A2 gets #REF!
+```
+
+`CellRange.Insert` and `CellRange.Delete` work like Excel's Insert and Delete with "Shift cells
+down", "Shift cells right", "Shift cells up" and "Shift cells left": only the cells in the range's
+columns (or rows) move, with their styles, number formats, links, data validation, merged areas and
+tables, and references to them follow as they do for rows. A reference to a range that only some of
+the moved cells are in stays as it was (`SUM(A1:C5)` does not change when cells of column A move),
+and a data validation rule over such a range is split. Row heights and column widths stay. A range of
+whole rows or whole columns inserts or deletes them, as `InsertRows` does.
+
+Cells that would move apart from the rest of a merged area, a table or an array formula throw
+`InvalidOperationException` and change nothing, as Excel refuses them. When the workbook is saved,
+the file's conditional formats, comments and other parts move with the cells; pictures and charts
+stay where they are.
+
 ## Copying cells
 
 ```csharp snippet=cells-copy

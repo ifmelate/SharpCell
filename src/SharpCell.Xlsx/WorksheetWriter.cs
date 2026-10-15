@@ -653,6 +653,12 @@ internal sealed class WorksheetWriter
 
     private void SheetData(XmlReader reader, XmlWriter writer)
     {
+        if (_shifted && _map.HasCellEdits(_sheet))
+        {
+            ShiftedSheetData((XElement)XNode.ReadFrom(reader), writer);
+            return;
+        }
+
         var depth = reader.Depth;
         var empty = reader.IsEmptyElement;
         XmlParts.CopyStartTag(reader, writer);
@@ -805,6 +811,84 @@ internal sealed class WorksheetWriter
 
         NewCellsBefore(row, int.MaxValue, writer);
         writer.WriteFullEndElement();
+    }
+
+    // After cells were inserted or deleted with a shift, cells of one row of the file go to different
+    // rows: the file's rows are read whole and written again in the cells' new order. Rows keep their
+    // own attributes where whole-row edits put them.
+    private void ShiftedSheetData(XElement sheetData, XmlWriter writer)
+    {
+        _changed = true;
+        var rows = new SortedDictionary<int, (XElement? Row, List<(int Column, CellAddress Source, XElement Cell)> Cells)>();
+        var sourceRow = 0;
+        foreach (var rowElement in sheetData.Elements(_ns + "row"))
+        {
+            var first = rowElement.Elements(_ns + "c").Select(c => (string?)c.Attribute("r")).FirstOrDefault(a => a is not null);
+            sourceRow = (string?)rowElement.Attribute("r") is { } r ? ParseRow(r)
+                : first is not null && CellAddress.TryParse(first, out var firstCell) ? firstCell.Row
+                : sourceRow + 1;
+            if (_map.MapRow(_sheet, sourceRow) is { } mapped)
+                rows[mapped] = (rowElement, Entry(mapped).Cells);
+
+            var sourceColumn = 0;
+            foreach (var cell in rowElement.Elements(_ns + "c"))
+            {
+                if (cell.Attribute("r") is { } reference && CellAddress.TryParse(reference.Value, out var address))
+                {
+                    if (address.Row != sourceRow)
+                        throw new InvalidDataException($"Cell {address} of sheet '{_sheet.Name}' lies in row {sourceRow}; the file cannot be written back.");
+                    sourceColumn = address.Column;
+                }
+                else
+                {
+                    sourceColumn++;
+                }
+
+                var source = new CellAddress(sourceRow, sourceColumn);
+                if (_map.Map(_sheet, source) is { } to)
+                    Entry(to.Row).Cells.Add((to.Column, source, cell));
+            }
+        }
+
+        writer.WriteStartElement(_prefix, "sheetData", _ns.NamespaceName);
+        foreach (var (row, (rowElement, cells)) in rows)
+        {
+            NewRowsBefore(row, writer);
+            while (_nextChangedRow < _changedRows.Count && _changedRows[_nextChangedRow] <= row)
+                _nextChangedRow++;
+            var sized = _rowsChanged && _look.RowChanged(_sheet, row);
+            writer.WriteStartElement(_prefix, "row", _ns.NamespaceName);
+            writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
+            foreach (var attribute in rowElement?.Attributes() ?? [])
+            {
+                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden");
+                if (!skip && !attribute.IsNamespaceDeclaration)
+                    writer.WriteAttributeString(attribute.Name.LocalName, attribute.Name.NamespaceName, attribute.Value);
+            }
+
+            if (sized || (rowElement is null && _look.RowChanged(_sheet, row)))
+                WriteRowAttributes(writer, row);
+            cells.Sort((a, b) => a.Column.CompareTo(b.Column));
+            foreach (var (column, source, cell) in cells)
+            {
+                CheckOrder(row, column);
+                NewCellsBefore(row, column, writer);
+                Cell(cell, row, column, source)?.WriteTo(writer);
+            }
+
+            NewCellsBefore(row, int.MaxValue, writer);
+            writer.WriteEndElement();
+        }
+
+        NewRowsBefore(int.MaxValue, writer);
+        writer.WriteFullEndElement();
+
+        (XElement? Row, List<(int Column, CellAddress Source, XElement Cell)> Cells) Entry(int row)
+        {
+            if (!rows.TryGetValue(row, out var entry))
+                rows[row] = entry = (null, []);
+            return entry;
+        }
     }
 
     // Merging needs the file's cells in order, as Excel writes them.

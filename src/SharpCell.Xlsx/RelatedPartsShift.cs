@@ -121,7 +121,8 @@ internal static class RelatedPartsShift
         var current = index;
         foreach (var edit in sheet.Edits)
         {
-            if (edit.Rows != rows)
+            // Shapes stay when only cells beside them shift.
+            if (edit.Rows != rows || !edit.Whole)
                 continue;
             var max = rows ? CellAddress.MaxRow : CellAddress.MaxColumn;
             current = edit.Map(current, max) ?? (edit.Delete ? Math.Min(edit.At, max) : max);

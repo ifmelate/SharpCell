@@ -514,6 +514,28 @@ rows with one call (`InsertRows(5, 100)`) rather than one at a time. When the
 workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
 sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
+## Inserting and deleting cells
+
+```csharp snippet=insert-cells
+sheet.Range("A1").Insert(InsertShift.Down);   // A1 and A2 move to A2 and A3; column B stays
+workbook.Recalculate();                        // C1 is =SUM(A2:A3) now
+
+sheet.Range("A1:A2").Delete(DeleteShift.Up);  // A3 moves up to A1; a formula reading A2 gets #REF!
+```
+
+`CellRange.Insert` and `CellRange.Delete` work like Excel's Insert and Delete with "Shift cells
+down", "Shift cells right", "Shift cells up" and "Shift cells left": only the cells in the range's
+columns (or rows) move, with their styles, number formats, links, data validation, merged areas and
+tables, and references to them follow as they do for rows. A reference to a range that only some of
+the moved cells are in stays as it was (`SUM(A1:C5)` does not change when cells of column A move),
+and a data validation rule over such a range is split. Row heights and column widths stay. A range of
+whole rows or whole columns inserts or deletes them, as `InsertRows` does.
+
+Cells that would move apart from the rest of a merged area, a table or an array formula throw
+`InvalidOperationException` and change nothing, as Excel refuses them. When the workbook is saved,
+the file's conditional formats, comments and other parts move with the cells; pictures and charts
+stay where they are.
+
 ## Copying cells
 
 ```csharp snippet=cells-copy
@@ -1940,6 +1962,25 @@ Copies the range's cells to another range, as copying and pasting them in Excel 
 - `InvalidOperationException`: A cell written to is part of an array formula other than its top-left cell.
 - `NotSupportedException`: The range holds part of an array formula (Ctrl+Shift+Enter), or a formula SharpCell cannot read (such as a link to another workbook), in a cell or a data validation rule, whose references could not be moved.
 
+<a id="delete-deleteshift"></a>
+### Delete(DeleteShift)
+
+```csharp
+public void Delete(DeleteShift shift)
+```
+
+Deletes the range's cells, as Excel's Delete with "Shift cells up" or "Shift cells left" does: the cells below (or to the right) in the range's columns (or rows) move into their place. A reference to a deleted cell becomes `#REF!`; otherwise references follow as with [CellRange.Insert](SharpCell.CellRange.md#insert-insertshift). A range of whole rows (or columns) deletes them.
+
+**Parameters**
+
+- `shift`: Which cells take the place of the deleted ones.
+
+**Exceptions**
+
+- `ArgumentException`: `shift` is not a defined value.
+- `InvalidOperationException`: The cells that move would split a merged area, a table or an array formula, or a table would lose its header, totals or data rows.
+- `NotSupportedException`: A formula on the sheet, or one naming it, cannot be read by SharpCell; or some of a table's columns would be deleted.
+
 <a id="equals-cellrange"></a>
 ### Equals(CellRange)
 
@@ -1979,6 +2020,25 @@ The value of every cell, empty ones included, indexed `[row, column]` from the r
 **Exceptions**
 
 - `InvalidOperationException`: The range has more cells than an array can hold.
+
+<a id="insert-insertshift"></a>
+### Insert(InsertShift)
+
+```csharp
+public void Insert(InsertShift shift)
+```
+
+Inserts empty cells in place of the range, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells in the range's columns (or rows) move, along with their styles, number formats, hyperlinks, data validation, merged areas and tables, and every reference to them follows. A reference to a range that only some of the moved cells are in stays as it was, as in Excel; data validation over such a range is split. A range of whole rows (or whole columns) inserts rows (or columns), as [Worksheet.InsertRows](SharpCell.Worksheet.md#insertrows-int-int) does. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `shift`: Where the cells beside the range go.
+
+**Exceptions**
+
+- `ArgumentException`: `shift` is not a defined value.
+- `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula.
+- `NotSupportedException`: A formula on the sheet, or one naming it, cannot be read by SharpCell, so its references could not follow; or cells would be inserted inside a table's columns.
 
 <a id="setvalues-cellvalue"></a>
 ### SetValues(CellValue[,])
@@ -2864,6 +2924,27 @@ The name.
 
 ---
 
+<!-- page: api/SharpCell.DeleteShift.md -->
+
+# DeleteShift
+
+```csharp
+public enum DeleteShift
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Which cells take the place of deleted cells, as in Excel's Delete dialog.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="up"></a>`Up` | 0 | The cells below move up: "Shift cells up". |
+| <a id="left"></a>`Left` | 1 | The cells to the right move left: "Shift cells left". |
+
+---
+
 <!-- page: api/SharpCell.DiagnosticKind.md -->
 
 # DiagnosticKind
@@ -3334,6 +3415,27 @@ public override string ToString()
 ```
 
 The target.
+
+---
+
+<!-- page: api/SharpCell.InsertShift.md -->
+
+# InsertShift
+
+```csharp
+public enum InsertShift
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Where the cells beside inserted cells go, as in Excel's Insert dialog.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="down"></a>`Down` | 0 | The cells below move down: "Shift cells down". |
+| <a id="right"></a>`Right` | 1 | The cells to the right move right: "Shift cells right". |
 
 ---
 

@@ -184,6 +184,26 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Insert_and_delete_cells()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+        sheet["A1"].Value = 1;
+        sheet["A2"].Value = 2;
+        sheet["B1"].Value = 10;
+        sheet["C1"].Formula = "=SUM(A1:A2)";
+
+        // snippet: insert-cells
+        sheet.Range("A1").Insert(InsertShift.Down);   // A1 and A2 move to A2 and A3; column B stays
+        workbook.Recalculate();                        // C1 is =SUM(A2:A3) now
+
+        sheet.Range("A1:A2").Delete(DeleteShift.Up);  // A3 moves up to A1; a formula reading A2 gets #REF!
+        // end-snippet
+
+        Assert.Equal(("=SUM(A1:A1)", 10.0), (sheet["C1"].Formula, sheet["B1"].Value.AsNumber()));
+    }
+
+    [Fact]
     public void Copy_cells()
     {
         var workbook = new Workbook();

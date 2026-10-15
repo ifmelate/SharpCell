@@ -64,6 +64,16 @@ public sealed partial class Worksheet
     /// on this sheet, or one naming it, cannot be read by SharpCell.</exception>
     public void DeleteColumns(int column, int count = 1) => Edit(new SheetEdit(Rows: false, column, count, Delete: true), nameof(column));
 
+    /// <summary>Inserts or deletes the cells of an area, moving the cells beside it; see <see cref="CellRange.Insert"/>.</summary>
+    internal void EditCells(Area area, bool rows, bool delete)
+    {
+        var (at, count, band) = rows
+            ? (area.FirstRow, area.Rows, (area.FirstColumn, area.LastColumn))
+            : (area.FirstColumn, area.Columns, (area.FirstRow, area.LastRow));
+        var whole = rows ? area.FirstColumn == 1 && area.LastColumn == CellAddress.MaxColumn : area.FirstRow == 1 && area.LastRow == CellAddress.MaxRow;
+        Edit(new SheetEdit(rows, at, count, delete, whole ? null : band), "range");
+    }
+
     private void Edit(SheetEdit edit, string parameter)
     {
         var max = edit.Rows ? CellAddress.MaxRow : CellAddress.MaxColumn;
@@ -111,13 +121,13 @@ public sealed partial class Worksheet
         if (!edit.Delete)
         {
             var last = max - edit.Count;
-            int Index(int row, int column) => edit.Rows ? row : column;
+            bool Pushed(int row, int column) => (edit.Rows ? row : column) > last && edit.InBand(edit.Rows ? column : row);
             var pushed = Store.Enumerate(1, 1, CellAddress.MaxRow, CellAddress.MaxColumn)
-                    .Any(cell => Index(cell.Row, cell.Column) > last && !(cell.Data.Formula is null && cell.Data.SpillAnchor is not null))
-                || _styles.Keys.Any(a => Index(a.Row, a.Column) > last)
-                || _formats.Keys.Any(a => Index(a.Row, a.Column) > last)
-                || _hyperlinks.Keys.Any(a => Index(a.Row, a.Column) > last)
-                || _validations.Exists(rule => rule.Areas.Exists(a => Index(a.FirstRow, a.FirstColumn) > last));
+                    .Any(cell => Pushed(cell.Row, cell.Column) && !(cell.Data.Formula is null && cell.Data.SpillAnchor is not null))
+                || _styles.Keys.Any(a => Pushed(a.Row, a.Column))
+                || _formats.Keys.Any(a => Pushed(a.Row, a.Column))
+                || _hyperlinks.Keys.Any(a => Pushed(a.Row, a.Column))
+                || _validations.Exists(rule => rule.Areas.Exists(a => Pushed(a.FirstRow, a.FirstColumn)));
             if (pushed)
                 throw new InvalidOperationException($"Content in the last {(edit.Rows ? "rows" : "columns")} would be pushed off the sheet.");
         }
@@ -127,8 +137,14 @@ public sealed partial class Worksheet
             if (cell.Data.FixedArray is not { } array)
                 continue;
             var (first, last) = edit.Rows ? (array.FirstRow, array.LastRow) : (array.FirstColumn, array.LastColumn);
-            if (Splits(edit, first, last))
+            if (Splits(edit, first, last) || Shears(edit, array))
                 throw new InvalidOperationException($"{Name}!{new CellAddress(cell.Row, cell.Column)} is an array formula; part of it cannot be inserted into or deleted.");
+        }
+
+        foreach (var merged in _merged)
+        {
+            if (Shears(edit, merged))
+                throw new InvalidOperationException($"Cells of the merged area {new CellRange(this, merged).Address} would be moved apart; unmerge it first.");
         }
 
         foreach (var table in Workbook.Tables)
@@ -136,6 +152,10 @@ public sealed partial class Worksheet
             if (table.Worksheet != this)
                 continue;
             var area = table.Area;
+            if (Shears(edit, area))
+                throw new InvalidOperationException($"Cells of table '{table.Name}' would be moved apart from the rest of it.");
+            if (!edit.Covers(edit.Across(area).First, edit.Across(area).Last))
+                continue;
             if (!edit.Rows)
             {
                 if (Splits(edit, area.FirstColumn, area.LastColumn))
@@ -161,16 +181,15 @@ public sealed partial class Worksheet
         ? Overlaps(edit, first, last) && !Contains(edit, first, last)
         : edit.At > first && edit.At <= last;
 
+    // An area some of whose cells move while the rest stay: one across the edge of the band.
+    private static bool Shears(SheetEdit edit, Area area) =>
+        edit.Touches(area) && !edit.Covers(edit.Across(area).First, edit.Across(area).Last);
+
     private static bool Overlaps(SheetEdit edit, int first, int last) => edit.At <= last && edit.At + edit.Count - 1 >= first;
 
     private static bool Contains(SheetEdit edit, int first, int last) => edit.At <= first && edit.At + edit.Count - 1 >= last;
 
-    private CellAddress? Map(SheetEdit edit, int row, int column)
-    {
-        if (edit.Rows)
-            return edit.Map(row, CellAddress.MaxRow) is { } r ? new CellAddress(r, column) : null;
-        return edit.Map(column, CellAddress.MaxColumn) is { } c ? new CellAddress(row, c) : null;
-    }
+    private static CellAddress? Map(SheetEdit edit, int row, int column) => edit.Map(new CellAddress(row, column));
 
     private void Apply(SheetEdit edit)
     {
@@ -211,12 +230,13 @@ public sealed partial class Worksheet
         MoveKeys(_styles, edit);
         MoveKeys(_formats, edit);
         MoveKeys(_hyperlinks, edit);
-        if (edit.Rows)
+        // Rows and columns keep their heights and widths when only some of their cells move.
+        if (edit.Whole && edit.Rows)
         {
             MoveIndexes(_rowHeights, edit, CellAddress.MaxRow);
             MoveIndexes(_hiddenRows, edit, CellAddress.MaxRow);
         }
-        else
+        else if (edit.Whole)
         {
             MoveIndexes(_columnWidths, edit, CellAddress.MaxColumn);
             MoveIndexes(_hiddenColumns, edit, CellAddress.MaxColumn);

@@ -1,1 +1,9 @@
 #nullable enable
+SharpCell.CellRange.Delete(SharpCell.DeleteShift shift) -> void
+SharpCell.CellRange.Insert(SharpCell.InsertShift shift) -> void
+SharpCell.DeleteShift
+SharpCell.DeleteShift.Left = 1 -> SharpCell.DeleteShift
+SharpCell.DeleteShift.Up = 0 -> SharpCell.DeleteShift
+SharpCell.InsertShift
+SharpCell.InsertShift.Down = 0 -> SharpCell.InsertShift
+SharpCell.InsertShift.Right = 1 -> SharpCell.InsertShift

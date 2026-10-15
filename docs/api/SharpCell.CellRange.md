@@ -98,6 +98,25 @@ Copies the range's cells to another range, as copying and pasting them in Excel 
 - `InvalidOperationException`: A cell written to is part of an array formula other than its top-left cell.
 - `NotSupportedException`: The range holds part of an array formula (Ctrl+Shift+Enter), or a formula SharpCell cannot read (such as a link to another workbook), in a cell or a data validation rule, whose references could not be moved.
 
+<a id="delete-deleteshift"></a>
+### Delete(DeleteShift)
+
+```csharp
+public void Delete(DeleteShift shift)
+```
+
+Deletes the range's cells, as Excel's Delete with "Shift cells up" or "Shift cells left" does: the cells below (or to the right) in the range's columns (or rows) move into their place. A reference to a deleted cell becomes `#REF!`; otherwise references follow as with [CellRange.Insert](SharpCell.CellRange.md#insert-insertshift). A range of whole rows (or columns) deletes them.
+
+**Parameters**
+
+- `shift`: Which cells take the place of the deleted ones.
+
+**Exceptions**
+
+- `ArgumentException`: `shift` is not a defined value.
+- `InvalidOperationException`: The cells that move would split a merged area, a table or an array formula, or a table would lose its header, totals or data rows.
+- `NotSupportedException`: A formula on the sheet, or one naming it, cannot be read by SharpCell; or some of a table's columns would be deleted.
+
 <a id="equals-cellrange"></a>
 ### Equals(CellRange)
 
@@ -137,6 +156,25 @@ The value of every cell, empty ones included, indexed `[row, column]` from the r
 **Exceptions**
 
 - `InvalidOperationException`: The range has more cells than an array can hold.
+
+<a id="insert-insertshift"></a>
+### Insert(InsertShift)
+
+```csharp
+public void Insert(InsertShift shift)
+```
+
+Inserts empty cells in place of the range, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells in the range's columns (or rows) move, along with their styles, number formats, hyperlinks, data validation, merged areas and tables, and every reference to them follows. A reference to a range that only some of the moved cells are in stays as it was, as in Excel; data validation over such a range is split. A range of whole rows (or whole columns) inserts rows (or columns), as [Worksheet.InsertRows](SharpCell.Worksheet.md#insertrows-int-int) does. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `shift`: Where the cells beside the range go.
+
+**Exceptions**
+
+- `ArgumentException`: `shift` is not a defined value.
+- `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula.
+- `NotSupportedException`: A formula on the sheet, or one naming it, cannot be read by SharpCell, so its references could not follow; or cells would be inserted inside a table's columns.
 
 <a id="setvalues-cellvalue"></a>
 ### SetValues(CellValue[,])
