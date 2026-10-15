@@ -1314,13 +1314,16 @@ maintainer.
 | 0.7 | Saving everything the model holds, workbooks built in code, .xlsm files, inserting and deleting rows and columns; functions as values, `GROUPBY`, `PIVOTBY`, `PERCENTOF` |
 | 0.8 | `Cell.Input`: a cell as typed in Excel |
 | 0.9 | Building workbooks: filling sheets from collections and `DataTable`s, hyperlinks, data validation, sheet and workbook protection, locked and hidden cells |
+| 0.10 | Copying cells as Excel pastes them, formulas, links and data validation following (`CellRange.CopyTo`) |
 
-## Now: 0.10, rules on cells
+## Now: 0.11, rules on cells
 
-- Conditional formatting: read, added and saved. SharpCell can also tell which cells a rule
-  applies to, since it calculates the formulas Excel would.
-- Comments (notes): read, added and saved.
-- Page setup: orientation, margins, print area, titles and page breaks.
+- Done: conditional formatting, read, added and saved. SharpCell also tells which cells a rule
+  applies to and how they look (`Cell.ConditionalFormats`, `Cell.DisplayStyle`), since it
+  calculates the formulas Excel would. Colour scales, data bars and icon sets are kept, not drawn.
+- Done: notes, read, added and saved.
+- Done: page setup: orientation, margins, print area, print titles and page breaks.
+- Done: inserting and deleting cells with Excel's "Shift cells down / right / up / left".
 - Benchmarks against EPPlus and ClosedXML: loading, recalculating and saving large workbooks.
 
 ## Later
