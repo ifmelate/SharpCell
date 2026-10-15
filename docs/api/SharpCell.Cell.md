@@ -81,6 +81,15 @@ Getting it gives the text Excel shows to edit the cell, which set again gives th
 - `FormulaParseException`: The text starts with `=` but is not a formula; the cell is unchanged.
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="note"></a>
+### Note
+
+```csharp
+public Note? Note { get; set; }
+```
+
+The cell's note, or null for none, which setting null also gives. A note moves with its cell when rows, columns or cells are inserted, goes with it when they are deleted, and is copied with it by [CellRange.CopyTo](SharpCell.CellRange.md#copyto-cellrange).
+
 <a id="numberformat"></a>
 ### NumberFormat
 

@@ -204,6 +204,25 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Notes()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-notes
+        sheet["B2"].Note = new Note("Checked against the invoice", "Ann");
+        sheet["B3"].Note = new Note("Shown all the time") { IsVisible = true };
+
+        foreach (var (cell, note) in sheet.Notes)
+            Console.WriteLine($"{cell.Address}: {note.Text} ({note.Author})");
+
+        sheet["B3"].Note = null;   // removes it
+        // end-snippet
+
+        Assert.Equal(["B2"], sheet.Notes.Select(n => n.Cell.Address));
+    }
+
+    [Fact]
     public void Copy_cells()
     {
         var workbook = new Workbook();

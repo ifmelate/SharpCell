@@ -245,7 +245,7 @@ workbook.Recalculate();
 ```
 
 `CellRange.CopyTo` copies cells as copying and pasting them in Excel does: values, formulas,
-number formats, styles, hyperlinks and data validation. Relative references in a formula keep their distance from its cell and
+number formats, styles, hyperlinks, notes and data validation. Relative references in a formula keep their distance from its cell and
 absolute ones (`$A$1`) stay; a reference that would point past the sheet's edge becomes `#REF!`.
 Data validation formulas keep their distance from each cell in the same way. Empty cells of
 the range clear the cells they land on, their validation and hyperlinks too. A destination that is a whole number of
@@ -255,6 +255,29 @@ destination may overlap, and the destination may be in another workbook, where f
 that workbook's sheets and names. Merged cells, column widths and row heights are not copied. A
 range holding part of an array formula (Ctrl+Shift+Enter) or a formula SharpCell cannot read throws
 `NotSupportedException`; nothing changes.
+
+## Notes
+
+```csharp snippet=cells-notes
+sheet["B2"].Note = new Note("Checked against the invoice", "Ann");
+sheet["B3"].Note = new Note("Shown all the time") { IsVisible = true };
+
+foreach (var (cell, note) in sheet.Notes)
+    Console.WriteLine($"{cell.Address}: {note.Text} ({note.Author})");
+
+sheet["B3"].Note = null;   // removes it
+```
+
+A `Note` is what Excel's Insert Note puts on a cell (a comment, before Excel 365): a text, who
+wrote it, and whether it is shown all the time (`IsVisible`) or only while the pointer rests on the
+cell. Notes move with their cells when rows, columns or cells are inserted or deleted, and
+`CopyTo` copies them. Excel starts the text of a note it makes with the author's name and a colon;
+SharpCell reads that line as part of the text and writes only the text it is given.
+
+`XlsxReader` reads the notes of a file and `XlsxWriter` saves them. A note that did not change keeps
+its formatted text and its box as they were; a new or changed one is written as plain text in a box
+beside its cell, where Excel puts a new note. Threaded comments, Excel's newer comments with replies,
+are not notes: a file's own are kept as they are, and SharpCell does not make them.
 
 ## Defined names
 

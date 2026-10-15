@@ -43,6 +43,7 @@ internal sealed class SheetLook
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
+        Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
         Validations = [.. sheet.ValidationRules.Select(rule => ((IReadOnlyList<Area>)rule.Areas.ToArray(), rule.Validation))];
         Protection = sheet.Protection;
         ProtectionPassword = sheet.ProtectionPassword;
@@ -71,6 +72,14 @@ internal sealed class SheetLook
         }
 
         Hyperlinks = hyperlinks;
+        var notes = new Dictionary<CellAddress, Note>();
+        foreach (var (address, note) in look.Notes)
+        {
+            if (map.Map(sheet, address) is { } to)
+                notes[to] = note;
+        }
+
+        Notes = notes;
 
         // Not moved: the rules of a sheet whose rows or columns moved are always written again, and
         // moving them here would mean moving their formulas as the model does.
@@ -113,6 +122,9 @@ internal sealed class SheetLook
     /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
     public IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks { get; }
 
+    /// <summary>The notes the model held, by cell; threaded comments are not here.</summary>
+    public IReadOnlyDictionary<CellAddress, Note> Notes { get; }
+
     /// <summary>The data validation rules in order, with their ranges, as read; not moved by edits.</summary>
     public IReadOnlyList<(IReadOnlyList<Area> Areas, DataValidation Validation)> Validations { get; }
 
@@ -151,6 +163,10 @@ internal sealed class SheetLook
     public bool HyperlinksChanged(Worksheet sheet) =>
         Hyperlinks.Count != sheet.Hyperlinks.Count
         || Hyperlinks.Any(pair => !sheet.Hyperlinks.TryGetValue(pair.Key, out var link) || !link.Equals(pair.Value));
+
+    public bool NotesChanged(Worksheet sheet) =>
+        Notes.Count != sheet.NoteMap.Count
+        || Notes.Any(pair => !sheet.NoteMap.TryGetValue(pair.Key, out var note) || !note.Equals(pair.Value));
 
     public bool ValidationsChanged(Worksheet sheet)
     {

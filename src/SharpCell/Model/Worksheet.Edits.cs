@@ -127,6 +127,7 @@ public sealed partial class Worksheet
                 || _styles.Keys.Any(a => Pushed(a.Row, a.Column))
                 || _formats.Keys.Any(a => Pushed(a.Row, a.Column))
                 || _hyperlinks.Keys.Any(a => Pushed(a.Row, a.Column))
+                || _notes.Keys.Any(a => Pushed(a.Row, a.Column))
                 || _validations.Exists(rule => rule.Areas.Exists(a => Pushed(a.FirstRow, a.FirstColumn)));
             if (pushed)
                 throw new InvalidOperationException($"Content in the last {(edit.Rows ? "rows" : "columns")} would be pushed off the sheet.");
@@ -230,6 +231,7 @@ public sealed partial class Worksheet
         MoveKeys(_styles, edit);
         MoveKeys(_formats, edit);
         MoveKeys(_hyperlinks, edit);
+        MoveKeys(_notes, edit);
         // Rows and columns keep their heights and widths when only some of their cells move.
         if (edit.Whole && edit.Rows)
         {

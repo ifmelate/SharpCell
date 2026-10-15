@@ -73,6 +73,7 @@ internal static class PackageWriter
         }
 
         var removedTables = MoveTables(edit, plan);
+        var notes = new List<NoteParts.Plan>();
         foreach (var sheet in workbook.Sheets)
         {
             var sheetSource = source.SheetFor(sheet);
@@ -80,9 +81,12 @@ internal static class PackageWriter
                 ? package.OpenXml(part)
                 : System.Xml.XmlReader.Create(new StringReader(NewWorksheet));
             var hyperlinks = HyperlinkWriter.Plan(edit, sheetSource, parts[sheet], sheet, plan.Edits);
+            var sheetNotes = NoteParts.Prepare(edit, sheetSource, parts[sheet], sheet, plan.Edits);
+            if (sheetNotes is not null)
+                notes.Add(sheetNotes);
             var bytes = WorksheetWriter.Write(reader, sheet, sheetSource, plan, saved, metadata, styles,
                 tables.TryGetValue(sheet, out var ids) ? ids : [], removedTables.TryGetValue(sheet, out var removed) ? removed : [],
-                headers.TryGetValue(sheet, out var names) ? names : [], hyperlinks);
+                headers.TryGetValue(sheet, out var names) ? names : [], hyperlinks, sheetNotes);
             if (bytes is not null || sheetSource.Part is null)
                 edit.Parts[parts[sheet]] = bytes ?? Encoding.UTF8.GetBytes(NewWorksheet);
         }
@@ -90,6 +94,7 @@ internal static class PackageWriter
         metadata.Save();
         styles.Save();
         RelatedPartsShift.Apply(edit, plan);
+        NoteParts.Write(edit, notes);
 
         // Excel trusts the calculation chain; one that lists cells without formulas makes it repair the file.
         if (plan.AnyFormulaChanged && WorkbookReader.FirstOfType(relationships, "calcChain")?.Target is { } chain)

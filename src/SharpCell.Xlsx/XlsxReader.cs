@@ -127,6 +127,7 @@ internal static class WorkbookReader
             if (entry is { } sheet)
             {
                 WorksheetReader.Read(package, sheet.Part, sheet.Sheet, saved);
+                NoteParts.Read(package, sheet.Part, sheet.Sheet);
                 sheetParts[sheet.Sheet] = sheet.Part;
             }
         }

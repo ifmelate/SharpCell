@@ -7,3 +7,16 @@ SharpCell.DeleteShift.Up = 0 -> SharpCell.DeleteShift
 SharpCell.InsertShift
 SharpCell.InsertShift.Down = 0 -> SharpCell.InsertShift
 SharpCell.InsertShift.Right = 1 -> SharpCell.InsertShift
+override SharpCell.Note.Equals(object? obj) -> bool
+override SharpCell.Note.GetHashCode() -> int
+override SharpCell.Note.ToString() -> string!
+SharpCell.Cell.Note.get -> SharpCell.Note?
+SharpCell.Cell.Note.set -> void
+SharpCell.Note
+SharpCell.Note.Author.get -> string?
+SharpCell.Note.Equals(SharpCell.Note? other) -> bool
+SharpCell.Note.IsVisible.get -> bool
+SharpCell.Note.IsVisible.init -> void
+SharpCell.Note.Note(string! text, string? author = null) -> void
+SharpCell.Note.Text.get -> string!
+SharpCell.Worksheet.Notes.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.Cell! Cell, SharpCell.Note! Note)>!

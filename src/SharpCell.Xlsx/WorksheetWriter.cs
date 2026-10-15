@@ -83,10 +83,14 @@ internal sealed class WorksheetWriter
     // The links to write when they changed; null when the file's element stays (moved by the edits).
     private readonly SheetHyperlinks? _hyperlinks;
 
+    // Where the notes go when they changed: a new legacyDrawing element, or the file's dropped.
+    private readonly NoteParts.Plan? _notes;
+
     private WorksheetWriter(Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved, CellMetadataWriter metadata,
         StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables, IReadOnlyDictionary<CellAddress, string> headers,
-        SheetHyperlinks? hyperlinks)
+        SheetHyperlinks? hyperlinks, NoteParts.Plan? notes)
     {
+        _notes = notes;
         _map = plan.Edits;
         _shifted = source.Part is not null && _map.HasEdits(sheet);
         _removedTables = removedTables;
@@ -132,6 +136,8 @@ internal sealed class WorksheetWriter
             _pending.Add("dataValidations");
         if (hyperlinks is not null)
             _pending.Add("hyperlinks");
+        if (notes?.LegacyDrawingId is not null)
+            _pending.Add("legacyDrawing");
         if (_rowsChanged)
         {
             var rows = new SortedSet<int>(_look.RowHeights.Keys);
@@ -154,11 +160,12 @@ internal sealed class WorksheetWriter
     /// <param name="headers">Header cells of new tables, with their column names.</param>
     /// <param name="removedTables">Relationship ids of table parts to leave out.</param>
     /// <param name="hyperlinks">The links to write, or null to keep the file's.</param>
+    /// <param name="notes">Where the sheet's notes go when they changed, or null.</param>
     public static byte[]? Write(XmlReader reader, Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved,
         CellMetadataWriter metadata, StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables,
-        IReadOnlyDictionary<CellAddress, string> headers, SheetHyperlinks? hyperlinks)
+        IReadOnlyDictionary<CellAddress, string> headers, SheetHyperlinks? hyperlinks, NoteParts.Plan? notes)
     {
-        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers, hyperlinks);
+        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers, hyperlinks, notes);
         var output = new MemoryStream();
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
             writer.Copy(reader, xml);
@@ -222,6 +229,7 @@ internal sealed class WorksheetWriter
                     case "sheetProtection" when _protectionChanged:
                     case "dataValidations" when _validationsChanged:
                     case "hyperlinks" when _hyperlinks is not null:
+                    case "legacyDrawing" when _notes is { RemoveLegacyDrawing: true } || _notes?.LegacyDrawingId is not null:
                         _pending.Remove(name);
                         _changed = true;
                         Build(name, (XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
@@ -269,6 +277,7 @@ internal sealed class WorksheetWriter
         "sheetProtection" => ProtectionElements.Element(_ns, _sheet),
         "dataValidations" => ValidationElements.Element(_ns, _sheet, source),
         "hyperlinks" => Hyperlinks(),
+        "legacyDrawing" => LegacyDrawing(),
         _ => MergeCells(),
     };
 
@@ -432,6 +441,14 @@ internal sealed class WorksheetWriter
         element.Descendants().Where(d => d.Name.LocalName == "sparklineGroups" && !d.HasElements).ToList().ForEach(d => d.Remove());
         element.Elements().Where(e => e.Name.LocalName == "ext" && !e.HasElements).ToList().ForEach(e => e.Remove());
         return element.HasElements ? element : null;
+    }
+
+    private XElement? LegacyDrawing()
+    {
+        if (_notes?.LegacyDrawingId is not { } id)
+            return null;
+        XNamespace relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+        return new XElement(_ns + "legacyDrawing", new XAttribute(XNamespace.Xmlns + "r", relationships), new XAttribute(relationships + "id", id));
     }
 
     private XElement? TableParts(XElement? element)

@@ -264,6 +264,21 @@ public sealed partial class Cell
     }
 
     /// <summary>
+    /// The cell's note, or null for none, which setting null also gives. A note moves with its cell
+    /// when rows, columns or cells are inserted, goes with it when they are deleted, and is copied
+    /// with it by <see cref="CellRange.CopyTo"/>.
+    /// </summary>
+    public Note? Note
+    {
+        get => Worksheet.NoteAt(Row, Column);
+        set
+        {
+            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.SetNote(Row, Column, value);
+        }
+    }
+
+    /// <summary>
     /// The data validation rule of the cell, or null for none. Its formulas are relative to the first
     /// cell of the rule's first range, not to this cell. Rules are set with <see cref="Worksheet.AddValidation"/>.
     /// </summary>

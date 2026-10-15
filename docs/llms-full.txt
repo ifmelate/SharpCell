@@ -546,7 +546,7 @@ workbook.Recalculate();
 ```
 
 `CellRange.CopyTo` copies cells as copying and pasting them in Excel does: values, formulas,
-number formats, styles, hyperlinks and data validation. Relative references in a formula keep their distance from its cell and
+number formats, styles, hyperlinks, notes and data validation. Relative references in a formula keep their distance from its cell and
 absolute ones (`$A$1`) stay; a reference that would point past the sheet's edge becomes `#REF!`.
 Data validation formulas keep their distance from each cell in the same way. Empty cells of
 the range clear the cells they land on, their validation and hyperlinks too. A destination that is a whole number of
@@ -556,6 +556,29 @@ destination may overlap, and the destination may be in another workbook, where f
 that workbook's sheets and names. Merged cells, column widths and row heights are not copied. A
 range holding part of an array formula (Ctrl+Shift+Enter) or a formula SharpCell cannot read throws
 `NotSupportedException`; nothing changes.
+
+## Notes
+
+```csharp snippet=cells-notes
+sheet["B2"].Note = new Note("Checked against the invoice", "Ann");
+sheet["B3"].Note = new Note("Shown all the time") { IsVisible = true };
+
+foreach (var (cell, note) in sheet.Notes)
+    Console.WriteLine($"{cell.Address}: {note.Text} ({note.Author})");
+
+sheet["B3"].Note = null;   // removes it
+```
+
+A `Note` is what Excel's Insert Note puts on a cell (a comment, before Excel 365): a text, who
+wrote it, and whether it is shown all the time (`IsVisible`) or only while the pointer rests on the
+cell. Notes move with their cells when rows, columns or cells are inserted or deleted, and
+`CopyTo` copies them. Excel starts the text of a note it makes with the author's name and a colon;
+SharpCell reads that line as part of the text and writes only the text it is given.
+
+`XlsxReader` reads the notes of a file and `XlsxWriter` saves them. A note that did not change keeps
+its formatted text and its box as they were; a new or changed one is written as plain text in a box
+beside its cell, where Excel puts a new note. Threaded comments, Excel's newer comments with replies,
+are not notes: a file's own are kept as they are, and SharpCell does not make them.
 
 ## Defined names
 
@@ -985,7 +1008,7 @@ Everything SharpCell models:
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
-- Hyperlinks, data validation, sheet and workbook protection, and locked and hidden cells.
+- Hyperlinks, notes, data validation, sheet and workbook protection, and locked and hidden cells.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
@@ -1469,6 +1492,15 @@ Getting it gives the text Excel shows to edit the cell, which set again gives th
 - `FormulaParseException`: The text starts with `=` but is not a formula; the cell is unchanged.
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
 
+<a id="note"></a>
+### Note
+
+```csharp
+public Note? Note { get; set; }
+```
+
+The cell's note, or null for none, which setting null also gives. A note moves with its cell when rows, columns or cells are inserted, goes with it when they are deleted, and is copied with it by [CellRange.CopyTo](SharpCell.CellRange.md#copyto-cellrange).
+
 <a id="numberformat"></a>
 ### NumberFormat
 
@@ -1948,7 +1980,7 @@ The sheet the range is on.
 public CellRange CopyTo(CellRange destination)
 ```
 
-Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats, styles, hyperlinks and data validation. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Data validation formulas keep their distance from each cell as cell formulas do. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats, styles, hyperlinks, notes and data validation. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Data validation formulas keep their distance from each cell as cell formulas do. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -2028,7 +2060,7 @@ The value of every cell, empty ones included, indexed `[row, column]` from the r
 public void Insert(InsertShift shift)
 ```
 
-Inserts empty cells in place of the range, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells in the range's columns (or rows) move, along with their styles, number formats, hyperlinks, data validation, merged areas and tables, and every reference to them follows. A reference to a range that only some of the moved cells are in stays as it was, as in Excel; data validation over such a range is split. A range of whole rows (or whole columns) inserts rows (or columns), as [Worksheet.InsertRows](SharpCell.Worksheet.md#insertrows-int-int) does. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Inserts empty cells in place of the range, as Excel's Insert with "Shift cells down" or "Shift cells right" does: only the cells in the range's columns (or rows) move, along with their styles, number formats, hyperlinks, notes, data validation, merged areas and tables, and every reference to them follows. A reference to a range that only some of the moved cells are in stays as it was, as in Excel; data validation over such a range is split. A range of whole rows (or whole columns) inserts rows (or columns), as [Worksheet.InsertRows](SharpCell.Worksheet.md#insertrows-int-int) does. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -3555,6 +3587,108 @@ A function value produced by `LAMBDA`. Instances are created only by the engine.
 
 ---
 
+<!-- page: api/SharpCell.Note.md -->
+
+# Note
+
+```csharp
+public sealed class Note
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it. Excel's threaded comments, with replies, are not notes; a file's own are kept when it is saved.
+
+## Constructors
+
+<a id="ctor-string-string"></a>
+### Note(string, string)
+
+```csharp
+public Note(string text, string? author = null)
+```
+
+A note with `text`, written by `author`.
+
+**Parameters**
+
+- `text`: The note's text. Excel puts the author's name and a colon on the first line of a note it makes; SharpCell writes only the text it is given.
+- `author`: Who wrote the note, or null for nobody. Excel shows it in the status bar while the pointer rests on the cell.
+
+**Exceptions**
+
+- `ArgumentNullException`: The text is null.
+- `ArgumentException`: The text is longer than 32,767 characters, as Excel allows.
+
+## Properties
+
+<a id="author"></a>
+### Author
+
+```csharp
+public string? Author { get; }
+```
+
+Who wrote the note, or null for nobody.
+
+<a id="isvisible"></a>
+### IsVisible
+
+```csharp
+public bool IsVisible { get; init; }
+```
+
+Whether the note is always shown, as Excel's Show/Hide Note makes it; otherwise it is shown only while the pointer rests on its cell.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string Text { get; }
+```
+
+The text, with `\n` between lines.
+
+## Methods
+
+<a id="equals-note"></a>
+### Equals(Note)
+
+```csharp
+public bool Equals(Note? other)
+```
+
+Whether the other note has the same text, author and visibility, compared ordinally.
+
+<a id="equals-object"></a>
+### Equals(object)
+
+```csharp
+public override bool Equals(object? obj)
+```
+
+Whether `obj` is the same note.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [Note.Equals](SharpCell.Note.md#equals-note).
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The text.
+
+---
+
 <!-- page: api/SharpCell.RecalculationResult.md -->
 
 # RecalculationResult
@@ -4318,6 +4452,15 @@ public string Name { get; }
 ```
 
 The sheet name.
+
+<a id="notes"></a>
+### Notes
+
+```csharp
+public IReadOnlyList<(Cell, Note)> Notes { get; }
+```
+
+The cells with a note, row by row and left to right, with their notes.
 
 <a id="protection"></a>
 ### Protection

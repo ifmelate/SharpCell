@@ -28,7 +28,7 @@ public sealed partial class CellRange
     /// <summary>
     /// Inserts empty cells in place of the range, as Excel's Insert with "Shift cells down" or
     /// "Shift cells right" does: only the cells in the range's columns (or rows) move, along with
-    /// their styles, number formats, hyperlinks, data validation, merged areas and tables, and every
+    /// their styles, number formats, hyperlinks, notes, data validation, merged areas and tables, and every
     /// reference to them follows. A reference to a range that only some of the moved cells are in
     /// stays as it was, as in Excel; data validation over such a range is split. A range of whole
     /// rows (or whole columns) inserts rows (or columns), as <see cref="Worksheet.InsertRows"/> does.

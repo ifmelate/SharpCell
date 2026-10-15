@@ -38,7 +38,7 @@ Everything SharpCell models:
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
-- Hyperlinks, data validation, sheet and workbook protection, and locked and hidden cells.
+- Hyperlinks, notes, data validation, sheet and workbook protection, and locked and hidden cells.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the

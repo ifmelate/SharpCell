@@ -100,6 +100,15 @@ public string Name { get; }
 
 The sheet name.
 
+<a id="notes"></a>
+### Notes
+
+```csharp
+public IReadOnlyList<(Cell, Note)> Notes { get; }
+```
+
+The cells with a note, row by row and left to right, with their notes.
+
 <a id="protection"></a>
 ### Protection
 
