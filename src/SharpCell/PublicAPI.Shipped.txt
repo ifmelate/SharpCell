@@ -18,6 +18,12 @@ override SharpCell.CellStyle.ToString() -> string!
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
 override SharpCell.CellValue.ToString() -> string!
+override SharpCell.ConditionalFormat.Equals(object? obj) -> bool
+override SharpCell.ConditionalFormat.GetHashCode() -> int
+override SharpCell.ConditionalFormat.ToString() -> string!
+override SharpCell.ConditionalStyle.Equals(object? obj) -> bool
+override SharpCell.ConditionalStyle.GetHashCode() -> int
+override SharpCell.ConditionalStyle.ToString() -> string!
 override SharpCell.DataValidation.Equals(object? obj) -> bool
 override SharpCell.DataValidation.GetHashCode() -> int
 override SharpCell.DataValidation.ToString() -> string!
@@ -28,6 +34,12 @@ override SharpCell.Hyperlink.ToString() -> string!
 override SharpCell.IterationSettings.Equals(object? obj) -> bool
 override SharpCell.IterationSettings.GetHashCode() -> int
 override SharpCell.IterationSettings.ToString() -> string!
+override SharpCell.Note.Equals(object? obj) -> bool
+override SharpCell.Note.GetHashCode() -> int
+override SharpCell.Note.ToString() -> string!
+override SharpCell.PageMargins.Equals(object? obj) -> bool
+override SharpCell.PageMargins.GetHashCode() -> int
+override SharpCell.PageMargins.ToString() -> string!
 override SharpCell.SheetProtection.Equals(object? obj) -> bool
 override SharpCell.SheetProtection.GetHashCode() -> int
 override SharpCell.SheetProtection.ToString() -> string!
@@ -42,13 +54,17 @@ SharpCell.CalculationDiagnostic.Sheet.get -> SharpCell.Worksheet?
 SharpCell.Cell
 SharpCell.Cell.Address.get -> string!
 SharpCell.Cell.Column.get -> int
+SharpCell.Cell.ConditionalFormats.get -> System.Collections.Generic.IReadOnlyList<SharpCell.ConditionalFormat!>!
 SharpCell.Cell.Dependents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
+SharpCell.Cell.DisplayStyle.get -> SharpCell.CellStyle!
 SharpCell.Cell.Formula.get -> string?
 SharpCell.Cell.Formula.set -> void
 SharpCell.Cell.Hyperlink.get -> SharpCell.Hyperlink?
 SharpCell.Cell.Hyperlink.set -> void
 SharpCell.Cell.Input.get -> string!
 SharpCell.Cell.Input.set -> void
+SharpCell.Cell.Note.get -> SharpCell.Note?
+SharpCell.Cell.Note.set -> void
 SharpCell.Cell.NumberFormat.get -> string!
 SharpCell.Cell.NumberFormat.set -> void
 SharpCell.Cell.Precedents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
@@ -125,10 +141,12 @@ SharpCell.CellRange
 SharpCell.CellRange.Address.get -> string!
 SharpCell.CellRange.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
 SharpCell.CellRange.CopyTo(SharpCell.CellRange! destination) -> SharpCell.CellRange!
+SharpCell.CellRange.Delete(SharpCell.DeleteShift shift) -> void
 SharpCell.CellRange.Equals(SharpCell.CellRange? other) -> bool
 SharpCell.CellRange.FirstColumn.get -> int
 SharpCell.CellRange.FirstRow.get -> int
 SharpCell.CellRange.GetValues() -> SharpCell.CellValue[,]!
+SharpCell.CellRange.Insert(SharpCell.InsertShift shift) -> void
 SharpCell.CellRange.LastColumn.get -> int
 SharpCell.CellRange.LastRow.get -> int
 SharpCell.CellRange.SetValues(SharpCell.CellValue[,]! values) -> void
@@ -194,6 +212,80 @@ SharpCell.CellVerticalAlignment.Center = 1 -> SharpCell.CellVerticalAlignment
 SharpCell.CellVerticalAlignment.Distributed = 4 -> SharpCell.CellVerticalAlignment
 SharpCell.CellVerticalAlignment.Justify = 3 -> SharpCell.CellVerticalAlignment
 SharpCell.CellVerticalAlignment.Top = 0 -> SharpCell.CellVerticalAlignment
+SharpCell.ConditionalFormat
+SharpCell.ConditionalFormat.<Clone>$() -> SharpCell.ConditionalFormat!
+SharpCell.ConditionalFormat.Equals(SharpCell.ConditionalFormat? other) -> bool
+SharpCell.ConditionalFormat.Formula1.get -> string?
+SharpCell.ConditionalFormat.Formula2.get -> string?
+SharpCell.ConditionalFormat.Operator.get -> SharpCell.ConditionalOperator
+SharpCell.ConditionalFormat.OrEqual.get -> bool
+SharpCell.ConditionalFormat.Percent.get -> bool
+SharpCell.ConditionalFormat.Period.get -> SharpCell.TimePeriod
+SharpCell.ConditionalFormat.Rank.get -> int
+SharpCell.ConditionalFormat.StandardDeviations.get -> int
+SharpCell.ConditionalFormat.StopIfTrue.get -> bool
+SharpCell.ConditionalFormat.StopIfTrue.init -> void
+SharpCell.ConditionalFormat.Style.get -> SharpCell.ConditionalStyle?
+SharpCell.ConditionalFormat.Style.init -> void
+SharpCell.ConditionalFormat.Text.get -> string?
+SharpCell.ConditionalFormat.Type.get -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.AboveAverage = 4 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.BeginsWith = 10 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.BelowAverage = 5 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Blanks = 12 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Bottom = 3 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.CellValue = 0 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.ColorScale = 17 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.ContainsText = 8 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.DataBar = 18 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.DuplicateValues = 6 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.EndsWith = 11 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Errors = 14 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Expression = 1 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.IconSet = 19 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.NoBlanks = 13 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.NoErrors = 15 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.NotContainsText = 9 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.TimePeriod = 16 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Top = 2 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.UniqueValues = 7 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.Between = 0 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.Equal = 2 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.GreaterThan = 4 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.GreaterThanOrEqual = 6 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.LessThan = 5 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.LessThanOrEqual = 7 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.NotBetween = 1 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.NotEqual = 3 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalStyle
+SharpCell.ConditionalStyle.<Clone>$() -> SharpCell.ConditionalStyle!
+SharpCell.ConditionalStyle.ApplyTo(SharpCell.CellStyle! style) -> SharpCell.CellStyle!
+SharpCell.ConditionalStyle.Bold.get -> bool?
+SharpCell.ConditionalStyle.Bold.init -> void
+SharpCell.ConditionalStyle.BottomBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.BottomBorder.init -> void
+SharpCell.ConditionalStyle.ConditionalStyle() -> void
+SharpCell.ConditionalStyle.Equals(SharpCell.ConditionalStyle? other) -> bool
+SharpCell.ConditionalStyle.Fill.get -> SharpCell.CellColor?
+SharpCell.ConditionalStyle.Fill.init -> void
+SharpCell.ConditionalStyle.FontColor.get -> SharpCell.CellColor?
+SharpCell.ConditionalStyle.FontColor.init -> void
+SharpCell.ConditionalStyle.Italic.get -> bool?
+SharpCell.ConditionalStyle.Italic.init -> void
+SharpCell.ConditionalStyle.LeftBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.LeftBorder.init -> void
+SharpCell.ConditionalStyle.NumberFormat.get -> string?
+SharpCell.ConditionalStyle.NumberFormat.init -> void
+SharpCell.ConditionalStyle.RightBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.RightBorder.init -> void
+SharpCell.ConditionalStyle.Strikethrough.get -> bool?
+SharpCell.ConditionalStyle.Strikethrough.init -> void
+SharpCell.ConditionalStyle.TopBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.TopBorder.init -> void
+SharpCell.ConditionalStyle.Underline.get -> SharpCell.CellUnderline?
+SharpCell.ConditionalStyle.Underline.init -> void
 SharpCell.DataValidation
 SharpCell.DataValidation.AllowBlank.get -> bool
 SharpCell.DataValidation.AllowBlank.init -> void
@@ -231,6 +323,9 @@ SharpCell.DefinedName
 SharpCell.DefinedName.Formula.get -> string!
 SharpCell.DefinedName.Name.get -> string!
 SharpCell.DefinedName.Scope.get -> SharpCell.Worksheet?
+SharpCell.DeleteShift
+SharpCell.DeleteShift.Left = 1 -> SharpCell.DeleteShift
+SharpCell.DeleteShift.Up = 0 -> SharpCell.DeleteShift
 SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.CircularReference = 0 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.CustomFunctionFailure = 4 -> SharpCell.DiagnosticKind
@@ -284,6 +379,9 @@ SharpCell.Hyperlink.Hyperlink(string! target, string? tooltip = null) -> void
 SharpCell.Hyperlink.IsInWorkbook.get -> bool
 SharpCell.Hyperlink.Target.get -> string!
 SharpCell.Hyperlink.Tooltip.get -> string?
+SharpCell.InsertShift
+SharpCell.InsertShift.Down = 0 -> SharpCell.InsertShift
+SharpCell.InsertShift.Right = 1 -> SharpCell.InsertShift
 SharpCell.IterationSettings
 SharpCell.IterationSettings.Enabled.get -> bool
 SharpCell.IterationSettings.Equals(SharpCell.IterationSettings? other) -> bool
@@ -291,6 +389,32 @@ SharpCell.IterationSettings.IterationSettings(bool Enabled = false, int MaxItera
 SharpCell.IterationSettings.MaxChange.get -> double
 SharpCell.IterationSettings.MaxIterations.get -> int
 SharpCell.LambdaValue
+SharpCell.Note
+SharpCell.Note.Author.get -> string?
+SharpCell.Note.Equals(SharpCell.Note? other) -> bool
+SharpCell.Note.IsVisible.get -> bool
+SharpCell.Note.IsVisible.init -> void
+SharpCell.Note.Note(string! text, string? author = null) -> void
+SharpCell.Note.Text.get -> string!
+SharpCell.PageMargins
+SharpCell.PageMargins.<Clone>$() -> SharpCell.PageMargins!
+SharpCell.PageMargins.Bottom.get -> double
+SharpCell.PageMargins.Bottom.init -> void
+SharpCell.PageMargins.Equals(SharpCell.PageMargins? other) -> bool
+SharpCell.PageMargins.Footer.get -> double
+SharpCell.PageMargins.Footer.init -> void
+SharpCell.PageMargins.Header.get -> double
+SharpCell.PageMargins.Header.init -> void
+SharpCell.PageMargins.Left.get -> double
+SharpCell.PageMargins.Left.init -> void
+SharpCell.PageMargins.PageMargins(double left, double right, double top, double bottom, double header, double footer) -> void
+SharpCell.PageMargins.Right.get -> double
+SharpCell.PageMargins.Right.init -> void
+SharpCell.PageMargins.Top.get -> double
+SharpCell.PageMargins.Top.init -> void
+SharpCell.PageOrientation
+SharpCell.PageOrientation.Landscape = 1 -> SharpCell.PageOrientation
+SharpCell.PageOrientation.Portrait = 0 -> SharpCell.PageOrientation
 SharpCell.RecalculationResult
 SharpCell.RecalculationResult.ChangedCells.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
 SharpCell.SheetProtection
@@ -334,6 +458,17 @@ SharpCell.Table.HasTotalsRow.get -> bool
 SharpCell.Table.Name.get -> string!
 SharpCell.Table.Range.get -> string!
 SharpCell.Table.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.TimePeriod
+SharpCell.TimePeriod.Last7Days = 3 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.LastMonth = 7 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.LastWeek = 4 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.NextMonth = 9 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.NextWeek = 6 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.ThisMonth = 8 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.ThisWeek = 5 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.Today = 1 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.Tomorrow = 2 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.Yesterday = 0 -> SharpCell.TimePeriod
 SharpCell.ValidationErrorStyle
 SharpCell.ValidationErrorStyle.Information = 2 -> SharpCell.ValidationErrorStyle
 SharpCell.ValidationErrorStyle.Stop = 0 -> SharpCell.ValidationErrorStyle
@@ -385,11 +520,18 @@ SharpCell.Workbook.TryGetTable(string! name, out SharpCell.Table? table) -> bool
 SharpCell.Workbook.Unprotect() -> void
 SharpCell.Workbook.Workbook() -> void
 SharpCell.Worksheet
+SharpCell.Worksheet.AddColumnPageBreak(int column) -> void
+SharpCell.Worksheet.AddConditionalFormat(string! range, SharpCell.ConditionalFormat! format) -> void
+SharpCell.Worksheet.AddRowPageBreak(int row) -> void
 SharpCell.Worksheet.AddTable(string! name, string! range, bool hasHeaderRow = true, bool hasTotalsRow = false) -> SharpCell.Table!
 SharpCell.Worksheet.AddValidation(string! range, SharpCell.DataValidation! validation) -> void
 SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
+SharpCell.Worksheet.ClearConditionalFormats() -> void
+SharpCell.Worksheet.ClearConditionalFormats(string! range) -> void
 SharpCell.Worksheet.ClearValidation(string! range) -> void
+SharpCell.Worksheet.ColumnPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
 SharpCell.Worksheet.ColumnWidth(int column) -> double?
+SharpCell.Worksheet.ConditionalFormats.get -> System.Collections.Generic.IReadOnlyList<(System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>! Ranges, SharpCell.ConditionalFormat! Format)>!
 SharpCell.Worksheet.DefaultColumnWidth.get -> double?
 SharpCell.Worksheet.DefaultColumnWidth.set -> void
 SharpCell.Worksheet.DefaultRowHeight.get -> double?
@@ -411,10 +553,24 @@ SharpCell.Worksheet.LoadRows<T>(string! topLeft, System.Collections.Generic.IEnu
 SharpCell.Worksheet.Merge(string! address) -> void
 SharpCell.Worksheet.MergedAreas.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
 SharpCell.Worksheet.Name.get -> string!
+SharpCell.Worksheet.Notes.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.Cell! Cell, SharpCell.Note! Note)>!
+SharpCell.Worksheet.PageMargins.get -> SharpCell.PageMargins!
+SharpCell.Worksheet.PageMargins.set -> void
+SharpCell.Worksheet.PageOrientation.get -> SharpCell.PageOrientation
+SharpCell.Worksheet.PageOrientation.set -> void
+SharpCell.Worksheet.PrintArea.get -> string?
+SharpCell.Worksheet.PrintArea.set -> void
+SharpCell.Worksheet.PrintTitleColumns.get -> string?
+SharpCell.Worksheet.PrintTitleColumns.set -> void
+SharpCell.Worksheet.PrintTitleRows.get -> string?
+SharpCell.Worksheet.PrintTitleRows.set -> void
 SharpCell.Worksheet.Protect(string? password = null, SharpCell.SheetProtection? allow = null) -> void
 SharpCell.Worksheet.Protection.get -> SharpCell.SheetProtection?
 SharpCell.Worksheet.Range(string! address) -> SharpCell.CellRange!
+SharpCell.Worksheet.RemoveColumnPageBreak(int column) -> void
+SharpCell.Worksheet.RemoveRowPageBreak(int row) -> void
 SharpCell.Worksheet.RowHeight(int row) -> double?
+SharpCell.Worksheet.RowPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
 SharpCell.Worksheet.SetColumnHidden(int column, bool hidden) -> void
 SharpCell.Worksheet.SetColumnWidth(int column, double? width) -> void
 SharpCell.Worksheet.SetRowHeight(int row, double? height) -> void
@@ -455,9 +611,38 @@ static SharpCell.CellValue.operator !=(SharpCell.CellValue left, SharpCell.CellV
 static SharpCell.CellValue.operator ==(SharpCell.CellValue left, SharpCell.CellValue right) -> bool
 static SharpCell.CellValue.Text(string! value) -> SharpCell.CellValue
 static SharpCell.CellValue.True.get -> SharpCell.CellValue
+static SharpCell.ConditionalFormat.AboveAverage(SharpCell.ConditionalStyle! style, bool orEqual = false, int standardDeviations = 0) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.BeginsWith(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.BelowAverage(SharpCell.ConditionalStyle! style, bool orEqual = false, int standardDeviations = 0) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Blanks(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Bottom(int rank, SharpCell.ConditionalStyle! style, bool percent = false) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.CellValue(SharpCell.ConditionalOperator comparison, string! formula1, SharpCell.ConditionalStyle! style, string? formula2 = null) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.ContainsText(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.DateOccurring(SharpCell.TimePeriod period, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.DuplicateValues(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.EndsWith(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Errors(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Expression(string! formula, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.NoBlanks(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.NoErrors(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.NotContainsText(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.operator !=(SharpCell.ConditionalFormat? left, SharpCell.ConditionalFormat? right) -> bool
+static SharpCell.ConditionalFormat.operator ==(SharpCell.ConditionalFormat? left, SharpCell.ConditionalFormat? right) -> bool
+static SharpCell.ConditionalFormat.Top(int rank, SharpCell.ConditionalStyle! style, bool percent = false) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.UniqueValues(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalStyle.GreenFill.get -> SharpCell.ConditionalStyle!
+static SharpCell.ConditionalStyle.LightRedFill.get -> SharpCell.ConditionalStyle!
+static SharpCell.ConditionalStyle.operator !=(SharpCell.ConditionalStyle? left, SharpCell.ConditionalStyle? right) -> bool
+static SharpCell.ConditionalStyle.operator ==(SharpCell.ConditionalStyle? left, SharpCell.ConditionalStyle? right) -> bool
+static SharpCell.ConditionalStyle.YellowFill.get -> SharpCell.ConditionalStyle!
 static SharpCell.DataValidation.Custom(string! formula) -> SharpCell.DataValidation!
 static SharpCell.DataValidation.List(params string![]! items) -> SharpCell.DataValidation!
 static SharpCell.DataValidation.ListFrom(string! range) -> SharpCell.DataValidation!
 static SharpCell.ErrorKinds.ToText(this SharpCell.ErrorKind kind) -> string!
 static SharpCell.ErrorKinds.TryParse(System.ReadOnlySpan<char> text, out SharpCell.ErrorKind kind) -> bool
+static SharpCell.PageMargins.Narrow.get -> SharpCell.PageMargins!
+static SharpCell.PageMargins.Normal.get -> SharpCell.PageMargins!
+static SharpCell.PageMargins.operator !=(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
+static SharpCell.PageMargins.operator ==(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
+static SharpCell.PageMargins.Wide.get -> SharpCell.PageMargins!
 ~override SharpCell.CellColor.Equals(object obj) -> bool
