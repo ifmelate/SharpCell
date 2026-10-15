@@ -63,3 +63,124 @@ SharpCell.PageMargins.Header.init -> void
 SharpCell.PageMargins.Left.init -> void
 SharpCell.PageMargins.Right.init -> void
 SharpCell.PageMargins.Top.init -> void
+SharpCell.Cell.ConditionalFormats.get -> System.Collections.Generic.IReadOnlyList<SharpCell.ConditionalFormat!>!
+SharpCell.Cell.DisplayStyle.get -> SharpCell.CellStyle!
+SharpCell.ConditionalFormat
+SharpCell.ConditionalFormat.<Clone>$() -> SharpCell.ConditionalFormat!
+SharpCell.ConditionalFormat.Equals(SharpCell.ConditionalFormat? other) -> bool
+SharpCell.ConditionalFormat.Formula1.get -> string?
+SharpCell.ConditionalFormat.Formula2.get -> string?
+SharpCell.ConditionalFormat.Operator.get -> SharpCell.ConditionalOperator
+SharpCell.ConditionalFormat.OrEqual.get -> bool
+SharpCell.ConditionalFormat.Percent.get -> bool
+SharpCell.ConditionalFormat.Period.get -> SharpCell.TimePeriod
+SharpCell.ConditionalFormat.Rank.get -> int
+SharpCell.ConditionalFormat.StandardDeviations.get -> int
+SharpCell.ConditionalFormat.StopIfTrue.get -> bool
+SharpCell.ConditionalFormat.StopIfTrue.init -> void
+SharpCell.ConditionalFormat.Style.get -> SharpCell.ConditionalStyle?
+SharpCell.ConditionalFormat.Style.init -> void
+SharpCell.ConditionalFormat.Text.get -> string?
+SharpCell.ConditionalFormat.Type.get -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.AboveAverage = 4 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.BeginsWith = 10 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.BelowAverage = 5 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Blanks = 12 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Bottom = 3 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.CellValue = 0 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.ColorScale = 17 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.ContainsText = 8 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.DataBar = 18 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.DuplicateValues = 6 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.EndsWith = 11 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Errors = 14 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Expression = 1 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.IconSet = 19 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.NoBlanks = 13 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.NoErrors = 15 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.NotContainsText = 9 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.TimePeriod = 16 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.Top = 2 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalFormatType.UniqueValues = 7 -> SharpCell.ConditionalFormatType
+SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.Between = 0 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.Equal = 2 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.GreaterThan = 4 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.GreaterThanOrEqual = 6 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.LessThan = 5 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.LessThanOrEqual = 7 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.NotBetween = 1 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalOperator.NotEqual = 3 -> SharpCell.ConditionalOperator
+SharpCell.ConditionalStyle
+SharpCell.ConditionalStyle.<Clone>$() -> SharpCell.ConditionalStyle!
+SharpCell.ConditionalStyle.ApplyTo(SharpCell.CellStyle! style) -> SharpCell.CellStyle!
+SharpCell.ConditionalStyle.Bold.get -> bool?
+SharpCell.ConditionalStyle.Bold.init -> void
+SharpCell.ConditionalStyle.BottomBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.BottomBorder.init -> void
+SharpCell.ConditionalStyle.ConditionalStyle() -> void
+SharpCell.ConditionalStyle.Equals(SharpCell.ConditionalStyle? other) -> bool
+SharpCell.ConditionalStyle.Fill.get -> SharpCell.CellColor?
+SharpCell.ConditionalStyle.Fill.init -> void
+SharpCell.ConditionalStyle.FontColor.get -> SharpCell.CellColor?
+SharpCell.ConditionalStyle.FontColor.init -> void
+SharpCell.ConditionalStyle.Italic.get -> bool?
+SharpCell.ConditionalStyle.Italic.init -> void
+SharpCell.ConditionalStyle.LeftBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.LeftBorder.init -> void
+SharpCell.ConditionalStyle.NumberFormat.get -> string?
+SharpCell.ConditionalStyle.NumberFormat.init -> void
+SharpCell.ConditionalStyle.RightBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.RightBorder.init -> void
+SharpCell.ConditionalStyle.Strikethrough.get -> bool?
+SharpCell.ConditionalStyle.Strikethrough.init -> void
+SharpCell.ConditionalStyle.TopBorder.get -> SharpCell.CellBorder?
+SharpCell.ConditionalStyle.TopBorder.init -> void
+SharpCell.ConditionalStyle.Underline.get -> SharpCell.CellUnderline?
+SharpCell.ConditionalStyle.Underline.init -> void
+SharpCell.TimePeriod
+SharpCell.TimePeriod.Last7Days = 3 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.LastMonth = 7 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.LastWeek = 4 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.NextMonth = 9 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.NextWeek = 6 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.ThisMonth = 8 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.ThisWeek = 5 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.Today = 1 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.Tomorrow = 2 -> SharpCell.TimePeriod
+SharpCell.TimePeriod.Yesterday = 0 -> SharpCell.TimePeriod
+SharpCell.Worksheet.AddConditionalFormat(string! range, SharpCell.ConditionalFormat! format) -> void
+SharpCell.Worksheet.ClearConditionalFormats() -> void
+SharpCell.Worksheet.ClearConditionalFormats(string! range) -> void
+SharpCell.Worksheet.ConditionalFormats.get -> System.Collections.Generic.IReadOnlyList<(System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>! Ranges, SharpCell.ConditionalFormat! Format)>!
+override SharpCell.ConditionalFormat.Equals(object? obj) -> bool
+override SharpCell.ConditionalFormat.GetHashCode() -> int
+override SharpCell.ConditionalFormat.ToString() -> string!
+override SharpCell.ConditionalStyle.Equals(object? obj) -> bool
+override SharpCell.ConditionalStyle.GetHashCode() -> int
+override SharpCell.ConditionalStyle.ToString() -> string!
+static SharpCell.ConditionalFormat.AboveAverage(SharpCell.ConditionalStyle! style, bool orEqual = false, int standardDeviations = 0) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.BeginsWith(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.BelowAverage(SharpCell.ConditionalStyle! style, bool orEqual = false, int standardDeviations = 0) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Blanks(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Bottom(int rank, SharpCell.ConditionalStyle! style, bool percent = false) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.CellValue(SharpCell.ConditionalOperator comparison, string! formula1, SharpCell.ConditionalStyle! style, string? formula2 = null) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.ContainsText(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.DateOccurring(SharpCell.TimePeriod period, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.DuplicateValues(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.EndsWith(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Errors(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Expression(string! formula, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.NoBlanks(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.NoErrors(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.NotContainsText(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.Top(int rank, SharpCell.ConditionalStyle! style, bool percent = false) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.UniqueValues(SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
+static SharpCell.ConditionalFormat.operator !=(SharpCell.ConditionalFormat? left, SharpCell.ConditionalFormat? right) -> bool
+static SharpCell.ConditionalFormat.operator ==(SharpCell.ConditionalFormat? left, SharpCell.ConditionalFormat? right) -> bool
+static SharpCell.ConditionalStyle.GreenFill.get -> SharpCell.ConditionalStyle!
+static SharpCell.ConditionalStyle.LightRedFill.get -> SharpCell.ConditionalStyle!
+static SharpCell.ConditionalStyle.YellowFill.get -> SharpCell.ConditionalStyle!
+static SharpCell.ConditionalStyle.operator !=(SharpCell.ConditionalStyle? left, SharpCell.ConditionalStyle? right) -> bool
+static SharpCell.ConditionalStyle.operator ==(SharpCell.ConditionalStyle? left, SharpCell.ConditionalStyle? right) -> bool

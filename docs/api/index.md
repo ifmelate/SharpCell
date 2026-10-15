@@ -21,6 +21,10 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
 | [CellVerticalAlignment](SharpCell.CellVerticalAlignment.md) | Where a cell's text sits from top to bottom of the cell. |
+| [ConditionalFormat](SharpCell.ConditionalFormat.md) | A conditional format: which cells of its ranges it formats, and how. |
+| [ConditionalFormatType](SharpCell.ConditionalFormatType.md) | What a conditional format looks at, as Excel's New Formatting Rule dialog offers it. |
+| [ConditionalOperator](SharpCell.ConditionalOperator.md) | How a [ConditionalFormatType.CellValue](SharpCell.ConditionalFormatType.md#cellvalue) rule compares the cell's value with its formulas. |
+| [ConditionalStyle](SharpCell.ConditionalStyle.md) | What a conditional format changes about a cell's look, as Excel's Format Cells for a rule sets it: the font's style and colour, the fill, the borders and the number format. |
 | [DataValidation](SharpCell.DataValidation.md) | A data validation rule: what the cells of a range accept and the messages Excel shows for them. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
 | [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
@@ -42,6 +46,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
 | [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
+| [TimePeriod](SharpCell.TimePeriod.md) | The periods of Excel's A Date Occurring rule, counted from today. |
 | [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |
 | [ValidationOperator](SharpCell.ValidationOperator.md) | How a value is compared with a rule's formulas; lists and custom rules do not compare. |
 | [ValidationType](SharpCell.ValidationType.md) | What a data validation rule lets a cell hold, as Excel's Data Validation dialog names it under Allow. |

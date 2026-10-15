@@ -44,6 +44,7 @@ internal sealed class SheetLook
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
         Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
+        ConditionalFormats = [.. sheet.ConditionalRules.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas], rule.Format))];
         Orientation = sheet.PageOrientation;
         Margins = sheet.PageMargins;
         PrintAreas = [.. sheet.PrintAreas];
@@ -87,6 +88,10 @@ internal sealed class SheetLook
         }
 
         Notes = notes;
+        // Rules whose cells moved compare by their ranges; their formulas, written for the moved first
+        // cell, then differ and the rules are written again from the model.
+        ConditionalFormats = [.. look.ConditionalFormats.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas.SelectMany(area => SheetEditMap.MapCells(sheet, area))], rule.Format))
+            .Where(rule => rule.Item1.Count > 0)];
         Orientation = look.Orientation;
         Margins = look.Margins;
         PrintAreas = [.. look.PrintAreas.Select(area => map.Map(sheet, area)).OfType<Area>()];
@@ -135,6 +140,9 @@ internal sealed class SheetLook
 
     /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
     public IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks { get; }
+
+    /// <summary>The conditional formats in priority order with their ranges, as read.</summary>
+    public IReadOnlyList<(IReadOnlyList<Area> Areas, ConditionalFormat Format)> ConditionalFormats { get; }
 
     public PageOrientation Orientation { get; }
 
@@ -191,6 +199,20 @@ internal sealed class SheetLook
     public bool HyperlinksChanged(Worksheet sheet) =>
         Hyperlinks.Count != sheet.Hyperlinks.Count
         || Hyperlinks.Any(pair => !sheet.Hyperlinks.TryGetValue(pair.Key, out var link) || !link.Equals(pair.Value));
+
+    public bool ConditionalFormatsChanged(Worksheet sheet)
+    {
+        var rules = sheet.ConditionalRules;
+        if (rules.Count != ConditionalFormats.Count)
+            return true;
+        for (var i = 0; i < rules.Count; i++)
+        {
+            if (!rules[i].Areas.SequenceEqual(ConditionalFormats[i].Areas) || !rules[i].Format.Equals(ConditionalFormats[i].Format))
+                return true;
+        }
+
+        return false;
+    }
 
     public bool OrientationChanged(Worksheet sheet) => Orientation != sheet.PageOrientation;
 

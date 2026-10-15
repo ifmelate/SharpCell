@@ -580,6 +580,42 @@ that workbook's sheets and names. Merged cells, column widths and row heights ar
 range holding part of an array formula (Ctrl+Shift+Enter) or a formula SharpCell cannot read throws
 `NotSupportedException`; nothing changes.
 
+## Conditional formats
+
+```csharp snippet=cells-conditional-formats
+sheet.AddConditionalFormat("B2:B6", ConditionalFormat.CellValue(
+    ConditionalOperator.GreaterThan, "=500", ConditionalStyle.LightRedFill));
+sheet.AddConditionalFormat("B2:B6", ConditionalFormat.Top(1, new ConditionalStyle { Bold = true }));
+workbook.Recalculate();
+
+foreach (var cell in sheet.Range("B2:B6").Cells)
+{
+    if (cell.ConditionalFormats.Count > 0)                    // the rules that apply now
+        Console.WriteLine($"{cell.Address}: {cell.DisplayStyle.Fill}");   // as Excel shows it
+}
+```
+
+`ConditionalFormat` has a factory for each of Excel's rules: `CellValue` (greater than, between and the
+others), `Expression` (a formula true for the cell), `Top` and `Bottom` (items or percent),
+`AboveAverage` and `BelowAverage`, `DuplicateValues` and `UniqueValues`, `ContainsText`,
+`NotContainsText`, `BeginsWith`, `EndsWith`, `Blanks`, `NoBlanks`, `Errors`, `NoErrors` and
+`DateOccurring`. Formulas are written for the range's top-left cell, as in Excel's dialog, and
+relative references move from cell to cell. A `ConditionalStyle` sets only what the rule changes: font
+style and colour, fill, borders and number format; `LightRedFill`, `YellowFill` and `GreenFill` are
+Excel's presets. Rules added first win where several set the same thing, and `StopIfTrue`
+(`rule with { StopIfTrue = true }`) skips the rules below for cells it applies to.
+
+SharpCell works out which cells a rule applies to as Excel does. `Cell.ConditionalFormats` lists the
+rules that apply to a cell, from the values of the last `Recalculate` (rule formulas are calculated
+when read), and `Cell.DisplayStyle` is the cell's style with them put over it, Excel's DisplayFormat.
+An empty cell compares as 0 or as empty text; top, bottom and average rules count only numbers, and
+duplicates compare text ignoring case and leave empty cells out.
+
+Colour scales, data bars and icon sets are read from files and kept, and their cells are listed as
+applying to numbers, but SharpCell does not work out their colours and cannot add them. Rules move
+with their cells when rows, columns or cells are inserted or deleted, and `CopyTo` copies them.
+`ClearConditionalFormats` takes a range out of every rule, or removes them all.
+
 ## Notes
 
 ```csharp snippet=cells-notes
@@ -955,11 +991,14 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
 - Column widths, row heights, hidden columns and merged cells (see [Cells, ranges and dates](cells.md#column-widths-row-heights-and-merged-cells)).
 - Frozen panes and whether gridlines show (see [Cells, ranges and dates](cells.md#frozen-panes-and-gridlines)).
+- Page orientation, margins, print areas, print titles and page breaks (see [Cells, ranges and dates](cells.md#printing)).
+- Conditional formats with their looks (see [Cells, ranges and dates](cells.md#conditional-formats)).
+- Notes on cells (see [Cells, ranges and dates](cells.md#notes)).
 - The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
 
-Pattern and gradient fills, styles of whole rows and columns, conditional formats, charts, pivot tables, comments and macros are skipped.
+Pattern and gradient fills, styles of whole rows and columns, charts, pivot tables, threaded comments and macros are skipped. Conditional formats in the extension list (newer data bars and icon sets) stay in the file without being read.
 
 | File | Result |
 |---|---|
@@ -1031,12 +1070,12 @@ Everything SharpCell models:
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
-- Hyperlinks, notes, data validation, sheet and workbook protection, and locked and hidden cells.
+- Hyperlinks, notes, data validation, conditional formats, sheet and workbook protection, and locked and hidden cells.
 - Page orientation and margins, print areas, print titles and manual page breaks.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
-file: charts, pivot tables, threaded comments, conditional formats, pictures, macros, headers and footers, paper size and scaling,
+file: charts, pivot tables, threaded comments, the settings of colour scales, data bars and icon sets, pictures, macros, headers and footers, paper size and scaling,
 pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
 and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
 pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
@@ -1048,7 +1087,7 @@ calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are
 saves them, so Excel shows them before it recalculates.
 
 After rows or columns were inserted or deleted, everything in the file that points at cells
-follows them, including what SharpCell does not model: conditional formats, filters, page breaks, print areas, pictures and shapes, comments, chart series and
+follows them, including what SharpCell does not model: filters, pictures and shapes, threaded comments, chart series and
 pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
 where they were. A pivot table moves with the rows above it, but rows inserted into it or deleted
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
@@ -1235,12 +1274,12 @@ several functions at once give `#VALUE!`.
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, comments, pictures or conditional formats, or remove or rename sheets; a file's own are kept as they are.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, threaded comments, pictures, colour scales, data bars or icon sets, or remove or rename sheets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
 - **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
-- **Styles are partly read.** Fonts, solid fills, borders, alignment, number formats and cell protection (locked, hidden) are read and saved; pattern and gradient fills, rotated text and conditional formats are not read (a file's own are kept when it is saved).
+- **Styles are partly read.** Fonts, solid fills, borders, alignment, number formats and cell protection (locked, hidden) are read and saved; pattern and gradient fills and rotated text are not read (a file's own are kept when it is saved). The colours of colour scales, data bars and icon sets are not worked out.
 - **Protection is not enforced.** Sheet and workbook protection is read, set and saved, but SharpCell does not enforce it: code can still change a protected sheet or workbook.
 - **Data validation is stored, not evaluated.** Rules are read, set and saved; nothing checks a value against them. Validations in `extLst` (`x14`) are not modelled, and neither is the `imeMode` attribute: it is lost when a sheet's rules are rewritten, which includes any row or column insert or delete on that sheet.
 - **Large hyperlinks.** A hyperlink covering more than 10,000 cells, or more than 100,000 linked cells on a sheet, is kept in the file but not read into the model.
@@ -1465,6 +1504,15 @@ public int Column { get; }
 
 The column number, from 1 (A is 1).
 
+<a id="conditionalformats"></a>
+### ConditionalFormats
+
+```csharp
+public IReadOnlyList<ConditionalFormat> ConditionalFormats { get; }
+```
+
+The conditional formats that apply to the cell now, highest priority first, as Excel works them out from the cell's value and the values of the rules' ranges: up to the first that applies with [ConditionalFormat.StopIfTrue](SharpCell.ConditionalFormat.md#stopiftrue). Values are those of the last [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken); rule formulas are calculated on each read.
+
 <a id="dependents"></a>
 ### Dependents
 
@@ -1477,6 +1525,15 @@ The formula cells that read this cell in their last calculation, alone or in a r
 **Exceptions**
 
 - `InvalidOperationException`: Some formula of the workbook is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+
+<a id="displaystyle"></a>
+### DisplayStyle
+
+```csharp
+public CellStyle DisplayStyle { get; }
+```
+
+The cell's style with the conditional formats that apply to it put over it, as Excel shows the cell (its Range.DisplayFormat): where rules set the same thing, the higher one's wins. A rule's number format is not part of it.
 
 <a id="formula"></a>
 ### Formula
@@ -2004,7 +2061,7 @@ The sheet the range is on.
 public CellRange CopyTo(CellRange destination)
 ```
 
-Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats, styles, hyperlinks, notes and data validation. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Data validation formulas keep their distance from each cell as cell formulas do. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+Copies the range's cells to another range, as copying and pasting them in Excel does: values, formulas, number formats, styles, hyperlinks, notes, data validation and conditional formats. A formula's relative references keep their distance from its cell, so `=A1*2` in B1 becomes `=A2*2` in B2, and a reference that would point past the sheet's edge becomes `#REF!`. Empty cells of the range clear the cells they are copied to. When the destination is a whole number of times as tall and as wide as the range, the range repeats to fill it; otherwise it is copied once, with its top-left cell at the destination's. The cells are read before any is written, so the ranges may overlap. The destination can be in another workbook: formulas then refer to that workbook's sheets and names. A cell filled by a formula's spill is copied as its value, unless that formula is copied too and spills again. Data validation formulas keep their distance from each cell as cell formulas do. Merged cells, column widths and row heights are not copied. Every formula reading the cells written is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
 **Parameters**
 
@@ -2635,6 +2692,602 @@ Where a cell's text sits from top to bottom of the cell.
 | <a id="bottom"></a>`Bottom` | 2 | Against the bottom edge, Excel's default. |
 | <a id="justify"></a>`Justify` | 3 | Lines spread to the top and bottom edges. |
 | <a id="distributed"></a>`Distributed` | 4 | Lines spread evenly from top to bottom. |
+
+---
+
+<!-- page: api/SharpCell.ConditionalFormat.md -->
+
+# ConditionalFormat
+
+```csharp
+public sealed class ConditionalFormat
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A conditional format: which cells of its ranges it formats, and how. Make one with a factory such as [ConditionalFormat.CellValue](SharpCell.ConditionalFormat.md#cellvalue-conditionaloperator-string-conditionalstyle-string), [ConditionalFormat.Expression](SharpCell.ConditionalFormat.md#expression-string-conditionalstyle) or [ConditionalFormat.Top](SharpCell.ConditionalFormat.md#top-int-conditionalstyle-bool), change it with `with` (`rule with { StopIfTrue = true }`), and add it with [Worksheet.AddConditionalFormat](SharpCell.Worksheet.md#addconditionalformat-string-conditionalformat). SharpCell works out which cells a rule applies to ([Cell.ConditionalFormats](SharpCell.Cell.md#conditionalformats)) and how a cell then looks ([Cell.DisplayStyle](SharpCell.Cell.md#displaystyle)).
+
+## Properties
+
+<a id="formula1"></a>
+### Formula1
+
+```csharp
+public string? Formula1 { get; }
+```
+
+The formula of a [ConditionalFormatType.CellValue](SharpCell.ConditionalFormatType.md#cellvalue) or [ConditionalFormatType.Expression](SharpCell.ConditionalFormatType.md#expression) rule, starting with `=`, relative to the first cell of the rule's first range; null for other rules.
+
+<a id="formula2"></a>
+### Formula2
+
+```csharp
+public string? Formula2 { get; }
+```
+
+The second formula of a between rule; null for others.
+
+<a id="operator"></a>
+### Operator
+
+```csharp
+public ConditionalOperator Operator { get; }
+```
+
+How a [ConditionalFormatType.CellValue](SharpCell.ConditionalFormatType.md#cellvalue) rule compares; [ConditionalOperator.Between](SharpCell.ConditionalOperator.md#between) for other rules.
+
+<a id="orequal"></a>
+### OrEqual
+
+```csharp
+public bool OrEqual { get; }
+```
+
+Whether an above or below average rule also formats values equal to the average.
+
+<a id="percent"></a>
+### Percent
+
+```csharp
+public bool Percent { get; }
+```
+
+Whether [ConditionalFormat.Rank](SharpCell.ConditionalFormat.md#rank) is a percentage.
+
+<a id="period"></a>
+### Period
+
+```csharp
+public TimePeriod Period { get; }
+```
+
+The period of a [ConditionalFormatType.TimePeriod](SharpCell.ConditionalFormatType.md#timeperiod) rule.
+
+<a id="rank"></a>
+### Rank
+
+```csharp
+public int Rank { get; }
+```
+
+How many values (or what percentage of them) a top or bottom rule formats; 0 for others.
+
+<a id="standarddeviations"></a>
+### StandardDeviations
+
+```csharp
+public int StandardDeviations { get; }
+```
+
+How many standard deviations above or below the average a value must be; 0 for the average itself.
+
+<a id="stopiftrue"></a>
+### StopIfTrue
+
+```csharp
+public bool StopIfTrue { get; init; }
+```
+
+Whether lower rules are skipped for a cell this rule applies to, as Excel's Stop If True does.
+
+<a id="style"></a>
+### Style
+
+```csharp
+public ConditionalStyle? Style { get; init; }
+```
+
+How matching cells look; null for colour scales, data bars and icon sets, which colour each cell themselves.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string? Text { get; }
+```
+
+The text a text rule looks for; null for others.
+
+<a id="type"></a>
+### Type
+
+```csharp
+public ConditionalFormatType Type { get; }
+```
+
+What the rule looks at.
+
+## Methods
+
+<a id="aboveaverage-conditionalstyle-bool-int"></a>
+### AboveAverage(ConditionalStyle, bool, int)
+
+```csharp
+public static ConditionalFormat AboveAverage(ConditionalStyle style, bool orEqual = false, int standardDeviations = 0)
+```
+
+Numbers above the average of the ranges, or by `standardDeviations` standard deviations above it.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The standard deviations are outside 0 to 3, as in Excel.
+
+<a id="beginswith-string-conditionalstyle"></a>
+### BeginsWith(string, ConditionalStyle)
+
+```csharp
+public static ConditionalFormat BeginsWith(string text, ConditionalStyle style)
+```
+
+Cells whose text begins with `text`, ignoring case.
+
+**Exceptions**
+
+- `ArgumentException`: The text is empty.
+
+<a id="belowaverage-conditionalstyle-bool-int"></a>
+### BelowAverage(ConditionalStyle, bool, int)
+
+```csharp
+public static ConditionalFormat BelowAverage(ConditionalStyle style, bool orEqual = false, int standardDeviations = 0)
+```
+
+Numbers below the average of the ranges, or by `standardDeviations` standard deviations below it.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The standard deviations are outside 0 to 3, as in Excel.
+
+<a id="blanks-conditionalstyle"></a>
+### Blanks(ConditionalStyle)
+
+```csharp
+public static ConditionalFormat Blanks(ConditionalStyle style)
+```
+
+Empty cells and cells holding only spaces.
+
+<a id="bottom-int-conditionalstyle-bool"></a>
+### Bottom(int, ConditionalStyle, bool)
+
+```csharp
+public static ConditionalFormat Bottom(int rank, ConditionalStyle style, bool percent = false)
+```
+
+The `rank` lowest numbers of the ranges, or the lowest `rank` percent of them.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rank is outside 1 to 1000, or a percentage outside 1 to 100.
+
+<a id="cellvalue-conditionaloperator-string-conditionalstyle-string"></a>
+### CellValue(ConditionalOperator, string, ConditionalStyle, string)
+
+```csharp
+public static ConditionalFormat CellValue(ConditionalOperator comparison, string formula1, ConditionalStyle style, string? formula2 = null)
+```
+
+Cells whose value compares with the formulas, such as greater than `=100` or between `=$B$1` and `=$B$2`.
+
+**Parameters**
+
+- `comparison`: How the value compares.
+- `formula1`: The formula compared with, starting with `=`, relative to the range's first cell.
+- `style`: How matching cells look.
+- `formula2`: The second formula, for [ConditionalOperator.Between](SharpCell.ConditionalOperator.md#between) and [ConditionalOperator.NotBetween](SharpCell.ConditionalOperator.md#notbetween).
+
+**Exceptions**
+
+- `ArgumentException`: A formula is missing or empty, or a second formula is given to a comparison that takes one.
+
+<a id="containstext-string-conditionalstyle"></a>
+### ContainsText(string, ConditionalStyle)
+
+```csharp
+public static ConditionalFormat ContainsText(string text, ConditionalStyle style)
+```
+
+Cells whose text contains `text`, ignoring case.
+
+**Exceptions**
+
+- `ArgumentException`: The text is empty.
+
+<a id="dateoccurring-timeperiod-conditionalstyle"></a>
+### DateOccurring(TimePeriod, ConditionalStyle)
+
+```csharp
+public static ConditionalFormat DateOccurring(TimePeriod period, ConditionalStyle style)
+```
+
+Dates in a period around today, as Excel's A Date Occurring.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The period is not a defined value.
+
+<a id="duplicatevalues-conditionalstyle"></a>
+### DuplicateValues(ConditionalStyle)
+
+```csharp
+public static ConditionalFormat DuplicateValues(ConditionalStyle style)
+```
+
+Values that appear more than once in the ranges; text ignoring case.
+
+<a id="endswith-string-conditionalstyle"></a>
+### EndsWith(string, ConditionalStyle)
+
+```csharp
+public static ConditionalFormat EndsWith(string text, ConditionalStyle style)
+```
+
+Cells whose text ends with `text`, ignoring case.
+
+**Exceptions**
+
+- `ArgumentException`: The text is empty.
+
+<a id="equals-conditionalformat"></a>
+### Equals(ConditionalFormat)
+
+```csharp
+public bool Equals(ConditionalFormat? other)
+```
+
+Whether the other rule has the same settings and style; texts compared ordinally.
+
+<a id="errors-conditionalstyle"></a>
+### Errors(ConditionalStyle)
+
+```csharp
+public static ConditionalFormat Errors(ConditionalStyle style)
+```
+
+Cells holding an error.
+
+<a id="expression-string-conditionalstyle"></a>
+### Expression(string, ConditionalStyle)
+
+```csharp
+public static ConditionalFormat Expression(string formula, ConditionalStyle style)
+```
+
+Cells for which a formula is true, such as `=$C2>$B2`, written for the range's first cell.
+
+**Parameters**
+
+- `formula`: The formula, starting with `=`.
+- `style`: How matching cells look.
+
+**Exceptions**
+
+- `ArgumentException`: The formula is empty.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code consistent with [ConditionalFormat.Equals](SharpCell.ConditionalFormat.md#equals-conditionalformat).
+
+<a id="noblanks-conditionalstyle"></a>
+### NoBlanks(ConditionalStyle)
+
+```csharp
+public static ConditionalFormat NoBlanks(ConditionalStyle style)
+```
+
+Cells that are not blank.
+
+<a id="noerrors-conditionalstyle"></a>
+### NoErrors(ConditionalStyle)
+
+```csharp
+public static ConditionalFormat NoErrors(ConditionalStyle style)
+```
+
+Cells not holding an error.
+
+<a id="notcontainstext-string-conditionalstyle"></a>
+### NotContainsText(string, ConditionalStyle)
+
+```csharp
+public static ConditionalFormat NotContainsText(string text, ConditionalStyle style)
+```
+
+Cells whose text does not contain `text`.
+
+**Exceptions**
+
+- `ArgumentException`: The text is empty.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The type, and the formula or text when the rule has one.
+
+<a id="top-int-conditionalstyle-bool"></a>
+### Top(int, ConditionalStyle, bool)
+
+```csharp
+public static ConditionalFormat Top(int rank, ConditionalStyle style, bool percent = false)
+```
+
+The `rank` highest numbers of the ranges, or the highest `rank` percent of them.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The rank is outside 1 to 1000, or a percentage outside 1 to 100.
+
+<a id="uniquevalues-conditionalstyle"></a>
+### UniqueValues(ConditionalStyle)
+
+```csharp
+public static ConditionalFormat UniqueValues(ConditionalStyle style)
+```
+
+Values that appear once in the ranges.
+
+---
+
+<!-- page: api/SharpCell.ConditionalFormatType.md -->
+
+# ConditionalFormatType
+
+```csharp
+public enum ConditionalFormatType
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a conditional format looks at, as Excel's New Formatting Rule dialog offers it.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="cellvalue"></a>`CellValue` | 0 | The cell's value compared with formulas: Highlight Cells Rules > Greater Than and the others. |
+| <a id="expression"></a>`Expression` | 1 | Cells for which a formula is true: Use a formula to determine which cells to format. |
+| <a id="top"></a>`Top` | 2 | The highest values of the ranges: Top/Bottom Rules > Top 10 Items or Top 10%. |
+| <a id="bottom"></a>`Bottom` | 3 | The lowest values of the ranges. |
+| <a id="aboveaverage"></a>`AboveAverage` | 4 | Values above the average of the ranges. |
+| <a id="belowaverage"></a>`BelowAverage` | 5 | Values below the average of the ranges. |
+| <a id="duplicatevalues"></a>`DuplicateValues` | 6 | Values that appear more than once in the ranges. |
+| <a id="uniquevalues"></a>`UniqueValues` | 7 | Values that appear once in the ranges. |
+| <a id="containstext"></a>`ContainsText` | 8 | Text containing [ConditionalFormat.Text](SharpCell.ConditionalFormat.md#text), ignoring case. |
+| <a id="notcontainstext"></a>`NotContainsText` | 9 | Text not containing [ConditionalFormat.Text](SharpCell.ConditionalFormat.md#text). |
+| <a id="beginswith"></a>`BeginsWith` | 10 | Text beginning with [ConditionalFormat.Text](SharpCell.ConditionalFormat.md#text). |
+| <a id="endswith"></a>`EndsWith` | 11 | Text ending with [ConditionalFormat.Text](SharpCell.ConditionalFormat.md#text). |
+| <a id="blanks"></a>`Blanks` | 12 | Empty cells, or cells holding only spaces. |
+| <a id="noblanks"></a>`NoBlanks` | 13 | Cells that are not blank. |
+| <a id="errors"></a>`Errors` | 14 | Cells holding an error. |
+| <a id="noerrors"></a>`NoErrors` | 15 | Cells not holding an error. |
+| <a id="timeperiod"></a>`TimePeriod` | 16 | Dates in a period around today: A Date Occurring. |
+| <a id="colorscale"></a>`ColorScale` | 17 | A colour scale, read from a file; every number gets a colour of its own, which SharpCell does not work out. |
+| <a id="databar"></a>`DataBar` | 18 | Data bars, read from a file. |
+| <a id="iconset"></a>`IconSet` | 19 | An icon set, read from a file. |
+
+---
+
+<!-- page: api/SharpCell.ConditionalOperator.md -->
+
+# ConditionalOperator
+
+```csharp
+public enum ConditionalOperator
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a [ConditionalFormatType.CellValue](SharpCell.ConditionalFormatType.md#cellvalue) rule compares the cell's value with its formulas.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="between"></a>`Between` | 0 | From the first formula to the second, both included. |
+| <a id="notbetween"></a>`NotBetween` | 1 | Less than the first formula or greater than the second. |
+| <a id="equal"></a>`Equal` | 2 | Equal to the first formula; text ignoring case. |
+| <a id="notequal"></a>`NotEqual` | 3 | Not equal to the first formula. |
+| <a id="greaterthan"></a>`GreaterThan` | 4 | Greater than the first formula. |
+| <a id="lessthan"></a>`LessThan` | 5 | Less than the first formula. |
+| <a id="greaterthanorequal"></a>`GreaterThanOrEqual` | 6 | Greater than or equal to the first formula. |
+| <a id="lessthanorequal"></a>`LessThanOrEqual` | 7 | Less than or equal to the first formula. |
+
+---
+
+<!-- page: api/SharpCell.ConditionalStyle.md -->
+
+# ConditionalStyle
+
+```csharp
+public sealed class ConditionalStyle
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a conditional format changes about a cell's look, as Excel's Format Cells for a rule sets it: the font's style and colour, the fill, the borders and the number format. A property left null keeps what the cell has. A record: `with` makes a changed copy.
+
+## Constructors
+
+<a id="ctor"></a>
+### ConditionalStyle()
+
+```csharp
+public ConditionalStyle()
+```
+
+A look that changes nothing; set properties in an initializer.
+
+## Properties
+
+<a id="bold"></a>
+### Bold
+
+```csharp
+public bool? Bold { get; init; }
+```
+
+Bold, or not bold; null keeps the cell's.
+
+<a id="bottomborder"></a>
+### BottomBorder
+
+```csharp
+public CellBorder? BottomBorder { get; init; }
+```
+
+The bottom border; null keeps the cell's.
+
+<a id="fill"></a>
+### Fill
+
+```csharp
+public CellColor? Fill { get; init; }
+```
+
+The fill colour; null keeps the cell's.
+
+<a id="fontcolor"></a>
+### FontColor
+
+```csharp
+public CellColor? FontColor { get; init; }
+```
+
+The text colour; null keeps the cell's.
+
+<a id="greenfill"></a>
+### GreenFill
+
+```csharp
+public static ConditionalStyle GreenFill { get; }
+```
+
+A green fill with dark green text.
+
+<a id="italic"></a>
+### Italic
+
+```csharp
+public bool? Italic { get; init; }
+```
+
+Italic, or not italic; null keeps the cell's.
+
+<a id="leftborder"></a>
+### LeftBorder
+
+```csharp
+public CellBorder? LeftBorder { get; init; }
+```
+
+The left border; null keeps the cell's.
+
+<a id="lightredfill"></a>
+### LightRedFill
+
+```csharp
+public static ConditionalStyle LightRedFill { get; }
+```
+
+A light red fill with dark red text, Excel's first preset.
+
+<a id="numberformat"></a>
+### NumberFormat
+
+```csharp
+public string? NumberFormat { get; init; }
+```
+
+The number format code, such as `0.00%`; null keeps the cell's.
+
+<a id="rightborder"></a>
+### RightBorder
+
+```csharp
+public CellBorder? RightBorder { get; init; }
+```
+
+The right border; null keeps the cell's.
+
+<a id="strikethrough"></a>
+### Strikethrough
+
+```csharp
+public bool? Strikethrough { get; init; }
+```
+
+Struck through, or not; null keeps the cell's.
+
+<a id="topborder"></a>
+### TopBorder
+
+```csharp
+public CellBorder? TopBorder { get; init; }
+```
+
+The top border; null keeps the cell's.
+
+<a id="underline"></a>
+### Underline
+
+```csharp
+public CellUnderline? Underline { get; init; }
+```
+
+The underline; null keeps the cell's.
+
+<a id="yellowfill"></a>
+### YellowFill
+
+```csharp
+public static ConditionalStyle YellowFill { get; }
+```
+
+A yellow fill with dark yellow text.
+
+## Methods
+
+<a id="applyto-cellstyle"></a>
+### ApplyTo(CellStyle)
+
+```csharp
+public CellStyle ApplyTo(CellStyle style)
+```
+
+The style with what this one sets put over it.
+
+**Parameters**
+
+- `style`: The cell's own style.
 
 ---
 
@@ -4193,6 +4846,35 @@ The table name.
 
 ---
 
+<!-- page: api/SharpCell.TimePeriod.md -->
+
+# TimePeriod
+
+```csharp
+public enum TimePeriod
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The periods of Excel's A Date Occurring rule, counted from today.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="yesterday"></a>`Yesterday` | 0 | Yesterday. |
+| <a id="today"></a>`Today` | 1 | Today. |
+| <a id="tomorrow"></a>`Tomorrow` | 2 | Tomorrow. |
+| <a id="last7days"></a>`Last7Days` | 3 | Today and the six days before. |
+| <a id="lastweek"></a>`LastWeek` | 4 | The week before this one, Sunday to Saturday. |
+| <a id="thisweek"></a>`ThisWeek` | 5 | This week, Sunday to Saturday. |
+| <a id="nextweek"></a>`NextWeek` | 6 | The week after this one. |
+| <a id="lastmonth"></a>`LastMonth` | 7 | The month before this one. |
+| <a id="thismonth"></a>`ThisMonth` | 8 | This month. |
+| <a id="nextmonth"></a>`NextMonth` | 9 | The month after this one. |
+
+---
+
 <!-- page: api/SharpCell.ValidationErrorStyle.md -->
 
 # ValidationErrorStyle
@@ -4564,6 +5246,15 @@ public IReadOnlyList<int> ColumnPageBreaks { get; }
 
 The columns that start a new printed page, in order.
 
+<a id="conditionalformats"></a>
+### ConditionalFormats
+
+```csharp
+public IReadOnlyList<(IReadOnlyList<CellRange>, ConditionalFormat)> ConditionalFormats { get; }
+```
+
+The conditional formats in priority order, highest first, each with its ranges. The formulas of a rule are relative to the first cell of its first range.
+
 <a id="defaultcolumnwidth"></a>
 ### DefaultColumnWidth
 
@@ -4808,6 +5499,26 @@ Starts a new printed page at a column: a page break left of it.
 
 - `ArgumentOutOfRangeException`: The column is not on the sheet or is column A.
 
+<a id="addconditionalformat-string-conditionalformat"></a>
+### AddConditionalFormat(string, ConditionalFormat)
+
+```csharp
+public void AddConditionalFormat(string range, ConditionalFormat format)
+```
+
+Adds a conditional format to a range, below the rules the sheet has: where several apply to a cell, those added earlier win. Formulas are relative to the range's top-left cell; for several ranges, to the first one's.
+
+**Parameters**
+
+- `range`: The cells, such as `B2:B10`, or several ranges separated by spaces, such as `B2:B10 D2:D10`.
+- `format`: The rule.
+
+**Exceptions**
+
+- `ArgumentNullException`: The format is null.
+- `ArgumentException`: The range is not an A1 range, or the format is one only read from files (a colour scale, data bars or an icon set).
+- `FormulaParseException`: A formula cannot be parsed; nothing is added.
+
 <a id="addrowpagebreak-int"></a>
 ### AddRowPageBreak(int)
 
@@ -4864,6 +5575,33 @@ Adds a data validation rule to a range. Cells of the range leave the rules they 
 - `ArgumentNullException`: The validation is null.
 - `ArgumentException`: The range is not an A1 range; or a rule other than [ValidationType.Any](SharpCell.ValidationType.md#any) has no [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); or a comparing rule (whole number, decimal, date, time, text length) with [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) or [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween) has no [DataValidation.Formula2](SharpCell.DataValidation.md#formula2).
 - `FormulaParseException`: A formula cannot be parsed; nothing is added.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
+
+<a id="clearconditionalformats"></a>
+### ClearConditionalFormats()
+
+```csharp
+public void ClearConditionalFormats()
+```
+
+Removes every conditional format of the sheet, as Excel's Clear Rules from Entire Sheet does.
+
+<a id="clearconditionalformats-string"></a>
+### ClearConditionalFormats(string)
+
+```csharp
+public void ClearConditionalFormats(string range)
+```
+
+Takes the cells of a range out of every conditional format, as Excel's Clear Rules from Selected Cells does; a rule left without cells is removed.
+
+**Parameters**
+
+- `range`: The cells, such as `A1:Z100`, or several ranges separated by spaces.
+
+**Exceptions**
+
+- `ArgumentException`: The range is not an A1 range.
 - `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
 <a id="clearvalidation-string"></a>

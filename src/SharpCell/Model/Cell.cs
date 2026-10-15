@@ -279,6 +279,45 @@ public sealed partial class Cell
     }
 
     /// <summary>
+    /// The conditional formats that apply to the cell now, highest priority first, as Excel works
+    /// them out from the cell's value and the values of the rules' ranges: up to the first that
+    /// applies with <see cref="ConditionalFormat.StopIfTrue"/>. Values are those of the last
+    /// <see cref="Workbook.Recalculate"/>; rule formulas are calculated on each read.
+    /// </summary>
+    public IReadOnlyList<ConditionalFormat> ConditionalFormats
+    {
+        get
+        {
+            Worksheet.Workbook.ThrowIfInCustomFunction();
+            return Worksheet.MatchingFormats(Row, Column);
+        }
+    }
+
+    /// <summary>
+    /// The cell's style with the conditional formats that apply to it put over it, as Excel shows
+    /// the cell (its Range.DisplayFormat): where rules set the same thing, the higher one's wins.
+    /// A rule's number format is not part of it.
+    /// </summary>
+    public CellStyle DisplayStyle
+    {
+        get
+        {
+            var formats = ConditionalFormats;
+            if (formats.Count == 0)
+                return Style;
+            var combined = new ConditionalStyle();
+            foreach (var format in formats)
+            {
+                if (format.Style is { } style)
+                    combined = combined.Over(style);
+            }
+
+            // Over keeps the first-set value: higher rules come first.
+            return combined.ApplyTo(Style);
+        }
+    }
+
+    /// <summary>
     /// The data validation rule of the cell, or null for none. Its formulas are relative to the first
     /// cell of the rule's first range, not to this cell. Rules are set with <see cref="Worksheet.AddValidation"/>.
     /// </summary>

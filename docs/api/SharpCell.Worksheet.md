@@ -30,6 +30,15 @@ public IReadOnlyList<int> ColumnPageBreaks { get; }
 
 The columns that start a new printed page, in order.
 
+<a id="conditionalformats"></a>
+### ConditionalFormats
+
+```csharp
+public IReadOnlyList<(IReadOnlyList<CellRange>, ConditionalFormat)> ConditionalFormats { get; }
+```
+
+The conditional formats in priority order, highest first, each with its ranges. The formulas of a rule are relative to the first cell of its first range.
+
 <a id="defaultcolumnwidth"></a>
 ### DefaultColumnWidth
 
@@ -274,6 +283,26 @@ Starts a new printed page at a column: a page break left of it.
 
 - `ArgumentOutOfRangeException`: The column is not on the sheet or is column A.
 
+<a id="addconditionalformat-string-conditionalformat"></a>
+### AddConditionalFormat(string, ConditionalFormat)
+
+```csharp
+public void AddConditionalFormat(string range, ConditionalFormat format)
+```
+
+Adds a conditional format to a range, below the rules the sheet has: where several apply to a cell, those added earlier win. Formulas are relative to the range's top-left cell; for several ranges, to the first one's.
+
+**Parameters**
+
+- `range`: The cells, such as `B2:B10`, or several ranges separated by spaces, such as `B2:B10 D2:D10`.
+- `format`: The rule.
+
+**Exceptions**
+
+- `ArgumentNullException`: The format is null.
+- `ArgumentException`: The range is not an A1 range, or the format is one only read from files (a colour scale, data bars or an icon set).
+- `FormulaParseException`: A formula cannot be parsed; nothing is added.
+
 <a id="addrowpagebreak-int"></a>
 ### AddRowPageBreak(int)
 
@@ -330,6 +359,33 @@ Adds a data validation rule to a range. Cells of the range leave the rules they 
 - `ArgumentNullException`: The validation is null.
 - `ArgumentException`: The range is not an A1 range; or a rule other than [ValidationType.Any](SharpCell.ValidationType.md#any) has no [DataValidation.Formula1](SharpCell.DataValidation.md#formula1); or a comparing rule (whole number, decimal, date, time, text length) with [ValidationOperator.Between](SharpCell.ValidationOperator.md#between) or [ValidationOperator.NotBetween](SharpCell.ValidationOperator.md#notbetween) has no [DataValidation.Formula2](SharpCell.DataValidation.md#formula2).
 - `FormulaParseException`: A formula cannot be parsed; nothing is added.
+- `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
+
+<a id="clearconditionalformats"></a>
+### ClearConditionalFormats()
+
+```csharp
+public void ClearConditionalFormats()
+```
+
+Removes every conditional format of the sheet, as Excel's Clear Rules from Entire Sheet does.
+
+<a id="clearconditionalformats-string"></a>
+### ClearConditionalFormats(string)
+
+```csharp
+public void ClearConditionalFormats(string range)
+```
+
+Takes the cells of a range out of every conditional format, as Excel's Clear Rules from Selected Cells does; a rule left without cells is removed.
+
+**Parameters**
+
+- `range`: The cells, such as `A1:Z100`, or several ranges separated by spaces.
+
+**Exceptions**
+
+- `ArgumentException`: The range is not an A1 range.
 - `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
 <a id="clearvalidation-string"></a>

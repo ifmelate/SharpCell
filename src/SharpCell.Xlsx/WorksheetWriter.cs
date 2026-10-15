@@ -83,6 +83,8 @@ internal sealed class WorksheetWriter
     // The links to write when they changed; null when the file's element stays (moved by the edits).
     private readonly SheetHyperlinks? _hyperlinks;
 
+    private readonly bool _conditionalFormatsChanged;
+    private bool _conditionalFormatsWritten;
     private readonly bool _marginsChanged;
     private readonly bool _orientationChanged;
     private readonly bool _rowBreaksChanged;
@@ -125,6 +127,9 @@ internal sealed class WorksheetWriter
         _filterChanged = _look.FilterChanged(sheet);
         _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
         _protectionChanged = _look.ProtectionChanged(sheet);
+        _conditionalFormatsChanged = _look.ConditionalFormatsChanged(sheet);
+        if (_conditionalFormatsChanged)
+            _pending.Add("conditionalFormatting");
         _marginsChanged = _look.MarginsChanged(sheet);
         _orientationChanged = _look.OrientationChanged(sheet);
         _rowBreaksChanged = _look.BreaksChanged(sheet, rows: true);
@@ -216,6 +221,15 @@ internal sealed class WorksheetWriter
                     continue;
                 }
 
+                if (name == "conditionalFormatting" && _conditionalFormatsChanged)
+                {
+                    // The model's elements take the place of the first of the file's; the others go.
+                    reader.Skip();
+                    _pending.Remove(name);
+                    WriteConditionalFormats(writer);
+                    continue;
+                }
+
                 switch (name)
                 {
                     case "dimension":
@@ -276,12 +290,28 @@ internal sealed class WorksheetWriter
         foreach (var name in _pending.Where(name => WorksheetParts.Rank(name) < rank).OrderBy(WorksheetParts.Rank).ToList())
         {
             _pending.Remove(name);
+            if (name == "conditionalFormatting")
+            {
+                WriteConditionalFormats(writer);
+                continue;
+            }
+
             if (Build(name, null) is { } element)
             {
                 _changed = true;
                 element.WriteTo(writer);
             }
         }
+    }
+
+    private void WriteConditionalFormats(XmlWriter writer)
+    {
+        _changed = true;
+        if (_conditionalFormatsWritten)
+            return;
+        _conditionalFormatsWritten = true;
+        foreach (var element in ConditionalFormatElements.Elements(_ns, _sheet, _styles))
+            element.WriteTo(writer);
     }
 
     // The element as the sheet now needs it, from the file's (or none); null when it has nothing to say.

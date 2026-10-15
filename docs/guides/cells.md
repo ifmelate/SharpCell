@@ -279,6 +279,42 @@ that workbook's sheets and names. Merged cells, column widths and row heights ar
 range holding part of an array formula (Ctrl+Shift+Enter) or a formula SharpCell cannot read throws
 `NotSupportedException`; nothing changes.
 
+## Conditional formats
+
+```csharp snippet=cells-conditional-formats
+sheet.AddConditionalFormat("B2:B6", ConditionalFormat.CellValue(
+    ConditionalOperator.GreaterThan, "=500", ConditionalStyle.LightRedFill));
+sheet.AddConditionalFormat("B2:B6", ConditionalFormat.Top(1, new ConditionalStyle { Bold = true }));
+workbook.Recalculate();
+
+foreach (var cell in sheet.Range("B2:B6").Cells)
+{
+    if (cell.ConditionalFormats.Count > 0)                    // the rules that apply now
+        Console.WriteLine($"{cell.Address}: {cell.DisplayStyle.Fill}");   // as Excel shows it
+}
+```
+
+`ConditionalFormat` has a factory for each of Excel's rules: `CellValue` (greater than, between and the
+others), `Expression` (a formula true for the cell), `Top` and `Bottom` (items or percent),
+`AboveAverage` and `BelowAverage`, `DuplicateValues` and `UniqueValues`, `ContainsText`,
+`NotContainsText`, `BeginsWith`, `EndsWith`, `Blanks`, `NoBlanks`, `Errors`, `NoErrors` and
+`DateOccurring`. Formulas are written for the range's top-left cell, as in Excel's dialog, and
+relative references move from cell to cell. A `ConditionalStyle` sets only what the rule changes: font
+style and colour, fill, borders and number format; `LightRedFill`, `YellowFill` and `GreenFill` are
+Excel's presets. Rules added first win where several set the same thing, and `StopIfTrue`
+(`rule with { StopIfTrue = true }`) skips the rules below for cells it applies to.
+
+SharpCell works out which cells a rule applies to as Excel does. `Cell.ConditionalFormats` lists the
+rules that apply to a cell, from the values of the last `Recalculate` (rule formulas are calculated
+when read), and `Cell.DisplayStyle` is the cell's style with them put over it, Excel's DisplayFormat.
+An empty cell compares as 0 or as empty text; top, bottom and average rules count only numbers, and
+duplicates compare text ignoring case and leave empty cells out.
+
+Colour scales, data bars and icon sets are read from files and kept, and their cells are listed as
+applying to numbers, but SharpCell does not work out their colours and cannot add them. Rules move
+with their cells when rows, columns or cells are inserted or deleted, and `CopyTo` copies them.
+`ClearConditionalFormats` takes a range out of every rule, or removes them all.
+
 ## Notes
 
 ```csharp snippet=cells-notes

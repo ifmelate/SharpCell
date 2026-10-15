@@ -239,6 +239,27 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Conditional_formats()
+    {
+        var (workbook, sheet) = Budget();
+
+        // snippet: cells-conditional-formats
+        sheet.AddConditionalFormat("B2:B6", ConditionalFormat.CellValue(
+            ConditionalOperator.GreaterThan, "=500", ConditionalStyle.LightRedFill));
+        sheet.AddConditionalFormat("B2:B6", ConditionalFormat.Top(1, new ConditionalStyle { Bold = true }));
+        workbook.Recalculate();
+
+        foreach (var cell in sheet.Range("B2:B6").Cells)
+        {
+            if (cell.ConditionalFormats.Count > 0)                    // the rules that apply now
+                Console.WriteLine($"{cell.Address}: {cell.DisplayStyle.Fill}");   // as Excel shows it
+        }
+        // end-snippet
+
+        Assert.Equal(2, sheet.ConditionalFormats.Count);
+    }
+
+    [Fact]
     public void Copy_cells()
     {
         var workbook = new Workbook();

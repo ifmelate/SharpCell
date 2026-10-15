@@ -38,12 +38,12 @@ Everything SharpCell models:
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
-- Hyperlinks, notes, data validation, sheet and workbook protection, and locked and hidden cells.
+- Hyperlinks, notes, data validation, conditional formats, sheet and workbook protection, and locked and hidden cells.
 - Page orientation and margins, print areas, print titles and manual page breaks.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
-file: charts, pivot tables, threaded comments, conditional formats, pictures, macros, headers and footers, paper size and scaling,
+file: charts, pivot tables, threaded comments, the settings of colour scales, data bars and icon sets, pictures, macros, headers and footers, paper size and scaling,
 pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
 and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
 pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
@@ -55,7 +55,7 @@ calculation chain is left out; Excel builds it again. `#SPILL!` and `#CALC!` are
 saves them, so Excel shows them before it recalculates.
 
 After rows or columns were inserted or deleted, everything in the file that points at cells
-follows them, including what SharpCell does not model: conditional formats, filters, page breaks, print areas, pictures and shapes, comments, chart series and
+follows them, including what SharpCell does not model: filters, pictures and shapes, threaded comments, chart series and
 pivot table sources. A comment on a deleted cell goes; a picture anchored in deleted rows shrinks to
 where they were. A pivot table moves with the rows above it, but rows inserted into it or deleted
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be

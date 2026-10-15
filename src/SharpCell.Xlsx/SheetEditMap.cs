@@ -109,7 +109,7 @@ internal sealed class SheetEditMap(Workbook workbook)
     }
 
     /// <summary>The cells of a range moved by each edit in turn: split where only some of them shift.</summary>
-    private static List<Area> MapCells(Worksheet sheet, Area area)
+    public static List<Area> MapCells(Worksheet sheet, Area area)
     {
         var current = new List<Area> { area };
         foreach (var edit in sheet.Edits)

@@ -118,6 +118,18 @@ public sealed partial class Worksheet
             }
         }
 
+        foreach (var sheet in Workbook.Sheets)
+        {
+            foreach (var rule in sheet.ConditionalRules)
+            {
+                foreach (var formula in new[] { rule.F1, rule.F2 })
+                {
+                    if (formula is UnsupportedNode unsupported && (sheet == this || Mentions(unsupported.Text)))
+                        throw new NotSupportedException($"A conditional format on {sheet.Name}!{new CellRange(sheet, rule.Areas[0]).Address} has a formula SharpCell cannot read; its references would not follow the moved cells.");
+                }
+            }
+        }
+
         if (!edit.Delete)
         {
             var last = max - edit.Count;
@@ -225,7 +237,10 @@ public sealed partial class Worksheet
         }
 
         foreach (var sheet in Workbook.Sheets)
+        {
             sheet.FollowEdit(this, edit);
+            sheet.FollowEditInFormats(this, edit);
+        }
 
         Store.Move((row, column) => Map(edit, row, column));
         MoveKeys(_styles, edit);

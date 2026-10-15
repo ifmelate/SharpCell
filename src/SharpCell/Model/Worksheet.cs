@@ -225,6 +225,7 @@ public sealed partial class Worksheet
         CopyPresentationFrom(source);
         CopyPrintingFrom(source);
         CopyValidationsFrom(source);
+        CopyConditionalFormatsFrom(source);
     }
 
     private static void CheckRow(int row)

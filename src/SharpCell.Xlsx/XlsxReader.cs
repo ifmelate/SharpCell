@@ -325,8 +325,8 @@ internal static class WorkbookReader
         var metadata = CellMetadata.Read(package, FirstOfType(relationships, "sheetMetadata")?.Target, rich);
         var stylesPart = FirstOfType(relationships, "styles")?.Target;
         var theme = ThemeReader.Read(package, FirstOfType(relationships, "theme")?.Target);
-        var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : [];
-        return new SavedCells(sharedStrings, metadata, styles);
+        var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : new StyleSheet();
+        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs);
     }
 
     internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)

@@ -40,6 +40,7 @@ internal static class WorksheetReader
         var tableIds = new List<string>();
         var sheetViews = 0;
         var links = new List<HyperlinkElement>();
+        var conditionalFormats = new List<(int Priority, Action<Worksheet> Add)>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -73,6 +74,12 @@ internal static class WorksheetReader
             if (reader.Depth == 1 && reader.LocalName == "dataValidations")
             {
                 ValidationElements.Read((XElement)XNode.ReadFrom(reader), sheet);
+                continue;
+            }
+
+            if (reader.Depth == 1 && reader.LocalName == "conditionalFormatting")
+            {
+                conditionalFormats.AddRange(ConditionalFormatElements.Read((XElement)XNode.ReadFrom(reader), saved.Dxfs));
                 continue;
             }
 
@@ -219,6 +226,10 @@ internal static class WorksheetReader
         }
 
         loader.Complete();
+
+        // Rules go in priority order; OrderBy keeps the file's order for equal priorities.
+        foreach (var (_, add) in conditionalFormats.OrderBy(rule => rule.Priority))
+            add(sheet);
         if (links.Count > 0)
             ReadHyperlinks(package, part, sheet, links);
         if (tableIds.Count > 0)
