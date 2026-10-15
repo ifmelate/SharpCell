@@ -83,6 +83,11 @@ internal sealed class WorksheetWriter
     // The links to write when they changed; null when the file's element stays (moved by the edits).
     private readonly SheetHyperlinks? _hyperlinks;
 
+    private readonly bool _marginsChanged;
+    private readonly bool _orientationChanged;
+    private readonly bool _rowBreaksChanged;
+    private readonly bool _columnBreaksChanged;
+
     // Where the notes go when they changed: a new legacyDrawing element, or the file's dropped.
     private readonly NoteParts.Plan? _notes;
 
@@ -120,6 +125,16 @@ internal sealed class WorksheetWriter
         _filterChanged = _look.FilterChanged(sheet);
         _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
         _protectionChanged = _look.ProtectionChanged(sheet);
+        _marginsChanged = _look.MarginsChanged(sheet);
+        _orientationChanged = _look.OrientationChanged(sheet);
+        _rowBreaksChanged = _look.BreaksChanged(sheet, rows: true);
+        _columnBreaksChanged = _look.BreaksChanged(sheet, rows: false);
+        foreach (var (name, changed) in new[] { ("pageMargins", _marginsChanged), ("pageSetup", _orientationChanged), ("rowBreaks", _rowBreaksChanged), ("colBreaks", _columnBreaksChanged) })
+        {
+            if (changed)
+                _pending.Add(name);
+        }
+
         if (_filterChanged && sheet.FilterMode)
             _pending.Add("sheetPr");
         if (_viewChanged)
@@ -212,8 +227,8 @@ internal sealed class WorksheetWriter
                     case "sheetViews" when !_viewChanged && _shifted:
                     case "autoFilter" when _shifted:
                     case "hyperlinks" when _shifted && _hyperlinks is null:
-                    case "rowBreaks" when _shifted:
-                    case "colBreaks" when _shifted:
+                    case "rowBreaks" when _shifted && !_rowBreaksChanged:
+                    case "colBreaks" when _shifted && !_columnBreaksChanged:
                     case "ignoredErrors" when _shifted:
                     case "protectedRanges" when _shifted:
                     case "conditionalFormatting" when _map.Any:
@@ -229,6 +244,10 @@ internal sealed class WorksheetWriter
                     case "sheetProtection" when _protectionChanged:
                     case "dataValidations" when _validationsChanged:
                     case "hyperlinks" when _hyperlinks is not null:
+                    case "pageMargins" when _marginsChanged:
+                    case "pageSetup" when _orientationChanged:
+                    case "rowBreaks" when _rowBreaksChanged:
+                    case "colBreaks" when _columnBreaksChanged:
                     case "legacyDrawing" when _notes is { RemoveLegacyDrawing: true } || _notes?.LegacyDrawingId is not null:
                         _pending.Remove(name);
                         _changed = true;
@@ -278,6 +297,10 @@ internal sealed class WorksheetWriter
         "dataValidations" => ValidationElements.Element(_ns, _sheet, source),
         "hyperlinks" => Hyperlinks(),
         "legacyDrawing" => LegacyDrawing(),
+        "pageMargins" => Margins(),
+        "pageSetup" => PageSetup(source),
+        "rowBreaks" => PageBreaks(rows: true),
+        "colBreaks" => PageBreaks(rows: false),
         _ => MergeCells(),
     };
 
@@ -441,6 +464,36 @@ internal sealed class WorksheetWriter
         element.Descendants().Where(d => d.Name.LocalName == "sparklineGroups" && !d.HasElements).ToList().ForEach(d => d.Remove());
         element.Elements().Where(e => e.Name.LocalName == "ext" && !e.HasElements).ToList().ForEach(e => e.Remove());
         return element.HasElements ? element : null;
+    }
+
+    private XElement Margins()
+    {
+        var margins = _sheet.PageMargins;
+        return new XElement(_ns + "pageMargins",
+            new XAttribute("left", WorksheetParts.Number(margins.Left)), new XAttribute("right", WorksheetParts.Number(margins.Right)),
+            new XAttribute("top", WorksheetParts.Number(margins.Top)), new XAttribute("bottom", WorksheetParts.Number(margins.Bottom)),
+            new XAttribute("header", WorksheetParts.Number(margins.Header)), new XAttribute("footer", WorksheetParts.Number(margins.Footer)));
+    }
+
+    // The file's page setup (paper, scaling, printer settings) with the model's orientation.
+    private XElement PageSetup(XElement? source)
+    {
+        var element = source ?? new XElement(_ns + "pageSetup");
+        element.SetAttributeValue("orientation", _sheet.PageOrientation == PageOrientation.Landscape ? "landscape" : "portrait");
+        return element;
+    }
+
+    // Manual page breaks; a break's id is the last row (or column) before it, from 1, and max the
+    // last column (or row) it runs to, from 0.
+    private XElement? PageBreaks(bool rows)
+    {
+        var breaks = rows ? _sheet.RowPageBreaks : _sheet.ColumnPageBreaks;
+        if (breaks.Count == 0)
+            return null;
+        var max = (rows ? CellAddress.MaxColumn : CellAddress.MaxRow) - 1;
+        return new XElement(_ns + (rows ? "rowBreaks" : "colBreaks"),
+            new XAttribute("count", breaks.Count), new XAttribute("manualBreakCount", breaks.Count),
+            breaks.Select(index => new XElement(_ns + "brk", new XAttribute("id", index - 1), new XAttribute("max", max), new XAttribute("man", 1))));
     }
 
     private XElement? LegacyDrawing()

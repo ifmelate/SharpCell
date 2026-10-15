@@ -232,6 +232,7 @@ public sealed partial class Worksheet
         MoveKeys(_formats, edit);
         MoveKeys(_hyperlinks, edit);
         MoveKeys(_notes, edit);
+        MovePrinting(edit);
         // Rows and columns keep their heights and widths when only some of their cells move.
         if (edit.Whole && edit.Rows)
         {

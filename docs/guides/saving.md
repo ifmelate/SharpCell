@@ -39,10 +39,11 @@ Everything SharpCell models:
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
 - Hyperlinks, notes, data validation, sheet and workbook protection, and locked and hidden cells.
+- Page orientation and margins, print areas, print titles and manual page breaks.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
-file: charts, pivot tables, comments, conditional formats, pictures, macros,
+file: charts, pivot tables, threaded comments, conditional formats, pictures, macros, headers and footers, paper size and scaling,
 pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
 and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
 pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for

@@ -223,6 +223,22 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Page_setup()
+    {
+        var (_, sheet) = Budget();
+
+        // snippet: cells-printing
+        sheet.PageOrientation = PageOrientation.Landscape;
+        sheet.PageMargins = PageMargins.Narrow with { Top = 1 };
+        sheet.PrintArea = "A1:E7";          // only these cells print
+        sheet.PrintTitleRows = "1:1";       // the header row repeats on every page
+        sheet.AddRowPageBreak(5);           // a new page starts at row 5
+        // end-snippet
+
+        Assert.Equal(("A1:E7", 5), (sheet.PrintArea, sheet.RowPageBreaks.Single()));
+    }
+
+    [Fact]
     public void Copy_cells()
     {
         var workbook = new Workbook();

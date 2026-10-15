@@ -51,6 +51,8 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [IterationSettings](https://ifmelate.github.io/SharpCell/api/SharpCell.IterationSettings.md): Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0.
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
 - [Note](https://ifmelate.github.io/SharpCell/api/SharpCell.Note.md): A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it.
+- [PageMargins](https://ifmelate.github.io/SharpCell/api/SharpCell.PageMargins.md): The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges.
+- [PageOrientation](https://ifmelate.github.io/SharpCell/api/SharpCell.PageOrientation.md): How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation.
 - [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
 - [SheetProtection](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetProtection.md): What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.

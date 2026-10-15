@@ -21,6 +21,15 @@ public IEnumerable<Cell> Cells { get; }
 
 The cells of the sheet that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Values and formulas may be changed while enumerating; adding or removing a cell makes the next step throw `InvalidOperationException`.
 
+<a id="columnpagebreaks"></a>
+### ColumnPageBreaks
+
+```csharp
+public IReadOnlyList<int> ColumnPageBreaks { get; }
+```
+
+The columns that start a new printed page, in order.
+
 <a id="defaultcolumnwidth"></a>
 ### DefaultColumnWidth
 
@@ -109,6 +118,71 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 
 The cells with a note, row by row and left to right, with their notes.
 
+<a id="pagemargins"></a>
+### PageMargins
+
+```csharp
+public PageMargins PageMargins { get; set; }
+```
+
+The margins of the printed pages; [PageMargins.Normal](SharpCell.PageMargins.md#normal) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentNullException`: The value is null.
+
+<a id="pageorientation"></a>
+### PageOrientation
+
+```csharp
+public PageOrientation PageOrientation { get; set; }
+```
+
+How the sheet is turned on the printed page; [PageOrientation.Portrait](SharpCell.PageOrientation.md#portrait) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not a defined orientation.
+
+<a id="printarea"></a>
+### PrintArea
+
+```csharp
+public string? PrintArea { get; set; }
+```
+
+The cells that print, as Excel's Print Area sets them: one range such as `A1:F40`, or several separated by commas, each printed on pages of its own. Null prints every cell that holds something, which is also what setting null gives. Read without `$` signs; written with or without them. The ranges move with their cells when rows, columns or cells are inserted or deleted, as the defined name Excel keeps them in does.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not A1 ranges of this sheet separated by commas.
+
+<a id="printtitlecolumns"></a>
+### PrintTitleColumns
+
+```csharp
+public string? PrintTitleColumns { get; set; }
+```
+
+The columns printed at the left of every page: `A:A` or `A:B`. Null for none. They move with their columns when columns are inserted or deleted.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not a span of whole columns such as `A:B`.
+
+<a id="printtitlerows"></a>
+### PrintTitleRows
+
+```csharp
+public string? PrintTitleRows { get; set; }
+```
+
+The rows printed at the top of every page, as Excel's Print Titles sets them: `1:1` or `1:3`. Null for none. They move with their rows when rows are inserted or deleted.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not a span of whole rows such as `1:2`.
+
 <a id="protection"></a>
 ### Protection
 
@@ -117,6 +191,15 @@ public SheetProtection? Protection { get; }
 ```
 
 What users may still do on the sheet when it is protected; null when it is not protected.
+
+<a id="rowpagebreaks"></a>
+### RowPageBreaks
+
+```csharp
+public IReadOnlyList<int> RowPageBreaks { get; }
+```
+
+The rows that start a new printed page, as Excel's Insert Page Break puts them, in order.
 
 <a id="showgridlines"></a>
 ### ShowGridlines
@@ -173,6 +256,40 @@ public Cell this[string address] { get; }
 A cell by A1 address such as `B3` (no `$`, no range).
 
 ## Methods
+
+<a id="addcolumnpagebreak-int"></a>
+### AddColumnPageBreak(int)
+
+```csharp
+public void AddColumnPageBreak(int column)
+```
+
+Starts a new printed page at a column: a page break left of it.
+
+**Parameters**
+
+- `column`: The first column of the new page, from 2 (B).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is not on the sheet or is column A.
+
+<a id="addrowpagebreak-int"></a>
+### AddRowPageBreak(int)
+
+```csharp
+public void AddRowPageBreak(int row)
+```
+
+Starts a new printed page at a row: a page break above it. Breaks move with their rows.
+
+**Parameters**
+
+- `row`: The first row of the new page, from 2.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is not on the sheet or is row 1.
 
 <a id="addtable-string-string-bool-bool"></a>
 ### AddTable(string, string, bool, bool)
@@ -449,6 +566,32 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 **Exceptions**
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
+
+<a id="removecolumnpagebreak-int"></a>
+### RemoveColumnPageBreak(int)
+
+```csharp
+public void RemoveColumnPageBreak(int column)
+```
+
+Removes the page break left of a column, if there is one.
+
+**Parameters**
+
+- `column`: The column.
+
+<a id="removerowpagebreak-int"></a>
+### RemoveRowPageBreak(int)
+
+```csharp
+public void RemoveRowPageBreak(int row)
+```
+
+Removes the page break above a row, if there is one.
+
+**Parameters**
+
+- `row`: The row.
 
 <a id="rowheight-int"></a>
 ### RowHeight(int)

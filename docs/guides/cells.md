@@ -181,6 +181,29 @@ frozen panes. None of them changes a result.
 `XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
 the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
 
+## Printing
+
+```csharp snippet=cells-printing
+sheet.PageOrientation = PageOrientation.Landscape;
+sheet.PageMargins = PageMargins.Narrow with { Top = 1 };
+sheet.PrintArea = "A1:E7";          // only these cells print
+sheet.PrintTitleRows = "1:1";       // the header row repeats on every page
+sheet.AddRowPageBreak(5);           // a new page starts at row 5
+```
+
+These are the settings of Excel's Page Layout tab. `PageOrientation` is portrait unless set
+otherwise, and `PageMargins` are Excel's Normal margins; `PageMargins.Wide` and `PageMargins.Narrow`
+are its other presets, and `with` changes single margins, in inches. `PrintArea` is one range or
+several separated by commas, each printed on pages of its own; null prints everything.
+`PrintTitleRows` and `PrintTitleColumns` repeat rows at the top and columns at the left of every
+page. `AddRowPageBreak` and `AddColumnPageBreak` start a new page at a row or column, as Insert Page
+Break does; `RowPageBreaks` and `ColumnPageBreaks` list them.
+
+The print area moves with its cells when rows, columns or cells are inserted or deleted, as the
+defined name Excel keeps it in does; titles and page breaks move with whole rows and columns.
+`XlsxReader` reads all of them and `XlsxWriter` saves them; the file's other page setup (paper size,
+scaling, headers and footers) stays as it was.
+
 ## Inserting and deleting rows and columns
 
 ```csharp snippet=insert-rows

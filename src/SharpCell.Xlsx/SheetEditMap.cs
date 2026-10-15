@@ -51,6 +51,19 @@ internal sealed class SheetEditMap(Workbook workbook)
         return current;
     }
 
+    /// <summary>Where a span of whole rows (or columns) goes, as a reference to them does; null when it is gone.</summary>
+    public (int First, int Last)? MapSpan(Worksheet sheet, bool rows, int first, int last)
+    {
+        (int First, int Last)? current = (first, last);
+        foreach (var edit in sheet.Edits)
+        {
+            if (edit.Rows == rows && edit.Whole && current is { } span)
+                current = edit.MapSpan(span.First, span.Last, rows ? CellAddress.MaxRow : CellAddress.MaxColumn);
+        }
+
+        return current;
+    }
+
     public CellAddress? Map(Worksheet sheet, CellAddress address)
     {
         CellAddress? current = address;

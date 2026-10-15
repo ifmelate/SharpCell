@@ -31,7 +31,8 @@ internal static class WorkbookWriter
         var workbook = plan.Workbook;
         var look = plan.Source.Look;
         var part = plan.Source.WorkbookPart;
-        var namesChanged = look.NamesChanged(workbook) || plan.Edits.Any;
+        var printChanged = workbook.Sheets.Where(sheet => PrintChanged(plan, sheet)).ToHashSet();
+        var namesChanged = look.NamesChanged(workbook) || plan.Edits.Any || printChanged.Count > 0;
         var iterationChanged = !workbook.Iteration.Equals(look.Iteration);
         var protectionChanged = look.ProtectionChanged(workbook);
         if (newSheets.Count == 0 && !namesChanged && !iterationChanged && !protectionChanged && workbook.DateSystem == look.DateSystem && !plan.FullCalcOnLoad)
@@ -57,7 +58,7 @@ internal static class WorkbookWriter
         }
 
         if (namesChanged)
-            WriteNames(root, sheets, workbook, look, plan.Edits);
+            WriteNames(root, sheets, workbook, look, plan.Edits, printChanged);
 
         if (iterationChanged || plan.FullCalcOnLoad)
         {
@@ -104,19 +105,41 @@ internal static class WorkbookWriter
 
     // Names the file has keep their element, with the model's formula where it changed; names
     // SharpCell does not read (print areas, macro names) stay as they are; new names go at the end.
-    private static void WriteNames(XElement root, XElement sheets, Workbook workbook, WorkbookLook look, SheetEditMap edits)
+    private static bool PrintChanged(WritePlan plan, Worksheet sheet)
+    {
+        // The model moves print areas and titles with inserted and deleted rows, also those listing
+        // several ranges, which the formulas of other names do not follow.
+        var look = plan.Source.SheetFor(sheet).Look.Mapped(plan.Edits, sheet);
+        return look.PrintAreaChanged(sheet) || look.PrintTitlesChanged(sheet)
+            || (plan.Edits.HasEdits(sheet) && (sheet.PrintAreas.Count > 0 || sheet.TitleRows is not null || sheet.TitleColumns is not null));
+    }
+
+    private static void WriteNames(XElement root, XElement sheets, Workbook workbook, WorkbookLook look, SheetEditMap edits, HashSet<Worksheet> printChanged)
     {
         var ns = root.Name.Namespace;
         var sheetNames = sheets.Elements(ns + "sheet").Select(s => (string?)s.Attribute("name") ?? "").ToList();
         var section = root.Element(ns + "definedNames");
         var written = new HashSet<(string, string)>();
         var model = workbook.Names.All.ToDictionary(WorkbookLook.Key);
-        foreach (var element in section?.Elements(ns + "definedName") ?? [])
+        var printWritten = new HashSet<(Worksheet, string)>();
+        foreach (var element in section?.Elements(ns + "definedName").ToList() ?? [])
         {
             var name = ((string?)element.Attribute("name"))?.ToUpperInvariant();
             if (name is null)
                 continue;
             var scope = (int?)element.Attribute("localSheetId") is { } index && index >= 0 && index < sheetNames.Count ? sheetNames[index].ToUpperInvariant() : "";
+
+            // A print area or titles the model changed: the model's, or none.
+            if (PrintNames.IsPrintName(name) && scope.Length > 0 && workbook.TryGetSheet(scope, out var printed) && printChanged.Contains(printed!))
+            {
+                var formula = PrintNames.IsArea(name) ? PrintNames.AreaFormula(printed!) : PrintNames.TitlesFormula(printed!);
+                if (formula is null || !printWritten.Add((printed!, PrintNames.IsArea(name) ? PrintNames.Area : PrintNames.Titles)))
+                    element.Remove();
+                else
+                    element.Value = formula;
+                continue;
+            }
+
             var key = model.Keys.FirstOrDefault(k => k.Name == name && k.Scope.ToUpperInvariant() == scope);
             if (key.Name is null || !written.Add(key))
             {
@@ -128,6 +151,18 @@ internal static class WorkbookWriter
             var definition = model[key];
             if (!look.Names.TryGetValue(key, out var text) || text != definition.Text)
                 element.Value = FileText(definition, workbook);
+        }
+
+        foreach (var sheet in printChanged)
+        {
+            foreach (var (name, formula) in new[] { (PrintNames.Area, PrintNames.AreaFormula(sheet)), (PrintNames.Titles, PrintNames.TitlesFormula(sheet)) })
+            {
+                if (formula is null || printWritten.Contains((sheet, name)))
+                    continue;
+                section ??= Section(root, "definedNames");
+                section.Add(new XElement(ns + "definedName", new XAttribute("name", name),
+                    new XAttribute("localSheetId", sheetNames.FindIndex(n => n.Equals(sheet.Name, StringComparison.OrdinalIgnoreCase))), formula));
+            }
         }
 
         foreach (var (key, definition) in model)

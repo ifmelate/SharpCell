@@ -482,6 +482,29 @@ frozen panes. None of them changes a result.
 `XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
 the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
 
+## Printing
+
+```csharp snippet=cells-printing
+sheet.PageOrientation = PageOrientation.Landscape;
+sheet.PageMargins = PageMargins.Narrow with { Top = 1 };
+sheet.PrintArea = "A1:E7";          // only these cells print
+sheet.PrintTitleRows = "1:1";       // the header row repeats on every page
+sheet.AddRowPageBreak(5);           // a new page starts at row 5
+```
+
+These are the settings of Excel's Page Layout tab. `PageOrientation` is portrait unless set
+otherwise, and `PageMargins` are Excel's Normal margins; `PageMargins.Wide` and `PageMargins.Narrow`
+are its other presets, and `with` changes single margins, in inches. `PrintArea` is one range or
+several separated by commas, each printed on pages of its own; null prints everything.
+`PrintTitleRows` and `PrintTitleColumns` repeat rows at the top and columns at the left of every
+page. `AddRowPageBreak` and `AddColumnPageBreak` start a new page at a row or column, as Insert Page
+Break does; `RowPageBreaks` and `ColumnPageBreaks` list them.
+
+The print area moves with its cells when rows, columns or cells are inserted or deleted, as the
+defined name Excel keeps it in does; titles and page breaks move with whole rows and columns.
+`XlsxReader` reads all of them and `XlsxWriter` saves them; the file's other page setup (paper size,
+scaling, headers and footers) stays as it was.
+
 ## Inserting and deleting rows and columns
 
 ```csharp snippet=insert-rows
@@ -1009,10 +1032,11 @@ Everything SharpCell models:
   cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
   filtered.
 - Hyperlinks, notes, data validation, sheet and workbook protection, and locked and hidden cells.
+- Page orientation and margins, print areas, print titles and manual page breaks.
 - New sheets, defined names, new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
-file: charts, pivot tables, comments, conditional formats, pictures, macros,
+file: charts, pivot tables, threaded comments, conditional formats, pictures, macros, headers and footers, paper size and scaling,
 pattern fills, and parts SharpCell does not know. A cell that did not change is copied as it was,
 and a new style starts from the cell's old one, so what SharpCell does not read (rotated text, a
 pattern fill) stays. Saving a workbook in which nothing changed writes the original file byte for
@@ -3689,6 +3713,163 @@ The text.
 
 ---
 
+<!-- page: api/SharpCell.PageMargins.md -->
+
+# PageMargins
+
+```csharp
+public sealed class PageMargins
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges.
+
+## Constructors
+
+<a id="ctor-double-double-double-double-double-double"></a>
+### PageMargins(double, double, double, double, double, double)
+
+```csharp
+public PageMargins(double left, double right, double top, double bottom, double header, double footer)
+```
+
+Margins of the given sizes in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A margin is negative, not a number, or 49 inches or more.
+
+## Properties
+
+<a id="bottom"></a>
+### Bottom
+
+```csharp
+public double Bottom { get; init; }
+```
+
+The bottom margin in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is negative, not a number, or 49 inches or more.
+
+<a id="footer"></a>
+### Footer
+
+```csharp
+public double Footer { get; init; }
+```
+
+How far the footer is from the bottom edge, in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is negative, not a number, or 49 inches or more.
+
+<a id="header"></a>
+### Header
+
+```csharp
+public double Header { get; init; }
+```
+
+How far the header is from the top edge, in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is negative, not a number, or 49 inches or more.
+
+<a id="left"></a>
+### Left
+
+```csharp
+public double Left { get; init; }
+```
+
+The left margin in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is negative, not a number, or 49 inches or more.
+
+<a id="narrow"></a>
+### Narrow
+
+```csharp
+public static PageMargins Narrow { get; }
+```
+
+Excel's Narrow margins: 0.25 inches left and right, 0.75 top and bottom, 0.3 for the header and footer.
+
+<a id="normal"></a>
+### Normal
+
+```csharp
+public static PageMargins Normal { get; }
+```
+
+Excel's Normal margins, which a sheet has unless set otherwise: 0.7 inches left and right, 0.75 top and bottom, 0.3 for the header and footer.
+
+<a id="right"></a>
+### Right
+
+```csharp
+public double Right { get; init; }
+```
+
+The right margin in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is negative, not a number, or 49 inches or more.
+
+<a id="top"></a>
+### Top
+
+```csharp
+public double Top { get; init; }
+```
+
+The top margin in inches.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is negative, not a number, or 49 inches or more.
+
+<a id="wide"></a>
+### Wide
+
+```csharp
+public static PageMargins Wide { get; }
+```
+
+Excel's Wide margins: an inch on every side, 0.5 inches for the header and footer.
+
+---
+
+<!-- page: api/SharpCell.PageOrientation.md -->
+
+# PageOrientation
+
+```csharp
+public enum PageOrientation
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="portrait"></a>`Portrait` | 0 | Taller than wide; Excel's default. |
+| <a id="landscape"></a>`Landscape` | 1 | Wider than tall. |
+
+---
+
 <!-- page: api/SharpCell.RecalculationResult.md -->
 
 # RecalculationResult
@@ -4374,6 +4555,15 @@ public IEnumerable<Cell> Cells { get; }
 
 The cells of the sheet that hold something (a constant, a formula or a value spilled into them), row by row and left to right. Values and formulas may be changed while enumerating; adding or removing a cell makes the next step throw `InvalidOperationException`.
 
+<a id="columnpagebreaks"></a>
+### ColumnPageBreaks
+
+```csharp
+public IReadOnlyList<int> ColumnPageBreaks { get; }
+```
+
+The columns that start a new printed page, in order.
+
 <a id="defaultcolumnwidth"></a>
 ### DefaultColumnWidth
 
@@ -4462,6 +4652,71 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 
 The cells with a note, row by row and left to right, with their notes.
 
+<a id="pagemargins"></a>
+### PageMargins
+
+```csharp
+public PageMargins PageMargins { get; set; }
+```
+
+The margins of the printed pages; [PageMargins.Normal](SharpCell.PageMargins.md#normal) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentNullException`: The value is null.
+
+<a id="pageorientation"></a>
+### PageOrientation
+
+```csharp
+public PageOrientation PageOrientation { get; set; }
+```
+
+How the sheet is turned on the printed page; [PageOrientation.Portrait](SharpCell.PageOrientation.md#portrait) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not a defined orientation.
+
+<a id="printarea"></a>
+### PrintArea
+
+```csharp
+public string? PrintArea { get; set; }
+```
+
+The cells that print, as Excel's Print Area sets them: one range such as `A1:F40`, or several separated by commas, each printed on pages of its own. Null prints every cell that holds something, which is also what setting null gives. Read without `$` signs; written with or without them. The ranges move with their cells when rows, columns or cells are inserted or deleted, as the defined name Excel keeps them in does.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not A1 ranges of this sheet separated by commas.
+
+<a id="printtitlecolumns"></a>
+### PrintTitleColumns
+
+```csharp
+public string? PrintTitleColumns { get; set; }
+```
+
+The columns printed at the left of every page: `A:A` or `A:B`. Null for none. They move with their columns when columns are inserted or deleted.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not a span of whole columns such as `A:B`.
+
+<a id="printtitlerows"></a>
+### PrintTitleRows
+
+```csharp
+public string? PrintTitleRows { get; set; }
+```
+
+The rows printed at the top of every page, as Excel's Print Titles sets them: `1:1` or `1:3`. Null for none. They move with their rows when rows are inserted or deleted.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not a span of whole rows such as `1:2`.
+
 <a id="protection"></a>
 ### Protection
 
@@ -4470,6 +4725,15 @@ public SheetProtection? Protection { get; }
 ```
 
 What users may still do on the sheet when it is protected; null when it is not protected.
+
+<a id="rowpagebreaks"></a>
+### RowPageBreaks
+
+```csharp
+public IReadOnlyList<int> RowPageBreaks { get; }
+```
+
+The rows that start a new printed page, as Excel's Insert Page Break puts them, in order.
 
 <a id="showgridlines"></a>
 ### ShowGridlines
@@ -4526,6 +4790,40 @@ public Cell this[string address] { get; }
 A cell by A1 address such as `B3` (no `$`, no range).
 
 ## Methods
+
+<a id="addcolumnpagebreak-int"></a>
+### AddColumnPageBreak(int)
+
+```csharp
+public void AddColumnPageBreak(int column)
+```
+
+Starts a new printed page at a column: a page break left of it.
+
+**Parameters**
+
+- `column`: The first column of the new page, from 2 (B).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is not on the sheet or is column A.
+
+<a id="addrowpagebreak-int"></a>
+### AddRowPageBreak(int)
+
+```csharp
+public void AddRowPageBreak(int row)
+```
+
+Starts a new printed page at a row: a page break above it. Breaks move with their rows.
+
+**Parameters**
+
+- `row`: The first row of the new page, from 2.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is not on the sheet or is row 1.
 
 <a id="addtable-string-string-bool-bool"></a>
 ### AddTable(string, string, bool, bool)
@@ -4802,6 +5100,32 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 **Exceptions**
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
+
+<a id="removecolumnpagebreak-int"></a>
+### RemoveColumnPageBreak(int)
+
+```csharp
+public void RemoveColumnPageBreak(int column)
+```
+
+Removes the page break left of a column, if there is one.
+
+**Parameters**
+
+- `column`: The column.
+
+<a id="removerowpagebreak-int"></a>
+### RemoveRowPageBreak(int)
+
+```csharp
+public void RemoveRowPageBreak(int row)
+```
+
+Removes the page break above a row, if there is one.
+
+**Parameters**
+
+- `row`: The row.
 
 <a id="rowheight-int"></a>
 ### RowHeight(int)

@@ -115,7 +115,12 @@ internal static class WorkbookReader
         }
 
         foreach (var name in names)
-            DefineName(workbook, name, byIndex);
+        {
+            if (name.Name.StartsWith("_xlnm.", StringComparison.OrdinalIgnoreCase))
+                PrintName(name, byIndex);
+            else
+                DefineName(workbook, name, byIndex);
+        }
 
         var saved = ReadSavedCells(package, relationships);
         if (saved.Styles.Count > 0)
@@ -220,9 +225,10 @@ internal static class WorkbookReader
             || CellMetadata.IsTrue(reader.GetAttribute("xlm"));
         var formula = reader.ReadElementContentAsString();
 
-        // Built-in names (print areas, filters) and placeholders for newer functions are not user names.
+        // Built-in names are not user names: print areas and titles are read as the sheet's own,
+        // others (a filter's range) stay in the file; nor are placeholders for newer functions.
         if (name is null || isMacro || formula.Length == 0
-            || name.StartsWith("_xlnm.", StringComparison.OrdinalIgnoreCase)
+            || (name.StartsWith("_xlnm.", StringComparison.OrdinalIgnoreCase) && !PrintNames.IsPrintName(name))
             || name.StartsWith("_xlfn.", StringComparison.OrdinalIgnoreCase))
             return null;
 
@@ -235,6 +241,30 @@ internal static class WorkbookReader
         }
 
         return new NameEntry(name, sheet, formula);
+    }
+
+    // A print area or print titles: the sheet's own setting. One SharpCell cannot read stays in the file.
+    private static void PrintName(NameEntry name, List<(Worksheet Sheet, string Part)?> byIndex)
+    {
+        if (name.LocalSheet is not { } index || index >= byIndex.Count || byIndex[index] is not { } entry
+            || PrintNames.Parse(name.Formula) is not { } areas)
+            return;
+        if (PrintNames.IsArea(name.Name))
+        {
+            entry.Sheet.LoadPrinting(areas, null, null);
+            return;
+        }
+
+        (int, int)? rows = null, columns = null;
+        foreach (var area in areas)
+        {
+            if (area.FirstColumn == 1 && area.LastColumn == CellAddress.MaxColumn)
+                rows = (area.FirstRow, area.LastRow);
+            else if (area.FirstRow == 1 && area.LastRow == CellAddress.MaxRow)
+                columns = (area.FirstColumn, area.LastColumn);
+        }
+
+        entry.Sheet.LoadPrinting(null, rows, columns);
     }
 
     private static void DefineName(Workbook workbook, NameEntry name, List<(Worksheet Sheet, string Part)?> byIndex)

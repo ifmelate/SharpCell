@@ -20,3 +20,46 @@ SharpCell.Note.IsVisible.init -> void
 SharpCell.Note.Note(string! text, string? author = null) -> void
 SharpCell.Note.Text.get -> string!
 SharpCell.Worksheet.Notes.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.Cell! Cell, SharpCell.Note! Note)>!
+SharpCell.PageMargins
+SharpCell.PageMargins.Bottom.get -> double
+SharpCell.PageMargins.Footer.get -> double
+SharpCell.PageMargins.Header.get -> double
+SharpCell.PageMargins.Left.get -> double
+SharpCell.PageMargins.PageMargins(double left, double right, double top, double bottom, double header, double footer) -> void
+SharpCell.PageMargins.Right.get -> double
+SharpCell.PageMargins.Top.get -> double
+SharpCell.PageOrientation
+SharpCell.PageOrientation.Landscape = 1 -> SharpCell.PageOrientation
+SharpCell.PageOrientation.Portrait = 0 -> SharpCell.PageOrientation
+SharpCell.Worksheet.AddColumnPageBreak(int column) -> void
+SharpCell.Worksheet.AddRowPageBreak(int row) -> void
+SharpCell.Worksheet.ColumnPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
+SharpCell.Worksheet.PageMargins.get -> SharpCell.PageMargins!
+SharpCell.Worksheet.PageMargins.set -> void
+SharpCell.Worksheet.PageOrientation.get -> SharpCell.PageOrientation
+SharpCell.Worksheet.PageOrientation.set -> void
+SharpCell.Worksheet.PrintArea.get -> string?
+SharpCell.Worksheet.PrintArea.set -> void
+SharpCell.Worksheet.PrintTitleColumns.get -> string?
+SharpCell.Worksheet.PrintTitleColumns.set -> void
+SharpCell.Worksheet.PrintTitleRows.get -> string?
+SharpCell.Worksheet.PrintTitleRows.set -> void
+SharpCell.Worksheet.RemoveColumnPageBreak(int column) -> void
+SharpCell.Worksheet.RemoveRowPageBreak(int row) -> void
+SharpCell.Worksheet.RowPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
+static SharpCell.PageMargins.Narrow.get -> SharpCell.PageMargins!
+static SharpCell.PageMargins.Normal.get -> SharpCell.PageMargins!
+static SharpCell.PageMargins.Wide.get -> SharpCell.PageMargins!
+SharpCell.PageMargins.<Clone>$() -> SharpCell.PageMargins!
+SharpCell.PageMargins.Equals(SharpCell.PageMargins? other) -> bool
+override SharpCell.PageMargins.Equals(object? obj) -> bool
+override SharpCell.PageMargins.GetHashCode() -> int
+override SharpCell.PageMargins.ToString() -> string!
+static SharpCell.PageMargins.operator !=(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
+static SharpCell.PageMargins.operator ==(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
+SharpCell.PageMargins.Bottom.init -> void
+SharpCell.PageMargins.Footer.init -> void
+SharpCell.PageMargins.Header.init -> void
+SharpCell.PageMargins.Left.init -> void
+SharpCell.PageMargins.Right.init -> void
+SharpCell.PageMargins.Top.init -> void
