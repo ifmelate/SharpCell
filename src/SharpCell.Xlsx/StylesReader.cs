@@ -36,6 +36,9 @@ internal sealed class StyleSheet
     public List<BorderEdges> Borders { get; } = [];
 
     public List<CellXf> Xfs { get; } = [];
+
+    /// <summary>The differential formats conditional formats point at, by index.</summary>
+    public List<ConditionalStyle> Dxfs { get; } = [];
 }
 
 /// <summary>
@@ -108,16 +111,16 @@ internal static class StylesReader
     /// Each <c>cellXfs</c> entry, in order. A part that is not valid XML gives no styles: every cell
     /// is General and has the default style.
     /// </summary>
-    public static List<CellXf> Read(Package package, string part, CellColor[] theme)
+    public static StyleSheet Read(Package package, string part, CellColor[] theme)
     {
         try
         {
             using var reader = package.OpenXml(part);
-            return ReadStyleSheet(XDocument.Load(reader).Root, theme).Xfs;
+            return ReadStyleSheet(XDocument.Load(reader).Root, theme);
         }
         catch (XmlException)
         {
-            return [];
+            return new StyleSheet();
         }
     }
 
@@ -192,6 +195,8 @@ internal static class StylesReader
                 shared.Add(style, style);
             styles.Add(new CellXf(Format(Int(xf, "numFmtId") ?? 0, custom), style));
         }
+
+        sheet.Dxfs.AddRange(Items(root, "dxfs", "dxf").Select(colors.Dxf));
 
         return sheet;
     }
@@ -313,6 +318,32 @@ internal static class StylesReader
                 && size is >= 1 and <= 409)
                 result = result with { Size = size };
             return result;
+        }
+
+        // A differential format: only what it sets. Its fill colour is the pattern's background, which
+        // Excel shows for a solid or unstated pattern; <b val="0"/> turns bold off.
+        public ConditionalStyle Dxf(XElement dxf)
+        {
+            var font = Child(dxf, "font");
+            var pattern = Child(dxf, "fill") is { } fill ? Child(fill, "patternFill") : null;
+            var patternType = pattern?.Attribute("patternType")?.Value;
+            var border = Child(dxf, "border") is { } edges ? Border(edges) : BorderEdges.None;
+            return new ConditionalStyle
+            {
+                Bold = font is null ? null : State(font, "b"),
+                Italic = font is null ? null : State(font, "i"),
+                Strikethrough = font is null ? null : State(font, "strike"),
+                Underline = font is not null && Child(font, "u") is { } u ? Lookup(Underlines, u.Attribute("val")?.Value ?? "single") ?? CellUnderline.Single : null,
+                FontColor = font is null ? null : Color(Child(font, "color")),
+                Fill = pattern is not null && patternType is null or "solid" ? Color(Child(pattern, "bgColor") ?? Child(pattern, "fgColor")) : null,
+                LeftBorder = border.Left,
+                RightBorder = border.Right,
+                TopBorder = border.Top,
+                BottomBorder = border.Bottom,
+                NumberFormat = Child(dxf, "numFmt")?.Attribute("formatCode")?.Value,
+            };
+
+            static bool? State(XElement font, string name) => Child(font, name) is { } flag ? flag.Attribute("val") is not { } val || IsTrue(val.Value) : null;
         }
 
         // Only solid fills: patterns and gradients have no single colour to show.

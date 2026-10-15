@@ -20,34 +20,61 @@ internal sealed class SheetEditMap(Workbook workbook)
 
     public bool HasEdits(Worksheet sheet) => sheet.Edits.Count > 0;
 
-    public bool HasColumnEdits(Worksheet sheet) => sheet.Edits.Any(edit => !edit.Rows);
+    public bool HasColumnEdits(Worksheet sheet) => sheet.Edits.Any(edit => !edit.Rows && edit.Whole);
 
+    /// <summary>Whether cells of the sheet were inserted or deleted with a shift, moving cells of a row to other rows.</summary>
+    public bool HasCellEdits(Worksheet sheet) => sheet.Edits.Any(edit => !edit.Whole);
+
+    /// <summary>Where a whole row goes, with its height and hidden flag; shifted cells do not move it.</summary>
     public int? MapRow(Worksheet sheet, int row)
     {
         int? current = row;
         foreach (var edit in sheet.Edits)
         {
-            if (edit.Rows && current is { } r)
+            if (edit.Rows && edit.Whole && current is { } r)
                 current = edit.Map(r, CellAddress.MaxRow);
         }
 
         return current;
     }
 
+    /// <summary>Where a whole column goes, with its width and hidden flag; shifted cells do not move it.</summary>
     public int? MapColumn(Worksheet sheet, int column)
     {
         int? current = column;
         foreach (var edit in sheet.Edits)
         {
-            if (!edit.Rows && current is { } c)
+            if (!edit.Rows && edit.Whole && current is { } c)
                 current = edit.Map(c, CellAddress.MaxColumn);
         }
 
         return current;
     }
 
-    public CellAddress? Map(Worksheet sheet, CellAddress address) =>
-        MapRow(sheet, address.Row) is { } row && MapColumn(sheet, address.Column) is { } column ? new CellAddress(row, column) : null;
+    /// <summary>Where a span of whole rows (or columns) goes, as a reference to them does; null when it is gone.</summary>
+    public (int First, int Last)? MapSpan(Worksheet sheet, bool rows, int first, int last)
+    {
+        (int First, int Last)? current = (first, last);
+        foreach (var edit in sheet.Edits)
+        {
+            if (edit.Rows == rows && edit.Whole && current is { } span)
+                current = edit.MapSpan(span.First, span.Last, rows ? CellAddress.MaxRow : CellAddress.MaxColumn);
+        }
+
+        return current;
+    }
+
+    public CellAddress? Map(Worksheet sheet, CellAddress address)
+    {
+        CellAddress? current = address;
+        foreach (var edit in sheet.Edits)
+        {
+            if (current is { } cell)
+                current = edit.Map(cell);
+        }
+
+        return current;
+    }
 
     /// <summary>A range, grown, shrunk or moved as a reference to it would be; null when it is gone.</summary>
     public Area? Map(Worksheet sheet, Area area)
@@ -74,16 +101,26 @@ internal sealed class SheetEditMap(Workbook workbook)
                 continue;
             }
 
-            if (Map(sheet, area) is { } moved)
+            foreach (var moved in MapCells(sheet, area))
                 mapped.Add(WorksheetParts.Format(moved));
         }
 
         return mapped.Count == 0 ? null : string.Join(' ', mapped);
     }
 
+    /// <summary>The cells of a range moved by each edit in turn: split where only some of them shift.</summary>
+    public static List<Area> MapCells(Worksheet sheet, Area area)
+    {
+        var current = new List<Area> { area };
+        foreach (var edit in sheet.Edits)
+            current = current.SelectMany(part => edit.MapCells(part).Select(p => p.After)).ToList();
+        return current;
+    }
+
     /// <summary>The first cell of a sqref that the sheet's edits leave, in row and column order of its ranges.</summary>
     public CellAddress? FirstSurvivingCell(Worksheet sheet, string sqref)
     {
+        var cells = HasCellEdits(sheet);
         foreach (var part in sqref.Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {
             if (!TryParse(part, out var area))
@@ -93,8 +130,23 @@ internal sealed class SheetEditMap(Workbook workbook)
                 row = MapRow(sheet, r) is null ? null : r;
             for (var c = area.FirstColumn; c <= area.LastColumn && column is null; c++)
                 column = MapColumn(sheet, c) is null ? null : c;
-            if (row is { } first && column is { } left)
+            if (row is not { } first || column is not { } left)
+                continue;
+            if (!cells)
                 return new CellAddress(first, left);
+
+            // Shifted cells can be deleted anywhere in the range: look row by row, skipping deleted
+            // rows; every cell looked at before the first one left is a deleted cell.
+            for (var r = first; r <= area.LastRow; r++)
+            {
+                if (MapRow(sheet, r) is null)
+                    continue;
+                for (var c = left; c <= area.LastColumn; c++)
+                {
+                    if (MapColumn(sheet, c) is not null && Map(sheet, new CellAddress(r, c)) is not null)
+                        return new CellAddress(r, c);
+                }
+            }
         }
 
         return null;
@@ -137,10 +189,7 @@ internal sealed class SheetEditMap(Workbook workbook)
             {
                 var moved = current;
                 if (edited == sheet)
-                {
-                    moved = (edit.Rows ? edit.Map(current.Row, CellAddress.MaxRow) is { } r ? new CellAddress(r, current.Column) : (CellAddress?)null
-                        : edit.Map(current.Column, CellAddress.MaxColumn) is { } c ? new CellAddress(current.Row, c) : null) ?? current;
-                }
+                    moved = edit.Map(current) ?? current;
 
                 shifted = ReferenceShift.Apply(shifted, sheet, current, moved, edited, edit);
                 current = moved;

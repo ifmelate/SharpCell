@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using SharpCell.Evaluation;
@@ -39,6 +40,7 @@ internal static class WorksheetReader
         var tableIds = new List<string>();
         var sheetViews = 0;
         var links = new List<HyperlinkElement>();
+        var conditionalFormats = new List<(int Priority, Action<Worksheet> Add)>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -75,9 +77,25 @@ internal static class WorksheetReader
                 continue;
             }
 
+            if (reader.Depth == 1 && reader.LocalName == "conditionalFormatting")
+            {
+                conditionalFormats.AddRange(ConditionalFormatElements.Read((XElement)XNode.ReadFrom(reader), saved.Dxfs));
+                continue;
+            }
+
             if (reader.Depth == 1 && reader.LocalName == "sheetProtection")
             {
                 ProtectionElements.Read((XElement)XNode.ReadFrom(reader), sheet);
+                continue;
+            }
+
+            // Page breaks: a break's id is the last row (or column) before it.
+            if (reader.Depth == 1 && reader.LocalName is "rowBreaks" or "colBreaks")
+            {
+                var rows = reader.LocalName == "rowBreaks";
+                var breaks = ((XElement)XNode.ReadFrom(reader)).Elements().Where(e => e.Name.LocalName == "brk")
+                    .Select(b => int.TryParse((string?)b.Attribute("id"), NumberStyles.None, CultureInfo.InvariantCulture, out var id) ? id + 1 : 0).ToList();
+                sheet.LoadPageBreaks(rows ? breaks : [], rows ? [] : breaks);
                 continue;
             }
 
@@ -85,6 +103,14 @@ internal static class WorksheetReader
             {
                 switch (reader.LocalName)
                 {
+                    case "pageMargins":
+                        if (PageMarginsOf(reader) is { } margins)
+                            sheet.PageMargins = margins;
+                        break;
+                    case "pageSetup":
+                        if (reader.GetAttribute("orientation") == "landscape")
+                            sheet.PageOrientation = PageOrientation.Landscape;
+                        break;
                     case "sheetPr":
                         if (reader.GetAttribute("filterMode") is "1" or "true")
                             sheet.FilterMode = true;
@@ -200,6 +226,10 @@ internal static class WorksheetReader
         }
 
         loader.Complete();
+
+        // Rules go in priority order; OrderBy keeps the file's order for equal priorities.
+        foreach (var (_, add) in conditionalFormats.OrderBy(rule => rule.Priority))
+            add(sheet);
         if (links.Count > 0)
             ReadHyperlinks(package, part, sheet, links);
         if (tableIds.Count > 0)
@@ -219,6 +249,23 @@ internal static class WorksheetReader
             for (var row = link.Area.FirstRow; row <= link.Area.LastRow; row++)
                 for (var column = link.Area.FirstColumn; column <= link.Area.LastColumn; column++)
                     sheet.SetHyperlink(row, column, link.Link);
+        }
+    }
+
+    // Margins only change how the sheet prints: ones Excel would not take are skipped.
+    private static PageMargins? PageMarginsOf(XmlReader reader)
+    {
+        var normal = PageMargins.Normal;
+        double Margin(string name, double fallback) =>
+            double.TryParse(reader.GetAttribute(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : fallback;
+        try
+        {
+            return new PageMargins(Margin("left", normal.Left), Margin("right", normal.Right), Margin("top", normal.Top),
+                Margin("bottom", normal.Bottom), Margin("header", normal.Header), Margin("footer", normal.Footer));
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return null;
         }
     }
 

@@ -184,6 +184,82 @@ public class AppGuideExamples
     }
 
     [Fact]
+    public void Insert_and_delete_cells()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+        sheet["A1"].Value = 1;
+        sheet["A2"].Value = 2;
+        sheet["B1"].Value = 10;
+        sheet["C1"].Formula = "=SUM(A1:A2)";
+
+        // snippet: insert-cells
+        sheet.Range("A1").Insert(InsertShift.Down);   // A1 and A2 move to A2 and A3; column B stays
+        workbook.Recalculate();                        // C1 is =SUM(A2:A3) now
+
+        sheet.Range("A1:A2").Delete(DeleteShift.Up);  // A3 moves up to A1; a formula reading A2 gets #REF!
+        // end-snippet
+
+        Assert.Equal(("=SUM(A1:A1)", 10.0), (sheet["C1"].Formula, sheet["B1"].Value.AsNumber()));
+    }
+
+    [Fact]
+    public void Notes()
+    {
+        var workbook = new Workbook();
+        var sheet = workbook.AddSheet("Sheet1");
+
+        // snippet: cells-notes
+        sheet["B2"].Note = new Note("Checked against the invoice", "Ann");
+        sheet["B3"].Note = new Note("Shown all the time") { IsVisible = true };
+
+        foreach (var (cell, note) in sheet.Notes)
+            Console.WriteLine($"{cell.Address}: {note.Text} ({note.Author})");
+
+        sheet["B3"].Note = null;   // removes it
+        // end-snippet
+
+        Assert.Equal(["B2"], sheet.Notes.Select(n => n.Cell.Address));
+    }
+
+    [Fact]
+    public void Page_setup()
+    {
+        var (_, sheet) = Budget();
+
+        // snippet: cells-printing
+        sheet.PageOrientation = PageOrientation.Landscape;
+        sheet.PageMargins = PageMargins.Narrow with { Top = 1 };
+        sheet.PrintArea = "A1:E7";          // only these cells print
+        sheet.PrintTitleRows = "1:1";       // the header row repeats on every page
+        sheet.AddRowPageBreak(5);           // a new page starts at row 5
+        // end-snippet
+
+        Assert.Equal(("A1:E7", 5), (sheet.PrintArea, sheet.RowPageBreaks.Single()));
+    }
+
+    [Fact]
+    public void Conditional_formats()
+    {
+        var (workbook, sheet) = Budget();
+
+        // snippet: cells-conditional-formats
+        sheet.AddConditionalFormat("B2:B6", ConditionalFormat.CellValue(
+            ConditionalOperator.GreaterThan, "=500", ConditionalStyle.LightRedFill));
+        sheet.AddConditionalFormat("B2:B6", ConditionalFormat.Top(1, new ConditionalStyle { Bold = true }));
+        workbook.Recalculate();
+
+        foreach (var cell in sheet.Range("B2:B6").Cells)
+        {
+            if (cell.ConditionalFormats.Count > 0)                    // the rules that apply now
+                Console.WriteLine($"{cell.Address}: {cell.DisplayStyle.Fill}");   // as Excel shows it
+        }
+        // end-snippet
+
+        Assert.Equal(2, sheet.ConditionalFormats.Count);
+    }
+
+    [Fact]
     public void Copy_cells()
     {
         var workbook = new Workbook();

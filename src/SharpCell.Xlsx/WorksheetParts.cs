@@ -43,6 +43,15 @@ internal sealed class SheetLook
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
+        Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
+        ConditionalFormats = [.. sheet.ConditionalRules.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas], rule.Format))];
+        Orientation = sheet.PageOrientation;
+        Margins = sheet.PageMargins;
+        PrintAreas = [.. sheet.PrintAreas];
+        TitleRows = sheet.TitleRows;
+        TitleColumns = sheet.TitleColumns;
+        RowBreaks = [.. sheet.RowPageBreaks];
+        ColumnBreaks = [.. sheet.ColumnPageBreaks];
         Validations = [.. sheet.ValidationRules.Select(rule => ((IReadOnlyList<Area>)rule.Areas.ToArray(), rule.Validation))];
         Protection = sheet.Protection;
         ProtectionPassword = sheet.ProtectionPassword;
@@ -71,6 +80,25 @@ internal sealed class SheetLook
         }
 
         Hyperlinks = hyperlinks;
+        var notes = new Dictionary<CellAddress, Note>();
+        foreach (var (address, note) in look.Notes)
+        {
+            if (map.Map(sheet, address) is { } to)
+                notes[to] = note;
+        }
+
+        Notes = notes;
+        // Rules whose cells moved compare by their ranges; their formulas, written for the moved first
+        // cell, then differ and the rules are written again from the model.
+        ConditionalFormats = [.. look.ConditionalFormats.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas.SelectMany(area => SheetEditMap.MapCells(sheet, area))], rule.Format))
+            .Where(rule => rule.Item1.Count > 0)];
+        Orientation = look.Orientation;
+        Margins = look.Margins;
+        PrintAreas = [.. look.PrintAreas.Select(area => map.Map(sheet, area)).OfType<Area>()];
+        TitleRows = look.TitleRows is { } rows ? map.MapSpan(sheet, rows: true, rows.First, rows.Last) : null;
+        TitleColumns = look.TitleColumns is { } columns ? map.MapSpan(sheet, rows: false, columns.First, columns.Last) : null;
+        RowBreaks = [.. look.RowBreaks.Select(row => map.MapRow(sheet, row)).OfType<int>().Where(row => row >= 2).Distinct().Order()];
+        ColumnBreaks = [.. look.ColumnBreaks.Select(column => map.MapColumn(sheet, column)).OfType<int>().Where(column => column >= 2).Distinct().Order()];
 
         // Not moved: the rules of a sheet whose rows or columns moved are always written again, and
         // moving them here would mean moving their formulas as the model does.
@@ -113,6 +141,26 @@ internal sealed class SheetLook
     /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
     public IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks { get; }
 
+    /// <summary>The conditional formats in priority order with their ranges, as read.</summary>
+    public IReadOnlyList<(IReadOnlyList<Area> Areas, ConditionalFormat Format)> ConditionalFormats { get; }
+
+    public PageOrientation Orientation { get; }
+
+    public PageMargins Margins { get; }
+
+    public IReadOnlyList<Area> PrintAreas { get; }
+
+    public (int First, int Last)? TitleRows { get; }
+
+    public (int First, int Last)? TitleColumns { get; }
+
+    public IReadOnlyList<int> RowBreaks { get; }
+
+    public IReadOnlyList<int> ColumnBreaks { get; }
+
+    /// <summary>The notes the model held, by cell; threaded comments are not here.</summary>
+    public IReadOnlyDictionary<CellAddress, Note> Notes { get; }
+
     /// <summary>The data validation rules in order, with their ranges, as read; not moved by edits.</summary>
     public IReadOnlyList<(IReadOnlyList<Area> Areas, DataValidation Validation)> Validations { get; }
 
@@ -151,6 +199,35 @@ internal sealed class SheetLook
     public bool HyperlinksChanged(Worksheet sheet) =>
         Hyperlinks.Count != sheet.Hyperlinks.Count
         || Hyperlinks.Any(pair => !sheet.Hyperlinks.TryGetValue(pair.Key, out var link) || !link.Equals(pair.Value));
+
+    public bool ConditionalFormatsChanged(Worksheet sheet)
+    {
+        var rules = sheet.ConditionalRules;
+        if (rules.Count != ConditionalFormats.Count)
+            return true;
+        for (var i = 0; i < rules.Count; i++)
+        {
+            if (!rules[i].Areas.SequenceEqual(ConditionalFormats[i].Areas) || !rules[i].Format.Equals(ConditionalFormats[i].Format))
+                return true;
+        }
+
+        return false;
+    }
+
+    public bool OrientationChanged(Worksheet sheet) => Orientation != sheet.PageOrientation;
+
+    public bool MarginsChanged(Worksheet sheet) => !Margins.Equals(sheet.PageMargins);
+
+    public bool PrintAreaChanged(Worksheet sheet) => !PrintAreas.SequenceEqual(sheet.PrintAreas);
+
+    public bool PrintTitlesChanged(Worksheet sheet) => TitleRows != sheet.TitleRows || TitleColumns != sheet.TitleColumns;
+
+    public bool BreaksChanged(Worksheet sheet, bool rows) =>
+        rows ? !RowBreaks.SequenceEqual(sheet.RowPageBreaks) : !ColumnBreaks.SequenceEqual(sheet.ColumnPageBreaks);
+
+    public bool NotesChanged(Worksheet sheet) =>
+        Notes.Count != sheet.NoteMap.Count
+        || Notes.Any(pair => !sheet.NoteMap.TryGetValue(pair.Key, out var note) || !note.Equals(pair.Value));
 
     public bool ValidationsChanged(Worksheet sheet)
     {

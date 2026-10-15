@@ -10,7 +10,7 @@ public sealed partial class CellRange
 {
     /// <summary>
     /// Copies the range's cells to another range, as copying and pasting them in Excel does: values,
-    /// formulas, number formats, styles, hyperlinks and data validation. A formula's relative references keep their distance
+    /// formulas, number formats, styles, hyperlinks, notes, data validation and conditional formats. A formula's relative references keep their distance
     /// from its cell, so <c>=A1*2</c> in B1 becomes <c>=A2*2</c> in B2, and a reference that would
     /// point past the sheet's edge becomes <c>#REF!</c>. Empty cells of the range clear the cells
     /// they are copied to. When the destination is a whole number of times as tall and as wide as
@@ -69,7 +69,9 @@ public sealed partial class CellRange
         var styles = Within(Worksheet.Styles, Area);
         var formats = Within(Worksheet.Formats, Area);
         var links = Within(Worksheet.Hyperlinks, Area);
+        var notes = Within(Worksheet.NoteMap, Area);
         var validations = Worksheet.ValidationsIn(Area);
+        var conditionalFormats = Worksheet.ConditionalRulesIn(Area);
 
         var targetCalculation = target.Workbook.Calculation;
         foreach (var cell in target.Store.Enumerate(written.FirstRow, written.FirstColumn, written.LastRow, written.LastColumn))
@@ -90,13 +92,16 @@ public sealed partial class CellRange
         }
 
         var rules = target.ValidationsPasted(validations, tiles);
+        var pastedFormats = target.ConditionalRulesPasted(conditionalFormats, tiles);
         foreach (var tile in tiles)
         {
             Paste(target, tile, cells, positions, styles, formats);
             Replace(target.Hyperlinks, links, tile, target.SetHyperlink);
+            Replace(target.NoteMap, notes, tile, target.SetNote);
         }
 
         target.SetValidationRules(rules);
+        target.SetConditionalRules(pastedFormats);
         return new CellRange(target, written);
     }
 

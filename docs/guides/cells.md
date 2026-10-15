@@ -181,6 +181,29 @@ frozen panes. None of them changes a result.
 `XlsxWriter` saves styles, sizes, merged cells, frozen panes and gridlines. A new style starts from
 the cell's style in the file, so what SharpCell does not read (pattern fills, rotated text) stays.
 
+## Printing
+
+```csharp snippet=cells-printing
+sheet.PageOrientation = PageOrientation.Landscape;
+sheet.PageMargins = PageMargins.Narrow with { Top = 1 };
+sheet.PrintArea = "A1:E7";          // only these cells print
+sheet.PrintTitleRows = "1:1";       // the header row repeats on every page
+sheet.AddRowPageBreak(5);           // a new page starts at row 5
+```
+
+These are the settings of Excel's Page Layout tab. `PageOrientation` is portrait unless set
+otherwise, and `PageMargins` are Excel's Normal margins; `PageMargins.Wide` and `PageMargins.Narrow`
+are its other presets, and `with` changes single margins, in inches. `PrintArea` is one range or
+several separated by commas, each printed on pages of its own; null prints everything.
+`PrintTitleRows` and `PrintTitleColumns` repeat rows at the top and columns at the left of every
+page. `AddRowPageBreak` and `AddColumnPageBreak` start a new page at a row or column, as Insert Page
+Break does; `RowPageBreaks` and `ColumnPageBreaks` list them.
+
+The print area moves with its cells when rows, columns or cells are inserted or deleted, as the
+defined name Excel keeps it in does; titles and page breaks move with whole rows and columns.
+`XlsxReader` reads all of them and `XlsxWriter` saves them; the file's other page setup (paper size,
+scaling, headers and footers) stays as it was.
+
 ## Inserting and deleting rows and columns
 
 ```csharp snippet=insert-rows
@@ -213,6 +236,28 @@ rows with one call (`InsertRows(5, 100)`) rather than one at a time. When the
 workbook is saved, conditional formats, data validation, pictures, comments, charts and pivot table
 sources in the file move with the cells too (see [Saving .xlsx files](saving.md)).
 
+## Inserting and deleting cells
+
+```csharp snippet=insert-cells
+sheet.Range("A1").Insert(InsertShift.Down);   // A1 and A2 move to A2 and A3; column B stays
+workbook.Recalculate();                        // C1 is =SUM(A2:A3) now
+
+sheet.Range("A1:A2").Delete(DeleteShift.Up);  // A3 moves up to A1; a formula reading A2 gets #REF!
+```
+
+`CellRange.Insert` and `CellRange.Delete` work like Excel's Insert and Delete with "Shift cells
+down", "Shift cells right", "Shift cells up" and "Shift cells left": only the cells in the range's
+columns (or rows) move, with their styles, number formats, links, data validation, merged areas and
+tables, and references to them follow as they do for rows. A reference to a range that only some of
+the moved cells are in stays as it was (`SUM(A1:C5)` does not change when cells of column A move),
+and a data validation rule over such a range is split. Row heights and column widths stay. A range of
+whole rows or whole columns inserts or deletes them, as `InsertRows` does.
+
+Cells that would move apart from the rest of a merged area, a table or an array formula throw
+`InvalidOperationException` and change nothing, as Excel refuses them. When the workbook is saved,
+the file's conditional formats, comments and other parts move with the cells; pictures and charts
+stay where they are.
+
 ## Copying cells
 
 ```csharp snippet=cells-copy
@@ -223,7 +268,7 @@ workbook.Recalculate();
 ```
 
 `CellRange.CopyTo` copies cells as copying and pasting them in Excel does: values, formulas,
-number formats, styles, hyperlinks and data validation. Relative references in a formula keep their distance from its cell and
+number formats, styles, hyperlinks, notes and data validation. Relative references in a formula keep their distance from its cell and
 absolute ones (`$A$1`) stay; a reference that would point past the sheet's edge becomes `#REF!`.
 Data validation formulas keep their distance from each cell in the same way. Empty cells of
 the range clear the cells they land on, their validation and hyperlinks too. A destination that is a whole number of
@@ -233,6 +278,65 @@ destination may overlap, and the destination may be in another workbook, where f
 that workbook's sheets and names. Merged cells, column widths and row heights are not copied. A
 range holding part of an array formula (Ctrl+Shift+Enter) or a formula SharpCell cannot read throws
 `NotSupportedException`; nothing changes.
+
+## Conditional formats
+
+```csharp snippet=cells-conditional-formats
+sheet.AddConditionalFormat("B2:B6", ConditionalFormat.CellValue(
+    ConditionalOperator.GreaterThan, "=500", ConditionalStyle.LightRedFill));
+sheet.AddConditionalFormat("B2:B6", ConditionalFormat.Top(1, new ConditionalStyle { Bold = true }));
+workbook.Recalculate();
+
+foreach (var cell in sheet.Range("B2:B6").Cells)
+{
+    if (cell.ConditionalFormats.Count > 0)                    // the rules that apply now
+        Console.WriteLine($"{cell.Address}: {cell.DisplayStyle.Fill}");   // as Excel shows it
+}
+```
+
+`ConditionalFormat` has a factory for each of Excel's rules: `CellValue` (greater than, between and the
+others), `Expression` (a formula true for the cell), `Top` and `Bottom` (items or percent),
+`AboveAverage` and `BelowAverage`, `DuplicateValues` and `UniqueValues`, `ContainsText`,
+`NotContainsText`, `BeginsWith`, `EndsWith`, `Blanks`, `NoBlanks`, `Errors`, `NoErrors` and
+`DateOccurring`. Formulas are written for the range's top-left cell, as in Excel's dialog, and
+relative references move from cell to cell. A `ConditionalStyle` sets only what the rule changes: font
+style and colour, fill, borders and number format; `LightRedFill`, `YellowFill` and `GreenFill` are
+Excel's presets. Rules added first win where several set the same thing, and `StopIfTrue`
+(`rule with { StopIfTrue = true }`) skips the rules below for cells it applies to.
+
+SharpCell works out which cells a rule applies to as Excel does. `Cell.ConditionalFormats` lists the
+rules that apply to a cell, from the values of the last `Recalculate` (rule formulas are calculated
+when read), and `Cell.DisplayStyle` is the cell's style with them put over it, Excel's DisplayFormat.
+An empty cell compares as 0 or as empty text; top, bottom and average rules count only numbers, and
+duplicates compare text ignoring case and leave empty cells out.
+
+Colour scales, data bars and icon sets are read from files and kept, and their cells are listed as
+applying to numbers, but SharpCell does not work out their colours and cannot add them. Rules move
+with their cells when rows, columns or cells are inserted or deleted, and `CopyTo` copies them.
+`ClearConditionalFormats` takes a range out of every rule, or removes them all.
+
+## Notes
+
+```csharp snippet=cells-notes
+sheet["B2"].Note = new Note("Checked against the invoice", "Ann");
+sheet["B3"].Note = new Note("Shown all the time") { IsVisible = true };
+
+foreach (var (cell, note) in sheet.Notes)
+    Console.WriteLine($"{cell.Address}: {note.Text} ({note.Author})");
+
+sheet["B3"].Note = null;   // removes it
+```
+
+A `Note` is what Excel's Insert Note puts on a cell (a comment, before Excel 365): a text, who
+wrote it, and whether it is shown all the time (`IsVisible`) or only while the pointer rests on the
+cell. Notes move with their cells when rows, columns or cells are inserted or deleted, and
+`CopyTo` copies them. Excel starts the text of a note it makes with the author's name and a colon;
+SharpCell reads that line as part of the text and writes only the text it is given.
+
+`XlsxReader` reads the notes of a file and `XlsxWriter` saves them. A note that did not change keeps
+its formatted text and its box as they were; a new or changed one is written as plain text in a box
+beside its cell, where Excel puts a new note. Threaded comments, Excel's newer comments with replies,
+are not notes: a file's own are kept as they are, and SharpCell does not make them.
 
 ## Defined names
 

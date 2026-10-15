@@ -167,9 +167,16 @@ internal sealed partial class Calculation(Workbook workbook)
         _cellDiagnostics.Remove(key);
     }
 
+    /// <summary>
+    /// Grows whenever a cell's content or value may have changed: what is worked out from values
+    /// (the statistics of conditional formats) is kept only while it stays the same.
+    /// </summary>
+    public int Generation { get; private set; }
+
     /// <summary>Call after a cell's content changed: it (if a formula) and everything reading it become dirty.</summary>
     public void AfterChange(CellKey key, CellData? data)
     {
+        Generation++;
         if (data?.Formula is not null)
             MarkDirty(key, data);
         Invalidate(key);
@@ -288,7 +295,11 @@ internal sealed partial class Calculation(Workbook workbook)
     }
 
     // Called before calculation writes a cell's value: keeps the value from before the first write.
-    private void Remember(CellKey key, CellData? data) => _before.TryAdd(key, data?.Value ?? CellValue.Empty);
+    private void Remember(CellKey key, CellData? data)
+    {
+        Generation++;
+        _before.TryAdd(key, data?.Value ?? CellValue.Empty);
+    }
 
     /// <summary>Evaluates a formula outside any cell, computing dirty cells it reads first.</summary>
     public CellValue EvaluateDetached(FormulaNode formula, Worksheet? sheet, CellAddress origin, CancellationToken cancellationToken)
@@ -317,6 +328,7 @@ internal sealed partial class Calculation(Workbook workbook)
     /// </summary>
     public void Rebuild(Action change)
     {
+        Generation++;
         Graph.Clear();
         _spillWatch.Clear();
         _fixedArrays.Clear();

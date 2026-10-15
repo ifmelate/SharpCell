@@ -86,6 +86,46 @@ internal sealed class StylesWriter
         return index;
     }
 
+    /// <summary>The differential format at an index of the file, or null when it has none there.</summary>
+    public ConditionalStyle? DxfAt(int index)
+    {
+        Load();
+        return index >= 0 && index < _read.Dxfs.Count ? _read.Dxfs[index] : null;
+    }
+
+    /// <summary>The index of a differential format for a conditional format's look, added when the file has none like it.</summary>
+    public int DxfFor(ConditionalStyle style)
+    {
+        Load();
+        var index = _read.Dxfs.IndexOf(style);
+        if (index >= 0)
+            return index;
+
+        // The schema's order: font, numFmt, fill, border; in the font b, i, strike, u, color.
+        XElement? font = null;
+        if (style.Bold is not null || style.Italic is not null || style.Strikethrough is not null || style.Underline is not null || style.FontColor is not null)
+        {
+            font = new XElement(Main + "font",
+                Flag("b", style.Bold), Flag("i", style.Italic), Flag("strike", style.Strikethrough),
+                style.Underline is { } underline
+                    ? new XElement(Main + "u", underline == CellUnderline.Single ? null : new XAttribute("val", underline == CellUnderline.None ? "none" : Name(StylesReader.Underlines, underline)))
+                    : null,
+                style.FontColor is { } color ? Color("color", color) : null);
+        }
+
+        var element = new XElement(Main + "dxf", font,
+            style.NumberFormat is { } code ? new XElement(Main + "numFmt", new XAttribute("numFmtId", NumberFormatId(code)), new XAttribute("formatCode", code)) : null,
+            style.Fill is { } fill ? new XElement(Main + "fill", new XElement(Main + "patternFill", Color("bgColor", fill))) : null,
+            (style.LeftBorder ?? style.RightBorder ?? style.TopBorder ?? style.BottomBorder) is null
+                ? null
+                : new XElement(Main + "border", DxfEdge("left", style.LeftBorder), DxfEdge("right", style.RightBorder), DxfEdge("top", style.TopBorder), DxfEdge("bottom", style.BottomBorder)));
+        return Add("dxfs", element, _read.Dxfs, style);
+
+        static XElement? Flag(string name, bool? on) => on is { } value ? new XElement(Main + name, value ? null : new XAttribute("val", "0")) : null;
+
+        static XElement? DxfEdge(string name, CellBorder? border) => border is null ? null : Edge(name, border);
+    }
+
     /// <summary>Changes the first cell style, which cells without a style of their own show, and the Normal style.</summary>
     public void SetDefault(CellStyle style)
     {
@@ -106,7 +146,7 @@ internal sealed class StylesWriter
             return;
         foreach (var section in _document!.Root!.Elements())
         {
-            if (section.Attribute("count") is not null || section.Name.LocalName is "numFmts" or "fonts" or "fills" or "borders" or "cellXfs")
+            if (section.Attribute("count") is not null || section.Name.LocalName is "numFmts" or "fonts" or "fills" or "borders" or "cellXfs" or "dxfs")
                 section.SetAttributeValue("count", section.Elements().Count());
         }
 

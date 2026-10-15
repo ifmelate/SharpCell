@@ -90,6 +90,25 @@ internal sealed class Package : IDisposable
 
     public bool Exists(string part) => _entries.ContainsKey(part);
 
+    /// <summary>The names of the parts.</summary>
+    public IEnumerable<string> Parts => _entries.Keys;
+
+    /// <summary>A part as text, decoded as its byte order mark says, else as UTF-8.</summary>
+    public string ReadText(string part)
+    {
+        using var reader = new StreamReader(Open(part));
+        return reader.ReadToEnd();
+    }
+
+    /// <summary>A part as an XML document; null when the package has no such part.</summary>
+    public System.Xml.Linq.XDocument? ReadXmlDocument(string part)
+    {
+        if (!Exists(part))
+            return null;
+        using var reader = OpenXml(part);
+        return System.Xml.Linq.XDocument.Load(reader);
+    }
+
     /// <summary>The zip entries in the order the file stores them.</summary>
     public IReadOnlyList<ZipArchiveEntry> Entries => _zip.Entries;
 

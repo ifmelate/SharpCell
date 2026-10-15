@@ -83,10 +83,21 @@ internal sealed class WorksheetWriter
     // The links to write when they changed; null when the file's element stays (moved by the edits).
     private readonly SheetHyperlinks? _hyperlinks;
 
+    private readonly bool _conditionalFormatsChanged;
+    private bool _conditionalFormatsWritten;
+    private readonly bool _marginsChanged;
+    private readonly bool _orientationChanged;
+    private readonly bool _rowBreaksChanged;
+    private readonly bool _columnBreaksChanged;
+
+    // Where the notes go when they changed: a new legacyDrawing element, or the file's dropped.
+    private readonly NoteParts.Plan? _notes;
+
     private WorksheetWriter(Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved, CellMetadataWriter metadata,
         StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables, IReadOnlyDictionary<CellAddress, string> headers,
-        SheetHyperlinks? hyperlinks)
+        SheetHyperlinks? hyperlinks, NoteParts.Plan? notes)
     {
+        _notes = notes;
         _map = plan.Edits;
         _shifted = source.Part is not null && _map.HasEdits(sheet);
         _removedTables = removedTables;
@@ -116,6 +127,19 @@ internal sealed class WorksheetWriter
         _filterChanged = _look.FilterChanged(sheet);
         _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
         _protectionChanged = _look.ProtectionChanged(sheet);
+        _conditionalFormatsChanged = _look.ConditionalFormatsChanged(sheet);
+        if (_conditionalFormatsChanged)
+            _pending.Add("conditionalFormatting");
+        _marginsChanged = _look.MarginsChanged(sheet);
+        _orientationChanged = _look.OrientationChanged(sheet);
+        _rowBreaksChanged = _look.BreaksChanged(sheet, rows: true);
+        _columnBreaksChanged = _look.BreaksChanged(sheet, rows: false);
+        foreach (var (name, changed) in new[] { ("pageMargins", _marginsChanged), ("pageSetup", _orientationChanged), ("rowBreaks", _rowBreaksChanged), ("colBreaks", _columnBreaksChanged) })
+        {
+            if (changed)
+                _pending.Add(name);
+        }
+
         if (_filterChanged && sheet.FilterMode)
             _pending.Add("sheetPr");
         if (_viewChanged)
@@ -132,6 +156,8 @@ internal sealed class WorksheetWriter
             _pending.Add("dataValidations");
         if (hyperlinks is not null)
             _pending.Add("hyperlinks");
+        if (notes?.LegacyDrawingId is not null)
+            _pending.Add("legacyDrawing");
         if (_rowsChanged)
         {
             var rows = new SortedSet<int>(_look.RowHeights.Keys);
@@ -154,11 +180,12 @@ internal sealed class WorksheetWriter
     /// <param name="headers">Header cells of new tables, with their column names.</param>
     /// <param name="removedTables">Relationship ids of table parts to leave out.</param>
     /// <param name="hyperlinks">The links to write, or null to keep the file's.</param>
+    /// <param name="notes">Where the sheet's notes go when they changed, or null.</param>
     public static byte[]? Write(XmlReader reader, Worksheet sheet, SheetSource source, WritePlan plan, SavedCells saved,
         CellMetadataWriter metadata, StylesWriter styles, IReadOnlyList<string> newTables, IReadOnlySet<string> removedTables,
-        IReadOnlyDictionary<CellAddress, string> headers, SheetHyperlinks? hyperlinks)
+        IReadOnlyDictionary<CellAddress, string> headers, SheetHyperlinks? hyperlinks, NoteParts.Plan? notes)
     {
-        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers, hyperlinks);
+        var writer = new WorksheetWriter(sheet, source, plan, saved, metadata, styles, newTables, removedTables, headers, hyperlinks, notes);
         var output = new MemoryStream();
         using (var xml = XmlWriter.Create(output, XmlParts.WriterSettings))
             writer.Copy(reader, xml);
@@ -194,6 +221,15 @@ internal sealed class WorksheetWriter
                     continue;
                 }
 
+                if (name == "conditionalFormatting" && _conditionalFormatsChanged)
+                {
+                    // The model's elements take the place of the first of the file's; the others go.
+                    reader.Skip();
+                    _pending.Remove(name);
+                    WriteConditionalFormats(writer);
+                    continue;
+                }
+
                 switch (name)
                 {
                     case "dimension":
@@ -205,8 +241,8 @@ internal sealed class WorksheetWriter
                     case "sheetViews" when !_viewChanged && _shifted:
                     case "autoFilter" when _shifted:
                     case "hyperlinks" when _shifted && _hyperlinks is null:
-                    case "rowBreaks" when _shifted:
-                    case "colBreaks" when _shifted:
+                    case "rowBreaks" when _shifted && !_rowBreaksChanged:
+                    case "colBreaks" when _shifted && !_columnBreaksChanged:
                     case "ignoredErrors" when _shifted:
                     case "protectedRanges" when _shifted:
                     case "conditionalFormatting" when _map.Any:
@@ -222,6 +258,11 @@ internal sealed class WorksheetWriter
                     case "sheetProtection" when _protectionChanged:
                     case "dataValidations" when _validationsChanged:
                     case "hyperlinks" when _hyperlinks is not null:
+                    case "pageMargins" when _marginsChanged:
+                    case "pageSetup" when _orientationChanged:
+                    case "rowBreaks" when _rowBreaksChanged:
+                    case "colBreaks" when _columnBreaksChanged:
+                    case "legacyDrawing" when _notes is { RemoveLegacyDrawing: true } || _notes?.LegacyDrawingId is not null:
                         _pending.Remove(name);
                         _changed = true;
                         Build(name, (XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
@@ -249,12 +290,28 @@ internal sealed class WorksheetWriter
         foreach (var name in _pending.Where(name => WorksheetParts.Rank(name) < rank).OrderBy(WorksheetParts.Rank).ToList())
         {
             _pending.Remove(name);
+            if (name == "conditionalFormatting")
+            {
+                WriteConditionalFormats(writer);
+                continue;
+            }
+
             if (Build(name, null) is { } element)
             {
                 _changed = true;
                 element.WriteTo(writer);
             }
         }
+    }
+
+    private void WriteConditionalFormats(XmlWriter writer)
+    {
+        _changed = true;
+        if (_conditionalFormatsWritten)
+            return;
+        _conditionalFormatsWritten = true;
+        foreach (var element in ConditionalFormatElements.Elements(_ns, _sheet, _styles))
+            element.WriteTo(writer);
     }
 
     // The element as the sheet now needs it, from the file's (or none); null when it has nothing to say.
@@ -269,6 +326,11 @@ internal sealed class WorksheetWriter
         "sheetProtection" => ProtectionElements.Element(_ns, _sheet),
         "dataValidations" => ValidationElements.Element(_ns, _sheet, source),
         "hyperlinks" => Hyperlinks(),
+        "legacyDrawing" => LegacyDrawing(),
+        "pageMargins" => Margins(),
+        "pageSetup" => PageSetup(source),
+        "rowBreaks" => PageBreaks(rows: true),
+        "colBreaks" => PageBreaks(rows: false),
         _ => MergeCells(),
     };
 
@@ -432,6 +494,44 @@ internal sealed class WorksheetWriter
         element.Descendants().Where(d => d.Name.LocalName == "sparklineGroups" && !d.HasElements).ToList().ForEach(d => d.Remove());
         element.Elements().Where(e => e.Name.LocalName == "ext" && !e.HasElements).ToList().ForEach(e => e.Remove());
         return element.HasElements ? element : null;
+    }
+
+    private XElement Margins()
+    {
+        var margins = _sheet.PageMargins;
+        return new XElement(_ns + "pageMargins",
+            new XAttribute("left", WorksheetParts.Number(margins.Left)), new XAttribute("right", WorksheetParts.Number(margins.Right)),
+            new XAttribute("top", WorksheetParts.Number(margins.Top)), new XAttribute("bottom", WorksheetParts.Number(margins.Bottom)),
+            new XAttribute("header", WorksheetParts.Number(margins.Header)), new XAttribute("footer", WorksheetParts.Number(margins.Footer)));
+    }
+
+    // The file's page setup (paper, scaling, printer settings) with the model's orientation.
+    private XElement PageSetup(XElement? source)
+    {
+        var element = source ?? new XElement(_ns + "pageSetup");
+        element.SetAttributeValue("orientation", _sheet.PageOrientation == PageOrientation.Landscape ? "landscape" : "portrait");
+        return element;
+    }
+
+    // Manual page breaks; a break's id is the last row (or column) before it, from 1, and max the
+    // last column (or row) it runs to, from 0.
+    private XElement? PageBreaks(bool rows)
+    {
+        var breaks = rows ? _sheet.RowPageBreaks : _sheet.ColumnPageBreaks;
+        if (breaks.Count == 0)
+            return null;
+        var max = (rows ? CellAddress.MaxColumn : CellAddress.MaxRow) - 1;
+        return new XElement(_ns + (rows ? "rowBreaks" : "colBreaks"),
+            new XAttribute("count", breaks.Count), new XAttribute("manualBreakCount", breaks.Count),
+            breaks.Select(index => new XElement(_ns + "brk", new XAttribute("id", index - 1), new XAttribute("max", max), new XAttribute("man", 1))));
+    }
+
+    private XElement? LegacyDrawing()
+    {
+        if (_notes?.LegacyDrawingId is not { } id)
+            return null;
+        XNamespace relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+        return new XElement(_ns + "legacyDrawing", new XAttribute(XNamespace.Xmlns + "r", relationships), new XAttribute(relationships + "id", id));
     }
 
     private XElement? TableParts(XElement? element)
@@ -653,6 +753,12 @@ internal sealed class WorksheetWriter
 
     private void SheetData(XmlReader reader, XmlWriter writer)
     {
+        if (_shifted && _map.HasCellEdits(_sheet))
+        {
+            ShiftedSheetData((XElement)XNode.ReadFrom(reader), writer);
+            return;
+        }
+
         var depth = reader.Depth;
         var empty = reader.IsEmptyElement;
         XmlParts.CopyStartTag(reader, writer);
@@ -805,6 +911,84 @@ internal sealed class WorksheetWriter
 
         NewCellsBefore(row, int.MaxValue, writer);
         writer.WriteFullEndElement();
+    }
+
+    // After cells were inserted or deleted with a shift, cells of one row of the file go to different
+    // rows: the file's rows are read whole and written again in the cells' new order. Rows keep their
+    // own attributes where whole-row edits put them.
+    private void ShiftedSheetData(XElement sheetData, XmlWriter writer)
+    {
+        _changed = true;
+        var rows = new SortedDictionary<int, (XElement? Row, List<(int Column, CellAddress Source, XElement Cell)> Cells)>();
+        var sourceRow = 0;
+        foreach (var rowElement in sheetData.Elements(_ns + "row"))
+        {
+            var first = rowElement.Elements(_ns + "c").Select(c => (string?)c.Attribute("r")).FirstOrDefault(a => a is not null);
+            sourceRow = (string?)rowElement.Attribute("r") is { } r ? ParseRow(r)
+                : first is not null && CellAddress.TryParse(first, out var firstCell) ? firstCell.Row
+                : sourceRow + 1;
+            if (_map.MapRow(_sheet, sourceRow) is { } mapped)
+                rows[mapped] = (rowElement, Entry(mapped).Cells);
+
+            var sourceColumn = 0;
+            foreach (var cell in rowElement.Elements(_ns + "c"))
+            {
+                if (cell.Attribute("r") is { } reference && CellAddress.TryParse(reference.Value, out var address))
+                {
+                    if (address.Row != sourceRow)
+                        throw new InvalidDataException($"Cell {address} of sheet '{_sheet.Name}' lies in row {sourceRow}; the file cannot be written back.");
+                    sourceColumn = address.Column;
+                }
+                else
+                {
+                    sourceColumn++;
+                }
+
+                var source = new CellAddress(sourceRow, sourceColumn);
+                if (_map.Map(_sheet, source) is { } to)
+                    Entry(to.Row).Cells.Add((to.Column, source, cell));
+            }
+        }
+
+        writer.WriteStartElement(_prefix, "sheetData", _ns.NamespaceName);
+        foreach (var (row, (rowElement, cells)) in rows)
+        {
+            NewRowsBefore(row, writer);
+            while (_nextChangedRow < _changedRows.Count && _changedRows[_nextChangedRow] <= row)
+                _nextChangedRow++;
+            var sized = _rowsChanged && _look.RowChanged(_sheet, row);
+            writer.WriteStartElement(_prefix, "row", _ns.NamespaceName);
+            writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
+            foreach (var attribute in rowElement?.Attributes() ?? [])
+            {
+                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden");
+                if (!skip && !attribute.IsNamespaceDeclaration)
+                    writer.WriteAttributeString(attribute.Name.LocalName, attribute.Name.NamespaceName, attribute.Value);
+            }
+
+            if (sized || (rowElement is null && _look.RowChanged(_sheet, row)))
+                WriteRowAttributes(writer, row);
+            cells.Sort((a, b) => a.Column.CompareTo(b.Column));
+            foreach (var (column, source, cell) in cells)
+            {
+                CheckOrder(row, column);
+                NewCellsBefore(row, column, writer);
+                Cell(cell, row, column, source)?.WriteTo(writer);
+            }
+
+            NewCellsBefore(row, int.MaxValue, writer);
+            writer.WriteEndElement();
+        }
+
+        NewRowsBefore(int.MaxValue, writer);
+        writer.WriteFullEndElement();
+
+        (XElement? Row, List<(int Column, CellAddress Source, XElement Cell)> Cells) Entry(int row)
+        {
+            if (!rows.TryGetValue(row, out var entry))
+                rows[row] = entry = (null, []);
+            return entry;
+        }
     }
 
     // Merging needs the file's cells in order, as Excel writes them.

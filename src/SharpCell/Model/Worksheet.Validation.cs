@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SharpCell.Evaluation;
 using SharpCell.Parsing;
 
@@ -221,10 +222,11 @@ public sealed partial class Worksheet
             CellAddress? kept = null;
             foreach (var area in rule.Areas)
             {
-                if (edit.Map(area) is not { } moved)
+                var parts = edit.MapCells(area);
+                if (parts.Count == 0)
                     continue;
-                kept ??= FirstKept(area, edit);
-                areas.Add(moved);
+                kept ??= FirstKept(parts[0].Before, edit);
+                areas.AddRange(parts.Select(part => part.After));
             }
 
             if (areas.Count == 0)
@@ -238,6 +240,8 @@ public sealed partial class Worksheet
     private static CellAddress FirstKept(Area area, SheetEdit edit)
     {
         var first = edit.Rows ? area.FirstRow : area.FirstColumn;
+        if (!edit.InBand(edit.Rows ? area.FirstColumn : area.FirstRow))
+            return new CellAddress(area.FirstRow, area.FirstColumn);
         if (edit.Delete && first >= edit.At && first < edit.At + edit.Count)
             first = edit.At + edit.Count;
         return edit.Rows ? new CellAddress(first, area.FirstColumn) : new CellAddress(area.FirstRow, first);

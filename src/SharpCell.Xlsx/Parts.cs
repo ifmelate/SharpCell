@@ -124,8 +124,12 @@ internal static class XmlText
 }
 
 /// <summary>What cells of a file point into, and reading a cell element the way the reader does.</summary>
-internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetadata? metadata, IReadOnlyList<CellXf> styles)
+internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetadata? metadata, IReadOnlyList<CellXf> styles,
+    IReadOnlyList<ConditionalStyle>? dxfs = null)
 {
+    /// <summary>The differential formats conditional formats point at, by index.</summary>
+    public IReadOnlyList<ConditionalStyle> Dxfs { get; } = dxfs ?? [];
+
     public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
 
     /// <summary>Each cell style: its number format and how it looks; empty when the file has no styles part.</summary>

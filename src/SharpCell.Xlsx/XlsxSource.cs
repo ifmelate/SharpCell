@@ -191,6 +191,8 @@ internal static class Presentation
                 text.Append("row ").Append(row.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(Number(height)).Append('\n');
             foreach (var area in sheet.MergedAreaList)
                 text.Append("merge ").Append(area.ToString()).Append('\n');
+            foreach (var (cell, note) in sheet.Notes)
+                text.Append("note ").Append(cell.Address).Append(' ').Append(note.Author).Append(note.IsVisible ? " shown " : " ").Append(note.Text).Append('\n');
         }
 
         return text.ToString();

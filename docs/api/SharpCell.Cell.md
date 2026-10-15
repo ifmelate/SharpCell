@@ -30,6 +30,15 @@ public int Column { get; }
 
 The column number, from 1 (A is 1).
 
+<a id="conditionalformats"></a>
+### ConditionalFormats
+
+```csharp
+public IReadOnlyList<ConditionalFormat> ConditionalFormats { get; }
+```
+
+The conditional formats that apply to the cell now, highest priority first, as Excel works them out from the cell's value and the values of the rules' ranges: up to the first that applies with [ConditionalFormat.StopIfTrue](SharpCell.ConditionalFormat.md#stopiftrue). Values are those of the last [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken); rule formulas are calculated on each read.
+
 <a id="dependents"></a>
 ### Dependents
 
@@ -42,6 +51,15 @@ The formula cells that read this cell in their last calculation, alone or in a r
 **Exceptions**
 
 - `InvalidOperationException`: Some formula of the workbook is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
+
+<a id="displaystyle"></a>
+### DisplayStyle
+
+```csharp
+public CellStyle DisplayStyle { get; }
+```
+
+The cell's style with the conditional formats that apply to it put over it, as Excel shows the cell (its Range.DisplayFormat): where rules set the same thing, the higher one's wins. A rule's number format is not part of it.
 
 <a id="formula"></a>
 ### Formula
@@ -80,6 +98,15 @@ Getting it gives the text Excel shows to edit the cell, which set again gives th
 
 - `FormulaParseException`: The text starts with `=` but is not a formula; the cell is unchanged.
 - `InvalidOperationException`: The cell is part of an array formula other than its top-left cell.
+
+<a id="note"></a>
+### Note
+
+```csharp
+public Note? Note { get; set; }
+```
+
+The cell's note, or null for none, which setting null also gives. A note moves with its cell when rows, columns or cells are inserted, goes with it when they are deleted, and is copied with it by [CellRange.CopyTo](SharpCell.CellRange.md#copyto-cellrange).
 
 <a id="numberformat"></a>
 ### NumberFormat

@@ -17,11 +17,14 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
 - Column widths, row heights, hidden columns and merged cells (see [Cells, ranges and dates](cells.md#column-widths-row-heights-and-merged-cells)).
 - Frozen panes and whether gridlines show (see [Cells, ranges and dates](cells.md#frozen-panes-and-gridlines)).
+- Page orientation, margins, print areas, print titles and page breaks (see [Cells, ranges and dates](cells.md#printing)).
+- Conditional formats with their looks (see [Cells, ranges and dates](cells.md#conditional-formats)).
+- Notes on cells (see [Cells, ranges and dates](cells.md#notes)).
 - The iterative calculation settings (see [Iterative calculation](recalculation.md#iterative-calculation)).
 
 ## What is not read
 
-Pattern and gradient fills, styles of whole rows and columns, conditional formats, charts, pivot tables, comments and macros are skipped.
+Pattern and gradient fills, styles of whole rows and columns, charts, pivot tables, threaded comments and macros are skipped. Conditional formats in the extension list (newer data bars and icon sets) stay in the file without being read.
 
 | File | Result |
 |---|---|

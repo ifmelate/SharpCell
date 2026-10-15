@@ -223,7 +223,9 @@ public sealed partial class Worksheet
         _filterMode = source._filterMode;
         _edits.AddRange(source._edits);
         CopyPresentationFrom(source);
+        CopyPrintingFrom(source);
         CopyValidationsFrom(source);
+        CopyConditionalFormatsFrom(source);
     }
 
     private static void CheckRow(int row)

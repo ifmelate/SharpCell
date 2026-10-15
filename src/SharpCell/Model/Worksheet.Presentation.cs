@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SharpCell.Evaluation;
 
 namespace SharpCell;
@@ -13,6 +14,7 @@ public sealed partial class Worksheet
 
     private readonly Dictionary<CellAddress, CellStyle> _styles = [];
     private readonly Dictionary<CellAddress, Hyperlink> _hyperlinks = [];
+    private readonly Dictionary<CellAddress, Note> _notes = [];
     private readonly Dictionary<int, double> _columnWidths = [];
     private readonly Dictionary<int, double> _rowHeights = [];
     private readonly HashSet<int> _hiddenColumns = [];
@@ -133,6 +135,25 @@ public sealed partial class Worksheet
 
     /// <summary>The cells with a hyperlink, in no particular order.</summary>
     internal IReadOnlyDictionary<CellAddress, Hyperlink> Hyperlinks => _hyperlinks;
+
+    internal Note? NoteAt(int row, int column) =>
+        _notes.Count != 0 && _notes.TryGetValue(new CellAddress(row, column), out var note) ? note : null;
+
+    /// <summary>Sets or (with null) removes the note of a cell.</summary>
+    internal void SetNote(int row, int column, Note? note)
+    {
+        if (note is null)
+            _notes.Remove(new CellAddress(row, column));
+        else
+            _notes[new CellAddress(row, column)] = note;
+    }
+
+    /// <summary>The cells with a note, in no particular order.</summary>
+    internal IReadOnlyDictionary<CellAddress, Note> NoteMap => _notes;
+
+    /// <summary>The cells with a note, row by row and left to right, with their notes.</summary>
+    public IReadOnlyList<(Cell Cell, Note Note)> Notes =>
+        [.. _notes.OrderBy(pair => pair.Key.Row).ThenBy(pair => pair.Key.Column).Select(pair => (new Cell(this, pair.Key.Row, pair.Key.Column), pair.Value))];
 
     internal IReadOnlyDictionary<int, double> ColumnWidths => _columnWidths;
 
@@ -280,6 +301,8 @@ public sealed partial class Worksheet
             _styles.Add(address, style);
         foreach (var (address, link) in source._hyperlinks)
             _hyperlinks.Add(address, link);
+        foreach (var (address, note) in source._notes)
+            _notes.Add(address, note);
         foreach (var (column, width) in source._columnWidths)
             _columnWidths.Add(column, width);
         foreach (var (row, height) in source._rowHeights)
