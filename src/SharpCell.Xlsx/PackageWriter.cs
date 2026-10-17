@@ -55,7 +55,9 @@ internal static class PackageWriter
         var nextId = 1;
         foreach (var table in workbook.Tables)
         {
-            if (source.Look.Tables.Contains(table.Name.ToUpperInvariant()))
+            // A table of the file still on its sheet; one whose sheet was removed went with its part.
+            if (source.Look.Tables.TryGetValue(table.Name.ToUpperInvariant(), out var readOn) && readOn is not null
+                && readOn == source.SheetFor(table.Worksheet).Part)
                 continue;
             while (!tableIds.Add(nextId))
                 nextId++;
@@ -97,10 +99,11 @@ internal static class PackageWriter
         NoteParts.Write(edit, notes);
 
         // Excel trusts the calculation chain; one that lists cells without formulas makes it repair the file.
-        if (plan.AnyFormulaChanged && WorkbookReader.FirstOfType(relationships, "calcChain")?.Target is { } chain)
+        var removedSheets = source.FileSheets.Any(sheet => sheet.Part is not null && !parts.ContainsValue(sheet.Part));
+        if ((plan.AnyFormulaChanged || removedSheets) && WorkbookReader.FirstOfType(relationships, "calcChain")?.Target is { } chain)
             edit.RemovePart(source.WorkbookPart, chain);
 
-        WorkbookWriter.Write(edit, plan, newSheets);
+        WorkbookWriter.Write(edit, plan, parts, newSheets);
         edit.Complete();
         return edit.Parts.Count == 0 && edit.Removed.Count == 0 ? source.Bytes : Repack(package, edit);
     }
@@ -111,7 +114,7 @@ internal static class PackageWriter
     {
         var removed = new Dictionary<Worksheet, HashSet<string>>();
         var package = edit.Package;
-        foreach (var (sheet, sheetSource) in plan.Source.Sheets)
+        foreach (var (sheet, sheetSource) in plan.Source.LiveSheets())
         {
             if (!plan.Edits.HasEdits(sheet))
                 continue;

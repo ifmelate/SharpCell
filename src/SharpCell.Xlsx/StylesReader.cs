@@ -39,6 +39,9 @@ internal sealed class StyleSheet
 
     /// <summary>The differential formats conditional formats point at, by index.</summary>
     public List<ConditionalStyle> Dxfs { get; } = [];
+
+    /// <summary>Turns a colour element (rgb, theme or indexed, with a tint) into RGB; null for automatic or unreadable.</summary>
+    public Func<XElement?, CellColor?>? Color { get; set; }
 }
 
 /// <summary>
@@ -143,6 +146,7 @@ internal static class StylesReader
             ? Children(indexed, "rgbColor").Select(c => ParseRgb(c.Attribute("rgb")?.Value) ?? default).ToArray()
             : DefaultPalette.Select(CellColor.FromRgb).ToArray();
         var colors = new Colors(theme, palette);
+        sheet.Color = colors.Color;
 
         var fonts = sheet.Fonts;
         fonts.AddRange(Items(root, "fonts", "font").Select(colors.Font));
@@ -202,6 +206,9 @@ internal static class StylesReader
     }
 
     /// <summary>An <c>RRGGBB</c> or <c>AARRGGBB</c> colour; the alpha is ignored, as Excel does.</summary>
+    /// <summary>Colours for a file without a styles part: the theme's and the default indexed palette.</summary>
+    public static Func<XElement?, CellColor?> DefaultColors(CellColor[] theme) => new Colors(theme, DefaultPalette.Select(CellColor.FromRgb).ToArray()).Color;
+
     public static CellColor? ParseRgb(string? text)
     {
         if (text is null || (text.Length != 6 && text.Length != 8))
@@ -363,7 +370,7 @@ internal static class StylesReader
                 ? new CellBorder(style, Color(Child(edge, "color")))
                 : null;
 
-        private CellColor? Color(XElement? color)
+        public CellColor? Color(XElement? color)
         {
             if (color is null || IsTrue(color.Attribute("auto")?.Value))
                 return null;

@@ -36,7 +36,17 @@ internal enum TokenKind
 }
 
 /// <summary>The sheet part of a reference: <c>Sheet1!</c>, or <c>Sheet1:Sheet3!</c> for a 3D reference.</summary>
-internal sealed record SheetPrefix(string First, string? Last = null);
+internal sealed record SheetPrefix(string First, string? Last = null)
+{
+    /// <summary>
+    /// A removed sheet, which Excel writes as <c>#REF!A1</c>. Its name is empty, which no sheet has,
+    /// so the reference finds no sheet and gives <c>#REF!</c>.
+    /// </summary>
+    public static SheetPrefix Deleted { get; } = new("");
+
+    /// <summary>Whether the sheet was removed.</summary>
+    public bool IsDeleted => First.Length == 0;
+}
 
 internal sealed record Token(TokenKind Kind, int Start, int Length)
 {

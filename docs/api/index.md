@@ -45,6 +45,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [PageOrientation](SharpCell.PageOrientation.md) | How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
 | [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
+| [SheetVisibility](SharpCell.SheetVisibility.md) | Whether a sheet's tab shows in Excel. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
 | [TimePeriod](SharpCell.TimePeriod.md) | The periods of Excel's A Date Occurring rule, counted from today. |
 | [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |

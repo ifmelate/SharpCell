@@ -61,6 +61,8 @@ internal sealed class SheetLook
         DefaultColumnWidth = sheet.DefaultColumnWidth;
         DefaultRowHeight = sheet.DefaultRowHeight;
         FilterMode = sheet.FilterMode;
+        TabColor = sheet.TabColor;
+        Visibility = sheet.Visibility;
     }
 
     public static SheetLook Of(Worksheet sheet) => new(sheet);
@@ -111,6 +113,8 @@ internal sealed class SheetLook
         DefaultColumnWidth = look.DefaultColumnWidth;
         DefaultRowHeight = look.DefaultRowHeight;
         FilterMode = look.FilterMode;
+        TabColor = look.TabColor;
+        Visibility = look.Visibility;
     }
 
     /// <summary>The sheet as read, with its rows and columns where the sheet's edits moved them.</summary>
@@ -181,6 +185,12 @@ internal sealed class SheetLook
     public double? DefaultRowHeight { get; }
 
     public bool FilterMode { get; }
+
+    public CellColor? TabColor { get; }
+
+    public SheetVisibility Visibility { get; }
+
+    public bool TabColorChanged(Worksheet sheet) => TabColor != sheet.TabColor;
 
     public bool ColumnsChanged(Worksheet sheet) => !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns);
 

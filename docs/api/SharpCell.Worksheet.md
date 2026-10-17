@@ -100,6 +100,15 @@ How many rows at the top stay in place while the rest scrolls, as Excel's Freeze
 
 - `ArgumentOutOfRangeException`: The count is negative or leaves no row to scroll.
 
+<a id="isremoved"></a>
+### IsRemoved
+
+```csharp
+public bool IsRemoved { get; }
+```
+
+Whether [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took the sheet out of its workbook; it can then be read but not changed.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -113,10 +122,16 @@ The merged areas, in the order they were merged.
 ### Name
 
 ```csharp
-public string Name { get; }
+public string Name { get; set; }
 ```
 
-The sheet name.
+The sheet name. Renaming a sheet renames it in every formula that refers to it, as Excel does: in cells of every sheet, defined names, data validation and conditional formats. Text inside INDIRECT and hyperlinks into the sheet keep the old name, as in Excel. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Exceptions**
+
+- `ArgumentException`: The name is not a valid sheet name, or another sheet has it, ignoring case.
+- `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not follow the new name.
+- `InvalidOperationException`: The sheet was removed from its workbook.
 
 <a id="notes"></a>
 ### Notes
@@ -219,6 +234,19 @@ public bool ShowGridlines { get; set; }
 
 Whether Excel draws gridlines between the sheet's cells; true unless turned off.
 
+<a id="tabcolor"></a>
+### TabColor
+
+```csharp
+public CellColor? TabColor { get; set; }
+```
+
+The colour of the sheet's tab; null for none.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="usedrange"></a>
 ### UsedRange
 
@@ -237,6 +265,19 @@ public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
 
 The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
 
+<a id="visibility"></a>
+### Visibility
+
+```csharp
+public SheetVisibility Visibility { get; set; }
+```
+
+Whether the sheet's tab shows in Excel. A workbook keeps at least one visible sheet, as in Excel. Hidden sheets are calculated and saved like any other.
+
+**Exceptions**
+
+- `InvalidOperationException`: Hiding the workbook's last visible sheet, or the sheet was removed.
+
 <a id="workbook"></a>
 ### Workbook
 
@@ -244,7 +285,7 @@ The data validation rules, one entry per range: a rule over several ranges has a
 public Workbook Workbook { get; }
 ```
 
-The workbook the sheet belongs to.
+The workbook the sheet belongs to, also after [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took it out.
 
 <a id="item-int-int"></a>
 ### this[int, int]

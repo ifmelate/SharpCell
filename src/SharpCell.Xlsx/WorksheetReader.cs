@@ -83,6 +83,12 @@ internal static class WorksheetReader
                 continue;
             }
 
+            if (reader.Depth == 2 && reader.LocalName == "tabColor")
+            {
+                sheet.TabColor = saved.Color((XElement)XNode.ReadFrom(reader));
+                continue;
+            }
+
             if (reader.Depth == 1 && reader.LocalName == "sheetProtection")
             {
                 ProtectionElements.Read((XElement)XNode.ReadFrom(reader), sheet);

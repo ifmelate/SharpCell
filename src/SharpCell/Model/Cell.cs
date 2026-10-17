@@ -45,7 +45,7 @@ public sealed partial class Cell
             if (value.Kind is CellValueKind.Missing or CellValueKind.Array or CellValueKind.Lambda)
                 throw new ArgumentException($"A cell cannot hold a {value.Kind} value.", nameof(value));
 
-            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.ThrowIfCannotChange();
             EnsureNotArrayMember();
             var key = Key;
             var calculation = Worksheet.Workbook.Calculation;
@@ -91,7 +91,7 @@ public sealed partial class Cell
     /// <param name="value">Formula text, or null to remove the formula.</param>
     internal void SetFormula(string? value, bool legacy)
     {
-        Worksheet.Workbook.ThrowIfInCustomFunction();
+        Worksheet.ThrowIfCannotChange();
         EnsureNotArrayMember();
         var key = Key;
         var calculation = Worksheet.Workbook.Calculation;
@@ -118,7 +118,7 @@ public sealed partial class Cell
     /// <param name="legacy">The formula predates dynamic arrays.</param>
     internal void SetFormula(string text, FormulaNode node, bool legacy)
     {
-        Worksheet.Workbook.ThrowIfInCustomFunction();
+        Worksheet.ThrowIfCannotChange();
         EnsureNotArrayMember();
         var key = Key;
         var calculation = Worksheet.Workbook.Calculation;
@@ -219,7 +219,7 @@ public sealed partial class Cell
         set
         {
             ArgumentNullException.ThrowIfNull(value);
-            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.ThrowIfCannotChange();
             if (value.Length == 0 || value.Equals("General", StringComparison.OrdinalIgnoreCase))
             {
                 Worksheet.SetFormat(Row, Column, null);
@@ -243,7 +243,7 @@ public sealed partial class Cell
         get => Worksheet.StyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle;
         set
         {
-            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.ThrowIfCannotChange();
             Worksheet.SetStyle(Row, Column, value);
         }
     }
@@ -258,7 +258,7 @@ public sealed partial class Cell
         get => Worksheet.HyperlinkAt(Row, Column);
         set
         {
-            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.ThrowIfCannotChange();
             Worksheet.SetHyperlink(Row, Column, value);
         }
     }
@@ -273,7 +273,7 @@ public sealed partial class Cell
         get => Worksheet.NoteAt(Row, Column);
         set
         {
-            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.ThrowIfCannotChange();
             Worksheet.SetNote(Row, Column, value);
         }
     }
@@ -288,7 +288,7 @@ public sealed partial class Cell
     {
         get
         {
-            Worksheet.Workbook.ThrowIfInCustomFunction();
+            Worksheet.ThrowIfCannotChange();
             return Worksheet.MatchingFormats(Row, Column);
         }
     }

@@ -409,6 +409,11 @@ internal sealed class FormulaPrinter
     {
         if (sheet is null)
             return;
+        if (sheet.IsDeleted)
+        {
+            _sb.Append(ErrorKind.Ref.ToText());
+            return;
+        }
 
         var quote = NeedsQuotes(sheet.First) || (sheet.Last is not null && NeedsQuotes(sheet.Last));
         var text = sheet.Last is null ? sheet.First : sheet.First + ":" + sheet.Last;

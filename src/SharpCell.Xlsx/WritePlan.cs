@@ -77,7 +77,7 @@ internal sealed class WritePlan
 
         if (problems.Count > 0 && !options.KeepUncalculated)
             throw new XlsxWriteException(problems);
-        return new WritePlan(workbook, source, kept, formulasChanged, options.RewriteAllValues) { Edits = new SheetEditMap(workbook) };
+        return new WritePlan(workbook, source, kept, formulasChanged, options.RewriteAllValues) { Edits = new SheetEditMap(workbook, source) };
     }
 
     /// <summary>Whether the formula a cell has now is the one it was read with.</summary>

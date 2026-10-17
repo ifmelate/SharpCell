@@ -62,7 +62,7 @@ public sealed partial class Worksheet
         var origin = new CellAddress(area.FirstRow, area.FirstColumn);
         var formula1 = validation.Formula1 is { } text1 ? FormulaParser.Parse(text1, origin) : null;
         var formula2 = validation.Formula2 is { } text2 ? FormulaParser.Parse(text2, origin) : null;
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
 
         var rules = new List<ValidationRule>(_validations);
         foreach (var part in areas)
@@ -97,7 +97,7 @@ public sealed partial class Worksheet
     public void ClearValidation(string range)
     {
         var areas = Areas(range);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
 
         var rules = new List<ValidationRule>(_validations);
         foreach (var area in areas)
@@ -245,6 +245,22 @@ public sealed partial class Worksheet
         if (edit.Delete && first >= edit.At && first < edit.At + edit.Count)
             first = edit.At + edit.Count;
         return edit.Rows ? new CellAddress(first, area.FirstColumn) : new CellAddress(area.FirstRow, first);
+    }
+
+    /// <summary>The rules' formulas rewritten, for a sheet renamed or removed.</summary>
+    internal void RewriteValidationFormulas(Func<FormulaNode, FormulaNode> rewrite)
+    {
+        for (var i = 0; i < _validations.Count; i++)
+        {
+            var rule = _validations[i];
+            var f1 = rule.F1 is null ? null : rewrite(rule.F1);
+            var f2 = rule.F2 is null ? null : rewrite(rule.F2);
+            if (f1 == rule.F1 && f2 == rule.F2)
+                continue;
+            _validations[i] = rule with { Validation = rule.Validation.WithFormulas(Print(f1), Print(f2)), F1 = f1, F2 = f2 };
+
+            string? Print(FormulaNode? node) => node is null ? null : "=" + FormulaPrinter.Print(node, rule.Origin);
+        }
     }
 
     // The rule's formulas moved by the edit. They are offsets from the rule's first cell, so they are

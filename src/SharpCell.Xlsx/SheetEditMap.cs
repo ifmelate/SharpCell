@@ -9,14 +9,44 @@ namespace SharpCell.Xlsx;
 /// <summary>
 /// Where the file's positions are in the model after rows and columns were inserted or deleted:
 /// cells, ranges, lists of ranges (sqref) and formulas the model does not hold (conditional
-/// formats, data validation, print areas).
+/// formats, data validation, print areas). Those formulas also follow sheets renamed or removed.
 /// </summary>
-internal sealed class SheetEditMap(Workbook workbook)
+internal sealed class SheetEditMap
 {
-    private readonly List<Worksheet> _edited = workbook.Sheets.Where(sheet => sheet.Edits.Count > 0).ToList();
+    private readonly List<Worksheet> _edited;
 
-    /// <summary>Whether any sheet of the workbook has edits.</summary>
-    public bool Any => _edited.Count > 0;
+    // The file's sheets by name: those renamed since with their names now, those removed, and all in order.
+    private readonly Dictionary<string, string> _renamed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> _removed = [];
+    private readonly List<string> _order = [];
+
+    public SheetEditMap(Workbook workbook, XlsxSource source)
+    {
+        _edited = workbook.Sheets.Where(sheet => sheet.Edits.Count > 0).ToList();
+        var live = source.LiveSheets().Where(p => p.Source.Part is not null).ToDictionary(p => p.Source.Part!, p => p.Sheet, StringComparer.OrdinalIgnoreCase);
+        foreach (var file in source.FileSheets)
+        {
+            _order.Add(file.Name);
+            if (file.Part is null)
+                continue;
+            if (!live.TryGetValue(file.Part, out var sheet))
+                _removed.Add(file.Name);
+            else if (sheet.Name != file.Name)
+                _renamed[file.Name] = sheet.Name;
+        }
+    }
+
+    /// <summary>Whether any sheet of the workbook has edits, or a sheet of the file was renamed or removed.</summary>
+    public bool Any => _edited.Count > 0 || SheetsChanged;
+
+    /// <summary>Whether a sheet of the file was renamed or removed.</summary>
+    public bool SheetsChanged => _renamed.Count > 0 || _removed.Count > 0;
+
+    /// <summary>The name a sheet of the file has now; null when it was removed.</summary>
+    public string? SheetName(string fileName) =>
+        _renamed.TryGetValue(fileName, out var name) ? name
+        : _removed.Exists(removed => removed.Equals(fileName, StringComparison.OrdinalIgnoreCase)) ? null
+        : fileName;
 
     public bool HasEdits(Worksheet sheet) => sheet.Edits.Count > 0;
 
@@ -181,7 +211,7 @@ internal sealed class SheetEditMap(Workbook workbook)
             return text;
         }
 
-        var shifted = node;
+        var shifted = SheetsChanged ? FollowSheets(node) : node;
         var current = anchor ?? origin;
         foreach (var edited in _edited)
         {
@@ -197,6 +227,26 @@ internal sealed class SheetEditMap(Workbook workbook)
         }
 
         return shifted == node && current == origin ? text : FormulaPrinter.PrintForFile(shifted, current, _ => null);
+    }
+
+    // References into removed sheets break, as the model's did, then renamed sheets get their new names.
+    private FormulaNode FollowSheets(FormulaNode node)
+    {
+        var order = new List<string>(_order);
+        foreach (var removed in _removed)
+        {
+            node = SheetReferences.Remove(node, removed, order);
+            order.RemoveAt(order.FindIndex(name => name.Equals(removed, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        if (_renamed.Count == 0)
+            return node;
+        return SheetReferences.Map(node, prefix =>
+        {
+            var first = prefix.IsDeleted ? prefix.First : _renamed.GetValueOrDefault(prefix.First, prefix.First);
+            var last = prefix.Last is null ? null : _renamed.GetValueOrDefault(prefix.Last, prefix.Last);
+            return first == prefix.First && last == prefix.Last ? prefix : new SheetPrefix(first, last);
+        });
     }
 
     private static bool TryParse(string text, out Area area)

@@ -67,6 +67,6 @@ internal static class Template
         var bytes = output.ToArray();
         var empty = XlsxReader.Load(bytes, XlsxLimits.Default);
         return new XlsxSource(bytes, XlsxLimits.Default, "xl/workbook.xml", new System.Collections.Generic.Dictionary<Worksheet, SheetSource>(),
-            WorkbookLook.Of(empty));
+            WorkbookLook.Of(empty, new System.Collections.Generic.Dictionary<Worksheet, string>()), []);
     }
 }

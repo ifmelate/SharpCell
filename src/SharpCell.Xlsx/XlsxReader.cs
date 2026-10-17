@@ -58,8 +58,8 @@ public static class XlsxReader
         try
         {
             using var package = Package.Open(new MemoryStream(bytes, writable: false), limits);
-            var workbook = WorkbookReader.Read(package, out var workbookPart, out var sheetParts);
-            workbook.Source = XlsxSource.Capture(bytes, limits, workbookPart, workbook, sheetParts);
+            var workbook = WorkbookReader.Read(package, out var workbookPart, out var sheetParts, out var fileSheets);
+            workbook.Source = XlsxSource.Capture(bytes, limits, workbookPart, workbook, sheetParts, fileSheets);
             return workbook;
         }
         catch (XmlException ex)
@@ -71,11 +71,11 @@ public static class XlsxReader
 
 internal static class WorkbookReader
 {
-    private sealed record SheetEntry(string Name, string RelationshipId);
+    private sealed record SheetEntry(string Name, string RelationshipId, SheetVisibility Visibility);
 
     private sealed record NameEntry(string Name, int? LocalSheet, string Formula);
 
-    public static Workbook Read(Package package, out string workbookPart, out Dictionary<Worksheet, string> sheetParts)
+    public static Workbook Read(Package package, out string workbookPart, out Dictionary<Worksheet, string> sheetParts, out List<FileSheet> fileSheets)
     {
         var root = package.ReadRelationships("");
         workbookPart = FirstOfType(root, "officeDocument")?.Target
@@ -93,11 +93,13 @@ internal static class WorkbookReader
 
         // Chart sheets and other non-worksheets hold no cells, but they count in sheet indexes.
         var byIndex = new List<(Worksheet Sheet, string Part)?>();
+        fileSheets = [];
         foreach (var entry in sheets)
         {
             if (!relationships.TryGetValue(entry.RelationshipId, out var relationship) || !relationship.Is("worksheet"))
             {
                 byIndex.Add(null);
+                fileSheets.Add(new FileSheet(entry.Name, entry.RelationshipId, null));
                 continue;
             }
 
@@ -111,7 +113,10 @@ internal static class WorkbookReader
                 throw new InvalidDataException($"Sheet name '{entry.Name}' is not valid: {ex.Message}", ex);
             }
 
+            // As the file has it, even when it hides every sheet, which Excel itself does not allow.
+            sheet.SetVisibility(entry.Visibility);
             byIndex.Add((sheet, relationship.Target));
+            fileSheets.Add(new FileSheet(entry.Name, entry.RelationshipId, relationship.Target));
         }
 
         foreach (var name in names)
@@ -181,7 +186,12 @@ internal static class WorkbookReader
                     break;
                 case "sheet":
                     if (reader.GetAttribute("name") is { } sheetName && RelationshipId(reader) is { } id)
-                        sheets.Add(new SheetEntry(sheetName, id));
+                        sheets.Add(new SheetEntry(sheetName, id, reader.GetAttribute("state") switch
+                        {
+                            "hidden" => SheetVisibility.Hidden,
+                            "veryHidden" => SheetVisibility.VeryHidden,
+                            _ => SheetVisibility.Visible,
+                        }));
                     break;
                 case "definedName":
                     if (ReadName(reader) is { } name)
@@ -326,7 +336,7 @@ internal static class WorkbookReader
         var stylesPart = FirstOfType(relationships, "styles")?.Target;
         var theme = ThemeReader.Read(package, FirstOfType(relationships, "theme")?.Target);
         var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : new StyleSheet();
-        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs);
+        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme) };
     }
 
     internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)

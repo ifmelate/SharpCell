@@ -1,1 +1,13 @@
 #nullable enable
+SharpCell.SheetVisibility
+SharpCell.SheetVisibility.Hidden = 1 -> SharpCell.SheetVisibility
+SharpCell.SheetVisibility.VeryHidden = 2 -> SharpCell.SheetVisibility
+SharpCell.SheetVisibility.Visible = 0 -> SharpCell.SheetVisibility
+SharpCell.Workbook.MoveSheet(SharpCell.Worksheet! sheet, int index) -> void
+SharpCell.Workbook.RemoveSheet(SharpCell.Worksheet! sheet) -> void
+SharpCell.Worksheet.IsRemoved.get -> bool
+SharpCell.Worksheet.Name.set -> void
+SharpCell.Worksheet.TabColor.get -> SharpCell.CellColor?
+SharpCell.Worksheet.TabColor.set -> void
+SharpCell.Worksheet.Visibility.get -> SharpCell.SheetVisibility
+SharpCell.Worksheet.Visibility.set -> void

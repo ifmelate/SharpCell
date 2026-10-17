@@ -43,6 +43,7 @@ internal sealed class WorksheetWriter
     private readonly bool _viewChanged;
     private readonly bool _defaultsChanged;
     private readonly bool _filterChanged;
+    private readonly bool _tabColorChanged;
 
     // The data validation rules are written from the model when they changed, and always on a sheet
     // whose rows or columns moved: the model's rules have followed the edits, so the file's element is
@@ -125,6 +126,7 @@ internal sealed class WorksheetWriter
         _viewChanged = _look.ViewChanged(sheet);
         _defaultsChanged = _look.DefaultsChanged(sheet);
         _filterChanged = _look.FilterChanged(sheet);
+        _tabColorChanged = _look.TabColorChanged(sheet);
         _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
         _protectionChanged = _look.ProtectionChanged(sheet);
         _conditionalFormatsChanged = _look.ConditionalFormatsChanged(sheet);
@@ -140,7 +142,7 @@ internal sealed class WorksheetWriter
                 _pending.Add(name);
         }
 
-        if (_filterChanged && sheet.FilterMode)
+        if ((_filterChanged && sheet.FilterMode) || (_tabColorChanged && sheet.TabColor is not null))
             _pending.Add("sheetPr");
         if (_viewChanged)
             _pending.Add("sheetViews");
@@ -250,7 +252,7 @@ internal sealed class WorksheetWriter
                         Shifted((XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
                         break;
                     case "tableParts" when _newTables.Count > 0 || _removedTables.Count > 0:
-                    case "sheetPr" when _filterChanged:
+                    case "sheetPr" when _filterChanged || _tabColorChanged:
                     case "sheetViews" when _viewChanged:
                     case "sheetFormatPr" when _defaultsChanged:
                     case "cols" when _columnsChanged:
@@ -552,6 +554,12 @@ internal sealed class WorksheetWriter
     {
         element ??= new XElement(_ns + "sheetPr");
         element.SetAttributeValue("filterMode", _sheet.FilterMode ? "1" : null);
+        if (!_tabColorChanged)
+            return element;
+        // The tab colour is sheetPr's first child.
+        element.Elements(_ns + "tabColor").Remove();
+        if (_sheet.TabColor is { } color)
+            element.AddFirst(new XElement(_ns + "tabColor", new XAttribute("rgb", "FF" + color.ToString()[1..])));
         return element;
     }
 

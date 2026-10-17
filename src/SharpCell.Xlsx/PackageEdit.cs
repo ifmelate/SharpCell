@@ -105,6 +105,64 @@ internal sealed class PackageEdit(Package package)
             Removed.Add(relationshipsPart);
     }
 
+    /// <summary>
+    /// Removes a part with every part that only it leads to through relationships: a sheet with its
+    /// drawings, charts, comments and tables. Parts still reached from the package's root another
+    /// way stay, such as a theme or an image another sheet shows too.
+    /// </summary>
+    public void RemoveTree(string source, string part)
+    {
+        var kept = Reachable("", part);
+        var gone = Reachable(part, null);
+        gone.ExceptWith(kept);
+        RemovePart(source, part);
+        foreach (var other in gone)
+        {
+            if (string.Equals(other, part, StringComparison.OrdinalIgnoreCase))
+                continue;
+            Parts.Remove(other);
+            if (Package.Exists(other))
+                Removed.Add(other);
+            ContentTypesDocument().Root!.Elements(ContentTypes + "Override")
+                .Where(o => string.Equals(((string?)o.Attribute("PartName"))?.TrimStart('/'), other, StringComparison.OrdinalIgnoreCase))
+                .Remove();
+            var relationshipsPart = Package.RelationshipsPart(other);
+            _relationships.Remove(relationshipsPart);
+            if (Package.Exists(relationshipsPart))
+                Removed.Add(relationshipsPart);
+        }
+    }
+
+    // The parts reached from a part (the root is "") through internal relationships, not passing through avoided.
+    private HashSet<string> Reachable(string from, string? avoided)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var queue = new Queue<string>();
+        queue.Enqueue(from);
+        if (from.Length > 0)
+            seen.Add(from);
+        while (queue.Count > 0)
+        {
+            var part = queue.Dequeue();
+            var relationshipsPart = part.Length == 0 ? "_rels/.rels" : Package.RelationshipsPart(part);
+            var document = _relationships.TryGetValue(relationshipsPart, out var edited) ? edited : ReadXml(relationshipsPart);
+            if (document?.Root is null)
+                continue;
+            var folder = Folder(part);
+            foreach (var relationship in document.Root.Elements(Relationships + "Relationship"))
+            {
+                if ((string?)relationship.Attribute("TargetMode") == "External")
+                    continue;
+                var target = Resolve(folder, (string?)relationship.Attribute("Target") ?? "");
+                if (target.Length == 0 || string.Equals(target, avoided, StringComparison.OrdinalIgnoreCase) || !Exists(target) || !seen.Add(target))
+                    continue;
+                queue.Enqueue(target);
+            }
+        }
+
+        return seen;
+    }
+
     /// <summary>Writes the changed content types and relationships into <see cref="Parts"/>.</summary>
     public void Complete()
     {

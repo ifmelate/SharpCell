@@ -25,7 +25,7 @@ internal static class RelatedPartsShift
         if (!map.Any)
             return;
         var package = edit.Package;
-        foreach (var (sheet, source) in plan.Source.Sheets)
+        foreach (var (sheet, source) in plan.Source.LiveSheets())
         {
             if (!map.HasEdits(sheet))
                 continue;
@@ -198,8 +198,13 @@ internal static class RelatedPartsShift
     {
         foreach (var source in root.Descendants().Where(e => e.Name.LocalName == "worksheetSource"))
         {
-            if ((string?)source.Attribute("ref") is { } reference && (string?)source.Attribute("sheet") is { } name
-                && workbook.TryGetSheet(name, out var sheet) && map.HasEdits(sheet!)
+            // A source on a removed sheet stays; Excel reports it when the pivot table is refreshed.
+            if ((string?)source.Attribute("sheet") is not { } name || map.SheetName(name) is not { } current)
+                continue;
+            if (current != name)
+                source.SetAttributeValue("sheet", current);
+            if ((string?)source.Attribute("ref") is { } reference
+                && workbook.TryGetSheet(current, out var sheet) && map.HasEdits(sheet!)
                 && map.MapSqref(sheet!, reference) is { } moved)
                 source.SetAttributeValue("ref", moved);
         }

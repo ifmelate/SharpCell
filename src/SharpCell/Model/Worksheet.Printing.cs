@@ -27,7 +27,7 @@ public sealed partial class Worksheet
         {
             if (value is not (PageOrientation.Portrait or PageOrientation.Landscape))
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Not a page orientation.");
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _orientation = value;
         }
     }
@@ -40,7 +40,7 @@ public sealed partial class Worksheet
         set
         {
             ArgumentNullException.ThrowIfNull(value);
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _margins = value;
         }
     }
@@ -59,7 +59,7 @@ public sealed partial class Worksheet
         set
         {
             var areas = value is null ? [] : ParseAreas(value, nameof(value));
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _printArea.Clear();
             _printArea.AddRange(areas);
         }
@@ -76,7 +76,7 @@ public sealed partial class Worksheet
         set
         {
             (int, int)? rows = value is null ? null : ParseLines(value, AreaKind.Rows, nameof(value));
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _titleRows = rows;
         }
     }
@@ -92,7 +92,7 @@ public sealed partial class Worksheet
         set
         {
             (int, int)? columns = value is null ? null : ParseLines(value, AreaKind.Columns, nameof(value));
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _titleColumns = columns;
         }
     }
@@ -110,7 +110,7 @@ public sealed partial class Worksheet
     {
         if (row is < 2 or > CellAddress.MaxRow)
             throw new ArgumentOutOfRangeException(nameof(row), row, "A page break goes above a row from 2 to the last.");
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         _rowBreaks.Add(row);
     }
 
@@ -118,7 +118,7 @@ public sealed partial class Worksheet
     /// <param name="row">The row.</param>
     public void RemoveRowPageBreak(int row)
     {
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         _rowBreaks.Remove(row);
     }
 
@@ -129,7 +129,7 @@ public sealed partial class Worksheet
     {
         if (column is < 2 or > CellAddress.MaxColumn)
             throw new ArgumentOutOfRangeException(nameof(column), column, "A page break goes left of a column from B to the last.");
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         _columnBreaks.Add(column);
     }
 
@@ -137,7 +137,7 @@ public sealed partial class Worksheet
     /// <param name="column">The column.</param>
     public void RemoveColumnPageBreak(int column)
     {
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         _columnBreaks.Remove(column);
     }
 

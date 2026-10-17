@@ -194,6 +194,25 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 
 - `OperationCanceledException`: The token was cancelled.
 
+<a id="movesheet-worksheet-int"></a>
+### MoveSheet(Worksheet, int)
+
+```csharp
+public void MoveSheet(Worksheet sheet, int index)
+```
+
+Moves a sheet to another place in the order, as dragging its tab in Excel does. Formulas do not change, but a reference through several sheets (`Sheet1:Sheet3!A1`) takes in the sheets now between its ends, so every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `sheet`: A sheet of this workbook.
+- `index`: Its new place in [Workbook.Sheets](SharpCell.Workbook.md#sheets), from 0.
+
+**Exceptions**
+
+- `ArgumentException`: The sheet is not in this workbook.
+- `ArgumentOutOfRangeException`: The index is not a place in [Workbook.Sheets](SharpCell.Workbook.md#sheets).
+
 <a id="protect-string-bool-bool"></a>
 ### Protect(string, bool, bool)
 
@@ -227,6 +246,25 @@ Calculates every formula that is out of date: those whose inputs changed since t
 **Exceptions**
 
 - `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
+
+<a id="removesheet-worksheet"></a>
+### RemoveSheet(Worksheet)
+
+```csharp
+public void RemoveSheet(Worksheet sheet)
+```
+
+Removes a sheet, as Excel's Delete Sheet does. References to it become `#REF!` (`=Sheet2!A1` becomes `=#REF!A1`) in formulas of every other sheet, defined names, data validation and conditional formats; a reference through several sheets that starts or ends at it keeps the sheets left between its ends. Names local to the sheet and its tables go with it, and references to those tables become `#REF!`. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken). The sheet object can still be read, but not changed ([Worksheet.IsRemoved](SharpCell.Worksheet.md#isremoved)).
+
+**Parameters**
+
+- `sheet`: A sheet of this workbook.
+
+**Exceptions**
+
+- `ArgumentException`: The sheet is not in this workbook.
+- `InvalidOperationException`: It is the last visible sheet while hidden ones remain: a workbook keeps at least one visible sheet.
+- `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not be broken as Excel breaks it.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)

@@ -46,6 +46,17 @@ internal sealed class NameTable
         _names[key] = definition;
     }
 
+    /// <summary>Removes the names local to a sheet.</summary>
+    public void RemoveScope(Worksheet scope)
+    {
+        _order.RemoveAll(key => key.Scope == scope);
+        foreach (var key in new List<(Worksheet? Scope, string Name)>(_names.Keys))
+        {
+            if (key.Scope == scope)
+                _names.Remove(key);
+        }
+    }
+
     public bool ContainsInAnyScope(string upperName)
     {
         foreach (var key in _names.Keys)

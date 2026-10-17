@@ -12,7 +12,7 @@ namespace SharpCell;
 /// A workbook: sheets, defined names and calculation settings. Not thread-safe; separate
 /// workbooks can be used from different threads.
 /// </summary>
-public sealed class Workbook
+public sealed partial class Workbook
 {
     private readonly List<Worksheet> _sheets = [];
     private CultureInfo _culture = CultureInfo.InvariantCulture;
