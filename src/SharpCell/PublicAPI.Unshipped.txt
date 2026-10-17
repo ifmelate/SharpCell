@@ -13,8 +13,12 @@ SharpCell.AutoFilter.Columns.get -> System.Collections.Generic.IReadOnlyDictiona
 SharpCell.AutoFilter.Filter(int column, SharpCell.ColumnFilter! filter) -> void
 SharpCell.AutoFilter.Range.get -> SharpCell.CellRange!
 SharpCell.AutoFilter.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.CellRange.ReadRows<T>(System.Func<SharpCell.RangeRow, T>! read) -> System.Collections.Generic.List<T>!
 SharpCell.CellRange.Sort(params SharpCell.SortKey[]! keys) -> void
 SharpCell.CellRange.Sort(System.Collections.Generic.IReadOnlyList<SharpCell.SortKey>! keys, bool matchCase = false, bool leftToRight = false) -> void
+SharpCell.CellRange.ToCsv(char delimiter = ',') -> string!
+SharpCell.CellRange.ToDataTable(bool headers = true) -> System.Data.DataTable!
+SharpCell.CellRange.WriteCsv(System.IO.TextWriter! writer, char delimiter = ',') -> void
 SharpCell.ColumnFilter
 SharpCell.ColumnFilter.<Clone>$() -> SharpCell.ColumnFilter!
 SharpCell.ColumnFilter.Blanks.get -> bool
@@ -115,6 +119,12 @@ SharpCell.FilterOperator.GreaterThanOrEqual = 3 -> SharpCell.FilterOperator
 SharpCell.FilterOperator.LessThan = 4 -> SharpCell.FilterOperator
 SharpCell.FilterOperator.LessThanOrEqual = 5 -> SharpCell.FilterOperator
 SharpCell.FilterOperator.NotEqual = 1 -> SharpCell.FilterOperator
+SharpCell.RangeRow
+SharpCell.RangeRow.HasColumn(string! header) -> bool
+SharpCell.RangeRow.RangeRow() -> void
+SharpCell.RangeRow.Row.get -> int
+SharpCell.RangeRow.this[int column].get -> SharpCell.Cell!
+SharpCell.RangeRow.this[string! header].get -> SharpCell.Cell!
 SharpCell.SheetVisibility
 SharpCell.SheetVisibility.Hidden = 1 -> SharpCell.SheetVisibility
 SharpCell.SheetVisibility.VeryHidden = 2 -> SharpCell.SheetVisibility
@@ -132,6 +142,7 @@ SharpCell.Workbook.MoveSheet(SharpCell.Worksheet! sheet, int index) -> void
 SharpCell.Workbook.RemoveSheet(SharpCell.Worksheet! sheet) -> void
 SharpCell.Worksheet.AutoFilter.get -> SharpCell.AutoFilter?
 SharpCell.Worksheet.IsRemoved.get -> bool
+SharpCell.Worksheet.LoadCsv(string! topLeft, System.IO.TextReader! reader, char delimiter = ',', bool formulas = false) -> SharpCell.CellRange!
 SharpCell.Worksheet.Name.set -> void
 SharpCell.Worksheet.RemoveAutoFilter() -> void
 SharpCell.Worksheet.SetAutoFilter(string! range) -> SharpCell.AutoFilter!

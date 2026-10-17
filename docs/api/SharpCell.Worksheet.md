@@ -575,6 +575,30 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loadcsv-string-textreader-char-bool"></a>
+### LoadCsv(string, TextReader, char, bool)
+
+```csharp
+public CellRange LoadCsv(string topLeft, TextReader reader, char delimiter = ,, bool formulas = false)
+```
+
+Writes CSV text into the sheet starting at a cell, as Excel opens a .csv file: each field is read as if typed into its cell (see [Cell.Input](SharpCell.Cell.md#input)), so numbers, percentages, dates and logical values in the workbook's culture become those values, with a format taken from how they were written. Fields may be quoted, with quotes doubled and line breaks inside; rows end in CRLF, LF or CR. An empty field clears its cell. A field starting with `=` stays text unless `formulas` is set, since a file from elsewhere could hide formulas in it. Nothing is written unless all of it fits on the sheet.
+
+**Parameters**
+
+- `topLeft`: The cell of the first field, such as `A1`.
+- `reader`: The CSV text.
+- `delimiter`: What separates the fields; Excel uses `;` where the decimal separator is a comma.
+- `formulas`: Whether a field starting with `=` is a formula, as Excel reads it.
+
+**Returns:** The range written: as many rows as the text has, as wide as its widest row.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a cell, or the delimiter is a quote or a line break.
+- `ArgumentOutOfRangeException`: The rows or fields run past the sheet's edge.
+- `FormulaParseException`: With `formulas`, a field starting with `=` is not a formula.
+
 <a id="loaddatatable-string-datatable-bool"></a>
 ### LoadDataTable(string, DataTable, bool)
 

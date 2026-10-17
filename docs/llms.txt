@@ -65,6 +65,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [Note](https://ifmelate.github.io/SharpCell/api/SharpCell.Note.md): A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it.
 - [PageMargins](https://ifmelate.github.io/SharpCell/api/SharpCell.PageMargins.md): The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges.
 - [PageOrientation](https://ifmelate.github.io/SharpCell/api/SharpCell.PageOrientation.md): How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation.
+- [RangeRow](https://ifmelate.github.io/SharpCell/api/SharpCell.RangeRow.md): A row of a range read by `CellRange.ReadRows<T>`: its cells by header or by column.
 - [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
 - [SheetProtection](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetProtection.md): What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else.
 - [SheetVisibility](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetVisibility.md): Whether a sheet's tab shows in Excel.

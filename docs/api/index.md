@@ -51,6 +51,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [Note](SharpCell.Note.md) | A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it. |
 | [PageMargins](SharpCell.PageMargins.md) | The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges. |
 | [PageOrientation](SharpCell.PageOrientation.md) | How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation. |
+| [RangeRow](SharpCell.RangeRow.md) | A row of a range read by [`CellRange.ReadRows<T>`](SharpCell.CellRange.md#readrows-func-rangerow-t): its cells by header or by column. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
 | [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
 | [SheetVisibility](SharpCell.SheetVisibility.md) | Whether a sheet's tab shows in Excel. |

@@ -176,6 +176,21 @@ Inserts empty cells in place of the range, as Excel's Insert with "Shift cells d
 - `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula.
 - `NotSupportedException`: A formula on the sheet, or one naming it, cannot be read by SharpCell, so its references could not follow; or cells would be inserted inside a table's columns.
 
+<a id="readrows-func-rangerow-t"></a>
+### ReadRows<T>(Func<RangeRow, T>)
+
+```csharp
+public List<T> ReadRows<T>(Func<RangeRow, T> read)
+```
+
+Reads each row below the range's first row into an object, the first row naming the columns: `range.ReadRows(row => new Order(row["Region"].Text, row["Units"].Value.AsNumber()))`. The lambda picks the cells, so no reflection is needed. Whole columns such as `A:C` end at the last row used. Formulas out of date in the range are calculated first, so the cells hold their current values.
+
+**Parameters**
+
+- `read`: Makes an item from a row.
+
+**Returns:** The items, in row order.
+
 <a id="setvalues-cellvalue"></a>
 ### SetValues(CellValue[,])
 
@@ -236,6 +251,36 @@ Sorts the rows of the range, as Excel's Data > Sort does: by the first key's col
 - `InvalidOperationException`: The range holds merged cells, or part of an array formula or a spill.
 - `NotSupportedException`: The range holds a formula SharpCell cannot read (such as a link to another workbook).
 
+<a id="tocsv-char"></a>
+### ToCsv(char)
+
+```csharp
+public string ToCsv(char delimiter = ,)
+```
+
+The range as CSV text, as Excel's Save As CSV writes it: each cell as it shows (with its number format), fields holding the delimiter, a quote or a line break in quotes, quotes doubled, and each row ending in CRLF. Whole columns such as `A:C` end at the last row used. Formulas out of date are calculated first.
+
+**Parameters**
+
+- `delimiter`: What separates the fields; Excel uses `;` where the decimal separator is a comma.
+
+**Exceptions**
+
+- `ArgumentException`: The delimiter is a quote or a line break.
+
+<a id="todatatable-bool"></a>
+### ToDataTable(bool)
+
+```csharp
+public DataTable ToDataTable(bool headers = true)
+```
+
+The range as a `DataTable` named after the sheet, one row per row of the range. With `headers`, the first row names the columns (`ColumnN` for an empty one, a number added to a repeated one, as tables name them); otherwise they are `Column1`, `Column2` and so on. A column whose values are all numbers is `Double`, all shown as dates `DateTime`, all logical values `Boolean`, all text `String`; any other mix is `Object`, with errors as their text (`#N/A`). Empty cells are `DBNull`. Whole columns such as `A:C` end at the last row used. Formulas out of date are calculated first.
+
+**Parameters**
+
+- `headers`: Whether the first row holds the column names.
+
 <a id="tostring"></a>
 ### ToString()
 
@@ -244,3 +289,21 @@ public override string ToString()
 ```
 
 The address with the sheet name as a formula writes it, such as `Sheet1!A1:C10` or `'My Sheet'!B2`.
+
+<a id="writecsv-textwriter-char"></a>
+### WriteCsv(TextWriter, char)
+
+```csharp
+public void WriteCsv(TextWriter writer, char delimiter = ,)
+```
+
+Writes the range as CSV text, for a file or a stream; see [CellRange.ToCsv](SharpCell.CellRange.md#tocsv-char).
+
+**Parameters**
+
+- `writer`: Where to write, in the encoding it has.
+- `delimiter`: What separates the fields.
+
+**Exceptions**
+
+- `ArgumentException`: The delimiter is a quote or a line break.
