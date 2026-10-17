@@ -46,6 +46,8 @@ A runnable version is in [samples/SharpCell.Sample](samples/SharpCell.Sample). `
 ## Documentation
 
 - [Documentation site](https://ifmelate.github.io/SharpCell/): getting started, guides, API reference ([source](docs/index.md)).
+- [Sheets, filters and sorting](docs/guides/sheets.md): renaming, removing and moving sheets with formulas following, Excel's filter, sorting a range.
+- [Data in and out](docs/guides/data.md): sheets from collections, `DataTable`s and CSV, and ranges back out as `DataTable`s, objects and CSV.
 - [Tables and hidden rows](docs/guides/tables.md): structured references, tables from files and code, SUBTOTAL and filters.
 - [Custom functions](docs/guides/custom-functions.md): functions written in C# that formulas call, in place of VBA or add-ins.
 - [Recalculation](docs/guides/recalculation.md): changed cells, precedents and dependents, cloning a template per request.

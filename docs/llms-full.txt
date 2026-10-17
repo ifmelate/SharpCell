@@ -651,6 +651,168 @@ defined, spelled as they were defined. It is a snapshot: names defined later are
 
 ---
 
+<!-- page: guides/sheets.md -->
+
+# Sheets, filters and sorting
+
+Renaming, removing, moving and hiding sheets; Excel's filter; sorting a range. Formulas follow each
+change as they do in Excel.
+
+## Managing sheets
+
+```csharp snippet=sheets-manage
+data.Name = "Data 2025";             // Summary!A1 is now ='Data 2025'!A1*2
+workbook.MoveSheet(data, 0);         // Data 2025 comes first
+workbook.RemoveSheet(draft);         // formulas reading Draft get #REF!
+data.Visibility = SheetVisibility.Hidden;
+summary.TabColor = CellColor.FromRgb(0x2E75B6);
+workbook.Recalculate();
+```
+
+Setting `Worksheet.Name` renames the sheet in every formula that refers to it: in cells of every
+sheet, defined names, data validation and conditional formats, quoting the name when it needs it.
+Text inside `INDIRECT` and the targets of hyperlinks keep the old name, as in Excel. A name another
+sheet has (ignoring case), or one Excel does not allow (more than 31 characters, `: \ / ? * [ ]`),
+throws `ArgumentException`.
+
+`Workbook.RemoveSheet` removes a sheet as Excel's Delete Sheet does. References to it become
+`#REF!`: `=Draft!A1` becomes `=#REF!A1`. A reference through several sheets
+(`=SUM(Jan:Mar!B2)`) whose first or last sheet is removed keeps the sheets left between its ends.
+Names local to the sheet and its tables go with it, and references to those tables become `#REF!`.
+The removed `Worksheet` can still be read; changing it throws `InvalidOperationException`
+(`IsRemoved` is true).
+
+`Workbook.MoveSheet` puts a sheet at another place in `Workbook.Sheets`. No formula changes, but a
+reference through several sheets takes in the sheets now between its ends.
+
+`Visibility` hides a sheet (`Hidden`, which Excel's Unhide lists) or hides it so that only code can
+show it again (`VeryHidden`). A workbook keeps at least one visible sheet: hiding or removing the
+last one throws `InvalidOperationException`. `TabColor` colours the sheet's tab.
+
+Each change goes through every formula of the workbook, and every formula is calculated again at
+the next `Recalculate`. When the workbook is saved, the file's sheets are renamed, reordered and
+hidden, a removed sheet's part goes with its drawings, comments and tables, and charts, pivot table
+sources, print areas and names in the file follow the new names (see [Saving .xlsx files](saving.md)).
+A formula SharpCell cannot read (such as a link to another workbook) that names the sheet makes
+renaming or removing it throw `NotSupportedException`.
+
+## Filtering rows
+
+```csharp snippet=sheets-filter
+AutoFilter filter = sheet.SetAutoFilter("A1:B5");
+filter.Filter(2, ColumnFilter.Custom(FilterOperator.GreaterThan, "100"));   // column B
+filter.Filter(1, ColumnFilter.OneOf("North", "West"));                      // column A
+bool hidden = sheet.IsRowHidden(3);   // true: South is not North or West
+
+sheet["B2"].Value = 90;
+filter.Apply();                       // Excel's Reapply: North is hidden now
+```
+
+`Worksheet.SetAutoFilter` turns on Excel's Data > Filter for a range whose first row holds the
+buttons; `Worksheet.AutoFilter` is the filter a sheet has, read from a file too. `AutoFilter.Filter`
+sets a column's criteria and applies the filter at once, as choosing them in Excel's menu does: each
+row below the first shows when it meets the criteria of every filtered column, and hides otherwise.
+The criteria are those of Excel's menu:
+
+| Factory | Shows rows whose cell |
+|---|---|
+| `ColumnFilter.OneOf("North", "1,250.00")` | shows one of the texts, as formatted, ignoring case |
+| `ColumnFilter.OneOf(new FilterDate(DateGrouping.Month, 2026, 3))` | holds a date in one of the years, months or days |
+| `ColumnFilter.Blank()` | is empty; `OneOf(...) with { Blanks = true }` adds empty cells |
+| `ColumnFilter.Custom(FilterOperator.GreaterThan, "100")` | meets a condition, or two with `matchAll` (And) or not (Or) |
+| `ColumnFilter.BeginsWith`, `EndsWith`, `Contains`, `DoesNotContain` | holds the text there, ignoring case |
+| `ColumnFilter.Top(10)`, `Top(10, percent: true)`, `Bottom(...)` | holds one of the highest or lowest numbers |
+| `ColumnFilter.Of(DynamicFilter.AboveAverage)` | is above (or below) the column's average |
+| `ColumnFilter.Of(DynamicFilter.ThisMonth)` | holds a date in a period around today, or in a quarter or month of any year |
+
+A custom condition compares a number with numbers and a text with texts; `Equal` and `NotEqual`
+match the cell's text with `*` and `?` as wildcards. Formulas out of date in the range are
+calculated first. Like Excel, a filter does not apply itself again when the data changes: call
+`Apply` (Excel's Reapply). `Clear(column)` and `Clear()` take criteria off, and
+`Worksheet.RemoveAutoFilter` turns the filter off and shows the rows it hid. While criteria are set,
+`Worksheet.FilterMode` is true, so `SUBTOTAL` with codes 1 to 11 skips the hidden rows (see
+[Tables and hidden rows](tables.md)).
+
+The filter and its criteria are saved, and move with inserted and deleted rows and columns. A
+file's filter by colour or icon is kept, but `Apply` throws `NotSupportedException` while one is
+set. Tables have filters of their own, which these are not: a sheet's filter cannot overlap a table.
+
+## Sorting
+
+```csharp snippet=sheets-sort
+sheet.Range("A2:B5").Sort(new SortKey(2, Descending: true));   // by units, highest first
+```
+
+`CellRange.Sort` sorts the rows of a range as Excel's Data > Sort does, by one key or several
+(`SortKey` is a sheet column and a direction); rows equal by every key keep their order. Ascending,
+numbers come first, then text, ignoring case, then `FALSE` and `TRUE`, then errors; descending
+reverses that, and empty cells come last either way. `matchCase: true` puts lower case first among
+texts that differ only in case, and `leftToRight: true` sorts the columns by rows.
+
+The cells move with their values, formulas, number formats, styles, hyperlinks and notes. A moved
+formula keeps its relative references, as when it is copied: `=B2*C2` sorted into row 5 is
+`=B5*C5`. Formulas elsewhere that read the range are not changed, so they read whatever was sorted
+into their cells. Data validation, conditional formats, row heights and hidden rows stay where they
+are. A range with merged cells, part of an array formula or a spill throws
+`InvalidOperationException`; nothing moves.
+
+---
+
+<!-- page: guides/data.md -->
+
+# Data in and out
+
+Filling sheets from collections, `DataTable`s and CSV text, and reading ranges back out.
+
+## Filling a sheet
+
+```csharp snippet=data-in
+sheet.LoadRows("A1", orders,
+    ("Id", o => o.Id), ("Total", o => o.Total), ("Placed", o => o.Placed));
+
+sheet.LoadCsv("E1", new StringReader("Code,Share\nX1,12%\n"));   // 12% is the number 0.12
+```
+
+`Worksheet.LoadRows` writes a header row and one row per item, its columns given as lambdas, so no
+reflection is needed and the code trims and compiles ahead of time. `LoadDataTable` writes a
+`DataTable`, with or without a header row. Strings stay text, never formulas; numbers, logical
+values, dates and times become those values, dates with a date format. Nothing is written unless
+every value could be stored.
+
+`Worksheet.LoadCsv` reads CSV text as Excel opens a .csv file: each field as if typed into its cell
+(see [Typing into cells](cells.md#typing-into-cells)), so numbers, percentages and dates in the
+workbook's culture become those values with a matching format. Fields may be quoted, with doubled
+quotes and line breaks inside. A field starting with `=` stays text unless `formulas: true`, since
+a file from elsewhere could hide formulas in it. Pass `delimiter: ';'` where the decimal separator is
+a comma, as Excel does there.
+
+## Reading a range out
+
+```csharp snippet=data-out
+DataTable table = sheet.Range("A1:B5").ToDataTable();   // Region (string), Units (double)
+
+List<(string Region, double Units)> rows = sheet.Range("A1:B5")
+    .ReadRows(row => (row["Region"].Text, row["Units"].Value.AsNumber()));
+
+string csv = sheet.Range("A1:B5").ToCsv();               // "Region,Units\r\nNorth,120\r\n..."
+sheet.Range("A1:B5").WriteCsv(writer);                   // to a file or a stream
+```
+
+`CellRange.ToDataTable` gives a `DataTable` named after the sheet. The first row names the columns,
+as tables name them: `Column3` for an empty header, `Units2` for a repeated one; pass
+`headers: false` for `Column1`, `Column2` and so on. A column whose values are all numbers is
+`double`, all shown as dates `DateTime`, all logical values `bool`, all text `string`, and any other
+mix `object`, with errors as their text (`#N/A`). Empty cells are `DBNull`.
+
+`CellRange.ReadRows` makes an object of each row below the first, with a lambda that picks cells by
+header (ignoring case) or by sheet column. `ToCsv` and `WriteCsv` write each cell as it shows, with
+its number format, as Excel's Save As CSV does, and end each row in CRLF.
+
+Whole columns such as `A:C` end at the last row used. Formulas out of date in the range are
+calculated first, so what is read out is current.
+
+---
+
 <!-- page: guides/recalculation.md -->
 
 # Recalculation
@@ -979,13 +1141,13 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 
 ## What is read
 
-- Sheets, including hidden ones, in workbook order.
+- Sheets, including hidden ones, in workbook order, with whether they are hidden and their tab colours (see [Sheets, filters and sorting](sheets.md)).
 - Constants: numbers, text, logical values and errors.
 - Formulas: ordinary, shared, legacy array formulas (Ctrl+Shift+Enter) and dynamic arrays.
 - The results Excel saved with each formula.
 - Defined names, workbook-wide and sheet-scoped.
 - Tables, with their column names and header and totals rows.
-- Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
+- Hidden rows, and the sheet's filter with its criteria (see [Filtering rows](sheets.md#filtering-rows) and [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
@@ -1068,11 +1230,12 @@ Everything SharpCell models:
   expected (`=SUM(A1:A3*2)`) is saved as a dynamic array formula, so Excel does not reduce it as
   Excel 2016 would.
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
-  cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
-  filtered.
+  cells, frozen panes, gridlines, the default column width and row height, and the sheet's filter
+  with its criteria.
 - Hyperlinks, notes, data validation, conditional formats, sheet and workbook protection, and locked and hidden cells.
 - Page orientation and margins, print areas, print titles and manual page breaks.
-- New sheets, defined names, new tables, the date system and the iteration settings.
+- New sheets, and sheets renamed, removed, moved and hidden, with their tab colours; defined names,
+  new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
 file: charts, pivot tables, threaded comments, the settings of colour scales, data bars and icon sets, pictures, macros, headers and footers, paper size and scaling,
@@ -1093,6 +1256,13 @@ where they were. A pivot table moves with the rows above it, but rows inserted i
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
 saved after its rows or columns moved (`NotSupportedException`). Formulas SharpCell cannot read are
 kept as the file has them, with the results Excel saved.
+
+When sheets are renamed, the file's charts, pivot table sources, print areas and the names
+SharpCell does not read refer to the new names. A removed sheet's part goes with the parts only it
+uses (drawings, charts, comments, tables), its local names go, and references to it in what
+SharpCell does not model become `#REF!`. Moved sheets keep their local names and the window shows
+the sheet it showed; when that sheet was removed or hidden, the window shows the next visible one.
+The list of sheet names in the document properties is left out (Excel writes it again).
 
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.
@@ -1200,7 +1370,8 @@ workbook.Recalculate();                         // both are 5
   criteria, every hidden row counts as filtered. `Worksheet.FilterMode` is that flag; the reader
   sets it from the file.
 - `AGGREGATE` with options 0, 2, 4 and 6 counts every row.
-- SharpCell does not apply filter criteria: hidden rows are as the file or your code left them.
+- A sheet's filter hides rows when its criteria are applied (see [Filtering rows](sheets.md#filtering-rows));
+  a table's own filter is not applied: its hidden rows are as the file or your code left them.
 
 ---
 
@@ -1274,10 +1445,10 @@ several functions at once give `#VALUE!`.
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, threaded comments, pictures, colour scales, data bars or icon sets, or remove or rename sheets; a file's own are kept as they are.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, threaded comments, pictures, colour scales, data bars or icon sets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
-- **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
+- **Some filters are not applied.** A sheet's filter is applied, except by colour or icon (kept, but `Apply` throws). A table's own filter is not: its rows are hidden as the file or your code left them.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
 - **Styles are partly read.** Fonts, solid fills, borders, alignment, number formats and cell protection (locked, hidden) are read and saved; pattern and gradient fills and rotated text are not read (a file's own are kept when it is saved). The colours of colour scales, data bars and icon sets are not worked out.
 - **Protection is not enforced.** Sheet and workbook protection is read, set and saved, but SharpCell does not enforce it: code can still change a protected sheet or workbook.
@@ -1315,30 +1486,39 @@ maintainer.
 | 0.8 | `Cell.Input`: a cell as typed in Excel |
 | 0.9 | Building workbooks: filling sheets from collections and `DataTable`s, hyperlinks, data validation, sheet and workbook protection, locked and hidden cells |
 | 0.10 | Copying cells as Excel pastes them, formulas, links and data validation following (`CellRange.CopyTo`) |
+| 0.11 | Conditional formats worked out as Excel shows them, notes, page setup, inserting and deleting cells with a shift |
 
-## Now: 0.11, rules on cells
+## Now: 0.12, sheets and data
 
-- Done: conditional formatting, read, added and saved. SharpCell also tells which cells a rule
-  applies to and how they look (`Cell.ConditionalFormats`, `Cell.DisplayStyle`), since it
-  calculates the formulas Excel would. Colour scales, data bars and icon sets are kept, not drawn.
-- Done: notes, read, added and saved.
-- Done: page setup: orientation, margins, print area, print titles and page breaks.
-- Done: inserting and deleting cells with Excel's "Shift cells down / right / up / left".
+- Done: renaming, removing, moving and hiding sheets, with formulas following as in Excel, and tab
+  colours.
+- Done: Excel's filter: values, dates, custom conditions, top and bottom, above and below average
+  and date periods, applied as Excel applies them, read and saved.
+- Done: sorting a range by one key or several, cells moving with their formulas and formats.
+- Done: reading ranges out as `DataTable`s, objects and CSV, and loading CSV.
 - Benchmarks against EPPlus and ClosedXML: loading, recalculating and saving large workbooks.
+
+## Next: 0.13, how sheets look
+
+- Grouping rows and columns into outlines that collapse and expand.
+- Rich text in cells: runs of different fonts in one cell.
+- Styles of whole rows and columns, named cell styles, pattern and gradient fills, rotated and
+  shrunk text, theme colours written as such.
+- Headers and footers, paper size, scaling and fitting to pages.
+- Fitting column widths to their contents. This needs font metrics, which the engine does not
+  carry; it may come as a separate package.
 
 ## Later
 
+- Resizing, renaming and removing tables, inserting columns into them, totals rows and table styles.
+- Copying a sheet, within a workbook and to another.
+- Pictures placed on a sheet.
 - Cells that break their data validation, found by calculating the rules (Excel's Circle Invalid Data).
-- Sorting a range, with formulas moving as Excel moves them.
-- Fitting column widths to their contents. This needs font metrics, which the engine does not
-  carry; it may come as a separate package.
-- Resizing and renaming tables, and inserting columns into them.
-- Removing and renaming sheets.
-- Rich text in cells.
+- Applying a table's own filter.
 
 ## Not planned
 
-Creating charts, pivot tables, pictures or shapes (a file's own are kept when it is saved),
+Creating charts, pivot tables or shapes (a file's own are kept when it is saved),
 running macros, .xls and .xlsb files, and encrypted files.
 
 ---
