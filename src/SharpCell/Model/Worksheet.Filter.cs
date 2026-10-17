@@ -92,7 +92,7 @@ public sealed partial class Worksheet
     }
 
     // The value a cell has now, calculated first when it is out of date.
-    private CellValue CurrentValue(int row, int column)
+    internal CellValue CurrentValue(int row, int column)
     {
         var data = Store.Get(row, column);
         return data is { Formula: not null, IsDirty: true }

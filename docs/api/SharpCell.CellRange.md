@@ -194,6 +194,48 @@ Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value)
 - `ArgumentException`: The array's size differs from the range's, or it holds a Missing, array or lambda value.
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell.
 
+<a id="sort-ireadonlylist-sortkey-bool-bool"></a>
+### Sort(IReadOnlyList<SortKey>, bool, bool)
+
+```csharp
+public void Sort(IReadOnlyList<SortKey> keys, bool matchCase = false, bool leftToRight = false)
+```
+
+Sorts the rows of the range, or its columns, as Excel's Data > Sort does. Ascending, numbers come first, then text (ignoring case unless `matchCase`), then FALSE and TRUE, then errors, which are all equal; descending reverses that, and empty cells come last either way. Formulas out of date are calculated first.
+
+The cells move with what they hold: values, formulas, number formats, styles, hyperlinks and notes. A moved formula's relative references keep their distance from its cell, as when it is copied, so `=B2*C2` moved to row 5 becomes `=B5*C5`; formulas elsewhere that point into the range are not changed, and read whatever was sorted into their cells. Data validation, conditional formats, row heights and hidden rows stay where they are. Every formula reading the cells is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `keys`: The columns that order the rows (or the rows that order the columns), first key first.
+- `matchCase`: Whether text of different case differs, lower case first, as Excel's Case sensitive option.
+- `leftToRight`: Whether to sort the columns by rows, as Excel's Sort left to right option.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A key's column (or row) is outside the range.
+- `InvalidOperationException`: The range holds merged cells, or part of an array formula or a spill.
+- `NotSupportedException`: The range holds a formula SharpCell cannot read (such as a link to another workbook).
+
+<a id="sort-sortkey"></a>
+### Sort(SortKey[])
+
+```csharp
+public void Sort(params SortKey[] keys)
+```
+
+Sorts the rows of the range, as Excel's Data > Sort does: by the first key's column, rows equal there by the second's, and so on; rows equal by every key keep their order. Without a key the first column orders the rows, ascending. See [CellRange.Sort](SharpCell.CellRange.md#sort-ireadonlylist-sortkey-bool-bool).
+
+**Parameters**
+
+- `keys`: The columns that order the rows.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A key's column is outside the range.
+- `InvalidOperationException`: The range holds merged cells, or part of an array formula or a spill.
+- `NotSupportedException`: The range holds a formula SharpCell cannot read (such as a link to another workbook).
+
 <a id="tostring"></a>
 ### ToString()
 

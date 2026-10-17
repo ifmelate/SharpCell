@@ -4,6 +4,7 @@ override SharpCell.ColumnFilter.GetHashCode() -> int
 override SharpCell.ColumnFilter.ToString() -> string!
 override SharpCell.FilterCondition.GetHashCode() -> int
 override SharpCell.FilterDate.GetHashCode() -> int
+override SharpCell.SortKey.GetHashCode() -> int
 SharpCell.AutoFilter
 SharpCell.AutoFilter.Apply() -> void
 SharpCell.AutoFilter.Clear() -> void
@@ -12,6 +13,8 @@ SharpCell.AutoFilter.Columns.get -> System.Collections.Generic.IReadOnlyDictiona
 SharpCell.AutoFilter.Filter(int column, SharpCell.ColumnFilter! filter) -> void
 SharpCell.AutoFilter.Range.get -> SharpCell.CellRange!
 SharpCell.AutoFilter.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.CellRange.Sort(params SharpCell.SortKey[]! keys) -> void
+SharpCell.CellRange.Sort(System.Collections.Generic.IReadOnlyList<SharpCell.SortKey>! keys, bool matchCase = false, bool leftToRight = false) -> void
 SharpCell.ColumnFilter
 SharpCell.ColumnFilter.<Clone>$() -> SharpCell.ColumnFilter!
 SharpCell.ColumnFilter.Blanks.get -> bool
@@ -116,6 +119,15 @@ SharpCell.SheetVisibility
 SharpCell.SheetVisibility.Hidden = 1 -> SharpCell.SheetVisibility
 SharpCell.SheetVisibility.VeryHidden = 2 -> SharpCell.SheetVisibility
 SharpCell.SheetVisibility.Visible = 0 -> SharpCell.SheetVisibility
+SharpCell.SortKey
+SharpCell.SortKey.Deconstruct(out int Index, out bool Descending) -> void
+SharpCell.SortKey.Descending.get -> bool
+SharpCell.SortKey.Descending.init -> void
+SharpCell.SortKey.Equals(SharpCell.SortKey other) -> bool
+SharpCell.SortKey.Index.get -> int
+SharpCell.SortKey.Index.init -> void
+SharpCell.SortKey.SortKey() -> void
+SharpCell.SortKey.SortKey(int Index, bool Descending = false) -> void
 SharpCell.Workbook.MoveSheet(SharpCell.Worksheet! sheet, int index) -> void
 SharpCell.Workbook.RemoveSheet(SharpCell.Worksheet! sheet) -> void
 SharpCell.Worksheet.AutoFilter.get -> SharpCell.AutoFilter?
@@ -145,7 +157,11 @@ static SharpCell.FilterCondition.operator !=(SharpCell.FilterCondition left, Sha
 static SharpCell.FilterCondition.operator ==(SharpCell.FilterCondition left, SharpCell.FilterCondition right) -> bool
 static SharpCell.FilterDate.operator !=(SharpCell.FilterDate left, SharpCell.FilterDate right) -> bool
 static SharpCell.FilterDate.operator ==(SharpCell.FilterDate left, SharpCell.FilterDate right) -> bool
+static SharpCell.SortKey.operator !=(SharpCell.SortKey left, SharpCell.SortKey right) -> bool
+static SharpCell.SortKey.operator ==(SharpCell.SortKey left, SharpCell.SortKey right) -> bool
 ~override SharpCell.FilterCondition.Equals(object obj) -> bool
 ~override SharpCell.FilterCondition.ToString() -> string
 ~override SharpCell.FilterDate.Equals(object obj) -> bool
 ~override SharpCell.FilterDate.ToString() -> string
+~override SharpCell.SortKey.Equals(object obj) -> bool
+~override SharpCell.SortKey.ToString() -> string

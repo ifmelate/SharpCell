@@ -68,6 +68,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
 - [SheetProtection](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetProtection.md): What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else.
 - [SheetVisibility](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetVisibility.md): Whether a sheet's tab shows in Excel.
+- [SortKey](https://ifmelate.github.io/SharpCell/api/SharpCell.SortKey.md): A key of CellRange.Sort: the column rows are put in order by.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
 - [TimePeriod](https://ifmelate.github.io/SharpCell/api/SharpCell.TimePeriod.md): The periods of Excel's A Date Occurring rule, counted from today.
 - [ValidationErrorStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationErrorStyle.md): What Excel does when a value breaks a rule.
