@@ -12,6 +12,15 @@ A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never se
 
 ## Properties
 
+<a id="autofilter"></a>
+### AutoFilter
+
+```csharp
+public AutoFilter? AutoFilter { get; }
+```
+
+The sheet's filter, Excel's Data > Filter; null when it has none. Tables have filters of their own, which this is not.
+
 <a id="cells"></a>
 ### Cells
 
@@ -664,6 +673,19 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
 
+<a id="removeautofilter"></a>
+### RemoveAutoFilter()
+
+```csharp
+public void RemoveAutoFilter()
+```
+
+Turns the sheet's filter off, as clicking Excel's Filter again does: the rows it hid show, and the sheet is no longer in [Worksheet.FilterMode](SharpCell.Worksheet.md#filtermode). Nothing happens without a filter.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="removecolumnpagebreak-int"></a>
 ### RemoveColumnPageBreak(int)
 
@@ -702,6 +724,24 @@ A row's own height in points; null when it has none.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setautofilter-string"></a>
+### SetAutoFilter(string)
+
+```csharp
+public AutoFilter SetAutoFilter(string range)
+```
+
+Turns on Excel's filter for a range, its first row holding the buttons, and returns it to filter columns with. A filter the sheet had is removed first, showing the rows it hid.
+
+**Parameters**
+
+- `range`: An A1 range on this sheet with at least two rows, such as `A1:D20`; whole columns such as `A:D` are filtered down to the last row with something in it.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not such a range, or the range overlaps a table.
+- `InvalidOperationException`: The sheet was removed.
 
 <a id="setcolumnhidden-int-bool"></a>
 ### SetColumnHidden(int, bool)

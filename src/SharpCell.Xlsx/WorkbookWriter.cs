@@ -34,7 +34,8 @@ internal static class WorkbookWriter
         var look = plan.Source.Look;
         var part = plan.Source.WorkbookPart;
         var printChanged = workbook.Sheets.Where(sheet => PrintChanged(plan, sheet)).ToHashSet();
-        var namesChanged = look.NamesChanged(workbook) || plan.Edits.Any || printChanged.Count > 0;
+        var filterChanged = workbook.Sheets.Where(sheet => plan.Source.SheetFor(sheet).Look.Mapped(plan.Edits, sheet).FilterArea != sheet.AutoFilter?.Area).ToHashSet();
+        var namesChanged = look.NamesChanged(workbook) || plan.Edits.Any || printChanged.Count > 0 || filterChanged.Count > 0;
         var iterationChanged = !workbook.Iteration.Equals(look.Iteration);
         var protectionChanged = look.ProtectionChanged(workbook);
         var sheetsChanged = newSheets.Count > 0 || SheetsChanged(plan, parts);
@@ -60,7 +61,7 @@ internal static class WorkbookWriter
         }
 
         if (namesChanged || indexes is not null)
-            WriteNames(root, sheets, workbook, look, plan.Edits, printChanged, indexes);
+            WriteNames(root, sheets, workbook, look, plan.Edits, printChanged, filterChanged, indexes);
 
         if (iterationChanged || plan.FullCalcOnLoad)
         {
@@ -272,7 +273,7 @@ internal static class WorkbookWriter
     }
 
     private static void WriteNames(XElement root, XElement sheets, Workbook workbook, WorkbookLook look, SheetEditMap edits, HashSet<Worksheet> printChanged,
-        Dictionary<int, int>? indexes)
+        HashSet<Worksheet> filterChanged, Dictionary<int, int>? indexes)
     {
         var ns = root.Name.Namespace;
         var sheetNames = sheets.Elements(ns + "sheet").Select(s => (string?)s.Attribute("name") ?? "").ToList();
@@ -295,12 +296,24 @@ internal static class WorkbookWriter
         var written = new HashSet<(string, string)>();
         var model = workbook.Names.All.ToDictionary(WorkbookLook.Key);
         var printWritten = new HashSet<(Worksheet, string)>();
+        var databaseWritten = new HashSet<Worksheet>();
         foreach (var element in section?.Elements(ns + "definedName").ToList() ?? [])
         {
             var name = ((string?)element.Attribute("name"))?.ToUpperInvariant();
             if (name is null)
                 continue;
             var scope = (int?)element.Attribute("localSheetId") is { } index && index >= 0 && index < sheetNames.Count ? sheetNames[index].ToUpperInvariant() : "";
+
+            // The range of a filter the model changed: the model's, or none.
+            if (name.Equals(FilterElements.DatabaseName, StringComparison.OrdinalIgnoreCase) && scope.Length > 0
+                && workbook.TryGetSheet(scope, out var filtered) && filterChanged.Contains(filtered!))
+            {
+                if (FilterElements.DatabaseFormula(filtered!) is { } database && databaseWritten.Add(filtered!))
+                    element.Value = database;
+                else
+                    element.Remove();
+                continue;
+            }
 
             // A print area or titles the model changed: the model's, or none.
             if (PrintNames.IsPrintName(name) && scope.Length > 0 && workbook.TryGetSheet(scope, out var printed) && printChanged.Contains(printed!))
@@ -336,6 +349,16 @@ internal static class WorkbookWriter
                 section.Add(new XElement(ns + "definedName", new XAttribute("name", name),
                     new XAttribute("localSheetId", sheetNames.FindIndex(n => n.Equals(sheet.Name, StringComparison.OrdinalIgnoreCase))), formula));
             }
+        }
+
+        foreach (var sheet in filterChanged)
+        {
+            if (databaseWritten.Contains(sheet) || FilterElements.DatabaseFormula(sheet) is not { } database)
+                continue;
+            section ??= Section(root, "definedNames");
+            section.Add(new XElement(ns + "definedName", new XAttribute("name", FilterElements.DatabaseName),
+                new XAttribute("localSheetId", sheetNames.FindIndex(n => n.Equals(sheet.Name, StringComparison.OrdinalIgnoreCase))),
+                new XAttribute("hidden", "1"), database));
         }
 
         foreach (var (key, definition) in model)

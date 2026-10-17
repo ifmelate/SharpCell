@@ -22,6 +22,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 
 ## API reference
 
+- [AutoFilter](https://ifmelate.github.io/SharpCell/api/SharpCell.AutoFilter.md): The filter of a sheet, Excel's Data > Filter: buttons in the first row of its range, and criteria on some of its columns that hide the rows below not meeting them.
 - [CalculationDiagnostic](https://ifmelate.github.io/SharpCell/api/SharpCell.CalculationDiagnostic.md): Something calculation noticed that is not visible in cell values alone.
 - [Cell](https://ifmelate.github.io/SharpCell/api/SharpCell.Cell.md): A handle to one cell position.
 - [CellBorder](https://ifmelate.github.io/SharpCell/api/SharpCell.CellBorder.md): One edge of a cell's border.
@@ -35,17 +36,24 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [CellValue](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValue.md): A value produced by a cell or a formula.
 - [CellValueKind](https://ifmelate.github.io/SharpCell/api/SharpCell.CellValueKind.md): The kind of value a CellValue holds.
 - [CellVerticalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellVerticalAlignment.md): Where a cell's text sits from top to bottom of the cell.
+- [ColumnFilter](https://ifmelate.github.io/SharpCell/api/SharpCell.ColumnFilter.md): What a column of an AutoFilter shows.
+- [ColumnFilterType](https://ifmelate.github.io/SharpCell/api/SharpCell.ColumnFilterType.md): How a column of an AutoFilter picks the rows it shows, as Excel's filter menu offers it.
 - [ConditionalFormat](https://ifmelate.github.io/SharpCell/api/SharpCell.ConditionalFormat.md): A conditional format: which cells of its ranges it formats, and how.
 - [ConditionalFormatType](https://ifmelate.github.io/SharpCell/api/SharpCell.ConditionalFormatType.md): What a conditional format looks at, as Excel's New Formatting Rule dialog offers it.
 - [ConditionalOperator](https://ifmelate.github.io/SharpCell/api/SharpCell.ConditionalOperator.md): How a ConditionalFormatType.CellValue rule compares the cell's value with its formulas.
 - [ConditionalStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.ConditionalStyle.md): What a conditional format changes about a cell's look, as Excel's Format Cells for a rule sets it: the font's style and colour, the fill, the borders and the number format.
 - [DataValidation](https://ifmelate.github.io/SharpCell/api/SharpCell.DataValidation.md): A data validation rule: what the cells of a range accept and the messages Excel shows for them.
+- [DateGrouping](https://ifmelate.github.io/SharpCell/api/SharpCell.DateGrouping.md): How much of a FilterDate counts: a year, a month, a day, down to a second.
 - [DateSystem](https://ifmelate.github.io/SharpCell/api/SharpCell.DateSystem.md): The workbook's date system: which day serial number 0 or 1 stands for.
 - [DefinedName](https://ifmelate.github.io/SharpCell/api/SharpCell.DefinedName.md): A defined name as Workbook.DefinedNames lists it.
 - [DeleteShift](https://ifmelate.github.io/SharpCell/api/SharpCell.DeleteShift.md): Which cells take the place of deleted cells, as in Excel's Delete dialog.
 - [DiagnosticKind](https://ifmelate.github.io/SharpCell/api/SharpCell.DiagnosticKind.md): What a CalculationDiagnostic reports.
+- [DynamicFilter](https://ifmelate.github.io/SharpCell/api/SharpCell.DynamicFilter.md): The rows a ColumnFilterType.Dynamic filter shows: around the average, or dates around today.
 - [ErrorKind](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKind.md): Excel error values.
 - [ErrorKinds](https://ifmelate.github.io/SharpCell/api/SharpCell.ErrorKinds.md): Conversion between ErrorKind and its literal text (`#DIV/0!`).
+- [FilterCondition](https://ifmelate.github.io/SharpCell/api/SharpCell.FilterCondition.md): One condition of a ColumnFilterType.Custom filter.
+- [FilterDate](https://ifmelate.github.io/SharpCell/api/SharpCell.FilterDate.md): A year, month, day (or hour, minute, second) a ColumnFilterType.Values filter shows, as the date tree of Excel's filter menu checks it: `new FilterDate(DateGrouping.Month, 2024, 3)` is March 2024.
+- [FilterOperator](https://ifmelate.github.io/SharpCell/api/SharpCell.FilterOperator.md): How a FilterCondition compares a cell with its value.
 - [FormulaParseException](https://ifmelate.github.io/SharpCell/api/SharpCell.FormulaParseException.md): Thrown when formula text cannot be parsed.
 - [FunctionArguments](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionArguments.md): The arguments of one call of a function added through Workbook.Functions.
 - [FunctionCollection](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionCollection.md): The functions a workbook's formulas can call besides Excel's: add one with FunctionCollection.Add, and formulas calling it by name (ignoring case) use it from the next calculation on.

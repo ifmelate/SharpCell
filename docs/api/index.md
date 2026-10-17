@@ -8,6 +8,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 
 | Type | Summary |
 |---|---|
+| [AutoFilter](SharpCell.AutoFilter.md) | The filter of a sheet, Excel's Data > Filter: buttons in the first row of its range, and criteria on some of its columns that hide the rows below not meeting them. |
 | [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) | Something calculation noticed that is not visible in cell values alone. |
 | [Cell](SharpCell.Cell.md) | A handle to one cell position. |
 | [CellBorder](SharpCell.CellBorder.md) | One edge of a cell's border. |
@@ -21,17 +22,24 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellValue](SharpCell.CellValue.md) | A value produced by a cell or a formula. |
 | [CellValueKind](SharpCell.CellValueKind.md) | The kind of value a [CellValue](SharpCell.CellValue.md) holds. |
 | [CellVerticalAlignment](SharpCell.CellVerticalAlignment.md) | Where a cell's text sits from top to bottom of the cell. |
+| [ColumnFilter](SharpCell.ColumnFilter.md) | What a column of an [AutoFilter](SharpCell.AutoFilter.md) shows. |
+| [ColumnFilterType](SharpCell.ColumnFilterType.md) | How a column of an [AutoFilter](SharpCell.AutoFilter.md) picks the rows it shows, as Excel's filter menu offers it. |
 | [ConditionalFormat](SharpCell.ConditionalFormat.md) | A conditional format: which cells of its ranges it formats, and how. |
 | [ConditionalFormatType](SharpCell.ConditionalFormatType.md) | What a conditional format looks at, as Excel's New Formatting Rule dialog offers it. |
 | [ConditionalOperator](SharpCell.ConditionalOperator.md) | How a [ConditionalFormatType.CellValue](SharpCell.ConditionalFormatType.md#cellvalue) rule compares the cell's value with its formulas. |
 | [ConditionalStyle](SharpCell.ConditionalStyle.md) | What a conditional format changes about a cell's look, as Excel's Format Cells for a rule sets it: the font's style and colour, the fill, the borders and the number format. |
 | [DataValidation](SharpCell.DataValidation.md) | A data validation rule: what the cells of a range accept and the messages Excel shows for them. |
+| [DateGrouping](SharpCell.DateGrouping.md) | How much of a [FilterDate](SharpCell.FilterDate.md) counts: a year, a month, a day, down to a second. |
 | [DateSystem](SharpCell.DateSystem.md) | The workbook's date system: which day serial number 0 or 1 stands for. |
 | [DefinedName](SharpCell.DefinedName.md) | A defined name as [Workbook.DefinedNames](SharpCell.Workbook.md#definednames) lists it. |
 | [DeleteShift](SharpCell.DeleteShift.md) | Which cells take the place of deleted cells, as in Excel's Delete dialog. |
 | [DiagnosticKind](SharpCell.DiagnosticKind.md) | What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports. |
+| [DynamicFilter](SharpCell.DynamicFilter.md) | The rows a [ColumnFilterType.Dynamic](SharpCell.ColumnFilterType.md#dynamic) filter shows: around the average, or dates around today. |
 | [ErrorKind](SharpCell.ErrorKind.md) | Excel error values. |
 | [ErrorKinds](SharpCell.ErrorKinds.md) | Conversion between [ErrorKind](SharpCell.ErrorKind.md) and its literal text (`#DIV/0!`). |
+| [FilterCondition](SharpCell.FilterCondition.md) | One condition of a [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) filter. |
+| [FilterDate](SharpCell.FilterDate.md) | A year, month, day (or hour, minute, second) a [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values) filter shows, as the date tree of Excel's filter menu checks it: `new FilterDate(DateGrouping.Month, 2024, 3)` is March 2024. |
+| [FilterOperator](SharpCell.FilterOperator.md) | How a [FilterCondition](SharpCell.FilterCondition.md) compares a cell with its value. |
 | [FormulaParseException](SharpCell.FormulaParseException.md) | Thrown when formula text cannot be parsed. |
 | [FunctionArguments](SharpCell.FunctionArguments.md) | The arguments of one call of a function added through [Workbook.Functions](SharpCell.Workbook.md#functions). |
 | [FunctionCollection](SharpCell.FunctionCollection.md) | The functions a workbook's formulas can call besides Excel's: add one with [FunctionCollection.Add](SharpCell.FunctionCollection.md#add-string-func-functionarguments-cellvalue-functionoptions), and formulas calling it by name (ignoring case) use it from the next calculation on. |

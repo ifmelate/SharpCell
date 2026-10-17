@@ -1401,6 +1401,117 @@ A function with status `not implemented` evaluates to `#NAME?`.
 
 ---
 
+<!-- page: api/SharpCell.AutoFilter.md -->
+
+# AutoFilter
+
+```csharp
+public sealed class AutoFilter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The filter of a sheet, Excel's Data > Filter: buttons in the first row of its range, and criteria on some of its columns that hide the rows below not meeting them. Turn it on with [Worksheet.SetAutoFilter](SharpCell.Worksheet.md#setautofilter-string).
+
+## Properties
+
+<a id="columns"></a>
+### Columns
+
+```csharp
+public IReadOnlyDictionary<int, ColumnFilter> Columns { get; }
+```
+
+The criteria by sheet column (A is 1), in column order.
+
+<a id="range"></a>
+### Range
+
+```csharp
+public CellRange Range { get; }
+```
+
+The filtered range, its first row holding the buttons.
+
+<a id="worksheet"></a>
+### Worksheet
+
+```csharp
+public Worksheet Worksheet { get; }
+```
+
+The sheet the filter is on.
+
+## Methods
+
+<a id="apply"></a>
+### Apply()
+
+```csharp
+public void Apply()
+```
+
+Applies the criteria again, as Excel's Reapply does after the data changed: each row of the range below its first row shows when it meets the criteria of every column, and hides otherwise, whether or not it was hidden before. Formulas out of date in the range are calculated first.
+
+**Exceptions**
+
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+- `NotSupportedException`: A column filters by colour, which SharpCell cannot apply.
+
+<a id="clear"></a>
+### Clear()
+
+```csharp
+public void Clear()
+```
+
+Takes the criteria off every column, showing every row of the range, as Excel's Clear does. The buttons stay.
+
+**Exceptions**
+
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+
+<a id="clear-int"></a>
+### Clear(int)
+
+```csharp
+public void Clear(int column)
+```
+
+Takes the criteria off a column and applies the filter again.
+
+**Parameters**
+
+- `column`: The sheet column (A is 1), inside the range.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the range.
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+- `NotSupportedException`: Another column filters by colour, which SharpCell cannot apply.
+
+<a id="filter-int-columnfilter"></a>
+### Filter(int, ColumnFilter)
+
+```csharp
+public void Filter(int column, ColumnFilter filter)
+```
+
+Filters a column and applies the filter at once, as choosing criteria in Excel's menu does: rows of the range below its first row show when they meet the criteria of every column, and hide otherwise. Formulas out of date in the range are calculated first.
+
+**Parameters**
+
+- `column`: The sheet column (A is 1), inside the range.
+- `filter`: The criteria, replacing the column's.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the range.
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+- `NotSupportedException`: Another column filters by colour, which SharpCell cannot apply.
+
+---
+
 <!-- page: api/SharpCell.CalculationDiagnostic.md -->
 
 # CalculationDiagnostic
@@ -2698,6 +2809,290 @@ Where a cell's text sits from top to bottom of the cell.
 
 ---
 
+<!-- page: api/SharpCell.ColumnFilter.md -->
+
+# ColumnFilter
+
+```csharp
+public sealed class ColumnFilter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a column of an [AutoFilter](SharpCell.AutoFilter.md) shows. Make one with a factory such as [ColumnFilter.OneOf](SharpCell.ColumnFilter.md#oneof-string), [ColumnFilter.Custom](SharpCell.ColumnFilter.md#custom-filteroperator-string) or [ColumnFilter.Top](SharpCell.ColumnFilter.md#top-double-bool), and give it to [AutoFilter.Filter](SharpCell.AutoFilter.md#filter-int-columnfilter).
+
+## Properties
+
+<a id="blanks"></a>
+### Blanks
+
+```csharp
+public bool Blanks { get; init; }
+```
+
+For [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values): whether empty cells show too, the menu's (Blanks).
+
+<a id="conditions"></a>
+### Conditions
+
+```csharp
+public IReadOnlyList<FilterCondition> Conditions { get; }
+```
+
+For [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom): the conditions, one or two.
+
+<a id="count"></a>
+### Count
+
+```csharp
+public double Count { get; }
+```
+
+For [ColumnFilterType.Top](SharpCell.ColumnFilterType.md#top) and [ColumnFilterType.Bottom](SharpCell.ColumnFilterType.md#bottom): how many rows, or what percent of them.
+
+<a id="dates"></a>
+### Dates
+
+```csharp
+public IReadOnlyList<FilterDate> Dates { get; init; }
+```
+
+For [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values): the years, months or days of the dates shown.
+
+<a id="dynamic"></a>
+### Dynamic
+
+```csharp
+public DynamicFilter Dynamic { get; }
+```
+
+For [ColumnFilterType.Dynamic](SharpCell.ColumnFilterType.md#dynamic): the rows shown.
+
+<a id="matchall"></a>
+### MatchAll
+
+```csharp
+public bool MatchAll { get; }
+```
+
+For [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) with two conditions: whether a row must meet both (And) or one (Or).
+
+<a id="percent"></a>
+### Percent
+
+```csharp
+public bool Percent { get; }
+```
+
+For [ColumnFilterType.Top](SharpCell.ColumnFilterType.md#top) and [ColumnFilterType.Bottom](SharpCell.ColumnFilterType.md#bottom): whether [ColumnFilter.Count](SharpCell.ColumnFilter.md#count) is a percent.
+
+<a id="type"></a>
+### Type
+
+```csharp
+public ColumnFilterType Type { get; }
+```
+
+What the filter looks at.
+
+<a id="values"></a>
+### Values
+
+```csharp
+public IReadOnlyList<string> Values { get; init; }
+```
+
+For [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values): the texts shown, as the cells display them, ignoring case.
+
+## Methods
+
+<a id="beginswith-string"></a>
+### BeginsWith(string)
+
+```csharp
+public static ColumnFilter BeginsWith(string text)
+```
+
+Rows whose cell begins with a text, ignoring case: Text Filters > Begins With.
+
+<a id="blank"></a>
+### Blank()
+
+```csharp
+public static ColumnFilter Blank()
+```
+
+Rows whose cell is empty, the menu's (Blanks) alone.
+
+<a id="bottom-double-bool"></a>
+### Bottom(double, bool)
+
+```csharp
+public static ColumnFilter Bottom(double count, bool percent = false)
+```
+
+The rows with the lowest numbers.
+
+**Parameters**
+
+- `count`: How many rows, 1 to 500, or with `percent` what percent of the rows with numbers, 1 to 100.
+- `percent`: Whether the count is a percent.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is outside what Excel allows.
+
+<a id="contains-string"></a>
+### Contains(string)
+
+```csharp
+public static ColumnFilter Contains(string text)
+```
+
+Rows whose cell contains a text, ignoring case.
+
+<a id="custom-filtercondition-filtercondition-bool"></a>
+### Custom(FilterCondition, FilterCondition, bool)
+
+```csharp
+public static ColumnFilter Custom(FilterCondition first, FilterCondition second, bool matchAll)
+```
+
+Rows whose cell meets both conditions (`matchAll`) or either of them.
+
+**Exceptions**
+
+- `ArgumentException`: An operator is not one of [FilterOperator](SharpCell.FilterOperator.md)'s.
+
+<a id="custom-filteroperator-string"></a>
+### Custom(FilterOperator, string)
+
+```csharp
+public static ColumnFilter Custom(FilterOperator operator, string value)
+```
+
+Rows whose cell meets a condition, such as `Custom(FilterOperator.GreaterThan, "100")`.
+
+**Exceptions**
+
+- `ArgumentException`: The operator is not one of [FilterOperator](SharpCell.FilterOperator.md)'s.
+
+<a id="doesnotcontain-string"></a>
+### DoesNotContain(string)
+
+```csharp
+public static ColumnFilter DoesNotContain(string text)
+```
+
+Rows whose cell does not contain a text, ignoring case.
+
+<a id="endswith-string"></a>
+### EndsWith(string)
+
+```csharp
+public static ColumnFilter EndsWith(string text)
+```
+
+Rows whose cell ends with a text, ignoring case.
+
+<a id="equals-columnfilter"></a>
+### Equals(ColumnFilter)
+
+```csharp
+public bool Equals(ColumnFilter? other)
+```
+
+Whether two filters pick the same rows the same way: their values and dates in the same order.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code agreeing with [ColumnFilter.Equals](SharpCell.ColumnFilter.md#equals-columnfilter).
+
+<a id="of-dynamicfilter"></a>
+### Of(DynamicFilter)
+
+```csharp
+public static ColumnFilter Of(DynamicFilter dynamic)
+```
+
+The rows above or below the average, or with dates in a period around today.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not one of [DynamicFilter](SharpCell.DynamicFilter.md)'s.
+
+<a id="oneof-filterdate"></a>
+### OneOf(FilterDate[])
+
+```csharp
+public static ColumnFilter OneOf(params FilterDate[] dates)
+```
+
+Rows whose date falls in one of the years, months or days, as the menu's date tree picks them.
+
+<a id="oneof-string"></a>
+### OneOf(string[])
+
+```csharp
+public static ColumnFilter OneOf(params string[] values)
+```
+
+Rows whose cell shows one of the texts, as the menu's check boxes pick them.
+
+**Parameters**
+
+- `values`: The texts, as the cells display them (a number with its format, such as `1,250.00`), ignoring case.
+
+<a id="top-double-bool"></a>
+### Top(double, bool)
+
+```csharp
+public static ColumnFilter Top(double count, bool percent = false)
+```
+
+The rows with the highest numbers: Number Filters > Top 10.
+
+**Parameters**
+
+- `count`: How many rows, 1 to 500, or with `percent` what percent of the rows with numbers, 1 to 100.
+- `percent`: Whether the count is a percent.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is outside what Excel allows.
+
+---
+
+<!-- page: api/SharpCell.ColumnFilterType.md -->
+
+# ColumnFilterType
+
+```csharp
+public enum ColumnFilterType
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a column of an [AutoFilter](SharpCell.AutoFilter.md) picks the rows it shows, as Excel's filter menu offers it.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="values"></a>`Values` | 0 | Rows whose cell shows one of [ColumnFilter.Values](SharpCell.ColumnFilter.md#values) or [ColumnFilter.Dates](SharpCell.ColumnFilter.md#dates), or is blank when [ColumnFilter.Blanks](SharpCell.ColumnFilter.md#blanks): the menu's check boxes. |
+| <a id="custom"></a>`Custom` | 1 | Rows whose cell meets one or two conditions: Text Filters and Number Filters > Custom Filter. |
+| <a id="top"></a>`Top` | 2 | Rows with the highest numbers: Number Filters > Top 10. |
+| <a id="bottom"></a>`Bottom` | 3 | Rows with the lowest numbers. |
+| <a id="dynamic"></a>`Dynamic` | 4 | Rows above or below the average, or with dates in a period around today: [ColumnFilter.Dynamic](SharpCell.ColumnFilter.md#dynamic). |
+| <a id="bycolor"></a>`ByColor` | 5 | Filter by Color (a fill, a font colour or an icon), read from a file. SharpCell keeps it when saving but cannot apply it, since cell colours from conditional formats are not worked out. |
+
+---
+
 <!-- page: api/SharpCell.ConditionalFormat.md -->
 
 # ConditionalFormat
@@ -3561,6 +3956,31 @@ The type, the operator of a comparing type, and the formulas, such as `WholeNumb
 
 ---
 
+<!-- page: api/SharpCell.DateGrouping.md -->
+
+# DateGrouping
+
+```csharp
+public enum DateGrouping
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How much of a [FilterDate](SharpCell.FilterDate.md) counts: a year, a month, a day, down to a second.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="year"></a>`Year` | 0 | The whole year. |
+| <a id="month"></a>`Month` | 1 | The whole month. |
+| <a id="day"></a>`Day` | 2 | The whole day. |
+| <a id="hour"></a>`Hour` | 3 | The whole hour. |
+| <a id="minute"></a>`Minute` | 4 | The whole minute. |
+| <a id="second"></a>`Second` | 5 | The second. |
+
+---
+
 <!-- page: api/SharpCell.DateSystem.md -->
 
 # DateSystem
@@ -3682,6 +4102,59 @@ What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
 
 ---
 
+<!-- page: api/SharpCell.DynamicFilter.md -->
+
+# DynamicFilter
+
+```csharp
+public enum DynamicFilter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The rows a [ColumnFilterType.Dynamic](SharpCell.ColumnFilterType.md#dynamic) filter shows: around the average, or dates around today.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="aboveaverage"></a>`AboveAverage` | 0 | Numbers above the column's average. |
+| <a id="belowaverage"></a>`BelowAverage` | 1 | Numbers below the column's average. |
+| <a id="yesterday"></a>`Yesterday` | 2 | Dates yesterday. |
+| <a id="today"></a>`Today` | 3 | Dates today. |
+| <a id="tomorrow"></a>`Tomorrow` | 4 | Dates tomorrow. |
+| <a id="lastweek"></a>`LastWeek` | 5 | Dates in the week before this one, Sunday to Saturday. |
+| <a id="thisweek"></a>`ThisWeek` | 6 | Dates in this week, Sunday to Saturday. |
+| <a id="nextweek"></a>`NextWeek` | 7 | Dates in the week after this one. |
+| <a id="lastmonth"></a>`LastMonth` | 8 | Dates in the month before this one. |
+| <a id="thismonth"></a>`ThisMonth` | 9 | Dates in this month. |
+| <a id="nextmonth"></a>`NextMonth` | 10 | Dates in the month after this one. |
+| <a id="lastquarter"></a>`LastQuarter` | 11 | Dates in the quarter before this one. |
+| <a id="thisquarter"></a>`ThisQuarter` | 12 | Dates in this quarter. |
+| <a id="nextquarter"></a>`NextQuarter` | 13 | Dates in the quarter after this one. |
+| <a id="lastyear"></a>`LastYear` | 14 | Dates in the year before this one. |
+| <a id="thisyear"></a>`ThisYear` | 15 | Dates in this year. |
+| <a id="nextyear"></a>`NextYear` | 16 | Dates in the year after this one. |
+| <a id="yeartodate"></a>`YearToDate` | 17 | Dates from the first of January to today. |
+| <a id="quarter1"></a>`Quarter1` | 18 | Dates in January to March of any year. |
+| <a id="quarter2"></a>`Quarter2` | 19 | Dates in April to June of any year. |
+| <a id="quarter3"></a>`Quarter3` | 20 | Dates in July to September of any year. |
+| <a id="quarter4"></a>`Quarter4` | 21 | Dates in October to December of any year. |
+| <a id="january"></a>`January` | 22 | Dates in January of any year. |
+| <a id="february"></a>`February` | 23 | Dates in February of any year. |
+| <a id="march"></a>`March` | 24 | Dates in March of any year. |
+| <a id="april"></a>`April` | 25 | Dates in April of any year. |
+| <a id="may"></a>`May` | 26 | Dates in May of any year. |
+| <a id="june"></a>`June` | 27 | Dates in June of any year. |
+| <a id="july"></a>`July` | 28 | Dates in July of any year. |
+| <a id="august"></a>`August` | 29 | Dates in August of any year. |
+| <a id="september"></a>`September` | 30 | Dates in September of any year. |
+| <a id="october"></a>`October` | 31 | Dates in October of any year. |
+| <a id="november"></a>`November` | 32 | Dates in November of any year. |
+| <a id="december"></a>`December` | 33 | Dates in December of any year. |
+
+---
+
 <!-- page: api/SharpCell.ErrorKind.md -->
 
 # ErrorKind
@@ -3741,6 +4214,192 @@ public static bool TryParse(ReadOnlySpan<char> text, out ErrorKind kind)
 ```
 
 Parses an error literal, ignoring case. The whole span must be the literal.
+
+---
+
+<!-- page: api/SharpCell.FilterCondition.md -->
+
+# FilterCondition
+
+```csharp
+public readonly struct FilterCondition
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+One condition of a [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) filter.
+
+## Constructors
+
+<a id="ctor-filteroperator-string"></a>
+### FilterCondition(FilterOperator, string)
+
+```csharp
+public FilterCondition(FilterOperator Operator, string Value)
+```
+
+One condition of a [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) filter.
+
+**Parameters**
+
+- `Operator`: How the cell is compared.
+- `Value`: A number written with `.` for decimals (dates as serial numbers), or a text.
+
+## Properties
+
+<a id="operator"></a>
+### Operator
+
+```csharp
+public FilterOperator Operator { get; init; }
+```
+
+How the cell is compared.
+
+<a id="value"></a>
+### Value
+
+```csharp
+public string Value { get; init; }
+```
+
+A number written with `.` for decimals (dates as serial numbers), or a text.
+
+---
+
+<!-- page: api/SharpCell.FilterDate.md -->
+
+# FilterDate
+
+```csharp
+public readonly struct FilterDate
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A year, month, day (or hour, minute, second) a [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values) filter shows, as the date tree of Excel's filter menu checks it: `new FilterDate(DateGrouping.Month, 2024, 3)` is March 2024. Parts finer than the grouping are left out.
+
+## Constructors
+
+<a id="ctor-dategrouping-int-int-int-int-int-int"></a>
+### FilterDate(DateGrouping, int, int, int, int, int, int)
+
+```csharp
+public FilterDate(DateGrouping Grouping, int Year, int Month = 1, int Day = 1, int Hour = 0, int Minute = 0, int Second = 0)
+```
+
+A year, month, day (or hour, minute, second) a [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values) filter shows, as the date tree of Excel's filter menu checks it: `new FilterDate(DateGrouping.Month, 2024, 3)` is March 2024. Parts finer than the grouping are left out.
+
+**Parameters**
+
+- `Grouping`: How much of the date counts.
+- `Year`: The year.
+- `Month`: The month, 1 to 12.
+- `Day`: The day of the month.
+- `Hour`: The hour, 0 to 23.
+- `Minute`: The minute.
+- `Second`: The second.
+
+## Properties
+
+<a id="day"></a>
+### Day
+
+```csharp
+public int Day { get; init; }
+```
+
+The day of the month.
+
+<a id="grouping"></a>
+### Grouping
+
+```csharp
+public DateGrouping Grouping { get; init; }
+```
+
+How much of the date counts.
+
+<a id="hour"></a>
+### Hour
+
+```csharp
+public int Hour { get; init; }
+```
+
+The hour, 0 to 23.
+
+<a id="minute"></a>
+### Minute
+
+```csharp
+public int Minute { get; init; }
+```
+
+The minute.
+
+<a id="month"></a>
+### Month
+
+```csharp
+public int Month { get; init; }
+```
+
+The month, 1 to 12.
+
+<a id="second"></a>
+### Second
+
+```csharp
+public int Second { get; init; }
+```
+
+The second.
+
+<a id="year"></a>
+### Year
+
+```csharp
+public int Year { get; init; }
+```
+
+The year.
+
+## Methods
+
+<a id="contains-datetime"></a>
+### Contains(DateTime)
+
+```csharp
+public bool Contains(DateTime value)
+```
+
+Whether a date and time falls in this year, month, day, hour, minute or second.
+
+---
+
+<!-- page: api/SharpCell.FilterOperator.md -->
+
+# FilterOperator
+
+```csharp
+public enum FilterOperator
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a [FilterCondition](SharpCell.FilterCondition.md) compares a cell with its value.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="equal"></a>`Equal` | 0 | The cell shows the value, ignoring case; `*` and `?` are wildcards, `~` escapes them. |
+| <a id="notequal"></a>`NotEqual` | 1 | The cell does not show the value. |
+| <a id="greaterthan"></a>`GreaterThan` | 2 | Greater than the value: a number than a number, a text than a text. |
+| <a id="greaterthanorequal"></a>`GreaterThanOrEqual` | 3 | Greater than or equal to the value. |
+| <a id="lessthan"></a>`LessThan` | 4 | Less than the value. |
+| <a id="lessthanorequal"></a>`LessThanOrEqual` | 5 | Less than or equal to the value. |
 
 ---
 
@@ -5291,6 +5950,15 @@ A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never se
 
 ## Properties
 
+<a id="autofilter"></a>
+### AutoFilter
+
+```csharp
+public AutoFilter? AutoFilter { get; }
+```
+
+The sheet's filter, Excel's Data > Filter; null when it has none. Tables have filters of their own, which this is not.
+
 <a id="cells"></a>
 ### Cells
 
@@ -5943,6 +6611,19 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
 
+<a id="removeautofilter"></a>
+### RemoveAutoFilter()
+
+```csharp
+public void RemoveAutoFilter()
+```
+
+Turns the sheet's filter off, as clicking Excel's Filter again does: the rows it hid show, and the sheet is no longer in [Worksheet.FilterMode](SharpCell.Worksheet.md#filtermode). Nothing happens without a filter.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="removecolumnpagebreak-int"></a>
 ### RemoveColumnPageBreak(int)
 
@@ -5981,6 +6662,24 @@ A row's own height in points; null when it has none.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setautofilter-string"></a>
+### SetAutoFilter(string)
+
+```csharp
+public AutoFilter SetAutoFilter(string range)
+```
+
+Turns on Excel's filter for a range, its first row holding the buttons, and returns it to filter columns with. A filter the sheet had is removed first, showing the rows it hid.
+
+**Parameters**
+
+- `range`: An A1 range on this sheet with at least two rows, such as `A1:D20`; whole columns such as `A:D` are filtered down to the last row with something in it.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not such a range, or the range overlaps a table.
+- `InvalidOperationException`: The sheet was removed.
 
 <a id="setcolumnhidden-int-bool"></a>
 ### SetColumnHidden(int, bool)

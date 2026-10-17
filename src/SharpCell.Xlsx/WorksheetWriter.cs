@@ -44,6 +44,7 @@ internal sealed class WorksheetWriter
     private readonly bool _defaultsChanged;
     private readonly bool _filterChanged;
     private readonly bool _tabColorChanged;
+    private readonly bool _autoFilterChanged;
 
     // The data validation rules are written from the model when they changed, and always on a sheet
     // whose rows or columns moved: the model's rules have followed the edits, so the file's element is
@@ -127,6 +128,9 @@ internal sealed class WorksheetWriter
         _defaultsChanged = _look.DefaultsChanged(sheet);
         _filterChanged = _look.FilterChanged(sheet);
         _tabColorChanged = _look.TabColorChanged(sheet);
+        _autoFilterChanged = _look.AutoFilterChanged(sheet);
+        if (_autoFilterChanged && sheet.AutoFilter is not null)
+            _pending.Add("autoFilter");
         _validationsChanged = _shifted || _look.ValidationsChanged(sheet);
         _protectionChanged = _look.ProtectionChanged(sheet);
         _conditionalFormatsChanged = _look.ConditionalFormatsChanged(sheet);
@@ -234,6 +238,15 @@ internal sealed class WorksheetWriter
 
                 switch (name)
                 {
+                    case "autoFilter" when _autoFilterChanged:
+                    {
+                        _pending.Remove(name);
+                        _changed = true;
+                        var filter = (XElement)XNode.ReadFrom(reader);
+                        Build(name, _shifted ? Shifted(filter) : filter)?.WriteTo(writer);
+                        break;
+                    }
+
                     case "dimension":
                         Dimension((XElement)XNode.ReadFrom(reader)).WriteTo(writer);
                         break;
@@ -320,6 +333,7 @@ internal sealed class WorksheetWriter
     private XElement? Build(string name, XElement? source) => name switch
     {
         "sheetPr" => SheetProperties(source),
+        "autoFilter" => FilterElements.Element(_ns, _sheet, source),
         "sheetViews" when _shifted => Shifted(SheetViews(source)),
         "sheetViews" => SheetViews(source),
         "sheetFormatPr" => SheetFormat(source),

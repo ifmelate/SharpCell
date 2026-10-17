@@ -289,6 +289,7 @@ public sealed partial class Worksheet
         _filterMode = source._filterMode;
         _visibility = source._visibility;
         _tabColor = source._tabColor;
+        AutoFilter = source.AutoFilter?.CopyFor(this);
         _edits.AddRange(source._edits);
         CopyPresentationFrom(source);
         CopyPrintingFrom(source);
