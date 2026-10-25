@@ -90,7 +90,10 @@ internal readonly struct ValueGrid
         return context.ReadCell(_sheet, _area.FirstRow + row, _area.FirstColumn + column);
     }
 
-    /// <summary>Positions (row, column offsets) where the grid may hold something other than empty.</summary>
+    /// <summary>
+    /// Positions (row, column offsets) where the grid may hold something other than empty; used by
+    /// the database, distribution test and array math functions.
+    /// </summary>
     public void AddOccupied(HashSet<(int, int)> positions)
     {
         if (_sheet is null)
@@ -107,6 +110,25 @@ internal readonly struct ValueGrid
         foreach (var cell in _sheet.Store.Enumerate(_area.FirstRow, _area.FirstColumn, _area.LastRow, _area.LastColumn))
             positions.Add((cell.Row - _area.FirstRow, cell.Column - _area.FirstColumn));
     }
+
+    /// <summary>
+    /// An array, a scalar, or a reference with no more positions than its sheet has cells, so
+    /// walking every position costs no more than walking the sheet.
+    /// </summary>
+    public bool IsNoLargerThanItsSheet => _sheet is null || (long)Rows * Columns <= _sheet.Store.Count;
+
+    /// <summary>
+    /// The cells a reference holds, row by row, columns ascending; null for an array or a scalar,
+    /// which hold a value at every position.
+    /// </summary>
+    public IEnumerator<StoredCell>? StoredCells() =>
+        _sheet?.Store.Enumerate(_area.FirstRow, _area.FirstColumn, _area.LastRow, _area.LastColumn).GetEnumerator();
+
+    /// <summary>Reads a cell of <see cref="StoredCells"/> through the evaluation context (dirty cells, dependencies).</summary>
+    public CellValue Read(StoredCell cell, EvaluationContext context) => context.ReadCell(_sheet!, cell);
+
+    /// <summary>The row and column offsets of a cell of <see cref="StoredCells"/>.</summary>
+    public (int Row, int Column) OffsetOf(StoredCell cell) => (cell.Row - _area.FirstRow, cell.Column - _area.FirstColumn);
 }
 
 /// <summary>
@@ -119,19 +141,21 @@ internal static class Conditional
 
     /// <summary>
     /// Calls <paramref name="match"/> with the target value (or Empty without a target) at every
-    /// position where all criteria hold. Positions where every range is empty are not visited one
-    /// by one: their number is passed to <paramref name="emptyMatches"/> if empty cells meet all
-    /// criteria. Ranges of different shapes are <c>#VALUE!</c>.
+    /// position where all criteria hold, row by row, columns ascending. Positions where every range
+    /// is empty are not visited one by one when empty cells meet all criteria: their number is
+    /// passed to <paramref name="emptyMatches"/>. Ranges of different shapes are <c>#VALUE!</c>.
     /// </summary>
     /// <returns>Null, or the error to return.</returns>
     public static CellValue? Visit(FunctionCall call, IReadOnlyList<(ValueGrid Range, Criterion Criterion)> conditions,
         ValueGrid? target, Action<CellValue> match, Action<long> emptyMatches)
     {
         var context = call.Context;
+        var count = conditions.Count;
         var rows = conditions[0].Range.Rows;
         var columns = conditions[0].Range.Columns;
-        foreach (var (range, _) in conditions)
+        for (var i = 0; i < count; i++)
         {
+            var range = conditions[i].Range;
             if (range.Rows != rows || range.Columns != columns)
                 return CellValue.Error(ErrorKind.Value);
         }
@@ -139,45 +163,209 @@ internal static class Conditional
         if (target is { } t && (t.Rows != rows || t.Columns != columns))
             return CellValue.Error(ErrorKind.Value);
 
-        var occupied = new HashSet<(int, int)>();
-        foreach (var (range, _) in conditions)
-            range.AddOccupied(occupied);
-        target?.AddOccupied(occupied);
-
-        // Row by row, so sums add up in the order Excel adds them.
-        var positions = new List<(int Row, int Column)>(occupied);
-        positions.Sort();
-        var visited = 0;
-        var emptyCandidates = (long)rows * columns - positions.Count;
-        foreach (var (row, column) in positions)
+        var criteria = new Criterion[count];
+        var allMatchEmpty = true;
+        var small = true;
+        for (var i = 0; i < count; i++)
         {
-            if (++visited % CancellationCheckInterval == 0)
-                context.CancellationToken.ThrowIfCancellationRequested();
+            criteria[i] = conditions[i].Criterion;
+            allMatchEmpty &= criteria[i].MatchesEmpty;
+            small &= conditions[i].Range.IsNoLargerThanItsSheet;
+        }
 
-            var all = true;
-            foreach (var (range, criterion) in conditions)
+        // When some criterion fails on empty, a position where every range is empty never matches,
+        // so visiting it changes nothing. Ranges no larger than their sheets are then cheaper to
+        // walk position by position, reading a range only when the criteria before it held.
+        if (!allMatchEmpty && small)
+        {
+            VisitEvery(context, conditions, criteria, target, match);
+            return null;
+        }
+
+        var emptyCandidates = (long)rows * columns - VisitStored(context, conditions, criteria, target, match);
+        if (emptyCandidates > 0 && allMatchEmpty)
+            emptyMatches(emptyCandidates);
+        return null;
+    }
+
+    private static void VisitEvery(EvaluationContext context, IReadOnlyList<(ValueGrid Range, Criterion Criterion)> conditions,
+        Criterion[] criteria, ValueGrid? target, Action<CellValue> match)
+    {
+        var grids = new ValueGrid[criteria.Length];
+        for (var i = 0; i < grids.Length; i++)
+            grids[i] = conditions[i].Range;
+
+        var rows = grids[0].Rows;
+        var columns = grids[0].Columns;
+        var visited = 0L;
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
             {
-                if (!criterion.Matches(range.Get(row, column, context)))
+                if (++visited % CancellationCheckInterval == 0)
+                    context.CancellationToken.ThrowIfCancellationRequested();
+
+                var all = true;
+                for (var i = 0; i < grids.Length; i++)
                 {
-                    all = false;
-                    break;
+                    if (!criteria[i].Matches(grids[i].Get(row, column, context)))
+                    {
+                        all = false;
+                        break;
+                    }
+                }
+
+                if (all)
+                    match(target is { } values ? values.Get(row, column, context) : CellValue.Empty);
+            }
+        }
+    }
+
+    // The positions where some range holds a cell, row by row; returns how many there were.
+    private static long VisitStored(EvaluationContext context, IReadOnlyList<(ValueGrid Range, Criterion Criterion)> conditions,
+        Criterion[] criteria, ValueGrid? target, Action<CellValue> match)
+    {
+        // One cursor per range, the target last. Each walks its own stored cells in order, so the
+        // positions where any range holds a cell come out merged, row by row, as Excel adds them.
+        var count = criteria.Length;
+        var columns = conditions[0].Range.Columns;
+        var cursors = new Cursor[target is null ? count : count + 1];
+        long visited = 0;
+        try
+        {
+            for (var i = 0; i < count; i++)
+                cursors[i] = new Cursor(conditions[i].Range, columns);
+            if (target is { } values)
+                cursors[count] = new Cursor(values, columns);
+
+            while (true)
+            {
+                var key = Cursor.End;
+                int row = 0, column = 0;
+                for (var i = 0; i < cursors.Length; i++)
+                {
+                    ref var cursor = ref cursors[i];
+                    if (cursor.Key < key)
+                    {
+                        key = cursor.Key;
+                        row = cursor.Row;
+                        column = cursor.Column;
+                    }
+                }
+
+                if (key == Cursor.End)
+                    return visited;
+                if (++visited % CancellationCheckInterval == 0)
+                    context.CancellationToken.ThrowIfCancellationRequested();
+
+                var all = true;
+                for (var i = 0; i < count; i++)
+                {
+                    if (!criteria[i].Matches(cursors[i].ValueAt(key, row, column, context)))
+                    {
+                        all = false;
+                        break;
+                    }
+                }
+
+                if (all)
+                    match(target is null ? CellValue.Empty : cursors[count].ValueAt(key, row, column, context));
+
+                for (var i = 0; i < cursors.Length; i++)
+                {
+                    ref var cursor = ref cursors[i];
+                    if (cursor.Key == key)
+                        cursor.Advance();
                 }
             }
-
-            if (all)
-                match(target is { } values ? values.Get(row, column, context) : CellValue.Empty);
         }
-
-        if (emptyCandidates > 0)
+        finally
         {
-            var allEmpty = true;
-            foreach (var (_, criterion) in conditions)
-                allEmpty &= criterion.MatchesEmpty;
-            if (allEmpty)
-                emptyMatches(emptyCandidates);
+            foreach (var cursor in cursors)
+                cursor.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Walks the positions where a grid may hold something other than empty, row by row, columns
+    /// ascending: the stored cells of a reference, every position of an array or a scalar.
+    /// </summary>
+    private struct Cursor
+    {
+        /// <summary>The key of a cursor that has passed its last position.</summary>
+        public const long End = long.MaxValue;
+
+        private readonly ValueGrid _grid;
+        private readonly IEnumerator<StoredCell>? _cells;
+        private readonly int _columns;
+        private readonly long _positions;
+        private StoredCell _cell;
+
+        public Cursor(ValueGrid grid, int columns)
+        {
+            _grid = grid;
+            _columns = columns;
+            _positions = (long)grid.Rows * columns;
+            _cells = grid.StoredCells();
+            if (_cells is null)
+                Key = _positions > 0 ? 0 : End;
+            else
+                Next();
         }
 
-        return null;
+        /// <summary>The current position, row offset times the width plus column offset; <see cref="End"/> when done.</summary>
+        public long Key { get; private set; }
+
+        public int Row { get; private set; }
+
+        public int Column { get; private set; }
+
+        /// <summary>The value at <paramref name="key"/>: the current cell if the cursor is there, otherwise empty.</summary>
+        public readonly CellValue ValueAt(long key, int row, int column, EvaluationContext context)
+        {
+            if (Key != key)
+                return CellValue.Empty;
+            return _cells is null ? _grid.Get(row, column, context) : _grid.Read(_cell, context);
+        }
+
+        public void Advance()
+        {
+            if (_cells is not null)
+            {
+                Next();
+                return;
+            }
+
+            if (Key + 1 >= _positions)
+            {
+                Key = End;
+                return;
+            }
+
+            Key++;
+            if (++Column == _columns)
+            {
+                Column = 0;
+                Row++;
+            }
+        }
+
+        public readonly void Dispose() => _cells?.Dispose();
+
+        private void Next()
+        {
+            if (!_cells!.MoveNext())
+            {
+                Key = End;
+                return;
+            }
+
+            _cell = _cells.Current;
+            var (row, column) = _grid.OffsetOf(_cell);
+            Row = row;
+            Column = column;
+            Key = (long)row * _columns + column;
+        }
     }
 
     /// <summary>Reads (range, criterion) pairs from the arguments starting at <paramref name="first"/>.</summary>
