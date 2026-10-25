@@ -46,7 +46,7 @@ public sealed partial class Worksheet
         var (formula1, formula2) = format.HasFormulas
             ? (FormulaParser.Parse(format.Formula1!, origin), format.Formula2 is { } second ? FormulaParser.Parse(second, origin) : null)
             : (Condition(format, origin) is { } condition ? FormulaParser.Parse(condition, origin) : null, null);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         _conditionalFormats.Add(new ConditionalRule(areas, format, formula1, formula2));
     }
 
@@ -61,7 +61,7 @@ public sealed partial class Worksheet
     public void ClearConditionalFormats(string range)
     {
         var areas = Areas(range);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         var rules = new List<ConditionalRule>(_conditionalFormats);
         foreach (var area in areas)
             rules = Without(rules, area);
@@ -71,7 +71,7 @@ public sealed partial class Worksheet
     /// <summary>Removes every conditional format of the sheet, as Excel's Clear Rules from Entire Sheet does.</summary>
     public void ClearConditionalFormats()
     {
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         _conditionalFormats.Clear();
     }
 
@@ -314,6 +314,21 @@ public sealed partial class Worksheet
         }
 
         return rules;
+    }
+
+    /// <summary>The rules' formulas rewritten, for a sheet renamed or removed.</summary>
+    internal void RewriteConditionalFormulas(Func<FormulaNode, FormulaNode> rewrite)
+    {
+        for (var i = 0; i < _conditionalFormats.Count; i++)
+        {
+            var rule = _conditionalFormats[i];
+            var f1 = rule.F1 is null ? null : rewrite(rule.F1);
+            var f2 = rule.F2 is null ? null : rewrite(rule.F2);
+            if (f1 == rule.F1 && f2 == rule.F2)
+                continue;
+            var rewritten = rule with { F1 = f1, F2 = f2 };
+            _conditionalFormats[i] = rewritten with { Format = PrintedAt(rewritten, rule.Origin) };
+        }
     }
 
     // The rule's formulas written for another first cell: relative references are offsets, so the

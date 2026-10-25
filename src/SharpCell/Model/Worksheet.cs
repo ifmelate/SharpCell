@@ -16,14 +16,80 @@ public sealed partial class Worksheet
     internal Worksheet(Workbook workbook, string name)
     {
         Workbook = workbook;
-        Name = name;
+        _name = name;
     }
 
-    /// <summary>The workbook the sheet belongs to.</summary>
+    /// <summary>The workbook the sheet belongs to, also after <see cref="SharpCell.Workbook.RemoveSheet"/> took it out.</summary>
     public Workbook Workbook { get; }
 
-    /// <summary>The sheet name.</summary>
-    public string Name { get; }
+    private string _name;
+
+    /// <summary>
+    /// The sheet name. Renaming a sheet renames it in every formula that refers to it, as Excel
+    /// does: in cells of every sheet, defined names, data validation and conditional formats. Text
+    /// inside INDIRECT and hyperlinks into the sheet keep the old name, as in Excel. Every formula is
+    /// calculated again at the next <see cref="Workbook.Recalculate"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">The name is not a valid sheet name, or another sheet has it, ignoring case.</exception>
+    /// <exception cref="NotSupportedException">A formula naming the sheet cannot be read by SharpCell (such as a link
+    /// to another workbook), so it could not follow the new name.</exception>
+    /// <exception cref="InvalidOperationException">The sheet was removed from its workbook.</exception>
+    public string Name
+    {
+        get => _name;
+        set => Workbook.RenameSheet(this, value);
+    }
+
+    internal void SetName(string name) => _name = name;
+
+    /// <summary>Whether <see cref="SharpCell.Workbook.RemoveSheet"/> took the sheet out of its workbook; it can then be read but not changed.</summary>
+    public bool IsRemoved { get; internal set; }
+
+    /// <summary>Throws when the sheet cannot change: it was removed, or a custom function is running.</summary>
+    internal void ThrowIfCannotChange()
+    {
+        if (IsRemoved)
+            throw new InvalidOperationException($"Sheet '{Name}' was removed from its workbook and cannot change.");
+        Workbook.ThrowIfInCustomFunction();
+    }
+
+    /// <summary>
+    /// Whether the sheet's tab shows in Excel. A workbook keeps at least one visible sheet, as in
+    /// Excel. Hidden sheets are calculated and saved like any other.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Hiding the workbook's last visible sheet, or the sheet was removed.</exception>
+    public SheetVisibility Visibility
+    {
+        get => _visibility;
+        set
+        {
+            if (value is < SheetVisibility.Visible or > SheetVisibility.VeryHidden)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Not a sheet visibility.");
+            ThrowIfCannotChange();
+            if (value != SheetVisibility.Visible && _visibility == SheetVisibility.Visible && Workbook.VisibleSheets() == 1)
+                throw new InvalidOperationException("A workbook must keep at least one visible sheet.");
+            _visibility = value;
+        }
+    }
+
+    private SheetVisibility _visibility;
+
+    /// <summary>Sets the visibility as a file has it, for the reader.</summary>
+    internal void SetVisibility(SheetVisibility visibility) => _visibility = visibility;
+
+    /// <summary>The colour of the sheet's tab; null for none.</summary>
+    /// <exception cref="InvalidOperationException">The sheet was removed.</exception>
+    public CellColor? TabColor
+    {
+        get => _tabColor;
+        set
+        {
+            ThrowIfCannotChange();
+            _tabColor = value;
+        }
+    }
+
+    private CellColor? _tabColor;
 
     internal SheetStore Store { get; } = new();
 
@@ -93,7 +159,7 @@ public sealed partial class Worksheet
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(range);
         // Before HeaderText, which may calculate.
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         // A single cell is a table of one data cell, without a header row.
         if (!ReferenceSyntax.TryParseA1Area(range, new CellAddress(1, 1), out var parsed) || parsed.Kind is not (AreaKind.Range or AreaKind.Cell))
             throw new ArgumentException($"'{range}' is not a range such as A1:D10.", nameof(range));
@@ -189,7 +255,7 @@ public sealed partial class Worksheet
     public void SetRowHidden(int row, bool hidden)
     {
         CheckRow(row);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         if (hidden)
             _hiddenRows.Add(row);
         else
@@ -206,7 +272,7 @@ public sealed partial class Worksheet
         get => _filterMode;
         set
         {
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _filterMode = value;
         }
     }
@@ -221,6 +287,9 @@ public sealed partial class Worksheet
         foreach (var (address, format) in source._formats)
             _formats.Add(address, format);
         _filterMode = source._filterMode;
+        _visibility = source._visibility;
+        _tabColor = source._tabColor;
+        AutoFilter = source.AutoFilter?.CopyFor(this);
         _edits.AddRange(source._edits);
         CopyPresentationFrom(source);
         CopyPrintingFrom(source);

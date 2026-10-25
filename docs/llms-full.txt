@@ -651,6 +651,168 @@ defined, spelled as they were defined. It is a snapshot: names defined later are
 
 ---
 
+<!-- page: guides/sheets.md -->
+
+# Sheets, filters and sorting
+
+Renaming, removing, moving and hiding sheets; Excel's filter; sorting a range. Formulas follow each
+change as they do in Excel.
+
+## Managing sheets
+
+```csharp snippet=sheets-manage
+data.Name = "Data 2025";             // Summary!A1 is now ='Data 2025'!A1*2
+workbook.MoveSheet(data, 0);         // Data 2025 comes first
+workbook.RemoveSheet(draft);         // formulas reading Draft get #REF!
+data.Visibility = SheetVisibility.Hidden;
+summary.TabColor = CellColor.FromRgb(0x2E75B6);
+workbook.Recalculate();
+```
+
+Setting `Worksheet.Name` renames the sheet in every formula that refers to it: in cells of every
+sheet, defined names, data validation and conditional formats, quoting the name when it needs it.
+Text inside `INDIRECT` and the targets of hyperlinks keep the old name, as in Excel. A name another
+sheet has (ignoring case), or one Excel does not allow (more than 31 characters, `: \ / ? * [ ]`),
+throws `ArgumentException`.
+
+`Workbook.RemoveSheet` removes a sheet as Excel's Delete Sheet does. References to it become
+`#REF!`: `=Draft!A1` becomes `=#REF!A1`. A reference through several sheets
+(`=SUM(Jan:Mar!B2)`) whose first or last sheet is removed keeps the sheets left between its ends.
+Names local to the sheet and its tables go with it, and references to those tables become `#REF!`.
+The removed `Worksheet` can still be read; changing it throws `InvalidOperationException`
+(`IsRemoved` is true).
+
+`Workbook.MoveSheet` puts a sheet at another place in `Workbook.Sheets`. No formula changes, but a
+reference through several sheets takes in the sheets now between its ends.
+
+`Visibility` hides a sheet (`Hidden`, which Excel's Unhide lists) or hides it so that only code can
+show it again (`VeryHidden`). A workbook keeps at least one visible sheet: hiding or removing the
+last one throws `InvalidOperationException`. `TabColor` colours the sheet's tab.
+
+Each change goes through every formula of the workbook, and every formula is calculated again at
+the next `Recalculate`. When the workbook is saved, the file's sheets are renamed, reordered and
+hidden, a removed sheet's part goes with its drawings, comments and tables, and charts, pivot table
+sources, print areas and names in the file follow the new names (see [Saving .xlsx files](saving.md)).
+A formula SharpCell cannot read (such as a link to another workbook) that names the sheet makes
+renaming or removing it throw `NotSupportedException`.
+
+## Filtering rows
+
+```csharp snippet=sheets-filter
+AutoFilter filter = sheet.SetAutoFilter("A1:B5");
+filter.Filter(2, ColumnFilter.Custom(FilterOperator.GreaterThan, "100"));   // column B
+filter.Filter(1, ColumnFilter.OneOf("North", "West"));                      // column A
+bool hidden = sheet.IsRowHidden(3);   // true: South is not North or West
+
+sheet["B2"].Value = 90;
+filter.Apply();                       // Excel's Reapply: North is hidden now
+```
+
+`Worksheet.SetAutoFilter` turns on Excel's Data > Filter for a range whose first row holds the
+buttons; `Worksheet.AutoFilter` is the filter a sheet has, read from a file too. `AutoFilter.Filter`
+sets a column's criteria and applies the filter at once, as choosing them in Excel's menu does: each
+row below the first shows when it meets the criteria of every filtered column, and hides otherwise.
+The criteria are those of Excel's menu:
+
+| Factory | Shows rows whose cell |
+|---|---|
+| `ColumnFilter.OneOf("North", "1,250.00")` | shows one of the texts, as formatted, ignoring case |
+| `ColumnFilter.OneOf(new FilterDate(DateGrouping.Month, 2026, 3))` | holds a date in one of the years, months or days |
+| `ColumnFilter.Blank()` | is empty; `OneOf(...) with { Blanks = true }` adds empty cells |
+| `ColumnFilter.Custom(FilterOperator.GreaterThan, "100")` | meets a condition, or two with `matchAll` (And) or not (Or) |
+| `ColumnFilter.BeginsWith`, `EndsWith`, `Contains`, `DoesNotContain` | holds the text there, ignoring case |
+| `ColumnFilter.Top(10)`, `Top(10, percent: true)`, `Bottom(...)` | holds one of the highest or lowest numbers |
+| `ColumnFilter.Of(DynamicFilter.AboveAverage)` | is above (or below) the column's average |
+| `ColumnFilter.Of(DynamicFilter.ThisMonth)` | holds a date in a period around today, or in a quarter or month of any year |
+
+A custom condition compares a number with numbers and a text with texts; `Equal` and `NotEqual`
+match the cell's text with `*` and `?` as wildcards. Formulas out of date in the range are
+calculated first. Like Excel, a filter does not apply itself again when the data changes: call
+`Apply` (Excel's Reapply). `Clear(column)` and `Clear()` take criteria off, and
+`Worksheet.RemoveAutoFilter` turns the filter off and shows the rows it hid. While criteria are set,
+`Worksheet.FilterMode` is true, so `SUBTOTAL` with codes 1 to 11 skips the hidden rows (see
+[Tables and hidden rows](tables.md)).
+
+The filter and its criteria are saved, and move with inserted and deleted rows and columns. A
+file's filter by colour or icon is kept, but `Apply` throws `NotSupportedException` while one is
+set. Tables have filters of their own, which these are not: a sheet's filter cannot overlap a table.
+
+## Sorting
+
+```csharp snippet=sheets-sort
+sheet.Range("A2:B5").Sort(new SortKey(2, Descending: true));   // by units, highest first
+```
+
+`CellRange.Sort` sorts the rows of a range as Excel's Data > Sort does, by one key or several
+(`SortKey` is a sheet column and a direction); rows equal by every key keep their order. Ascending,
+numbers come first, then text, ignoring case, then `FALSE` and `TRUE`, then errors; descending
+reverses that, and empty cells come last either way. `matchCase: true` puts lower case first among
+texts that differ only in case, and `leftToRight: true` sorts the columns by rows.
+
+The cells move with their values, formulas, number formats, styles, hyperlinks and notes. A moved
+formula keeps its relative references, as when it is copied: `=B2*C2` sorted into row 5 is
+`=B5*C5`. Formulas elsewhere that read the range are not changed, so they read whatever was sorted
+into their cells. Data validation, conditional formats, row heights and hidden rows stay where they
+are. A range with merged cells, part of an array formula or a spill throws
+`InvalidOperationException`; nothing moves.
+
+---
+
+<!-- page: guides/data.md -->
+
+# Data in and out
+
+Filling sheets from collections, `DataTable`s and CSV text, and reading ranges back out.
+
+## Filling a sheet
+
+```csharp snippet=data-in
+sheet.LoadRows("A1", orders,
+    ("Id", o => o.Id), ("Total", o => o.Total), ("Placed", o => o.Placed));
+
+sheet.LoadCsv("E1", new StringReader("Code,Share\nX1,12%\n"));   // 12% is the number 0.12
+```
+
+`Worksheet.LoadRows` writes a header row and one row per item, its columns given as lambdas, so no
+reflection is needed and the code trims and compiles ahead of time. `LoadDataTable` writes a
+`DataTable`, with or without a header row. Strings stay text, never formulas; numbers, logical
+values, dates and times become those values, dates with a date format. Nothing is written unless
+every value could be stored.
+
+`Worksheet.LoadCsv` reads CSV text as Excel opens a .csv file: each field as if typed into its cell
+(see [Typing into cells](cells.md#typing-into-cells)), so numbers, percentages and dates in the
+workbook's culture become those values with a matching format. Fields may be quoted, with doubled
+quotes and line breaks inside. A field starting with `=` stays text unless `formulas: true`, since
+a file from elsewhere could hide formulas in it. Pass `delimiter: ';'` where the decimal separator is
+a comma, as Excel does there.
+
+## Reading a range out
+
+```csharp snippet=data-out
+DataTable table = sheet.Range("A1:B5").ToDataTable();   // Region (string), Units (double)
+
+List<(string Region, double Units)> rows = sheet.Range("A1:B5")
+    .ReadRows(row => (row["Region"].Text, row["Units"].Value.AsNumber()));
+
+string csv = sheet.Range("A1:B5").ToCsv();               // "Region,Units\r\nNorth,120\r\n..."
+sheet.Range("A1:B5").WriteCsv(writer);                   // to a file or a stream
+```
+
+`CellRange.ToDataTable` gives a `DataTable` named after the sheet. The first row names the columns,
+as tables name them: `Column3` for an empty header, `Units2` for a repeated one; pass
+`headers: false` for `Column1`, `Column2` and so on. A column whose values are all numbers is
+`double`, all shown as dates `DateTime`, all logical values `bool`, all text `string`, and any other
+mix `object`, with errors as their text (`#N/A`). Empty cells are `DBNull`.
+
+`CellRange.ReadRows` makes an object of each row below the first, with a lambda that picks cells by
+header (ignoring case) or by sheet column. `ToCsv` and `WriteCsv` write each cell as it shows, with
+its number format, as Excel's Save As CSV does, and end each row in CRLF.
+
+Whole columns such as `A:C` end at the last row used. Formulas out of date in the range are
+calculated first, so what is read out is current.
+
+---
+
 <!-- page: guides/recalculation.md -->
 
 # Recalculation
@@ -979,13 +1141,13 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 
 ## What is read
 
-- Sheets, including hidden ones, in workbook order.
+- Sheets, including hidden ones, in workbook order, with whether they are hidden and their tab colours (see [Sheets, filters and sorting](sheets.md)).
 - Constants: numbers, text, logical values and errors.
 - Formulas: ordinary, shared, legacy array formulas (Ctrl+Shift+Enter) and dynamic arrays.
 - The results Excel saved with each formula.
 - Defined names, workbook-wide and sheet-scoped.
 - Tables, with their column names and header and totals rows.
-- Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
+- Hidden rows, and the sheet's filter with its criteria (see [Filtering rows](sheets.md#filtering-rows) and [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).
@@ -1068,11 +1230,12 @@ Everything SharpCell models:
   expected (`=SUM(A1:A3*2)`) is saved as a dynamic array formula, so Excel does not reduce it as
   Excel 2016 would.
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
-  cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
-  filtered.
+  cells, frozen panes, gridlines, the default column width and row height, and the sheet's filter
+  with its criteria.
 - Hyperlinks, notes, data validation, conditional formats, sheet and workbook protection, and locked and hidden cells.
 - Page orientation and margins, print areas, print titles and manual page breaks.
-- New sheets, defined names, new tables, the date system and the iteration settings.
+- New sheets, and sheets renamed, removed, moved and hidden, with their tab colours; defined names,
+  new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
 file: charts, pivot tables, threaded comments, the settings of colour scales, data bars and icon sets, pictures, macros, headers and footers, paper size and scaling,
@@ -1093,6 +1256,13 @@ where they were. A pivot table moves with the rows above it, but rows inserted i
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
 saved after its rows or columns moved (`NotSupportedException`). Formulas SharpCell cannot read are
 kept as the file has them, with the results Excel saved.
+
+When sheets are renamed, the file's charts, pivot table sources, print areas and the names
+SharpCell does not read refer to the new names. A removed sheet's part goes with the parts only it
+uses (drawings, charts, comments, tables), its local names go, and references to it in what
+SharpCell does not model become `#REF!`. Moved sheets keep their local names and the window shows
+the sheet it showed; when that sheet was removed or hidden, the window shows the next visible one.
+The list of sheet names in the document properties is left out (Excel writes it again).
 
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.
@@ -1200,7 +1370,8 @@ workbook.Recalculate();                         // both are 5
   criteria, every hidden row counts as filtered. `Worksheet.FilterMode` is that flag; the reader
   sets it from the file.
 - `AGGREGATE` with options 0, 2, 4 and 6 counts every row.
-- SharpCell does not apply filter criteria: hidden rows are as the file or your code left them.
+- A sheet's filter hides rows when its criteria are applied (see [Filtering rows](sheets.md#filtering-rows));
+  a table's own filter is not applied: its hidden rows are as the file or your code left them.
 
 ---
 
@@ -1274,10 +1445,10 @@ several functions at once give `#VALUE!`.
 
 Every known gap in one list, so you can decide before you start.
 
-- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, threaded comments, pictures, colour scales, data bars or icon sets, or remove or rename sheets; a file's own are kept as they are.
+- **Writing files.** `XlsxWriter` saves what SharpCell models (see [Saving .xlsx files](saving.md)). It cannot add charts, pivot tables, threaded comments, pictures, colour scales, data bars or icon sets; a file's own are kept as they are.
 - **Other file formats.** .xls, .xlsb and encrypted files throw `NotSupportedException`. Macros of .xlsm files are kept, never run.
 - **Tables change only with rows.** Tables grow and shrink with inserted and deleted rows, but cannot be resized, renamed or removed directly, columns cannot be inserted into or deleted from them, and editing a header cell does not rename its column.
-- **Filters are not applied.** Rows are hidden as the file or your code left them; filter criteria are not evaluated.
+- **Some filters are not applied.** A sheet's filter is applied, except by colour or icon (kept, but `Apply` throws). A table's own filter is not: its rows are hidden as the file or your code left them.
 - **Iterative calculation is not compared with Excel.** It follows Excel's documented behaviour, but Excel for the web cannot calculate it, so no reference workbook pins the order of passes in a cycle of several cells.
 - **Styles are partly read.** Fonts, solid fills, borders, alignment, number formats and cell protection (locked, hidden) are read and saved; pattern and gradient fills and rotated text are not read (a file's own are kept when it is saved). The colours of colour scales, data bars and icon sets are not worked out.
 - **Protection is not enforced.** Sheet and workbook protection is read, set and saved, but SharpCell does not enforce it: code can still change a protected sheet or workbook.
@@ -1315,30 +1486,39 @@ maintainer.
 | 0.8 | `Cell.Input`: a cell as typed in Excel |
 | 0.9 | Building workbooks: filling sheets from collections and `DataTable`s, hyperlinks, data validation, sheet and workbook protection, locked and hidden cells |
 | 0.10 | Copying cells as Excel pastes them, formulas, links and data validation following (`CellRange.CopyTo`) |
+| 0.11 | Conditional formats worked out as Excel shows them, notes, page setup, inserting and deleting cells with a shift |
 
-## Now: 0.11, rules on cells
+## Now: 0.12, sheets and data
 
-- Done: conditional formatting, read, added and saved. SharpCell also tells which cells a rule
-  applies to and how they look (`Cell.ConditionalFormats`, `Cell.DisplayStyle`), since it
-  calculates the formulas Excel would. Colour scales, data bars and icon sets are kept, not drawn.
-- Done: notes, read, added and saved.
-- Done: page setup: orientation, margins, print area, print titles and page breaks.
-- Done: inserting and deleting cells with Excel's "Shift cells down / right / up / left".
+- Done: renaming, removing, moving and hiding sheets, with formulas following as in Excel, and tab
+  colours.
+- Done: Excel's filter: values, dates, custom conditions, top and bottom, above and below average
+  and date periods, applied as Excel applies them, read and saved.
+- Done: sorting a range by one key or several, cells moving with their formulas and formats.
+- Done: reading ranges out as `DataTable`s, objects and CSV, and loading CSV.
 - Benchmarks against EPPlus and ClosedXML: loading, recalculating and saving large workbooks.
+
+## Next: 0.13, how sheets look
+
+- Grouping rows and columns into outlines that collapse and expand.
+- Rich text in cells: runs of different fonts in one cell.
+- Styles of whole rows and columns, named cell styles, pattern and gradient fills, rotated and
+  shrunk text, theme colours written as such.
+- Headers and footers, paper size, scaling and fitting to pages.
+- Fitting column widths to their contents. This needs font metrics, which the engine does not
+  carry; it may come as a separate package.
 
 ## Later
 
+- Resizing, renaming and removing tables, inserting columns into them, totals rows and table styles.
+- Copying a sheet, within a workbook and to another.
+- Pictures placed on a sheet.
 - Cells that break their data validation, found by calculating the rules (Excel's Circle Invalid Data).
-- Sorting a range, with formulas moving as Excel moves them.
-- Fitting column widths to their contents. This needs font metrics, which the engine does not
-  carry; it may come as a separate package.
-- Resizing and renaming tables, and inserting columns into them.
-- Removing and renaming sheets.
-- Rich text in cells.
+- Applying a table's own filter.
 
 ## Not planned
 
-Creating charts, pivot tables, pictures or shapes (a file's own are kept when it is saved),
+Creating charts, pivot tables or shapes (a file's own are kept when it is saved),
 running macros, .xls and .xlsb files, and encrypted files.
 
 ---
@@ -1398,6 +1578,117 @@ curl -s https://ifmelate.github.io/SharpCell/compatibility.json | jq '.functions
 ```
 
 A function with status `not implemented` evaluates to `#NAME?`.
+
+---
+
+<!-- page: api/SharpCell.AutoFilter.md -->
+
+# AutoFilter
+
+```csharp
+public sealed class AutoFilter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The filter of a sheet, Excel's Data > Filter: buttons in the first row of its range, and criteria on some of its columns that hide the rows below not meeting them. Turn it on with [Worksheet.SetAutoFilter](SharpCell.Worksheet.md#setautofilter-string).
+
+## Properties
+
+<a id="columns"></a>
+### Columns
+
+```csharp
+public IReadOnlyDictionary<int, ColumnFilter> Columns { get; }
+```
+
+The criteria by sheet column (A is 1), in column order.
+
+<a id="range"></a>
+### Range
+
+```csharp
+public CellRange Range { get; }
+```
+
+The filtered range, its first row holding the buttons.
+
+<a id="worksheet"></a>
+### Worksheet
+
+```csharp
+public Worksheet Worksheet { get; }
+```
+
+The sheet the filter is on.
+
+## Methods
+
+<a id="apply"></a>
+### Apply()
+
+```csharp
+public void Apply()
+```
+
+Applies the criteria again, as Excel's Reapply does after the data changed: each row of the range below its first row shows when it meets the criteria of every column, and hides otherwise, whether or not it was hidden before. Formulas out of date in the range are calculated first.
+
+**Exceptions**
+
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+- `NotSupportedException`: A column filters by colour, which SharpCell cannot apply.
+
+<a id="clear"></a>
+### Clear()
+
+```csharp
+public void Clear()
+```
+
+Takes the criteria off every column, showing every row of the range, as Excel's Clear does. The buttons stay.
+
+**Exceptions**
+
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+
+<a id="clear-int"></a>
+### Clear(int)
+
+```csharp
+public void Clear(int column)
+```
+
+Takes the criteria off a column and applies the filter again.
+
+**Parameters**
+
+- `column`: The sheet column (A is 1), inside the range.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the range.
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+- `NotSupportedException`: Another column filters by colour, which SharpCell cannot apply.
+
+<a id="filter-int-columnfilter"></a>
+### Filter(int, ColumnFilter)
+
+```csharp
+public void Filter(int column, ColumnFilter filter)
+```
+
+Filters a column and applies the filter at once, as choosing criteria in Excel's menu does: rows of the range below its first row show when they meet the criteria of every column, and hide otherwise. Formulas out of date in the range are calculated first.
+
+**Parameters**
+
+- `column`: The sheet column (A is 1), inside the range.
+- `filter`: The criteria, replacing the column's.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the range.
+- `InvalidOperationException`: The filter was removed, or its sheet was.
+- `NotSupportedException`: Another column filters by colour, which SharpCell cannot apply.
 
 ---
 
@@ -2156,6 +2447,21 @@ Inserts empty cells in place of the range, as Excel's Insert with "Shift cells d
 - `InvalidOperationException`: Content would be pushed off the sheet, or the cells that move would split a merged area, a table or an array formula.
 - `NotSupportedException`: A formula on the sheet, or one naming it, cannot be read by SharpCell, so its references could not follow; or cells would be inserted inside a table's columns.
 
+<a id="readrows-func-rangerow-t"></a>
+### ReadRows<T>(Func<RangeRow, T>)
+
+```csharp
+public List<T> ReadRows<T>(Func<RangeRow, T> read)
+```
+
+Reads each row below the range's first row into an object, the first row naming the columns: `range.ReadRows(row => new Order(row["Region"].Text, row["Units"].Value.AsNumber()))`. The lambda picks the cells, so no reflection is needed. Whole columns such as `A:C` end at the last row used. Formulas out of date in the range are calculated first, so the cells hold their current values.
+
+**Parameters**
+
+- `read`: Makes an item from a row.
+
+**Returns:** The items, in row order.
+
 <a id="setvalues-cellvalue"></a>
 ### SetValues(CellValue[,])
 
@@ -2174,6 +2480,78 @@ Sets the value of every cell, as assigning [Cell.Value](SharpCell.Cell.md#value)
 - `ArgumentException`: The array's size differs from the range's, or it holds a Missing, array or lambda value.
 - `InvalidOperationException`: A cell is part of an array formula other than its top-left cell.
 
+<a id="sort-ireadonlylist-sortkey-bool-bool"></a>
+### Sort(IReadOnlyList<SortKey>, bool, bool)
+
+```csharp
+public void Sort(IReadOnlyList<SortKey> keys, bool matchCase = false, bool leftToRight = false)
+```
+
+Sorts the rows of the range, or its columns, as Excel's Data > Sort does. Ascending, numbers come first, then text (ignoring case unless `matchCase`), then FALSE and TRUE, then errors, which are all equal; descending reverses that, and empty cells come last either way. Formulas out of date are calculated first.
+
+The cells move with what they hold: values, formulas, number formats, styles, hyperlinks and notes. A moved formula's relative references keep their distance from its cell, as when it is copied, so `=B2*C2` moved to row 5 becomes `=B5*C5`; formulas elsewhere that point into the range are not changed, and read whatever was sorted into their cells. Data validation, conditional formats, row heights and hidden rows stay where they are. Every formula reading the cells is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `keys`: The columns that order the rows (or the rows that order the columns), first key first.
+- `matchCase`: Whether text of different case differs, lower case first, as Excel's Case sensitive option.
+- `leftToRight`: Whether to sort the columns by rows, as Excel's Sort left to right option.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A key's column (or row) is outside the range.
+- `InvalidOperationException`: The range holds merged cells, or part of an array formula or a spill.
+- `NotSupportedException`: The range holds a formula SharpCell cannot read (such as a link to another workbook).
+
+<a id="sort-sortkey"></a>
+### Sort(SortKey[])
+
+```csharp
+public void Sort(params SortKey[] keys)
+```
+
+Sorts the rows of the range, as Excel's Data > Sort does: by the first key's column, rows equal there by the second's, and so on; rows equal by every key keep their order. Without a key the first column orders the rows, ascending. See [CellRange.Sort](SharpCell.CellRange.md#sort-ireadonlylist-sortkey-bool-bool).
+
+**Parameters**
+
+- `keys`: The columns that order the rows.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A key's column is outside the range.
+- `InvalidOperationException`: The range holds merged cells, or part of an array formula or a spill.
+- `NotSupportedException`: The range holds a formula SharpCell cannot read (such as a link to another workbook).
+
+<a id="tocsv-char"></a>
+### ToCsv(char)
+
+```csharp
+public string ToCsv(char delimiter = ,)
+```
+
+The range as CSV text, as Excel's Save As CSV writes it: each cell as it shows (with its number format), fields holding the delimiter, a quote or a line break in quotes, quotes doubled, and each row ending in CRLF. Whole columns such as `A:C` end at the last row used. Formulas out of date are calculated first.
+
+**Parameters**
+
+- `delimiter`: What separates the fields; Excel uses `;` where the decimal separator is a comma.
+
+**Exceptions**
+
+- `ArgumentException`: The delimiter is a quote or a line break.
+
+<a id="todatatable-bool"></a>
+### ToDataTable(bool)
+
+```csharp
+public DataTable ToDataTable(bool headers = true)
+```
+
+The range as a `DataTable` named after the sheet, one row per row of the range. With `headers`, the first row names the columns (`ColumnN` for an empty one, a number added to a repeated one, as tables name them); otherwise they are `Column1`, `Column2` and so on. A column whose values are all numbers is `Double`, all shown as dates `DateTime`, all logical values `Boolean`, all text `String`; any other mix is `Object`, with errors as their text (`#N/A`). Empty cells are `DBNull`. Whole columns such as `A:C` end at the last row used. Formulas out of date are calculated first.
+
+**Parameters**
+
+- `headers`: Whether the first row holds the column names.
+
 <a id="tostring"></a>
 ### ToString()
 
@@ -2182,6 +2560,24 @@ public override string ToString()
 ```
 
 The address with the sheet name as a formula writes it, such as `Sheet1!A1:C10` or `'My Sheet'!B2`.
+
+<a id="writecsv-textwriter-char"></a>
+### WriteCsv(TextWriter, char)
+
+```csharp
+public void WriteCsv(TextWriter writer, char delimiter = ,)
+```
+
+Writes the range as CSV text, for a file or a stream; see [CellRange.ToCsv](SharpCell.CellRange.md#tocsv-char).
+
+**Parameters**
+
+- `writer`: Where to write, in the encoding it has.
+- `delimiter`: What separates the fields.
+
+**Exceptions**
+
+- `ArgumentException`: The delimiter is a quote or a line break.
 
 ---
 
@@ -2695,6 +3091,290 @@ Where a cell's text sits from top to bottom of the cell.
 | <a id="bottom"></a>`Bottom` | 2 | Against the bottom edge, Excel's default. |
 | <a id="justify"></a>`Justify` | 3 | Lines spread to the top and bottom edges. |
 | <a id="distributed"></a>`Distributed` | 4 | Lines spread evenly from top to bottom. |
+
+---
+
+<!-- page: api/SharpCell.ColumnFilter.md -->
+
+# ColumnFilter
+
+```csharp
+public sealed class ColumnFilter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+What a column of an [AutoFilter](SharpCell.AutoFilter.md) shows. Make one with a factory such as [ColumnFilter.OneOf](SharpCell.ColumnFilter.md#oneof-string), [ColumnFilter.Custom](SharpCell.ColumnFilter.md#custom-filteroperator-string) or [ColumnFilter.Top](SharpCell.ColumnFilter.md#top-double-bool), and give it to [AutoFilter.Filter](SharpCell.AutoFilter.md#filter-int-columnfilter).
+
+## Properties
+
+<a id="blanks"></a>
+### Blanks
+
+```csharp
+public bool Blanks { get; init; }
+```
+
+For [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values): whether empty cells show too, the menu's (Blanks).
+
+<a id="conditions"></a>
+### Conditions
+
+```csharp
+public IReadOnlyList<FilterCondition> Conditions { get; }
+```
+
+For [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom): the conditions, one or two.
+
+<a id="count"></a>
+### Count
+
+```csharp
+public double Count { get; }
+```
+
+For [ColumnFilterType.Top](SharpCell.ColumnFilterType.md#top) and [ColumnFilterType.Bottom](SharpCell.ColumnFilterType.md#bottom): how many rows, or what percent of them.
+
+<a id="dates"></a>
+### Dates
+
+```csharp
+public IReadOnlyList<FilterDate> Dates { get; init; }
+```
+
+For [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values): the years, months or days of the dates shown.
+
+<a id="dynamic"></a>
+### Dynamic
+
+```csharp
+public DynamicFilter Dynamic { get; }
+```
+
+For [ColumnFilterType.Dynamic](SharpCell.ColumnFilterType.md#dynamic): the rows shown.
+
+<a id="matchall"></a>
+### MatchAll
+
+```csharp
+public bool MatchAll { get; }
+```
+
+For [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) with two conditions: whether a row must meet both (And) or one (Or).
+
+<a id="percent"></a>
+### Percent
+
+```csharp
+public bool Percent { get; }
+```
+
+For [ColumnFilterType.Top](SharpCell.ColumnFilterType.md#top) and [ColumnFilterType.Bottom](SharpCell.ColumnFilterType.md#bottom): whether [ColumnFilter.Count](SharpCell.ColumnFilter.md#count) is a percent.
+
+<a id="type"></a>
+### Type
+
+```csharp
+public ColumnFilterType Type { get; }
+```
+
+What the filter looks at.
+
+<a id="values"></a>
+### Values
+
+```csharp
+public IReadOnlyList<string> Values { get; init; }
+```
+
+For [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values): the texts shown, as the cells display them, ignoring case.
+
+## Methods
+
+<a id="beginswith-string"></a>
+### BeginsWith(string)
+
+```csharp
+public static ColumnFilter BeginsWith(string text)
+```
+
+Rows whose cell begins with a text, ignoring case: Text Filters > Begins With.
+
+<a id="blank"></a>
+### Blank()
+
+```csharp
+public static ColumnFilter Blank()
+```
+
+Rows whose cell is empty, the menu's (Blanks) alone.
+
+<a id="bottom-double-bool"></a>
+### Bottom(double, bool)
+
+```csharp
+public static ColumnFilter Bottom(double count, bool percent = false)
+```
+
+The rows with the lowest numbers.
+
+**Parameters**
+
+- `count`: How many rows, 1 to 500, or with `percent` what percent of the rows with numbers, 1 to 100.
+- `percent`: Whether the count is a percent.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is outside what Excel allows.
+
+<a id="contains-string"></a>
+### Contains(string)
+
+```csharp
+public static ColumnFilter Contains(string text)
+```
+
+Rows whose cell contains a text, ignoring case.
+
+<a id="custom-filtercondition-filtercondition-bool"></a>
+### Custom(FilterCondition, FilterCondition, bool)
+
+```csharp
+public static ColumnFilter Custom(FilterCondition first, FilterCondition second, bool matchAll)
+```
+
+Rows whose cell meets both conditions (`matchAll`) or either of them.
+
+**Exceptions**
+
+- `ArgumentException`: An operator is not one of [FilterOperator](SharpCell.FilterOperator.md)'s.
+
+<a id="custom-filteroperator-string"></a>
+### Custom(FilterOperator, string)
+
+```csharp
+public static ColumnFilter Custom(FilterOperator operator, string value)
+```
+
+Rows whose cell meets a condition, such as `Custom(FilterOperator.GreaterThan, "100")`.
+
+**Exceptions**
+
+- `ArgumentException`: The operator is not one of [FilterOperator](SharpCell.FilterOperator.md)'s.
+
+<a id="doesnotcontain-string"></a>
+### DoesNotContain(string)
+
+```csharp
+public static ColumnFilter DoesNotContain(string text)
+```
+
+Rows whose cell does not contain a text, ignoring case.
+
+<a id="endswith-string"></a>
+### EndsWith(string)
+
+```csharp
+public static ColumnFilter EndsWith(string text)
+```
+
+Rows whose cell ends with a text, ignoring case.
+
+<a id="equals-columnfilter"></a>
+### Equals(ColumnFilter)
+
+```csharp
+public bool Equals(ColumnFilter? other)
+```
+
+Whether two filters pick the same rows the same way: their values and dates in the same order.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash code agreeing with [ColumnFilter.Equals](SharpCell.ColumnFilter.md#equals-columnfilter).
+
+<a id="of-dynamicfilter"></a>
+### Of(DynamicFilter)
+
+```csharp
+public static ColumnFilter Of(DynamicFilter dynamic)
+```
+
+The rows above or below the average, or with dates in a period around today.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not one of [DynamicFilter](SharpCell.DynamicFilter.md)'s.
+
+<a id="oneof-filterdate"></a>
+### OneOf(FilterDate[])
+
+```csharp
+public static ColumnFilter OneOf(params FilterDate[] dates)
+```
+
+Rows whose date falls in one of the years, months or days, as the menu's date tree picks them.
+
+<a id="oneof-string"></a>
+### OneOf(string[])
+
+```csharp
+public static ColumnFilter OneOf(params string[] values)
+```
+
+Rows whose cell shows one of the texts, as the menu's check boxes pick them.
+
+**Parameters**
+
+- `values`: The texts, as the cells display them (a number with its format, such as `1,250.00`), ignoring case.
+
+<a id="top-double-bool"></a>
+### Top(double, bool)
+
+```csharp
+public static ColumnFilter Top(double count, bool percent = false)
+```
+
+The rows with the highest numbers: Number Filters > Top 10.
+
+**Parameters**
+
+- `count`: How many rows, 1 to 500, or with `percent` what percent of the rows with numbers, 1 to 100.
+- `percent`: Whether the count is a percent.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The count is outside what Excel allows.
+
+---
+
+<!-- page: api/SharpCell.ColumnFilterType.md -->
+
+# ColumnFilterType
+
+```csharp
+public enum ColumnFilterType
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a column of an [AutoFilter](SharpCell.AutoFilter.md) picks the rows it shows, as Excel's filter menu offers it.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="values"></a>`Values` | 0 | Rows whose cell shows one of [ColumnFilter.Values](SharpCell.ColumnFilter.md#values) or [ColumnFilter.Dates](SharpCell.ColumnFilter.md#dates), or is blank when [ColumnFilter.Blanks](SharpCell.ColumnFilter.md#blanks): the menu's check boxes. |
+| <a id="custom"></a>`Custom` | 1 | Rows whose cell meets one or two conditions: Text Filters and Number Filters > Custom Filter. |
+| <a id="top"></a>`Top` | 2 | Rows with the highest numbers: Number Filters > Top 10. |
+| <a id="bottom"></a>`Bottom` | 3 | Rows with the lowest numbers. |
+| <a id="dynamic"></a>`Dynamic` | 4 | Rows above or below the average, or with dates in a period around today: [ColumnFilter.Dynamic](SharpCell.ColumnFilter.md#dynamic). |
+| <a id="bycolor"></a>`ByColor` | 5 | Filter by Color (a fill, a font colour or an icon), read from a file. SharpCell keeps it when saving but cannot apply it, since cell colours from conditional formats are not worked out. |
 
 ---
 
@@ -3561,6 +4241,31 @@ The type, the operator of a comparing type, and the formulas, such as `WholeNumb
 
 ---
 
+<!-- page: api/SharpCell.DateGrouping.md -->
+
+# DateGrouping
+
+```csharp
+public enum DateGrouping
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How much of a [FilterDate](SharpCell.FilterDate.md) counts: a year, a month, a day, down to a second.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="year"></a>`Year` | 0 | The whole year. |
+| <a id="month"></a>`Month` | 1 | The whole month. |
+| <a id="day"></a>`Day` | 2 | The whole day. |
+| <a id="hour"></a>`Hour` | 3 | The whole hour. |
+| <a id="minute"></a>`Minute` | 4 | The whole minute. |
+| <a id="second"></a>`Second` | 5 | The second. |
+
+---
+
 <!-- page: api/SharpCell.DateSystem.md -->
 
 # DateSystem
@@ -3682,6 +4387,59 @@ What a [CalculationDiagnostic](SharpCell.CalculationDiagnostic.md) reports.
 
 ---
 
+<!-- page: api/SharpCell.DynamicFilter.md -->
+
+# DynamicFilter
+
+```csharp
+public enum DynamicFilter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The rows a [ColumnFilterType.Dynamic](SharpCell.ColumnFilterType.md#dynamic) filter shows: around the average, or dates around today.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="aboveaverage"></a>`AboveAverage` | 0 | Numbers above the column's average. |
+| <a id="belowaverage"></a>`BelowAverage` | 1 | Numbers below the column's average. |
+| <a id="yesterday"></a>`Yesterday` | 2 | Dates yesterday. |
+| <a id="today"></a>`Today` | 3 | Dates today. |
+| <a id="tomorrow"></a>`Tomorrow` | 4 | Dates tomorrow. |
+| <a id="lastweek"></a>`LastWeek` | 5 | Dates in the week before this one, Sunday to Saturday. |
+| <a id="thisweek"></a>`ThisWeek` | 6 | Dates in this week, Sunday to Saturday. |
+| <a id="nextweek"></a>`NextWeek` | 7 | Dates in the week after this one. |
+| <a id="lastmonth"></a>`LastMonth` | 8 | Dates in the month before this one. |
+| <a id="thismonth"></a>`ThisMonth` | 9 | Dates in this month. |
+| <a id="nextmonth"></a>`NextMonth` | 10 | Dates in the month after this one. |
+| <a id="lastquarter"></a>`LastQuarter` | 11 | Dates in the quarter before this one. |
+| <a id="thisquarter"></a>`ThisQuarter` | 12 | Dates in this quarter. |
+| <a id="nextquarter"></a>`NextQuarter` | 13 | Dates in the quarter after this one. |
+| <a id="lastyear"></a>`LastYear` | 14 | Dates in the year before this one. |
+| <a id="thisyear"></a>`ThisYear` | 15 | Dates in this year. |
+| <a id="nextyear"></a>`NextYear` | 16 | Dates in the year after this one. |
+| <a id="yeartodate"></a>`YearToDate` | 17 | Dates from the first of January to today. |
+| <a id="quarter1"></a>`Quarter1` | 18 | Dates in January to March of any year. |
+| <a id="quarter2"></a>`Quarter2` | 19 | Dates in April to June of any year. |
+| <a id="quarter3"></a>`Quarter3` | 20 | Dates in July to September of any year. |
+| <a id="quarter4"></a>`Quarter4` | 21 | Dates in October to December of any year. |
+| <a id="january"></a>`January` | 22 | Dates in January of any year. |
+| <a id="february"></a>`February` | 23 | Dates in February of any year. |
+| <a id="march"></a>`March` | 24 | Dates in March of any year. |
+| <a id="april"></a>`April` | 25 | Dates in April of any year. |
+| <a id="may"></a>`May` | 26 | Dates in May of any year. |
+| <a id="june"></a>`June` | 27 | Dates in June of any year. |
+| <a id="july"></a>`July` | 28 | Dates in July of any year. |
+| <a id="august"></a>`August` | 29 | Dates in August of any year. |
+| <a id="september"></a>`September` | 30 | Dates in September of any year. |
+| <a id="october"></a>`October` | 31 | Dates in October of any year. |
+| <a id="november"></a>`November` | 32 | Dates in November of any year. |
+| <a id="december"></a>`December` | 33 | Dates in December of any year. |
+
+---
+
 <!-- page: api/SharpCell.ErrorKind.md -->
 
 # ErrorKind
@@ -3741,6 +4499,192 @@ public static bool TryParse(ReadOnlySpan<char> text, out ErrorKind kind)
 ```
 
 Parses an error literal, ignoring case. The whole span must be the literal.
+
+---
+
+<!-- page: api/SharpCell.FilterCondition.md -->
+
+# FilterCondition
+
+```csharp
+public readonly struct FilterCondition
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+One condition of a [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) filter.
+
+## Constructors
+
+<a id="ctor-filteroperator-string"></a>
+### FilterCondition(FilterOperator, string)
+
+```csharp
+public FilterCondition(FilterOperator Operator, string Value)
+```
+
+One condition of a [ColumnFilterType.Custom](SharpCell.ColumnFilterType.md#custom) filter.
+
+**Parameters**
+
+- `Operator`: How the cell is compared.
+- `Value`: A number written with `.` for decimals (dates as serial numbers), or a text.
+
+## Properties
+
+<a id="operator"></a>
+### Operator
+
+```csharp
+public FilterOperator Operator { get; init; }
+```
+
+How the cell is compared.
+
+<a id="value"></a>
+### Value
+
+```csharp
+public string Value { get; init; }
+```
+
+A number written with `.` for decimals (dates as serial numbers), or a text.
+
+---
+
+<!-- page: api/SharpCell.FilterDate.md -->
+
+# FilterDate
+
+```csharp
+public readonly struct FilterDate
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A year, month, day (or hour, minute, second) a [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values) filter shows, as the date tree of Excel's filter menu checks it: `new FilterDate(DateGrouping.Month, 2024, 3)` is March 2024. Parts finer than the grouping are left out.
+
+## Constructors
+
+<a id="ctor-dategrouping-int-int-int-int-int-int"></a>
+### FilterDate(DateGrouping, int, int, int, int, int, int)
+
+```csharp
+public FilterDate(DateGrouping Grouping, int Year, int Month = 1, int Day = 1, int Hour = 0, int Minute = 0, int Second = 0)
+```
+
+A year, month, day (or hour, minute, second) a [ColumnFilterType.Values](SharpCell.ColumnFilterType.md#values) filter shows, as the date tree of Excel's filter menu checks it: `new FilterDate(DateGrouping.Month, 2024, 3)` is March 2024. Parts finer than the grouping are left out.
+
+**Parameters**
+
+- `Grouping`: How much of the date counts.
+- `Year`: The year.
+- `Month`: The month, 1 to 12.
+- `Day`: The day of the month.
+- `Hour`: The hour, 0 to 23.
+- `Minute`: The minute.
+- `Second`: The second.
+
+## Properties
+
+<a id="day"></a>
+### Day
+
+```csharp
+public int Day { get; init; }
+```
+
+The day of the month.
+
+<a id="grouping"></a>
+### Grouping
+
+```csharp
+public DateGrouping Grouping { get; init; }
+```
+
+How much of the date counts.
+
+<a id="hour"></a>
+### Hour
+
+```csharp
+public int Hour { get; init; }
+```
+
+The hour, 0 to 23.
+
+<a id="minute"></a>
+### Minute
+
+```csharp
+public int Minute { get; init; }
+```
+
+The minute.
+
+<a id="month"></a>
+### Month
+
+```csharp
+public int Month { get; init; }
+```
+
+The month, 1 to 12.
+
+<a id="second"></a>
+### Second
+
+```csharp
+public int Second { get; init; }
+```
+
+The second.
+
+<a id="year"></a>
+### Year
+
+```csharp
+public int Year { get; init; }
+```
+
+The year.
+
+## Methods
+
+<a id="contains-datetime"></a>
+### Contains(DateTime)
+
+```csharp
+public bool Contains(DateTime value)
+```
+
+Whether a date and time falls in this year, month, day, hour, minute or second.
+
+---
+
+<!-- page: api/SharpCell.FilterOperator.md -->
+
+# FilterOperator
+
+```csharp
+public enum FilterOperator
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a [FilterCondition](SharpCell.FilterCondition.md) compares a cell with its value.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="equal"></a>`Equal` | 0 | The cell shows the value, ignoring case; `*` and `?` are wildcards, `~` escapes them. |
+| <a id="notequal"></a>`NotEqual` | 1 | The cell does not show the value. |
+| <a id="greaterthan"></a>`GreaterThan` | 2 | Greater than the value: a number than a number, a text than a text. |
+| <a id="greaterthanorequal"></a>`GreaterThanOrEqual` | 3 | Greater than or equal to the value. |
+| <a id="lessthan"></a>`LessThan` | 4 | Less than the value. |
+| <a id="lessthanorequal"></a>`LessThanOrEqual` | 5 | Less than or equal to the value. |
 
 ---
 
@@ -4526,6 +5470,64 @@ How a sheet is turned on the printed page, as in Excel's Page Layout > Orientati
 
 ---
 
+<!-- page: api/SharpCell.RangeRow.md -->
+
+# RangeRow
+
+```csharp
+public readonly struct RangeRow
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A row of a range read by [`CellRange.ReadRows<T>`](SharpCell.CellRange.md#readrows-func-rangerow-t): its cells by header or by column.
+
+## Properties
+
+<a id="row"></a>
+### Row
+
+```csharp
+public int Row { get; }
+```
+
+The sheet row, from 1.
+
+<a id="item-int"></a>
+### this[int]
+
+```csharp
+public Cell this[int column] { get; }
+```
+
+The cell in a sheet column (A is 1).
+
+<a id="item-string"></a>
+### this[string]
+
+```csharp
+public Cell this[string header] { get; }
+```
+
+The cell under a header of the range's first row, ignoring case.
+
+**Exceptions**
+
+- `KeyNotFoundException`: No column has that header.
+
+## Methods
+
+<a id="hascolumn-string"></a>
+### HasColumn(string)
+
+```csharp
+public bool HasColumn(string header)
+```
+
+Whether a column has the header, ignoring case.
+
+---
+
 <!-- page: api/SharpCell.RecalculationResult.md -->
 
 # RecalculationResult
@@ -4765,6 +5767,78 @@ public override string ToString()
 ```
 
 The names of the allowed actions, such as `SelectLockedCells, SelectUnlockedCells`, or `None`.
+
+---
+
+<!-- page: api/SharpCell.SheetVisibility.md -->
+
+# SheetVisibility
+
+```csharp
+public enum SheetVisibility
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Whether a sheet's tab shows in Excel.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="visible"></a>`Visible` | 0 | The tab shows. |
+| <a id="hidden"></a>`Hidden` | 1 | Hidden; Excel's Unhide shows it again. |
+| <a id="veryhidden"></a>`VeryHidden` | 2 | Hidden so that Excel's Unhide does not list it; only code (VBA, SharpCell) shows it again. |
+
+---
+
+<!-- page: api/SharpCell.SortKey.md -->
+
+# SortKey
+
+```csharp
+public readonly struct SortKey
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A key of [CellRange.Sort](SharpCell.CellRange.md#sort-sortkey): the column rows are put in order by.
+
+## Constructors
+
+<a id="ctor-int-bool"></a>
+### SortKey(int, bool)
+
+```csharp
+public SortKey(int Index, bool Descending = false)
+```
+
+A key of [CellRange.Sort](SharpCell.CellRange.md#sort-sortkey): the column rows are put in order by.
+
+**Parameters**
+
+- `Index`: The sheet column (A is 1) whose cells order the rows; for a sort left to right, the sheet row ordering the columns.
+- `Descending`: Whether the highest come first.
+
+## Properties
+
+<a id="descending"></a>
+### Descending
+
+```csharp
+public bool Descending { get; init; }
+```
+
+Whether the highest come first.
+
+<a id="index"></a>
+### Index
+
+```csharp
+public int Index { get; init; }
+```
+
+The sheet column (A is 1) whose cells order the rows; for a sort left to right, the sheet row ordering the columns.
 
 ---
 
@@ -5150,6 +6224,25 @@ Evaluates a formula that belongs to no cell, as if it were in cell A1 of the fir
 
 - `OperationCanceledException`: The token was cancelled.
 
+<a id="movesheet-worksheet-int"></a>
+### MoveSheet(Worksheet, int)
+
+```csharp
+public void MoveSheet(Worksheet sheet, int index)
+```
+
+Moves a sheet to another place in the order, as dragging its tab in Excel does. Formulas do not change, but a reference through several sheets (`Sheet1:Sheet3!A1`) takes in the sheets now between its ends, so every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Parameters**
+
+- `sheet`: A sheet of this workbook.
+- `index`: Its new place in [Workbook.Sheets](SharpCell.Workbook.md#sheets), from 0.
+
+**Exceptions**
+
+- `ArgumentException`: The sheet is not in this workbook.
+- `ArgumentOutOfRangeException`: The index is not a place in [Workbook.Sheets](SharpCell.Workbook.md#sheets).
+
 <a id="protect-string-bool-bool"></a>
 ### Protect(string, bool, bool)
 
@@ -5183,6 +6276,25 @@ Calculates every formula that is out of date: those whose inputs changed since t
 **Exceptions**
 
 - `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
+
+<a id="removesheet-worksheet"></a>
+### RemoveSheet(Worksheet)
+
+```csharp
+public void RemoveSheet(Worksheet sheet)
+```
+
+Removes a sheet, as Excel's Delete Sheet does. References to it become `#REF!` (`=Sheet2!A1` becomes `=#REF!A1`) in formulas of every other sheet, defined names, data validation and conditional formats; a reference through several sheets that starts or ends at it keeps the sheets left between its ends. Names local to the sheet and its tables go with it, and references to those tables become `#REF!`. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken). The sheet object can still be read, but not changed ([Worksheet.IsRemoved](SharpCell.Worksheet.md#isremoved)).
+
+**Parameters**
+
+- `sheet`: A sheet of this workbook.
+
+**Exceptions**
+
+- `ArgumentException`: The sheet is not in this workbook.
+- `InvalidOperationException`: It is the last visible sheet while hidden ones remain: a workbook keeps at least one visible sheet.
+- `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not be broken as Excel breaks it.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)
@@ -5230,6 +6342,15 @@ Namespace `SharpCell` · package `SharpCell`
 A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never set costs nothing: a [Cell](SharpCell.Cell.md) is a handle, and storage is allocated only when a value or formula is set.
 
 ## Properties
+
+<a id="autofilter"></a>
+### AutoFilter
+
+```csharp
+public AutoFilter? AutoFilter { get; }
+```
+
+The sheet's filter, Excel's Data > Filter; null when it has none. Tables have filters of their own, which this is not.
 
 <a id="cells"></a>
 ### Cells
@@ -5319,6 +6440,15 @@ How many rows at the top stay in place while the rest scrolls, as Excel's Freeze
 
 - `ArgumentOutOfRangeException`: The count is negative or leaves no row to scroll.
 
+<a id="isremoved"></a>
+### IsRemoved
+
+```csharp
+public bool IsRemoved { get; }
+```
+
+Whether [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took the sheet out of its workbook; it can then be read but not changed.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -5332,10 +6462,16 @@ The merged areas, in the order they were merged.
 ### Name
 
 ```csharp
-public string Name { get; }
+public string Name { get; set; }
 ```
 
-The sheet name.
+The sheet name. Renaming a sheet renames it in every formula that refers to it, as Excel does: in cells of every sheet, defined names, data validation and conditional formats. Text inside INDIRECT and hyperlinks into the sheet keep the old name, as in Excel. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Exceptions**
+
+- `ArgumentException`: The name is not a valid sheet name, or another sheet has it, ignoring case.
+- `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not follow the new name.
+- `InvalidOperationException`: The sheet was removed from its workbook.
 
 <a id="notes"></a>
 ### Notes
@@ -5438,6 +6574,19 @@ public bool ShowGridlines { get; set; }
 
 Whether Excel draws gridlines between the sheet's cells; true unless turned off.
 
+<a id="tabcolor"></a>
+### TabColor
+
+```csharp
+public CellColor? TabColor { get; set; }
+```
+
+The colour of the sheet's tab; null for none.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="usedrange"></a>
 ### UsedRange
 
@@ -5456,6 +6605,19 @@ public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
 
 The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
 
+<a id="visibility"></a>
+### Visibility
+
+```csharp
+public SheetVisibility Visibility { get; set; }
+```
+
+Whether the sheet's tab shows in Excel. A workbook keeps at least one visible sheet, as in Excel. Hidden sheets are calculated and saved like any other.
+
+**Exceptions**
+
+- `InvalidOperationException`: Hiding the workbook's last visible sheet, or the sheet was removed.
+
 <a id="workbook"></a>
 ### Workbook
 
@@ -5463,7 +6625,7 @@ The data validation rules, one entry per range: a rule over several ranges has a
 public Workbook Workbook { get; }
 ```
 
-The workbook the sheet belongs to.
+The workbook the sheet belongs to, also after [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took it out.
 
 <a id="item-int-int"></a>
 ### this[int, int]
@@ -5744,6 +6906,30 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loadcsv-string-textreader-char-bool"></a>
+### LoadCsv(string, TextReader, char, bool)
+
+```csharp
+public CellRange LoadCsv(string topLeft, TextReader reader, char delimiter = ,, bool formulas = false)
+```
+
+Writes CSV text into the sheet starting at a cell, as Excel opens a .csv file: each field is read as if typed into its cell (see [Cell.Input](SharpCell.Cell.md#input)), so numbers, percentages, dates and logical values in the workbook's culture become those values, with a format taken from how they were written. Fields may be quoted, with quotes doubled and line breaks inside; rows end in CRLF, LF or CR. An empty field clears its cell. A field starting with `=` stays text unless `formulas` is set, since a file from elsewhere could hide formulas in it. Nothing is written unless all of it fits on the sheet.
+
+**Parameters**
+
+- `topLeft`: The cell of the first field, such as `A1`.
+- `reader`: The CSV text.
+- `delimiter`: What separates the fields; Excel uses `;` where the decimal separator is a comma.
+- `formulas`: Whether a field starting with `=` is a formula, as Excel reads it.
+
+**Returns:** The range written: as many rows as the text has, as wide as its widest row.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a cell, or the delimiter is a quote or a line break.
+- `ArgumentOutOfRangeException`: The rows or fields run past the sheet's edge.
+- `FormulaParseException`: With `formulas`, a field starting with `=` is not a formula.
+
 <a id="loaddatatable-string-datatable-bool"></a>
 ### LoadDataTable(string, DataTable, bool)
 
@@ -5842,6 +7028,19 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
 
+<a id="removeautofilter"></a>
+### RemoveAutoFilter()
+
+```csharp
+public void RemoveAutoFilter()
+```
+
+Turns the sheet's filter off, as clicking Excel's Filter again does: the rows it hid show, and the sheet is no longer in [Worksheet.FilterMode](SharpCell.Worksheet.md#filtermode). Nothing happens without a filter.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="removecolumnpagebreak-int"></a>
 ### RemoveColumnPageBreak(int)
 
@@ -5880,6 +7079,24 @@ A row's own height in points; null when it has none.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setautofilter-string"></a>
+### SetAutoFilter(string)
+
+```csharp
+public AutoFilter SetAutoFilter(string range)
+```
+
+Turns on Excel's filter for a range, its first row holding the buttons, and returns it to filter columns with. A filter the sheet had is removed first, showing the rows it hid.
+
+**Parameters**
+
+- `range`: An A1 range on this sheet with at least two rows, such as `A1:D20`; whole columns such as `A:D` are filtered down to the last row with something in it.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not such a range, or the range overlaps a table.
+- `InvalidOperationException`: The sheet was removed.
 
 <a id="setcolumnhidden-int-bool"></a>
 ### SetColumnHidden(int, bool)

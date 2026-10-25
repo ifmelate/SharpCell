@@ -12,8 +12,11 @@ namespace SharpCell.Xlsx;
 /// so a save can write into the same file only what changed.
 /// </summary>
 internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workbookPart,
-    IReadOnlyDictionary<Worksheet, SheetSource> sheets, WorkbookLook look) : IWorkbookSource
+    IReadOnlyDictionary<Worksheet, SheetSource> sheets, WorkbookLook look, IReadOnlyList<FileSheet> fileSheets) : IWorkbookSource
 {
+    /// <summary>The file's sheets in order, chart sheets included, as read.</summary>
+    public IReadOnlyList<FileSheet> FileSheets { get; } = fileSheets;
+
     public byte[] Bytes { get; } = bytes;
 
     public XlsxLimits Limits { get; } = limits;
@@ -29,29 +32,52 @@ internal sealed class XlsxSource(byte[] bytes, XlsxLimits limits, string workboo
     /// <summary>The sheet's record; a sheet added since the workbook was read has an empty one and no part.</summary>
     public SheetSource SheetFor(Worksheet sheet) => Sheets.TryGetValue(sheet, out var source) ? source : SheetSource.New;
 
-    /// <summary>The same file for a clone of the workbook: the bytes and the per-sheet records are shared.</summary>
+    /// <summary>
+    /// The same file for a clone of the workbook: the bytes and the per-sheet records are shared.
+    /// Removed sheets are not in the clone; their parts are found missing when it is saved.
+    /// </summary>
     public IWorkbookSource CopyFor(Func<Worksheet, Worksheet> map)
     {
         var sheets = new Dictionary<Worksheet, SheetSource>(Sheets.Count);
         foreach (var (sheet, source) in Sheets)
-            sheets.Add(map(sheet), source);
-        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Look);
+        {
+            if (!sheet.IsRemoved)
+                sheets.Add(map(sheet), source);
+        }
+
+        return new XlsxSource(Bytes, Limits, WorkbookPart, sheets, Look, FileSheets);
+    }
+
+    /// <summary>The sheets read from the file that the workbook still has, with their records.</summary>
+    public IEnumerable<(Worksheet Sheet, SheetSource Source)> LiveSheets()
+    {
+        foreach (var (sheet, source) in Sheets)
+        {
+            if (!sheet.IsRemoved)
+                yield return (sheet, source);
+        }
     }
 
     public static XlsxSource Capture(byte[] bytes, XlsxLimits limits, string workbookPart, Workbook workbook,
-        IReadOnlyDictionary<Worksheet, string> parts)
+        IReadOnlyDictionary<Worksheet, string> parts, IReadOnlyList<FileSheet> fileSheets)
     {
         var sheets = new Dictionary<Worksheet, SheetSource>();
         foreach (var (sheet, part) in parts)
             sheets[sheet] = SheetSource.Capture(sheet, part);
-        return new XlsxSource(bytes, limits, workbookPart, sheets, WorkbookLook.Of(workbook));
+        return new XlsxSource(bytes, limits, workbookPart, sheets, WorkbookLook.Of(workbook, parts), fileSheets);
     }
 }
+
+/// <summary>A sheet entry of the file's workbook part.</summary>
+/// <param name="Name">The sheet's name as read.</param>
+/// <param name="RelationshipId">The relationship to its part.</param>
+/// <param name="Part">The worksheet part; null for a chart sheet or anything else that is not a worksheet.</param>
+internal sealed record FileSheet(string Name, string RelationshipId, string? Part);
 
 /// <summary>A workbook's defined names, tables, settings and default style as read.</summary>
 internal sealed class WorkbookLook
 {
-    private WorkbookLook(Workbook workbook)
+    private WorkbookLook(Workbook workbook, IReadOnlyDictionary<Worksheet, string> parts)
     {
         DefaultStyle = workbook.DefaultStyle;
         DateSystem = workbook.DateSystem;
@@ -61,10 +87,10 @@ internal sealed class WorkbookLook
         ProtectionPassword = workbook.ProtectionPassword;
         foreach (var name in workbook.Names.All)
             Names[Key(name)] = name.Text;
-        Tables = workbook.Tables.Select(t => t.Name.ToUpperInvariant()).ToHashSet(StringComparer.Ordinal);
+        Tables = workbook.Tables.ToDictionary(t => t.Name.ToUpperInvariant(), t => parts.GetValueOrDefault(t.Worksheet), StringComparer.Ordinal);
     }
 
-    public static WorkbookLook Of(Workbook workbook) => new(workbook);
+    public static WorkbookLook Of(Workbook workbook, IReadOnlyDictionary<Worksheet, string> parts) => new(workbook, parts);
 
     /// <summary>Cells without a style of their own showed it.</summary>
     public CellStyle DefaultStyle { get; }
@@ -86,8 +112,8 @@ internal sealed class WorkbookLook
     /// <summary>Each defined name's formula text, by scope (the sheet's name, or "") and upper-case name.</summary>
     public Dictionary<(string Scope, string Name), string> Names { get; } = [];
 
-    /// <summary>The tables' names in upper case.</summary>
-    public IReadOnlySet<string> Tables { get; }
+    /// <summary>The tables' names in upper case, with the part of the sheet each is on.</summary>
+    public IReadOnlyDictionary<string, string?> Tables { get; }
 
     public static (string Scope, string Name) Key(NameDefinition name) => (name.Scope?.Name ?? "", name.Name);
 
@@ -98,8 +124,11 @@ internal sealed class WorkbookLook
 
 /// <summary>A worksheet's part in the file and its formulas as they were read.</summary>
 internal sealed class SheetSource(string? part, IReadOnlyDictionary<CellAddress, LoadedFormula> formulas,
-    IReadOnlyDictionary<CellAddress, string> formats, IReadOnlyDictionary<CellAddress, CellStyle> styles, SheetLook look)
+    IReadOnlyDictionary<CellAddress, string> formats, IReadOnlyDictionary<CellAddress, CellStyle> styles, SheetLook look, string name = "")
 {
+    /// <summary>The sheet's name as read; empty for a sheet added since.</summary>
+    public string Name { get; } = name;
+
     /// <summary>The record of a sheet the file does not have.</summary>
     public static SheetSource New { get; } = new(null, new Dictionary<CellAddress, LoadedFormula>(),
         new Dictionary<CellAddress, string>(), new Dictionary<CellAddress, CellStyle>(), SheetLook.Of(new Workbook().AddSheet("Sheet1")));
@@ -116,7 +145,7 @@ internal sealed class SheetSource(string? part, IReadOnlyDictionary<CellAddress,
         var formats = new Dictionary<CellAddress, string>();
         foreach (var (address, format) in sheet.Formats)
             formats[address] = format.FormatCode;
-        return new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles), SheetLook.Of(sheet));
+        return new SheetSource(part, formulas, formats, new Dictionary<CellAddress, CellStyle>(sheet.Styles), SheetLook.Of(sheet), sheet.Name);
     }
 
     /// <summary>The sheet's sizes, merges, panes and filter as read.</summary>

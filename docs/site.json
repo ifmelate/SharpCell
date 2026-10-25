@@ -12,6 +12,8 @@
         { "path": "getting-started.md", "title": "Getting started", "description": "Install, read an .xlsx file, recalculate, read values; walks through the console sample." },
         { "path": "guides/formulas.md", "title": "Formulas and values", "description": "Formula syntax, references, CellValue kinds, dynamic arrays, names and LAMBDA, parse errors." },
         { "path": "guides/cells.md", "title": "Cells, ranges and dates", "description": "Going through non-empty cells, UsedRange, reading and writing blocks of values, dates as DateTime, typing into cells as in Excel, defined names." },
+        { "path": "guides/sheets.md", "title": "Sheets, filters and sorting", "description": "Renaming, removing, moving and hiding sheets with formulas following; Excel's filter and its criteria; sorting a range." },
+        { "path": "guides/data.md", "title": "Data in and out", "description": "Filling sheets from collections, DataTables and CSV; reading ranges out as DataTables, objects and CSV." },
         { "path": "guides/recalculation.md", "title": "Recalculation", "description": "When values update, changed cells, precedents and dependents, cancellation, diagnostics, threads, cloning templates, culture and dates." },
         { "path": "guides/custom-functions.md", "title": "Custom functions", "description": "Functions written in C# that formulas call by name: arguments, scalar parameters, volatile functions, failures." },
         { "path": "guides/xlsx.md", "title": "Reading .xlsx files", "description": "What the reader loads and skips, saved results, streams, unsupported formats." },

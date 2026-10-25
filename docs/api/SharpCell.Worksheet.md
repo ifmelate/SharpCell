@@ -12,6 +12,15 @@ A sheet of a [Workbook](SharpCell.Workbook.md). Reading a cell that was never se
 
 ## Properties
 
+<a id="autofilter"></a>
+### AutoFilter
+
+```csharp
+public AutoFilter? AutoFilter { get; }
+```
+
+The sheet's filter, Excel's Data > Filter; null when it has none. Tables have filters of their own, which this is not.
+
 <a id="cells"></a>
 ### Cells
 
@@ -100,6 +109,15 @@ How many rows at the top stay in place while the rest scrolls, as Excel's Freeze
 
 - `ArgumentOutOfRangeException`: The count is negative or leaves no row to scroll.
 
+<a id="isremoved"></a>
+### IsRemoved
+
+```csharp
+public bool IsRemoved { get; }
+```
+
+Whether [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took the sheet out of its workbook; it can then be read but not changed.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -113,10 +131,16 @@ The merged areas, in the order they were merged.
 ### Name
 
 ```csharp
-public string Name { get; }
+public string Name { get; set; }
 ```
 
-The sheet name.
+The sheet name. Renaming a sheet renames it in every formula that refers to it, as Excel does: in cells of every sheet, defined names, data validation and conditional formats. Text inside INDIRECT and hyperlinks into the sheet keep the old name, as in Excel. Every formula is calculated again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
+
+**Exceptions**
+
+- `ArgumentException`: The name is not a valid sheet name, or another sheet has it, ignoring case.
+- `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not follow the new name.
+- `InvalidOperationException`: The sheet was removed from its workbook.
 
 <a id="notes"></a>
 ### Notes
@@ -219,6 +243,19 @@ public bool ShowGridlines { get; set; }
 
 Whether Excel draws gridlines between the sheet's cells; true unless turned off.
 
+<a id="tabcolor"></a>
+### TabColor
+
+```csharp
+public CellColor? TabColor { get; set; }
+```
+
+The colour of the sheet's tab; null for none.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="usedrange"></a>
 ### UsedRange
 
@@ -237,6 +274,19 @@ public IReadOnlyList<(CellRange, DataValidation)> Validations { get; }
 
 The data validation rules, one entry per range: a rule over several ranges has an entry for each, in order. The formulas of a rule are relative to the first cell of its first range.
 
+<a id="visibility"></a>
+### Visibility
+
+```csharp
+public SheetVisibility Visibility { get; set; }
+```
+
+Whether the sheet's tab shows in Excel. A workbook keeps at least one visible sheet, as in Excel. Hidden sheets are calculated and saved like any other.
+
+**Exceptions**
+
+- `InvalidOperationException`: Hiding the workbook's last visible sheet, or the sheet was removed.
+
 <a id="workbook"></a>
 ### Workbook
 
@@ -244,7 +294,7 @@ The data validation rules, one entry per range: a rule over several ranges has a
 public Workbook Workbook { get; }
 ```
 
-The workbook the sheet belongs to.
+The workbook the sheet belongs to, also after [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took it out.
 
 <a id="item-int-int"></a>
 ### this[int, int]
@@ -525,6 +575,30 @@ Whether a row is hidden.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="loadcsv-string-textreader-char-bool"></a>
+### LoadCsv(string, TextReader, char, bool)
+
+```csharp
+public CellRange LoadCsv(string topLeft, TextReader reader, char delimiter = ,, bool formulas = false)
+```
+
+Writes CSV text into the sheet starting at a cell, as Excel opens a .csv file: each field is read as if typed into its cell (see [Cell.Input](SharpCell.Cell.md#input)), so numbers, percentages, dates and logical values in the workbook's culture become those values, with a format taken from how they were written. Fields may be quoted, with quotes doubled and line breaks inside; rows end in CRLF, LF or CR. An empty field clears its cell. A field starting with `=` stays text unless `formulas` is set, since a file from elsewhere could hide formulas in it. Nothing is written unless all of it fits on the sheet.
+
+**Parameters**
+
+- `topLeft`: The cell of the first field, such as `A1`.
+- `reader`: The CSV text.
+- `delimiter`: What separates the fields; Excel uses `;` where the decimal separator is a comma.
+- `formulas`: Whether a field starting with `=` is a formula, as Excel reads it.
+
+**Returns:** The range written: as many rows as the text has, as wide as its widest row.
+
+**Exceptions**
+
+- `ArgumentException`: The address is not a cell, or the delimiter is a quote or a line break.
+- `ArgumentOutOfRangeException`: The rows or fields run past the sheet's edge.
+- `FormulaParseException`: With `formulas`, a field starting with `=` is not a formula.
+
 <a id="loaddatatable-string-datatable-bool"></a>
 ### LoadDataTable(string, DataTable, bool)
 
@@ -623,6 +697,19 @@ A range of this sheet by A1 address: `A1:C10`, `B2`, whole columns `A:B` or whol
 
 - `ArgumentException`: The text is not such an address; a sheet name is not allowed.
 
+<a id="removeautofilter"></a>
+### RemoveAutoFilter()
+
+```csharp
+public void RemoveAutoFilter()
+```
+
+Turns the sheet's filter off, as clicking Excel's Filter again does: the rows it hid show, and the sheet is no longer in [Worksheet.FilterMode](SharpCell.Worksheet.md#filtermode). Nothing happens without a filter.
+
+**Exceptions**
+
+- `InvalidOperationException`: The sheet was removed.
+
 <a id="removecolumnpagebreak-int"></a>
 ### RemoveColumnPageBreak(int)
 
@@ -661,6 +748,24 @@ A row's own height in points; null when it has none.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setautofilter-string"></a>
+### SetAutoFilter(string)
+
+```csharp
+public AutoFilter SetAutoFilter(string range)
+```
+
+Turns on Excel's filter for a range, its first row holding the buttons, and returns it to filter columns with. A filter the sheet had is removed first, showing the rows it hid.
+
+**Parameters**
+
+- `range`: An A1 range on this sheet with at least two rows, such as `A1:D20`; whole columns such as `A:D` are filtered down to the last row with something in it.
+
+**Exceptions**
+
+- `ArgumentException`: The text is not such a range, or the range overlaps a table.
+- `InvalidOperationException`: The sheet was removed.
 
 <a id="setcolumnhidden-int-bool"></a>
 ### SetColumnHidden(int, bool)

@@ -171,6 +171,12 @@ internal sealed class Lexer
         var start = _pos;
         if (TryMatchError(start, out var kind, out var length))
         {
+            // Excel writes a reference into a removed sheet as #REF!A1.
+            var after = start + length;
+            if (kind == ErrorKind.Ref && after < _text.Length
+                && (_style == ReferenceStyle.R1C1 ? TryLexR1C1Reference(after, SheetPrefix.Deleted, start) : TryLexReference(after, SheetPrefix.Deleted, start)))
+                return;
+
             _pos += length;
             Add(new Token(TokenKind.Error, start, length) { Error = kind });
             return;

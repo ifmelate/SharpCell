@@ -83,6 +83,18 @@ internal static class WorksheetReader
                 continue;
             }
 
+            if (reader.Depth == 1 && reader.LocalName == "autoFilter")
+            {
+                FilterElements.Read((XElement)XNode.ReadFrom(reader), sheet);
+                continue;
+            }
+
+            if (reader.Depth == 2 && reader.LocalName == "tabColor")
+            {
+                sheet.TabColor = saved.Color((XElement)XNode.ReadFrom(reader));
+                continue;
+            }
+
             if (reader.Depth == 1 && reader.LocalName == "sheetProtection")
             {
                 ProtectionElements.Read((XElement)XNode.ReadFrom(reader), sheet);
@@ -113,10 +125,6 @@ internal static class WorksheetReader
                         break;
                     case "sheetPr":
                         if (reader.GetAttribute("filterMode") is "1" or "true")
-                            sheet.FilterMode = true;
-                        break;
-                    case "autoFilter":
-                        if (AutoFilter.HasCriteria(reader))
                             sheet.FilterMode = true;
                         break;
                     case "sheetFormatPr":

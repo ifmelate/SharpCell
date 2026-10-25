@@ -81,7 +81,7 @@ public sealed partial class Worksheet
             throw new ArgumentOutOfRangeException(parameter, edit.At, "The position is outside the sheet.");
         if (edit.Count < 1 || edit.Count > max - edit.At + 1)
             throw new ArgumentOutOfRangeException("count", edit.Count, "The rows or columns must fit on the sheet.");
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         Check(edit, max);
         Workbook.Calculation.Rebuild(() => Apply(edit));
         _edits.Add(edit);
@@ -248,6 +248,7 @@ public sealed partial class Worksheet
         MoveKeys(_hyperlinks, edit);
         MoveKeys(_notes, edit);
         MovePrinting(edit);
+        MoveAutoFilter(edit);
         // Rows and columns keep their heights and widths when only some of their cells move.
         if (edit.Whole && edit.Rows)
         {

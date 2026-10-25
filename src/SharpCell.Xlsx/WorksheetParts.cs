@@ -61,6 +61,10 @@ internal sealed class SheetLook
         DefaultColumnWidth = sheet.DefaultColumnWidth;
         DefaultRowHeight = sheet.DefaultRowHeight;
         FilterMode = sheet.FilterMode;
+        TabColor = sheet.TabColor;
+        Visibility = sheet.Visibility;
+        FilterArea = sheet.AutoFilter?.Area;
+        FilterColumns = sheet.AutoFilter is { } filter ? [.. filter.Columns.Select(pair => (pair.Key, pair.Value))] : [];
     }
 
     public static SheetLook Of(Worksheet sheet) => new(sheet);
@@ -111,6 +115,11 @@ internal sealed class SheetLook
         DefaultColumnWidth = look.DefaultColumnWidth;
         DefaultRowHeight = look.DefaultRowHeight;
         FilterMode = look.FilterMode;
+        TabColor = look.TabColor;
+        Visibility = look.Visibility;
+        FilterArea = look.FilterArea is { } filtered ? map.Map(sheet, filtered) : null;
+        FilterColumns = [.. look.FilterColumns.Select(pair => (Column: map.MapColumn(sheet, pair.Column), pair.Filter))
+            .Where(pair => pair.Column is not null).Select(pair => (pair.Column!.Value, pair.Filter))];
     }
 
     /// <summary>The sheet as read, with its rows and columns where the sheet's edits moved them.</summary>
@@ -181,6 +190,22 @@ internal sealed class SheetLook
     public double? DefaultRowHeight { get; }
 
     public bool FilterMode { get; }
+
+    public CellColor? TabColor { get; }
+
+    public SheetVisibility Visibility { get; }
+
+    /// <summary>The filter's range, or null for none.</summary>
+    public Area? FilterArea { get; }
+
+    /// <summary>The filter's criteria by sheet column.</summary>
+    public IReadOnlyList<(int Column, ColumnFilter Filter)> FilterColumns { get; }
+
+    public bool AutoFilterChanged(Worksheet sheet) =>
+        sheet.AutoFilter?.Area != FilterArea
+        || !(sheet.AutoFilter?.Columns.Select(pair => (pair.Key, pair.Value)) ?? []).SequenceEqual(FilterColumns);
+
+    public bool TabColorChanged(Worksheet sheet) => TabColor != sheet.TabColor;
 
     public bool ColumnsChanged(Worksheet sheet) => !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns);
 

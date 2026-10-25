@@ -33,7 +33,7 @@ internal static class TableReader
                     totals = RowCount(reader.GetAttribute("totalsRowCount"), 0, part) == 1;
                     break;
                 case "autoFilter" when reader.Depth == 1:
-                    filtered |= AutoFilter.HasCriteria(reader);
+                    filtered |= FilterElements.HasCriteria(reader);
                     break;
                 case "tableColumn":
                     columns.Add(XmlText.Decode(reader.GetAttribute("name")
@@ -56,30 +56,4 @@ internal static class TableReader
         "1" => 1,
         _ => throw new InvalidDataException($"Table part '{part}' has a header or totals row count of '{text}'; only 0 and 1 are supported."),
     };
-}
-
-internal static class AutoFilter
-{
-    // The children of filterColumn that hold criteria; a filterColumn without one only hides its button.
-    private static readonly HashSet<string> Criteria = new(StringComparer.Ordinal)
-    {
-        "filters", "customFilters", "top10", "dynamicFilter", "colorFilter", "iconFilter",
-    };
-
-    /// <summary>Whether the autoFilter element the reader is on has a column with criteria. Leaves the reader on its end.</summary>
-    public static bool HasCriteria(XmlReader reader)
-    {
-        if (reader.IsEmptyElement)
-            return false;
-        using var subtree = reader.ReadSubtree();
-        var found = false;
-        while (subtree.Read())
-        {
-            // autoFilter is depth 0 here, filterColumn 1, criteria 2.
-            if (subtree.NodeType == XmlNodeType.Element && subtree.Depth == 2 && Criteria.Contains(subtree.LocalName))
-                found = true;
-        }
-
-        return found;
-    }
 }

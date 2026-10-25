@@ -53,7 +53,7 @@ public sealed partial class Worksheet
             throw new ArgumentException($"'{topLeft}' is not a cell address.", nameof(topLeft));
         if (start.Column + columns.Length - 1 > CellAddress.MaxColumn)
             throw new ArgumentOutOfRangeException(nameof(columns), columns.Length, "The columns run past the last column of the sheet.");
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
 
         // Convert everything first, so that a value that cannot be stored leaves the sheet as it was.
         var converted = new List<(CellValue Value, string? Format)[]>();
@@ -115,7 +115,7 @@ public sealed partial class Worksheet
             throw new ArgumentException($"'{topLeft}' is not a cell address.", nameof(topLeft));
         if (start.Column + columnCount - 1 > CellAddress.MaxColumn)
             throw new ArgumentOutOfRangeException(nameof(table), columnCount, "The columns run past the last column of the sheet.");
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
 
         var converted = new List<(CellValue Value, string? Format)[]>();
         if (headers)

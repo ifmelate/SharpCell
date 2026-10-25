@@ -1,0 +1,7 @@
+<Project>
+  <!-- BenchmarkDotNet builds a generated project below this folder. It must pick its own target framework, not the two the repository lists. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <PropertyGroup>
+    <TargetFrameworks></TargetFrameworks>
+  </PropertyGroup>
+</Project>

@@ -70,4 +70,5 @@ workbook.Recalculate();                         // both are 5
   criteria, every hidden row counts as filtered. `Worksheet.FilterMode` is that flag; the reader
   sets it from the file.
 - `AGGREGATE` with options 0, 2, 4 and 6 counts every row.
-- SharpCell does not apply filter criteria: hidden rows are as the file or your code left them.
+- A sheet's filter hides rows when its criteria are applied (see [Filtering rows](sheets.md#filtering-rows));
+  a table's own filter is not applied: its hidden rows are as the file or your code left them.

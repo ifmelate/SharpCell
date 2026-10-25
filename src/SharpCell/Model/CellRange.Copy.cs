@@ -33,8 +33,8 @@ public sealed partial class CellRange
     public CellRange CopyTo(CellRange destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        Worksheet.Workbook.ThrowIfInCustomFunction();
-        destination.Worksheet.Workbook.ThrowIfInCustomFunction();
+        Worksheet.ThrowIfCannotChange();
+        destination.Worksheet.ThrowIfCannotChange();
         var target = destination.Worksheet;
         var to = destination.Area;
         var (down, across) = to.Rows % Area.Rows == 0 && to.Columns % Area.Columns == 0

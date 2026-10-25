@@ -39,7 +39,7 @@ public sealed partial class Worksheet
         {
             if (value is < 0 or >= CellAddress.MaxRow)
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Frozen rows must leave at least one row to scroll.");
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _frozenRows = value;
         }
     }
@@ -53,7 +53,7 @@ public sealed partial class Worksheet
         {
             if (value is < 0 or >= CellAddress.MaxColumn)
                 throw new ArgumentOutOfRangeException(nameof(value), value, "Frozen columns must leave at least one column to scroll.");
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _frozenColumns = value;
         }
     }
@@ -64,7 +64,7 @@ public sealed partial class Worksheet
         get => _showGridlines;
         set
         {
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _showGridlines = value;
         }
     }
@@ -88,14 +88,14 @@ public sealed partial class Worksheet
     /// <param name="allow">What users may still do; null for Excel's defaults, selecting cells only.</param>
     public void Protect(string? password = null, SheetProtection? allow = null)
     {
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         SetProtection(allow ?? new SheetProtection(), string.IsNullOrEmpty(password) ? null : ProtectionPassword.Create(password));
     }
 
     /// <summary>Removes the sheet's protection and its password, as Excel's Unprotect Sheet does once the password is given.</summary>
     public void Unprotect()
     {
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         SetProtection(null, null);
     }
 
@@ -172,7 +172,7 @@ public sealed partial class Worksheet
         get => _defaultColumnWidth;
         set
         {
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _defaultColumnWidth = value is { } width ? CheckSize(width, MaxColumnWidth, nameof(value)) : null;
         }
     }
@@ -187,7 +187,7 @@ public sealed partial class Worksheet
         get => _defaultRowHeight;
         set
         {
-            Workbook.ThrowIfInCustomFunction();
+            ThrowIfCannotChange();
             _defaultRowHeight = value is { } height ? CheckSize(height, MaxRowHeight, nameof(value)) : null;
         }
     }
@@ -205,7 +205,7 @@ public sealed partial class Worksheet
     public void SetColumnWidth(int column, double? width)
     {
         CheckColumn(column);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         if (width is { } value)
             _columnWidths[column] = CheckSize(value, MaxColumnWidth, nameof(width));
         else
@@ -225,7 +225,7 @@ public sealed partial class Worksheet
     public void SetRowHeight(int row, double? height)
     {
         CheckRow(row);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         if (height is { } value)
             _rowHeights[row] = CheckSize(value, MaxRowHeight, nameof(height));
         else
@@ -245,7 +245,7 @@ public sealed partial class Worksheet
     public void SetColumnHidden(int column, bool hidden)
     {
         CheckColumn(column);
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         if (hidden)
             _hiddenColumns.Add(column);
         else
@@ -265,7 +265,7 @@ public sealed partial class Worksheet
     public void Merge(string address)
     {
         var area = Range(address).Area;
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         if (area.IsSingleCell)
             throw new ArgumentException($"'{address}' is one cell; a merge needs two or more.", nameof(address));
         if (!TryMerge(area))
@@ -277,7 +277,7 @@ public sealed partial class Worksheet
     public void Unmerge(string address)
     {
         var area = Range(address).Area;
-        Workbook.ThrowIfInCustomFunction();
+        ThrowIfCannotChange();
         if (!_merged.Remove(area))
             throw new ArgumentException($"'{address}' is not a merged area.", nameof(address));
     }

@@ -132,6 +132,9 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
 
     public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
 
+    /// <summary>Turns a colour element into RGB with the file's theme and palette.</summary>
+    public Func<XElement?, CellColor?> Color { get; init; } = _ => null;
+
     /// <summary>Each cell style: its number format and how it looks; empty when the file has no styles part.</summary>
     public IReadOnlyList<CellXf> Styles { get; } = styles;
 

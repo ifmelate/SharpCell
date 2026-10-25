@@ -36,11 +36,12 @@ Everything SharpCell models:
   expected (`=SUM(A1:A3*2)`) is saved as a dynamic array formula, so Excel does not reduce it as
   Excel 2016 would.
 - Cell styles and number formats, column widths, hidden columns, row heights, hidden rows, merged
-  cells, frozen panes, gridlines, the default column width and row height, and whether a sheet is
-  filtered.
+  cells, frozen panes, gridlines, the default column width and row height, and the sheet's filter
+  with its criteria.
 - Hyperlinks, notes, data validation, conditional formats, sheet and workbook protection, and locked and hidden cells.
 - Page orientation and margins, print areas, print titles and manual page breaks.
-- New sheets, defined names, new tables, the date system and the iteration settings.
+- New sheets, and sheets renamed, removed, moved and hidden, with their tab colours; defined names,
+  new tables, the date system and the iteration settings.
 
 A workbook read from a file keeps everything SharpCell does not model, copied unchanged from the
 file: charts, pivot tables, threaded comments, the settings of colour scales, data bars and icon sets, pictures, macros, headers and footers, paper size and scaling,
@@ -61,6 +62,13 @@ where they were. A pivot table moves with the rows above it, but rows inserted i
 from it make the save fail, as Excel refuses that edit. A sheet holding an Excel data table cannot be
 saved after its rows or columns moved (`NotSupportedException`). Formulas SharpCell cannot read are
 kept as the file has them, with the results Excel saved.
+
+When sheets are renamed, the file's charts, pivot table sources, print areas and the names
+SharpCell does not read refer to the new names. A removed sheet's part goes with the parts only it
+uses (drawings, charts, comments, tables), its local names go, and references to it in what
+SharpCell does not model become `#REF!`. Moved sheets keep their local names and the window shows
+the sheet it showed; when that sheet was removed or hidden, the window shows the next visible one.
+The list of sheet names in the document properties is left out (Excel writes it again).
 
 Saving to a path writes a new file next to the target and then replaces it, so the file the workbook
 was read from can be the target.

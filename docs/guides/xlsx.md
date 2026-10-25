@@ -5,13 +5,13 @@ What `XlsxReader` loads, what it skips, and how saved results and streams behave
 
 ## What is read
 
-- Sheets, including hidden ones, in workbook order.
+- Sheets, including hidden ones, in workbook order, with whether they are hidden and their tab colours (see [Sheets, filters and sorting](sheets.md)).
 - Constants: numbers, text, logical values and errors.
 - Formulas: ordinary, shared, legacy array formulas (Ctrl+Shift+Enter) and dynamic arrays.
 - The results Excel saved with each formula.
 - Defined names, workbook-wide and sheet-scoped.
 - Tables, with their column names and header and totals rows.
-- Hidden rows, and whether a sheet has a filter (see [Tables and hidden rows](tables.md)).
+- Hidden rows, and the sheet's filter with its criteria (see [Filtering rows](sheets.md#filtering-rows) and [Tables and hidden rows](tables.md)).
 - The date system, 1900 or 1904.
 - Each cell's number format, for `Cell.NumberFormat` and `Cell.Text` (see [Cells, ranges and dates](cells.md#number-formats-and-display-text)).
 - Each cell's style: font, solid fill, borders, alignment; theme colours as RGB (see [Cells, ranges and dates](cells.md#styles)).

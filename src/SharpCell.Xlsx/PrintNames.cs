@@ -50,7 +50,8 @@ internal static class PrintNames
         return parts.Count == 0 ? null : string.Join(",", parts);
     }
 
-    private static string Reference(Worksheet sheet, Area area)
+    /// <summary>A range of the sheet as built-in names write it: absolute, with the sheet name.</summary>
+    public static string Reference(Worksheet sheet, Area area)
     {
         var prefix = FormulaPrinter.QuoteSheetName(sheet.Name) + "!";
         if (area.FirstColumn == 1 && area.LastColumn == CellAddress.MaxColumn)

@@ -77,7 +77,7 @@ public sealed partial class CellRange : IEquatable<CellRange>
     public void SetValues(CellValue[,] values)
     {
         ArgumentNullException.ThrowIfNull(values);
-        Worksheet.Workbook.ThrowIfInCustomFunction();
+        Worksheet.ThrowIfCannotChange();
         if (values.GetLength(0) != Area.Rows || values.GetLength(1) != Area.Columns)
             throw new ArgumentException(
                 $"The array is {values.GetLength(0)}x{values.GetLength(1)}; {this} is {Area.Rows}x{Area.Columns}.", nameof(values));
@@ -115,7 +115,7 @@ public sealed partial class CellRange : IEquatable<CellRange>
     {
         var store = sheet.Store;
         var version = store.Version;
-        using var cells = store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn).GetEnumerator();
+        var cells = store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn).GetEnumerator();
         while (true)
         {
             if (store.Version != version)
