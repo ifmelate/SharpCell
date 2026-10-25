@@ -47,5 +47,6 @@ Values update only on `Recalculate`. Excel errors such as `#DIV/0!` are values, 
 - [Documentation](https://ifmelate.github.io/SharpCell/)
 - [What matches Excel](https://ifmelate.github.io/SharpCell/compatibility.html), function by function
 - [What SharpCell does not do](https://ifmelate.github.io/SharpCell/guides/limits.html)
+- [Speed](https://github.com/ifmelate/SharpCell#speed): 10,000 rows with 30,000 formulas calculate in about 0.1 s, and one changed input recalculates in about 30 ms
 - [For AI coding agents](https://ifmelate.github.io/SharpCell/llms.txt)
 - [Source and issues](https://github.com/ifmelate/SharpCell)
