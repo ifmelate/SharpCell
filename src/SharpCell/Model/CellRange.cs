@@ -115,7 +115,7 @@ public sealed partial class CellRange : IEquatable<CellRange>
     {
         var store = sheet.Store;
         var version = store.Version;
-        using var cells = store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn).GetEnumerator();
+        var cells = store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn).GetEnumerator();
         while (true)
         {
             if (store.Version != version)
