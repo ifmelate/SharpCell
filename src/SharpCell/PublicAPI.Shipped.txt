@@ -18,6 +18,9 @@ override SharpCell.CellStyle.ToString() -> string!
 override SharpCell.CellValue.Equals(object? obj) -> bool
 override SharpCell.CellValue.GetHashCode() -> int
 override SharpCell.CellValue.ToString() -> string!
+override SharpCell.ColumnFilter.Equals(object? obj) -> bool
+override SharpCell.ColumnFilter.GetHashCode() -> int
+override SharpCell.ColumnFilter.ToString() -> string!
 override SharpCell.ConditionalFormat.Equals(object? obj) -> bool
 override SharpCell.ConditionalFormat.GetHashCode() -> int
 override SharpCell.ConditionalFormat.ToString() -> string!
@@ -28,6 +31,8 @@ override SharpCell.DataValidation.Equals(object? obj) -> bool
 override SharpCell.DataValidation.GetHashCode() -> int
 override SharpCell.DataValidation.ToString() -> string!
 override SharpCell.DefinedName.ToString() -> string!
+override SharpCell.FilterCondition.GetHashCode() -> int
+override SharpCell.FilterDate.GetHashCode() -> int
 override SharpCell.Hyperlink.Equals(object? obj) -> bool
 override SharpCell.Hyperlink.GetHashCode() -> int
 override SharpCell.Hyperlink.ToString() -> string!
@@ -43,8 +48,17 @@ override SharpCell.PageMargins.ToString() -> string!
 override SharpCell.SheetProtection.Equals(object? obj) -> bool
 override SharpCell.SheetProtection.GetHashCode() -> int
 override SharpCell.SheetProtection.ToString() -> string!
+override SharpCell.SortKey.GetHashCode() -> int
 override SharpCell.Table.ToString() -> string!
 override SharpCell.Worksheet.ToString() -> string!
+SharpCell.AutoFilter
+SharpCell.AutoFilter.Apply() -> void
+SharpCell.AutoFilter.Clear() -> void
+SharpCell.AutoFilter.Clear(int column) -> void
+SharpCell.AutoFilter.Columns.get -> System.Collections.Generic.IReadOnlyDictionary<int, SharpCell.ColumnFilter!>!
+SharpCell.AutoFilter.Filter(int column, SharpCell.ColumnFilter! filter) -> void
+SharpCell.AutoFilter.Range.get -> SharpCell.CellRange!
+SharpCell.AutoFilter.Worksheet.get -> SharpCell.Worksheet!
 SharpCell.CalculationDiagnostic
 SharpCell.CalculationDiagnostic.Address.get -> string?
 SharpCell.CalculationDiagnostic.CalculationDiagnostic(SharpCell.DiagnosticKind kind, SharpCell.Worksheet? sheet, string? address, string! message) -> void
@@ -149,8 +163,14 @@ SharpCell.CellRange.GetValues() -> SharpCell.CellValue[,]!
 SharpCell.CellRange.Insert(SharpCell.InsertShift shift) -> void
 SharpCell.CellRange.LastColumn.get -> int
 SharpCell.CellRange.LastRow.get -> int
+SharpCell.CellRange.ReadRows<T>(System.Func<SharpCell.RangeRow, T>! read) -> System.Collections.Generic.List<T>!
 SharpCell.CellRange.SetValues(SharpCell.CellValue[,]! values) -> void
+SharpCell.CellRange.Sort(params SharpCell.SortKey[]! keys) -> void
+SharpCell.CellRange.Sort(System.Collections.Generic.IReadOnlyList<SharpCell.SortKey>! keys, bool matchCase = false, bool leftToRight = false) -> void
+SharpCell.CellRange.ToCsv(char delimiter = ',') -> string!
+SharpCell.CellRange.ToDataTable(bool headers = true) -> System.Data.DataTable!
 SharpCell.CellRange.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.CellRange.WriteCsv(System.IO.TextWriter! writer, char delimiter = ',') -> void
 SharpCell.CellStyle
 SharpCell.CellStyle.<Clone>$() -> SharpCell.CellStyle!
 SharpCell.CellStyle.BottomBorder.get -> SharpCell.CellBorder?
@@ -212,6 +232,28 @@ SharpCell.CellVerticalAlignment.Center = 1 -> SharpCell.CellVerticalAlignment
 SharpCell.CellVerticalAlignment.Distributed = 4 -> SharpCell.CellVerticalAlignment
 SharpCell.CellVerticalAlignment.Justify = 3 -> SharpCell.CellVerticalAlignment
 SharpCell.CellVerticalAlignment.Top = 0 -> SharpCell.CellVerticalAlignment
+SharpCell.ColumnFilter
+SharpCell.ColumnFilter.<Clone>$() -> SharpCell.ColumnFilter!
+SharpCell.ColumnFilter.Blanks.get -> bool
+SharpCell.ColumnFilter.Blanks.init -> void
+SharpCell.ColumnFilter.Conditions.get -> System.Collections.Generic.IReadOnlyList<SharpCell.FilterCondition>!
+SharpCell.ColumnFilter.Count.get -> double
+SharpCell.ColumnFilter.Dates.get -> System.Collections.Generic.IReadOnlyList<SharpCell.FilterDate>!
+SharpCell.ColumnFilter.Dates.init -> void
+SharpCell.ColumnFilter.Dynamic.get -> SharpCell.DynamicFilter
+SharpCell.ColumnFilter.Equals(SharpCell.ColumnFilter? other) -> bool
+SharpCell.ColumnFilter.MatchAll.get -> bool
+SharpCell.ColumnFilter.Percent.get -> bool
+SharpCell.ColumnFilter.Type.get -> SharpCell.ColumnFilterType
+SharpCell.ColumnFilter.Values.get -> System.Collections.Generic.IReadOnlyList<string!>!
+SharpCell.ColumnFilter.Values.init -> void
+SharpCell.ColumnFilterType
+SharpCell.ColumnFilterType.Bottom = 3 -> SharpCell.ColumnFilterType
+SharpCell.ColumnFilterType.ByColor = 5 -> SharpCell.ColumnFilterType
+SharpCell.ColumnFilterType.Custom = 1 -> SharpCell.ColumnFilterType
+SharpCell.ColumnFilterType.Dynamic = 4 -> SharpCell.ColumnFilterType
+SharpCell.ColumnFilterType.Top = 2 -> SharpCell.ColumnFilterType
+SharpCell.ColumnFilterType.Values = 0 -> SharpCell.ColumnFilterType
 SharpCell.ConditionalFormat
 SharpCell.ConditionalFormat.<Clone>$() -> SharpCell.ConditionalFormat!
 SharpCell.ConditionalFormat.Equals(SharpCell.ConditionalFormat? other) -> bool
@@ -316,6 +358,13 @@ SharpCell.DataValidation.ShowInputMessage.get -> bool
 SharpCell.DataValidation.ShowInputMessage.init -> void
 SharpCell.DataValidation.Type.get -> SharpCell.ValidationType
 SharpCell.DataValidation.Type.init -> void
+SharpCell.DateGrouping
+SharpCell.DateGrouping.Day = 2 -> SharpCell.DateGrouping
+SharpCell.DateGrouping.Hour = 3 -> SharpCell.DateGrouping
+SharpCell.DateGrouping.Minute = 4 -> SharpCell.DateGrouping
+SharpCell.DateGrouping.Month = 1 -> SharpCell.DateGrouping
+SharpCell.DateGrouping.Second = 5 -> SharpCell.DateGrouping
+SharpCell.DateGrouping.Year = 0 -> SharpCell.DateGrouping
 SharpCell.DateSystem
 SharpCell.DateSystem.Date1900 = 0 -> SharpCell.DateSystem
 SharpCell.DateSystem.Date1904 = 1 -> SharpCell.DateSystem
@@ -333,6 +382,41 @@ SharpCell.DiagnosticKind.FunctionFailure = 1 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.IterationLimitReached = 5 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.LimitExceeded = 3 -> SharpCell.DiagnosticKind
 SharpCell.DiagnosticKind.UnsupportedFormula = 2 -> SharpCell.DiagnosticKind
+SharpCell.DynamicFilter
+SharpCell.DynamicFilter.AboveAverage = 0 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.April = 25 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.August = 29 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.BelowAverage = 1 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.December = 33 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.February = 23 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.January = 22 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.July = 28 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.June = 27 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.LastMonth = 8 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.LastQuarter = 11 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.LastWeek = 5 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.LastYear = 14 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.March = 24 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.May = 26 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.NextMonth = 10 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.NextQuarter = 13 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.NextWeek = 7 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.NextYear = 16 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.November = 32 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.October = 31 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Quarter1 = 18 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Quarter2 = 19 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Quarter3 = 20 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Quarter4 = 21 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.September = 30 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.ThisMonth = 9 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.ThisQuarter = 12 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.ThisWeek = 6 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.ThisYear = 15 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Today = 3 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Tomorrow = 4 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.YearToDate = 17 -> SharpCell.DynamicFilter
+SharpCell.DynamicFilter.Yesterday = 2 -> SharpCell.DynamicFilter
 SharpCell.ErrorKind
 SharpCell.ErrorKind.Calc = 14 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Div0 = 2 -> SharpCell.ErrorKind
@@ -344,6 +428,42 @@ SharpCell.ErrorKind.Ref = 4 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Spill = 9 -> SharpCell.ErrorKind
 SharpCell.ErrorKind.Value = 3 -> SharpCell.ErrorKind
 SharpCell.ErrorKinds
+SharpCell.FilterCondition
+SharpCell.FilterCondition.Deconstruct(out SharpCell.FilterOperator Operator, out string! Value) -> void
+SharpCell.FilterCondition.Equals(SharpCell.FilterCondition other) -> bool
+SharpCell.FilterCondition.FilterCondition() -> void
+SharpCell.FilterCondition.FilterCondition(SharpCell.FilterOperator Operator, string! Value) -> void
+SharpCell.FilterCondition.Operator.get -> SharpCell.FilterOperator
+SharpCell.FilterCondition.Operator.init -> void
+SharpCell.FilterCondition.Value.get -> string!
+SharpCell.FilterCondition.Value.init -> void
+SharpCell.FilterDate
+SharpCell.FilterDate.Contains(System.DateTime value) -> bool
+SharpCell.FilterDate.Day.get -> int
+SharpCell.FilterDate.Day.init -> void
+SharpCell.FilterDate.Deconstruct(out SharpCell.DateGrouping Grouping, out int Year, out int Month, out int Day, out int Hour, out int Minute, out int Second) -> void
+SharpCell.FilterDate.Equals(SharpCell.FilterDate other) -> bool
+SharpCell.FilterDate.FilterDate() -> void
+SharpCell.FilterDate.FilterDate(SharpCell.DateGrouping Grouping, int Year, int Month = 1, int Day = 1, int Hour = 0, int Minute = 0, int Second = 0) -> void
+SharpCell.FilterDate.Grouping.get -> SharpCell.DateGrouping
+SharpCell.FilterDate.Grouping.init -> void
+SharpCell.FilterDate.Hour.get -> int
+SharpCell.FilterDate.Hour.init -> void
+SharpCell.FilterDate.Minute.get -> int
+SharpCell.FilterDate.Minute.init -> void
+SharpCell.FilterDate.Month.get -> int
+SharpCell.FilterDate.Month.init -> void
+SharpCell.FilterDate.Second.get -> int
+SharpCell.FilterDate.Second.init -> void
+SharpCell.FilterDate.Year.get -> int
+SharpCell.FilterDate.Year.init -> void
+SharpCell.FilterOperator
+SharpCell.FilterOperator.Equal = 0 -> SharpCell.FilterOperator
+SharpCell.FilterOperator.GreaterThan = 2 -> SharpCell.FilterOperator
+SharpCell.FilterOperator.GreaterThanOrEqual = 3 -> SharpCell.FilterOperator
+SharpCell.FilterOperator.LessThan = 4 -> SharpCell.FilterOperator
+SharpCell.FilterOperator.LessThanOrEqual = 5 -> SharpCell.FilterOperator
+SharpCell.FilterOperator.NotEqual = 1 -> SharpCell.FilterOperator
 SharpCell.FormulaParseException
 SharpCell.FormulaParseException.FormulaParseException(string! message, int position) -> void
 SharpCell.FormulaParseException.Position.get -> int
@@ -415,6 +535,12 @@ SharpCell.PageMargins.Top.init -> void
 SharpCell.PageOrientation
 SharpCell.PageOrientation.Landscape = 1 -> SharpCell.PageOrientation
 SharpCell.PageOrientation.Portrait = 0 -> SharpCell.PageOrientation
+SharpCell.RangeRow
+SharpCell.RangeRow.HasColumn(string! header) -> bool
+SharpCell.RangeRow.RangeRow() -> void
+SharpCell.RangeRow.Row.get -> int
+SharpCell.RangeRow.this[int column].get -> SharpCell.Cell!
+SharpCell.RangeRow.this[string! header].get -> SharpCell.Cell!
 SharpCell.RecalculationResult
 SharpCell.RecalculationResult.ChangedCells.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
 SharpCell.SheetProtection
@@ -451,6 +577,19 @@ SharpCell.SheetProtection.SheetProtection() -> void
 SharpCell.SheetProtection.SheetProtection(SharpCell.SheetProtection! source) -> void
 SharpCell.SheetProtection.Sort.get -> bool
 SharpCell.SheetProtection.Sort.init -> void
+SharpCell.SheetVisibility
+SharpCell.SheetVisibility.Hidden = 1 -> SharpCell.SheetVisibility
+SharpCell.SheetVisibility.VeryHidden = 2 -> SharpCell.SheetVisibility
+SharpCell.SheetVisibility.Visible = 0 -> SharpCell.SheetVisibility
+SharpCell.SortKey
+SharpCell.SortKey.Deconstruct(out int Index, out bool Descending) -> void
+SharpCell.SortKey.Descending.get -> bool
+SharpCell.SortKey.Descending.init -> void
+SharpCell.SortKey.Equals(SharpCell.SortKey other) -> bool
+SharpCell.SortKey.Index.get -> int
+SharpCell.SortKey.Index.init -> void
+SharpCell.SortKey.SortKey() -> void
+SharpCell.SortKey.SortKey(int Index, bool Descending = false) -> void
 SharpCell.Table
 SharpCell.Table.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
 SharpCell.Table.HasHeaderRow.get -> bool
@@ -510,8 +649,10 @@ SharpCell.Workbook.IsStructureProtected.get -> bool
 SharpCell.Workbook.IsWindowsProtected.get -> bool
 SharpCell.Workbook.Iteration.get -> SharpCell.IterationSettings!
 SharpCell.Workbook.Iteration.set -> void
+SharpCell.Workbook.MoveSheet(SharpCell.Worksheet! sheet, int index) -> void
 SharpCell.Workbook.Protect(string? password = null, bool structure = true, bool windows = false) -> void
 SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> SharpCell.RecalculationResult!
+SharpCell.Workbook.RemoveSheet(SharpCell.Worksheet! sheet) -> void
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
 SharpCell.Workbook.Tables.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Table!>!
 SharpCell.Workbook.this[string! name].get -> SharpCell.Worksheet!
@@ -525,6 +666,7 @@ SharpCell.Worksheet.AddConditionalFormat(string! range, SharpCell.ConditionalFor
 SharpCell.Worksheet.AddRowPageBreak(int row) -> void
 SharpCell.Worksheet.AddTable(string! name, string! range, bool hasHeaderRow = true, bool hasTotalsRow = false) -> SharpCell.Table!
 SharpCell.Worksheet.AddValidation(string! range, SharpCell.DataValidation! validation) -> void
+SharpCell.Worksheet.AutoFilter.get -> SharpCell.AutoFilter?
 SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCell.Cell!>!
 SharpCell.Worksheet.ClearConditionalFormats() -> void
 SharpCell.Worksheet.ClearConditionalFormats(string! range) -> void
@@ -547,12 +689,15 @@ SharpCell.Worksheet.FrozenRows.set -> void
 SharpCell.Worksheet.InsertColumns(int column, int count = 1) -> void
 SharpCell.Worksheet.InsertRows(int row, int count = 1) -> void
 SharpCell.Worksheet.IsColumnHidden(int column) -> bool
+SharpCell.Worksheet.IsRemoved.get -> bool
 SharpCell.Worksheet.IsRowHidden(int row) -> bool
+SharpCell.Worksheet.LoadCsv(string! topLeft, System.IO.TextReader! reader, char delimiter = ',', bool formulas = false) -> SharpCell.CellRange!
 SharpCell.Worksheet.LoadDataTable(string! topLeft, System.Data.DataTable! table, bool headers = true) -> SharpCell.CellRange!
 SharpCell.Worksheet.LoadRows<T>(string! topLeft, System.Collections.Generic.IEnumerable<T>! rows, params (string! Header, System.Func<T, object?>! Value)[]! columns) -> SharpCell.CellRange!
 SharpCell.Worksheet.Merge(string! address) -> void
 SharpCell.Worksheet.MergedAreas.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
 SharpCell.Worksheet.Name.get -> string!
+SharpCell.Worksheet.Name.set -> void
 SharpCell.Worksheet.Notes.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.Cell! Cell, SharpCell.Note! Note)>!
 SharpCell.Worksheet.PageMargins.get -> SharpCell.PageMargins!
 SharpCell.Worksheet.PageMargins.set -> void
@@ -567,22 +712,28 @@ SharpCell.Worksheet.PrintTitleRows.set -> void
 SharpCell.Worksheet.Protect(string? password = null, SharpCell.SheetProtection? allow = null) -> void
 SharpCell.Worksheet.Protection.get -> SharpCell.SheetProtection?
 SharpCell.Worksheet.Range(string! address) -> SharpCell.CellRange!
+SharpCell.Worksheet.RemoveAutoFilter() -> void
 SharpCell.Worksheet.RemoveColumnPageBreak(int column) -> void
 SharpCell.Worksheet.RemoveRowPageBreak(int row) -> void
 SharpCell.Worksheet.RowHeight(int row) -> double?
 SharpCell.Worksheet.RowPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
+SharpCell.Worksheet.SetAutoFilter(string! range) -> SharpCell.AutoFilter!
 SharpCell.Worksheet.SetColumnHidden(int column, bool hidden) -> void
 SharpCell.Worksheet.SetColumnWidth(int column, double? width) -> void
 SharpCell.Worksheet.SetRowHeight(int row, double? height) -> void
 SharpCell.Worksheet.SetRowHidden(int row, bool hidden) -> void
 SharpCell.Worksheet.ShowGridlines.get -> bool
 SharpCell.Worksheet.ShowGridlines.set -> void
+SharpCell.Worksheet.TabColor.get -> SharpCell.CellColor?
+SharpCell.Worksheet.TabColor.set -> void
 SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
 SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
 SharpCell.Worksheet.Unmerge(string! address) -> void
 SharpCell.Worksheet.Unprotect() -> void
 SharpCell.Worksheet.UsedRange.get -> SharpCell.CellRange?
 SharpCell.Worksheet.Validations.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.CellRange! Range, SharpCell.DataValidation! Validation)>!
+SharpCell.Worksheet.Visibility.get -> SharpCell.SheetVisibility
+SharpCell.Worksheet.Visibility.set -> void
 SharpCell.Worksheet.Workbook.get -> SharpCell.Workbook!
 static SharpCell.CellBorder.operator !=(SharpCell.CellBorder? left, SharpCell.CellBorder? right) -> bool
 static SharpCell.CellBorder.operator ==(SharpCell.CellBorder? left, SharpCell.CellBorder? right) -> bool
@@ -611,6 +762,20 @@ static SharpCell.CellValue.operator !=(SharpCell.CellValue left, SharpCell.CellV
 static SharpCell.CellValue.operator ==(SharpCell.CellValue left, SharpCell.CellValue right) -> bool
 static SharpCell.CellValue.Text(string! value) -> SharpCell.CellValue
 static SharpCell.CellValue.True.get -> SharpCell.CellValue
+static SharpCell.ColumnFilter.BeginsWith(string! text) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.Blank() -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.Bottom(double count, bool percent = false) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.Contains(string! text) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.Custom(SharpCell.FilterCondition first, SharpCell.FilterCondition second, bool matchAll) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.Custom(SharpCell.FilterOperator operator, string! value) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.DoesNotContain(string! text) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.EndsWith(string! text) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.Of(SharpCell.DynamicFilter dynamic) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.OneOf(params SharpCell.FilterDate[]! dates) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.OneOf(params string![]! values) -> SharpCell.ColumnFilter!
+static SharpCell.ColumnFilter.operator !=(SharpCell.ColumnFilter? left, SharpCell.ColumnFilter? right) -> bool
+static SharpCell.ColumnFilter.operator ==(SharpCell.ColumnFilter? left, SharpCell.ColumnFilter? right) -> bool
+static SharpCell.ColumnFilter.Top(double count, bool percent = false) -> SharpCell.ColumnFilter!
 static SharpCell.ConditionalFormat.AboveAverage(SharpCell.ConditionalStyle! style, bool orEqual = false, int standardDeviations = 0) -> SharpCell.ConditionalFormat!
 static SharpCell.ConditionalFormat.BeginsWith(string! text, SharpCell.ConditionalStyle! style) -> SharpCell.ConditionalFormat!
 static SharpCell.ConditionalFormat.BelowAverage(SharpCell.ConditionalStyle! style, bool orEqual = false, int standardDeviations = 0) -> SharpCell.ConditionalFormat!
@@ -640,9 +805,21 @@ static SharpCell.DataValidation.List(params string![]! items) -> SharpCell.DataV
 static SharpCell.DataValidation.ListFrom(string! range) -> SharpCell.DataValidation!
 static SharpCell.ErrorKinds.ToText(this SharpCell.ErrorKind kind) -> string!
 static SharpCell.ErrorKinds.TryParse(System.ReadOnlySpan<char> text, out SharpCell.ErrorKind kind) -> bool
+static SharpCell.FilterCondition.operator !=(SharpCell.FilterCondition left, SharpCell.FilterCondition right) -> bool
+static SharpCell.FilterCondition.operator ==(SharpCell.FilterCondition left, SharpCell.FilterCondition right) -> bool
+static SharpCell.FilterDate.operator !=(SharpCell.FilterDate left, SharpCell.FilterDate right) -> bool
+static SharpCell.FilterDate.operator ==(SharpCell.FilterDate left, SharpCell.FilterDate right) -> bool
 static SharpCell.PageMargins.Narrow.get -> SharpCell.PageMargins!
 static SharpCell.PageMargins.Normal.get -> SharpCell.PageMargins!
 static SharpCell.PageMargins.operator !=(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
 static SharpCell.PageMargins.operator ==(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
 static SharpCell.PageMargins.Wide.get -> SharpCell.PageMargins!
+static SharpCell.SortKey.operator !=(SharpCell.SortKey left, SharpCell.SortKey right) -> bool
+static SharpCell.SortKey.operator ==(SharpCell.SortKey left, SharpCell.SortKey right) -> bool
 ~override SharpCell.CellColor.Equals(object obj) -> bool
+~override SharpCell.FilterCondition.Equals(object obj) -> bool
+~override SharpCell.FilterCondition.ToString() -> string
+~override SharpCell.FilterDate.Equals(object obj) -> bool
+~override SharpCell.FilterDate.ToString() -> string
+~override SharpCell.SortKey.Equals(object obj) -> bool
+~override SharpCell.SortKey.ToString() -> string
