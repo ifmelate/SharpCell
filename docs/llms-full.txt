@@ -1487,16 +1487,7 @@ maintainer.
 | 0.9 | Building workbooks: filling sheets from collections and `DataTable`s, hyperlinks, data validation, sheet and workbook protection, locked and hidden cells |
 | 0.10 | Copying cells as Excel pastes them, formulas, links and data validation following (`CellRange.CopyTo`) |
 | 0.11 | Conditional formats worked out as Excel shows them, notes, page setup, inserting and deleting cells with a shift |
-
-## Now: 0.12, sheets and data
-
-- Done: renaming, removing, moving and hiding sheets, with formulas following as in Excel, and tab
-  colours.
-- Done: Excel's filter: values, dates, custom conditions, top and bottom, above and below average
-  and date periods, applied as Excel applies them, read and saved.
-- Done: sorting a range by one key or several, cells moving with their formulas and formats.
-- Done: reading ranges out as `DataTable`s, objects and CSV, and loading CSV.
-- Benchmarks against EPPlus and ClosedXML: loading, recalculating and saving large workbooks.
+| 0.12 | Renaming, removing, moving and hiding sheets; Excel's filter; sorting ranges; ranges as `DataTable`s, objects and CSV; benchmarks, and `SUMIFS`-style functions several times faster |
 
 ## Next: 0.13, how sheets look
 
