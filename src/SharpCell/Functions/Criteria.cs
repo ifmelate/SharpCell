@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace SharpCell.Functions;
@@ -43,8 +44,24 @@ internal sealed class Criterion
     private readonly ErrorKind _error;
     private readonly string _text = "";
     private readonly bool _hasWildcards;
+    private readonly string _upperPattern = "";
     private readonly CultureInfo _culture;
     private readonly DateSystem _dateSystem;
+
+    // How many distinct texts one criterion remembers. A criterion lives for one function call and
+    // ranges repeat a few texts many times (regions, products, statuses). Once full it adds no more,
+    // so memory stays bounded; if the texts seen so far hardly repeated, it stops looking up too.
+    private const int RememberedTextsLimit = 1024;
+
+    // Whether a text cell costs a culture comparison or a number parse, so that the result for each
+    // distinct text is worth remembering. The result is a pure function of the text (ordinal), the
+    // criterion and the culture, so remembering it changes no result.
+    private readonly bool _remembersTexts;
+    private Dictionary<string, bool>? _rememberedTexts;
+    private int _rememberedHits;
+    private bool _gaveUpRemembering;
+    private string? _lastText;
+    private bool _lastResult;
 
     private Criterion(Operator op, OperandKind kind, CultureInfo culture, DateSystem dateSystem)
     {
@@ -55,7 +72,11 @@ internal sealed class Criterion
     }
 
     private Criterion(Operator op, double number, CultureInfo culture, DateSystem dateSystem)
-        : this(op, OperandKind.Number, culture, dateSystem) => _number = number;
+        : this(op, OperandKind.Number, culture, dateSystem)
+    {
+        _number = number;
+        _remembersTexts = op == Operator.Equal;
+    }
 
     private Criterion(Operator op, bool boolean, CultureInfo culture, DateSystem dateSystem)
         : this(op, OperandKind.Boolean, culture, dateSystem) => _boolean = boolean;
@@ -68,6 +89,9 @@ internal sealed class Criterion
     {
         _text = text;
         _hasWildcards = text.AsSpan().IndexOfAny("*?~") >= 0;
+        if (_hasWildcards)
+            _upperPattern = culture.TextInfo.ToUpper(text);
+        _remembersTexts = text.Length > 0;
     }
 
     /// <summary>Whether an empty cell meets the criterion; ranges count their empty cells without visiting them.</summary>
@@ -122,6 +146,52 @@ internal sealed class Criterion
 
     public bool Matches(CellValue value)
     {
+        if (_remembersTexts && value.Kind == CellValueKind.Text)
+            return MatchesRemembered(value.AsText());
+        return MatchesAfresh(value);
+    }
+
+    private bool MatchesRemembered(string text)
+    {
+        // Sorted or grouped data repeats the same string object in a row.
+        if (ReferenceEquals(text, _lastText))
+            return _lastResult;
+
+        bool result;
+        if (_gaveUpRemembering)
+        {
+            result = MatchesAfresh(CellValue.Text(text));
+        }
+        else
+        {
+            var remembered = _rememberedTexts ??= new Dictionary<string, bool>(StringComparer.Ordinal);
+            if (remembered.TryGetValue(text, out result))
+            {
+                _rememberedHits++;
+            }
+            else
+            {
+                result = MatchesAfresh(CellValue.Text(text));
+                if (remembered.Count < RememberedTextsLimit)
+                {
+                    remembered.Add(text, result);
+                }
+                else if (_rememberedHits < RememberedTextsLimit)
+                {
+                    // Full, and texts hardly repeated: lookups would only add cost from here on.
+                    _gaveUpRemembering = true;
+                    _rememberedTexts = null;
+                }
+            }
+        }
+
+        _lastText = text;
+        _lastResult = result;
+        return result;
+    }
+
+    private bool MatchesAfresh(CellValue value)
+    {
         if (_op == Operator.NotEqual)
             return !Equal(value);
         if (_op == Operator.Equal)
@@ -138,7 +208,10 @@ internal sealed class Criterion
             case OperandKind.Text when _text.Length == 0:
                 return false;
             case OperandKind.Text when value.Kind == CellValueKind.Text:
-                order = string.Compare(value.AsText(), _text, _culture, CompareOptions.IgnoreCase);
+                // Ordinal-equal strings are equal in every culture's order.
+                order = string.Equals(value.AsText(), _text, StringComparison.Ordinal)
+                    ? 0
+                    : string.Compare(value.AsText(), _text, _culture, CompareOptions.IgnoreCase);
                 break;
             case OperandKind.Boolean when value.Kind == CellValueKind.Boolean:
                 order = value.AsBoolean().CompareTo(_boolean);
@@ -178,9 +251,11 @@ internal sealed class Criterion
                         : value.Kind == CellValueKind.Empty || (value.Kind == CellValueKind.Text && value.AsText().Length == 0);
                 if (value.Kind != CellValueKind.Text)
                     return false;
-                return _hasWildcards
-                    ? Wildcard.Matches(_text, value.AsText(), _culture)
-                    : string.Compare(value.AsText(), _text, _culture, CompareOptions.IgnoreCase) == 0;
+                if (_hasWildcards)
+                    return Wildcard.MatchesUpper(_upperPattern, value.AsText(), _culture);
+                // Ordinal-equal strings are equal in every culture's order.
+                return string.Equals(value.AsText(), _text, StringComparison.Ordinal)
+                    || string.Compare(value.AsText(), _text, _culture, CompareOptions.IgnoreCase) == 0;
         }
     }
 }
@@ -188,9 +263,12 @@ internal sealed class Criterion
 /// <summary>Excel wildcards: <c>*</c> any run, <c>?</c> one character, <c>~</c> escapes the next one. Case is ignored.</summary>
 internal static class Wildcard
 {
-    public static bool Matches(string pattern, string text, CultureInfo culture)
+    public static bool Matches(string pattern, string text, CultureInfo culture) =>
+        MatchesUpper(culture.TextInfo.ToUpper(pattern), text, culture);
+
+    /// <summary>Like <see cref="Matches"/> with the pattern already upper-cased by <paramref name="culture"/>, for matching one pattern many times.</summary>
+    public static bool MatchesUpper(string p, string text, CultureInfo culture)
     {
-        var p = culture.TextInfo.ToUpper(pattern);
         var t = culture.TextInfo.ToUpper(text);
 
         // Greedy matching with one backtrack point per '*': linear in practice, no regex.
