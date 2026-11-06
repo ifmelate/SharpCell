@@ -193,3 +193,22 @@ SharpCell.CellStyle.Name.init -> void
 SharpCell.Workbook.NamedStyles.get -> System.Collections.Generic.IReadOnlyDictionary<string!, SharpCell.CellStyle!>!
 SharpCell.Workbook.RemoveNamedStyle(string! name) -> bool
 SharpCell.Workbook.SetNamedStyle(string! name, SharpCell.CellStyle! look) -> SharpCell.CellStyle!
+SharpCell.Worksheet.CollapseColumnGroup(int column) -> void
+SharpCell.Worksheet.CollapseRowGroup(int row) -> void
+SharpCell.Worksheet.ColumnOutlineLevel(int column) -> int
+SharpCell.Worksheet.ExpandColumnGroup(int column) -> void
+SharpCell.Worksheet.ExpandRowGroup(int row) -> void
+SharpCell.Worksheet.GroupColumns(int first, int last) -> void
+SharpCell.Worksheet.GroupRows(int first, int last) -> void
+SharpCell.Worksheet.IsColumnGroupCollapsed(int column) -> bool
+SharpCell.Worksheet.IsRowGroupCollapsed(int row) -> bool
+SharpCell.Worksheet.OutlineSummaryBelow.get -> bool
+SharpCell.Worksheet.OutlineSummaryBelow.set -> void
+SharpCell.Worksheet.OutlineSummaryRight.get -> bool
+SharpCell.Worksheet.OutlineSummaryRight.set -> void
+SharpCell.Worksheet.RowOutlineLevel(int row) -> int
+SharpCell.Worksheet.SetColumnOutlineLevel(int column, int level) -> void
+SharpCell.Worksheet.SetRowOutlineLevel(int row, int level) -> void
+SharpCell.Worksheet.UngroupColumns(int first, int last) -> void
+SharpCell.Worksheet.UngroupRows(int first, int last) -> void
+static SharpCell.Worksheet.MaxOutlineLevel.get -> int

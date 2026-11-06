@@ -69,6 +69,8 @@ internal static class WorksheetReader
                     sheet.SetRowHeight(row, height);
                 if (reader.GetAttribute("customFormat") is "1" or "true" && row <= CellAddress.MaxRow && StyleOf(reader.GetAttribute("s"), saved) is { } rowStyle)
                     sheet.SetRowStyle(row, rowStyle);
+                if (row <= CellAddress.MaxRow)
+                    ReadOutline(reader, sheet, rows: true, row);
                 reader.Read();
                 continue;
             }
@@ -102,6 +104,12 @@ internal static class WorksheetReader
             {
                 ProtectionElements.Read((XElement)XNode.ReadFrom(reader), sheet);
                 continue;
+            }
+
+            if (reader.Depth == 2 && reader.LocalName == "outlinePr")
+            {
+                sheet.OutlineSummaryBelow = reader.GetAttribute("summaryBelow") is not ("0" or "false");
+                sheet.OutlineSummaryRight = reader.GetAttribute("summaryRight") is not ("0" or "false");
             }
 
             if (reader.Depth == 2 && reader.LocalName == "pageSetUpPr")
@@ -345,10 +353,16 @@ internal static class WorksheetReader
                 sheet.SetColumnWidth(column, width);
             if (style is not null)
                 sheet.SetColumnStyle(column, style);
+            ReadOutline(reader, sheet, rows: false, column);
             if (hidden)
                 sheet.SetColumnHidden(column, true);
         }
     }
+
+    private static void ReadOutline(XmlReader reader, Worksheet sheet, bool rows, int index) =>
+        sheet.LoadOutline(rows, index,
+            int.TryParse(reader.GetAttribute("outlineLevel"), NumberStyles.None, CultureInfo.InvariantCulture, out var level) ? level : 0,
+            reader.GetAttribute("collapsed") is "1" or "true");
 
     // The look of a row's or column's style index; null for none, index 0 or one the file lacks.
     private static CellStyle? StyleOf(string? index, SavedCells saved) =>

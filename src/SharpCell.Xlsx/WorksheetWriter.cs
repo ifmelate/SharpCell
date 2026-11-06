@@ -90,6 +90,7 @@ internal sealed class WorksheetWriter
     private readonly bool _marginsChanged;
     private readonly bool _pageSetupChanged;
     private readonly bool _fitChanged;
+    private readonly bool _outlineSummaryChanged;
     private readonly bool _headerFootersChanged;
     private readonly bool _rowBreaksChanged;
     private readonly bool _columnBreaksChanged;
@@ -141,6 +142,7 @@ internal sealed class WorksheetWriter
         _marginsChanged = _look.MarginsChanged(sheet);
         _pageSetupChanged = _look.PageSetupChanged(sheet);
         _fitChanged = _look.FitChanged(sheet);
+        _outlineSummaryChanged = _look.OutlineSummaryChanged(sheet);
         _headerFootersChanged = _look.HeaderFootersChanged(sheet);
         _rowBreaksChanged = _look.BreaksChanged(sheet, rows: true);
         _columnBreaksChanged = _look.BreaksChanged(sheet, rows: false);
@@ -150,7 +152,7 @@ internal sealed class WorksheetWriter
                 _pending.Add(name);
         }
 
-        if ((_filterChanged && sheet.FilterMode) || (_tabColorChanged && sheet.TabColor is not null) || (_fitChanged && sheet.FitToPages is not null))
+        if ((_filterChanged && sheet.FilterMode) || (_tabColorChanged && sheet.TabColor is not null) || (_fitChanged && sheet.FitToPages is not null) || _outlineSummaryChanged)
             _pending.Add("sheetPr");
         if (_viewChanged)
             _pending.Add("sheetViews");
@@ -176,6 +178,10 @@ internal sealed class WorksheetWriter
             rows.UnionWith(sheet.RowHeights.Keys);
             rows.UnionWith(sheet.HiddenRows);
             rows.UnionWith(sheet.RowStyles.Keys);
+            rows.UnionWith(_look.RowLevels.Keys);
+            rows.UnionWith(_look.CollapsedRows);
+            rows.UnionWith(sheet.RowLevels.Keys);
+            rows.UnionWith(sheet.CollapsedRows);
             _changedRows.AddRange(rows.Where(row => _look.RowChanged(sheet, row)));
         }
     }
@@ -271,7 +277,7 @@ internal sealed class WorksheetWriter
                         Shifted((XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
                         break;
                     case "tableParts" when _newTables.Count > 0 || _removedTables.Count > 0:
-                    case "sheetPr" when _filterChanged || _tabColorChanged || _fitChanged:
+                    case "sheetPr" when _filterChanged || _tabColorChanged || _fitChanged || _outlineSummaryChanged:
                     case "sheetViews" when _viewChanged:
                     case "sheetFormatPr" when _defaultsChanged:
                     case "cols" when _columnsChanged:
@@ -620,6 +626,25 @@ internal sealed class WorksheetWriter
     {
         element ??= new XElement(_ns + "sheetPr");
         element.SetAttributeValue("filterMode", _sheet.FilterMode ? "1" : null);
+        if (_outlineSummaryChanged)
+        {
+            // outlinePr comes after tabColor and before pageSetUpPr.
+            var outline = element.Element(_ns + "outlinePr");
+            if (outline is null)
+            {
+                outline = new XElement(_ns + "outlinePr");
+                if (element.Element(_ns + "pageSetUpPr") is { } setup)
+                    setup.AddBeforeSelf(outline);
+                else
+                    element.Add(outline);
+            }
+
+            outline.SetAttributeValue("summaryBelow", _sheet.OutlineSummaryBelow ? null : "0");
+            outline.SetAttributeValue("summaryRight", _sheet.OutlineSummaryRight ? null : "0");
+            if (!outline.HasAttributes)
+                outline.Remove();
+        }
+
         if (_fitChanged)
         {
             // pageSetUpPr is sheetPr's last child, after tabColor and outlinePr.
@@ -686,6 +711,9 @@ internal sealed class WorksheetWriter
             element.SetAttributeValue("defaultRowHeight", "15");   // required by the schema; Excel's for Calibri 11
         }
 
+        // Without the deepest levels Excel shows no outline buttons.
+        element.SetAttributeValue("outlineLevelRow", _sheet.MaxRowLevel is > 0 and var rows ? rows : null);
+        element.SetAttributeValue("outlineLevelCol", _sheet.MaxColumnLevel is > 0 and var columns ? columns : null);
         return element;
     }
 
@@ -714,6 +742,10 @@ internal sealed class WorksheetWriter
         touched.UnionWith(_sheet.HiddenColumns);
         touched.UnionWith(_look.ColumnStyles.Keys);
         touched.UnionWith(_sheet.ColumnStyles.Keys);
+        touched.UnionWith(_look.ColumnLevels.Keys);
+        touched.UnionWith(_sheet.ColumnLevels.Keys);
+        touched.UnionWith(_look.CollapsedColumns);
+        touched.UnionWith(_sheet.CollapsedColumns);
         foreach (var column in touched)
         {
             var width = _sheet.ColumnWidth(column);
@@ -731,6 +763,12 @@ internal sealed class WorksheetWriter
                 Set(attributes, "hidden", hidden ? "1" : null);
             if (!Equals(style, _look.LoadedColumnStyle(column)))
                 Set(attributes, "style", style is null ? null : _styles.XfFor(0, style, "General").ToString(CultureInfo.InvariantCulture));
+            var level = _sheet.ColumnOutlineLevel(column);
+            if (level != _look.ColumnLevels.GetValueOrDefault(column))
+                Set(attributes, "outlineLevel", level == 0 ? null : level.ToString(CultureInfo.InvariantCulture));
+            var collapsed = _sheet.CollapsedColumns.Contains(column);
+            if (collapsed != _look.CollapsedColumns.Contains(column))
+                Set(attributes, "collapsed", collapsed ? "1" : null);
             if (attributes.Count == 0)
                 columns.Remove(column);
         }
@@ -811,6 +849,11 @@ internal sealed class WorksheetWriter
             writer.WriteAttributeString("s", _styles.XfFor(0, style, "General").ToString(CultureInfo.InvariantCulture));
             writer.WriteAttributeString("customFormat", "1");
         }
+
+        if (_sheet.RowOutlineLevel(row) is > 0 and var level)
+            writer.WriteAttributeString("outlineLevel", level.ToString(CultureInfo.InvariantCulture));
+        if (_sheet.CollapsedRows.Contains(row))
+            writer.WriteAttributeString("collapsed", "1");
     }
 
     // Widened to the cells the sheet now has; never narrowed (a larger one is also valid), except
@@ -937,7 +980,7 @@ internal sealed class WorksheetWriter
                 do
                 {
                     var skip = reader.NamespaceURI.Length == 0
-                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || (sized && reader.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat"));
+                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || (sized && reader.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat" or "outlineLevel" or "collapsed"));
                     if (!skip)
                         writer.WriteAttributeString(reader.Prefix, reader.LocalName, reader.NamespaceURI, reader.Value);
                 }
@@ -1056,7 +1099,7 @@ internal sealed class WorksheetWriter
             writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
             foreach (var attribute in rowElement?.Attributes() ?? [])
             {
-                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat");
+                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat" or "outlineLevel" or "collapsed");
                 if (!skip && !attribute.IsNamespaceDeclaration)
                     writer.WriteAttributeString(attribute.Name.LocalName, attribute.Name.NamespaceName, attribute.Value);
             }

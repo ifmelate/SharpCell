@@ -43,6 +43,12 @@ internal sealed class SheetLook
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         RowStyles = new Dictionary<int, CellStyle>(sheet.RowStyles);
         ColumnStyles = new Dictionary<int, CellStyle>(sheet.ColumnStyles);
+        RowLevels = new Dictionary<int, int>(sheet.RowLevels);
+        ColumnLevels = new Dictionary<int, int>(sheet.ColumnLevels);
+        CollapsedRows = new HashSet<int>(sheet.CollapsedRows);
+        CollapsedColumns = new HashSet<int>(sheet.CollapsedColumns);
+        SummaryBelow = sheet.OutlineSummaryBelow;
+        SummaryRight = sheet.OutlineSummaryRight;
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
         Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
@@ -83,6 +89,12 @@ internal sealed class SheetLook
         HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
         RowStyles = Moved(look.RowStyles, row => map.MapRow(sheet, row));
         ColumnStyles = Moved(look.ColumnStyles, column => map.MapColumn(sheet, column));
+        RowLevels = Moved(look.RowLevels, row => map.MapRow(sheet, row));
+        ColumnLevels = Moved(look.ColumnLevels, column => map.MapColumn(sheet, column));
+        CollapsedRows = look.CollapsedRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
+        CollapsedColumns = look.CollapsedColumns.Select(column => map.MapColumn(sheet, column)).OfType<int>().ToHashSet();
+        SummaryBelow = look.SummaryBelow;
+        SummaryRight = look.SummaryRight;
         Merged = [.. look.Merged.Select(area => map.Map(sheet, area)).OfType<Area>().Where(area => !area.IsSingleCell)];
         var hyperlinks = new Dictionary<CellAddress, Hyperlink>();
         foreach (var (address, link) in look.Hyperlinks)
@@ -161,6 +173,18 @@ internal sealed class SheetLook
 
     public IReadOnlyDictionary<int, CellStyle> ColumnStyles { get; }
 
+    public IReadOnlyDictionary<int, int> RowLevels { get; }
+
+    public IReadOnlyDictionary<int, int> ColumnLevels { get; }
+
+    public IReadOnlySet<int> CollapsedRows { get; }
+
+    public IReadOnlySet<int> CollapsedColumns { get; }
+
+    public bool SummaryBelow { get; }
+
+    public bool SummaryRight { get; }
+
     public IReadOnlyList<Area> Merged { get; }
 
     /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
@@ -232,13 +256,21 @@ internal sealed class SheetLook
     public bool TabColorChanged(Worksheet sheet) => TabColor != sheet.TabColor;
 
     public bool ColumnsChanged(Worksheet sheet) =>
-        !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns) || !Same(ColumnStyles, sheet.ColumnStyles);
+        !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns) || !Same(ColumnStyles, sheet.ColumnStyles)
+        || !Same(ColumnLevels, sheet.ColumnLevels) || !CollapsedColumns.SetEquals(sheet.CollapsedColumns);
 
     public bool RowsChanged(Worksheet sheet) =>
-        !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows) || !Same(RowStyles, sheet.RowStyles);
+        !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows) || !Same(RowStyles, sheet.RowStyles)
+        || !Same(RowLevels, sheet.RowLevels) || !CollapsedRows.SetEquals(sheet.CollapsedRows);
 
     public bool RowChanged(Worksheet sheet, int row) =>
-        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row) || !Equals(LoadedRowStyle(row), sheet.RowStyle(row));
+        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row) || !Equals(LoadedRowStyle(row), sheet.RowStyle(row))
+        || RowLevels.GetValueOrDefault(row) != sheet.RowOutlineLevel(row) || CollapsedRows.Contains(row) != sheet.CollapsedRows.Contains(row);
+
+    public bool OutlineSummaryChanged(Worksheet sheet) => SummaryBelow != sheet.OutlineSummaryBelow || SummaryRight != sheet.OutlineSummaryRight;
+
+    public bool OutlineLevelsChanged(Worksheet sheet) =>
+        (RowLevels.Count == 0 ? 0 : RowLevels.Values.Max()) != sheet.MaxRowLevel || (ColumnLevels.Count == 0 ? 0 : ColumnLevels.Values.Max()) != sheet.MaxColumnLevel;
 
     public CellStyle? LoadedRowStyle(int row) => RowStyles.TryGetValue(row, out var style) ? style : null;
 
@@ -310,7 +342,8 @@ internal sealed class SheetLook
 
     public bool ViewChanged(Worksheet sheet) => PanesChanged(sheet) || ShowGridlines != sheet.ShowGridlines;
 
-    public bool DefaultsChanged(Worksheet sheet) => DefaultColumnWidth != sheet.DefaultColumnWidth || DefaultRowHeight != sheet.DefaultRowHeight;
+    public bool DefaultsChanged(Worksheet sheet) =>
+        DefaultColumnWidth != sheet.DefaultColumnWidth || DefaultRowHeight != sheet.DefaultRowHeight || OutlineLevelsChanged(sheet);
 
     public bool FilterChanged(Worksheet sheet) => FilterMode != sheet.FilterMode;
 

@@ -293,6 +293,7 @@ public sealed partial class Worksheet
         _edits.AddRange(source._edits);
         CopyPresentationFrom(source);
         CopyPrintingFrom(source);
+        CopyOutlineFrom(source);
         CopyValidationsFrom(source);
         CopyConditionalFormatsFrom(source);
     }

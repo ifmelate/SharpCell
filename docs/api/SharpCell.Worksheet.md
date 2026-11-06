@@ -179,6 +179,15 @@ public bool IsRemoved { get; }
 
 Whether [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took the sheet out of its workbook; it can then be read but not changed.
 
+<a id="maxoutlinelevel"></a>
+### MaxOutlineLevel
+
+```csharp
+public static int MaxOutlineLevel { get; }
+```
+
+The deepest outline level Excel allows.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -211,6 +220,24 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 ```
 
 The cells with a note, row by row and left to right, with their notes.
+
+<a id="outlinesummarybelow"></a>
+### OutlineSummaryBelow
+
+```csharp
+public bool OutlineSummaryBelow { get; set; }
+```
+
+Whether a group's summary row is the one below it, as Excel has it unless Data > Outline settings say otherwise.
+
+<a id="outlinesummaryright"></a>
+### OutlineSummaryRight
+
+```csharp
+public bool OutlineSummaryRight { get; set; }
+```
+
+Whether a group's summary column is the one right of it, as Excel has it unless set otherwise.
 
 <a id="pagefooter"></a>
 ### PageFooter
@@ -569,6 +596,51 @@ Takes the cells of a range out of every data validation rule; a rule left withou
 - `ArgumentException`: The range is not an A1 range.
 - `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
+<a id="collapsecolumngroup-int"></a>
+### CollapseColumnGroup(int)
+
+```csharp
+public void CollapseColumnGroup(int column)
+```
+
+Collapses the group a column is in at its own level, hiding its columns.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The column is in no group.
+
+<a id="collapserowgroup-int"></a>
+### CollapseRowGroup(int)
+
+```csharp
+public void CollapseRowGroup(int row)
+```
+
+Collapses the group a row is in at its own level, as the group's minus button does: the group's rows are hidden and its summary row is marked collapsed. Groups inside it stay as they are.
+
+**Parameters**
+
+- `row`: Any row of the group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The row is in no group.
+
+<a id="columnoutlinelevel-int"></a>
+### ColumnOutlineLevel(int)
+
+```csharp
+public int ColumnOutlineLevel(int column)
+```
+
+A column's outline level: 0 outside any group, up to [Worksheet.MaxOutlineLevel](SharpCell.Worksheet.md#maxoutlinelevel).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="columnstyle-int"></a>
 ### ColumnStyle(int)
 
@@ -635,6 +707,67 @@ Deletes rows, as Excel's Delete Sheet Rows does: cells below move up. A referenc
 - `InvalidOperationException`: The rows hold part of an array formula, or a table's header or totals row or all its data rows without the whole table.
 - `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell.
 
+<a id="expandcolumngroup-int"></a>
+### ExpandColumnGroup(int)
+
+```csharp
+public void ExpandColumnGroup(int column)
+```
+
+Expands the group a column is in at its own level, apart from collapsed groups inside it.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The column is in no group.
+
+<a id="expandrowgroup-int"></a>
+### ExpandRowGroup(int)
+
+```csharp
+public void ExpandRowGroup(int row)
+```
+
+Expands the group a row is in at its own level, as the group's plus button does: its rows are shown, apart from those of groups inside it that stay collapsed.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The row is in no group.
+
+<a id="groupcolumns-int-int"></a>
+### GroupColumns(int, int)
+
+```csharp
+public void GroupColumns(int first, int last)
+```
+
+Groups columns, as Excel's Data > Group does: each goes one level deeper.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or first is after last.
+- `InvalidOperationException`: A column is already at level 7.
+
+<a id="grouprows-int-int"></a>
+### GroupRows(int, int)
+
+```csharp
+public void GroupRows(int first, int last)
+```
+
+Groups rows, as Excel's Data > Group does: each goes one level deeper. Their summary row is the one after them (or before, with [Worksheet.OutlineSummaryBelow](SharpCell.Worksheet.md#outlinesummarybelow) false).
+
+**Parameters**
+
+- `first`: The first row.
+- `last`: The last row.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or first is after last.
+- `InvalidOperationException`: A row is already at level 7.
+
 <a id="insertcolumns-int-int"></a>
 ### InsertColumns(int, int)
 
@@ -675,6 +808,19 @@ Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, style
 - `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula (Ctrl+Shift+Enter).
 - `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell (such as a link to another workbook), so its references could not follow.
 
+<a id="iscolumngroupcollapsed-int"></a>
+### IsColumnGroupCollapsed(int)
+
+```csharp
+public bool IsColumnGroupCollapsed(int column)
+```
+
+Whether the group a column is in at its own level is collapsed; false for a column in no group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="iscolumnhidden-int"></a>
 ### IsColumnHidden(int)
 
@@ -687,6 +833,19 @@ Whether a column is hidden.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="isrowgroupcollapsed-int"></a>
+### IsRowGroupCollapsed(int)
+
+```csharp
+public bool IsRowGroupCollapsed(int row)
+```
+
+Whether the group a row is in at its own level is collapsed; false for a row in no group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
 
 <a id="isrowhidden-int"></a>
 ### IsRowHidden(int)
@@ -875,6 +1034,19 @@ A row's own height in points; null when it has none.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="rowoutlinelevel-int"></a>
+### RowOutlineLevel(int)
+
+```csharp
+public int RowOutlineLevel(int row)
+```
+
+A row's outline level: 0 outside any group, up to [Worksheet.MaxOutlineLevel](SharpCell.Worksheet.md#maxoutlinelevel).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
 <a id="rowstyle-int"></a>
 ### RowStyle(int)
 
@@ -918,6 +1090,19 @@ Hides or shows a column. Unlike hidden rows, hidden columns change no result, as
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="setcolumnoutlinelevel-int-int"></a>
+### SetColumnOutlineLevel(int, int)
+
+```csharp
+public void SetColumnOutlineLevel(int column, int level)
+```
+
+Sets a column's outline level as it is, 0 to take it out of every group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet, or the level outside 0 to 7.
 
 <a id="setcolumnstyle-int-cellstyle"></a>
 ### SetColumnStyle(int, CellStyle)
@@ -971,6 +1156,19 @@ Hides or shows a row. SUBTOTAL with codes 101–111 and AGGREGATE with options 1
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="setrowoutlinelevel-int-int"></a>
+### SetRowOutlineLevel(int, int)
+
+```csharp
+public void SetRowOutlineLevel(int row, int level)
+```
+
+Sets a row's outline level as it is, 0 to take it out of every group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet, or the level outside 0 to 7.
+
 <a id="setrowstyle-int-cellstyle"></a>
 ### SetRowStyle(int, CellStyle)
 
@@ -992,6 +1190,32 @@ public override string ToString()
 ```
 
 The sheet name.
+
+<a id="ungroupcolumns-int-int"></a>
+### UngroupColumns(int, int)
+
+```csharp
+public void UngroupColumns(int first, int last)
+```
+
+Takes columns one level out, as Excel's Data > Ungroup does.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or first is after last.
+
+<a id="ungrouprows-int-int"></a>
+### UngroupRows(int, int)
+
+```csharp
+public void UngroupRows(int first, int last)
+```
+
+Takes rows one level out, as Excel's Data > Ungroup does; rows outside any group stay so.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or first is after last.
 
 <a id="unmerge-string"></a>
 ### Unmerge(string)
