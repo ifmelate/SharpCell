@@ -58,6 +58,22 @@ public sealed record CellFont
 
     /// <summary>The text colour; null for automatic, which Excel shows black.</summary>
     public CellColor? Color { get; init; }
+
+    /// <summary>Text raised or lowered and made smaller, as Format Cells &gt; Font &gt; Superscript and Subscript.</summary>
+    public CellFontScript Script { get; init; }
+}
+
+/// <summary>Where text sits against the line, as Excel's Superscript and Subscript effects put it.</summary>
+public enum CellFontScript
+{
+    /// <summary>On the line.</summary>
+    Normal,
+
+    /// <summary>Raised and smaller, such as the 2 of m².</summary>
+    Superscript,
+
+    /// <summary>Lowered and smaller, such as the 2 of H₂O.</summary>
+    Subscript,
 }
 
 /// <summary>How a font underlines text.</summary>

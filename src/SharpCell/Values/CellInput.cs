@@ -61,7 +61,7 @@ internal static class CellInput
                 var read = Read(text, culture, workbook.DateSystem, 2000);
                 return read.Formula is null && read.Value.Kind == CellValueKind.Text && read.Value.AsText() == text ? text : "'" + text;
             case CellValueKind.Number:
-                return NumberEditText(value.AsNumber(), cell.Worksheet.FormatAt(cell.Row, cell.Column), culture, workbook.DateSystem);
+                return NumberEditText(value.AsNumber(), cell.Worksheet.ShownFormatAt(cell.Row, cell.Column), culture, workbook.DateSystem);
             default:
                 return "";
         }

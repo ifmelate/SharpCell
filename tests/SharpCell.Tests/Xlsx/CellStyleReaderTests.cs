@@ -131,8 +131,8 @@ public class CellStyleReaderTests
         // Excel numbers theme colours lt1, dk1, lt2, dk2, accent1... while the part lists dk1 first.
         var theme = Theme(dk1: "112233", lt1: "FAFAFA", accent1: "4472C4");
 
-        Assert.Equal(CellColor.FromRgb(0x112233), StyleOf(0, theme: theme).Font.Color);
-        Assert.NotNull(StyleOf(3, theme: theme).Font.Color);
+        Assert.Equal(CellColor.FromRgb(0x112233) with { Theme = ThemeColor.Text1 }, StyleOf(0, theme: theme).Font.Color);
+        Assert.Equal((ThemeColor.Accent1, -0.499984740745262), (StyleOf(3, theme: theme).Font.Color!.Value.Theme, StyleOf(3, theme: theme).Font.Color!.Value.Tint));
     }
 
     [Fact]
@@ -142,14 +142,14 @@ public class CellStyleReaderTests
         var theme = Theme(dk1: "000000", lt1: "FFFFFF", accent1: "4472C4");
         var lighterBlack = Styles.Replace("<color theme=\"1\"/>", "<color theme=\"1\" tint=\"0.499984740745262\"/>");
 
-        Assert.Equal(CellColor.FromRgb(0xD9D9D9), StyleOf(3, theme: theme).Fill);
-        Assert.Equal(CellColor.FromRgb(0x7F7F7F), StyleOf(0, lighterBlack, theme).Font.Color);
+        Assert.Equal(CellColor.FromRgb(0xD9D9D9) with { Theme = ThemeColor.Background1, Tint = -0.149998474074526 }, StyleOf(3, theme: theme).Fill);
+        Assert.Equal(CellColor.FromRgb(0x7F7F7F) with { Theme = ThemeColor.Text1, Tint = 0.499984740745262 }, StyleOf(0, lighterBlack, theme).Font.Color);
     }
 
     [Fact]
     public void Without_a_theme_part_the_Office_theme_is_used()
     {
-        Assert.Equal(CellColor.FromRgb(0x000000), StyleOf(0).Font.Color);
+        Assert.Equal(CellColor.FromRgb(0x000000) with { Theme = ThemeColor.Text1 }, StyleOf(0).Font.Color);
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class CellStyleReaderTests
         Assert.True(styled > 0, "No corpus cell has a style of its own.");
     }
 
-    private static string Theme(string dk1, string lt1, string accent1) => $"""
+    internal static string Theme(string dk1, string lt1, string accent1) => $"""
         <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Test">
           <a:themeElements><a:clrScheme name="Test">
             <a:dk1><a:sysClr val="windowText" lastClr="{dk1}"/></a:dk1>

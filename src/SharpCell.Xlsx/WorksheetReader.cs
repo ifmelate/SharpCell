@@ -28,6 +28,7 @@ internal static class WorksheetReader
         public string? SharedIndex;
         public string? Value;
         public string? InlineText;
+        public List<(string Text, XElement? Properties)>? InlineRuns;
     }
 
     public static void Read(Package package, string part, Worksheet sheet, SavedCells saved)
@@ -41,6 +42,8 @@ internal static class WorksheetReader
         var sheetViews = 0;
         var links = new List<HyperlinkElement>();
         var conditionalFormats = new List<(int Priority, Action<Worksheet> Add)>();
+        var fitToPage = false;
+        var richTexts = new List<(int Row, int Column, RichText Rich)>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -66,6 +69,10 @@ internal static class WorksheetReader
                 // Excel writes ht for rows grown to fit a larger font too, not only for customHeight.
                 if (Size(reader.GetAttribute("ht"), MaxRowHeight) is { } height && row <= CellAddress.MaxRow)
                     sheet.SetRowHeight(row, height);
+                if (reader.GetAttribute("customFormat") is "1" or "true" && row <= CellAddress.MaxRow)
+                    ReadLineStyle(reader.GetAttribute("s"), saved, sheet, rows: true, row);
+                if (row <= CellAddress.MaxRow)
+                    ReadOutline(reader, sheet, rows: true, row);
                 reader.Read();
                 continue;
             }
@@ -101,6 +108,21 @@ internal static class WorksheetReader
                 continue;
             }
 
+            if (reader.Depth == 2 && reader.LocalName == "outlinePr")
+            {
+                sheet.OutlineSummaryBelow = reader.GetAttribute("summaryBelow") is not ("0" or "false");
+                sheet.OutlineSummaryRight = reader.GetAttribute("summaryRight") is not ("0" or "false");
+            }
+
+            if (reader.Depth == 2 && reader.LocalName == "pageSetUpPr")
+                fitToPage = reader.GetAttribute("fitToPage") is "1" or "true";
+
+            if (reader.Depth == 1 && reader.LocalName == "headerFooter")
+            {
+                ReadHeaderFooter((XElement)XNode.ReadFrom(reader), sheet);
+                continue;
+            }
+
             // Page breaks: a break's id is the last row (or column) before it.
             if (reader.Depth == 1 && reader.LocalName is "rowBreaks" or "colBreaks")
             {
@@ -120,8 +142,7 @@ internal static class WorksheetReader
                             sheet.PageMargins = margins;
                         break;
                     case "pageSetup":
-                        if (reader.GetAttribute("orientation") == "landscape")
-                            sheet.PageOrientation = PageOrientation.Landscape;
+                        ReadPageSetup(reader, sheet, fitToPage);
                         break;
                     case "sheetPr":
                         if (reader.GetAttribute("filterMode") is "1" or "true")
@@ -159,7 +180,7 @@ internal static class WorksheetReader
             // them is skipped rather than refusing the file.
             if (reader.Depth == 2 && reader.LocalName == "col")
             {
-                ReadColumns(reader, sheet);
+                ReadColumns(reader, sheet, saved);
                 reader.Read();
                 continue;
             }
@@ -218,22 +239,39 @@ internal static class WorksheetReader
             if (cell.FormulaType != "dataTable" && (cell.FormulaText is { Length: > 0 } || cell.FormulaType == "shared"))
                 LoadFormula(loader, cell, origin, cached, saved.Metadata, shared);
             else
+            {
                 loader.SetValue(row, column, cached);
+                if (SavedRich(cell, saved) is { } rich)
+                    richTexts.Add((row, column, rich));
+            }
 
             // A style the styles part does not have (or no styles part) leaves the cell General with
             // the default style: a style only changes how a cell is shown, so it never stops a file
-            // from loading. A cell with the default style keeps none of its own.
-            if (cell.Style is { } style && style < saved.Styles.Count)
+            // from loading. A cell with the default style keeps none of its own, unless its row or
+            // column has a style: the cell's own Normal then still shows instead.
+            if ((cell.Style ?? 0) is var style && style < saved.Styles.Count)
             {
                 var xf = saved.Styles[style];
                 if (xf.Format is { } format)
                     sheet.SetFormat(row, column, format);
-                if (xf.Style != sheet.Workbook.DefaultStyle)
+                // Only a style unlike the one its row or column gives it is the cell's own; General
+                // of its own in a formatted row or column needs one too.
+                if (xf.Style != (sheet.ShownStyleAt(row, column) ?? sheet.Workbook.DefaultStyle)
+                    || (xf.Format is null && sheet.ShownFormatAt(row, column) is not null))
                     sheet.SetStyle(row, column, xf.Style);
             }
         }
 
         loader.Complete();
+
+        // Fit to page with no pageSetup element fits to one page each way, its defaults.
+        if (fitToPage && sheet.FitToPages is null)
+            sheet.FitToPages = new PageFit(1, 1);
+        foreach (var (richRow, richColumn, rich) in richTexts)
+        {
+            if (sheet.Store.Get(richRow, richColumn) is { FormulaText: null } data && data.Value.Kind == CellValueKind.Text)
+                data.Rich = rich;
+        }
 
         // Rules go in priority order; OrderBy keeps the file's order for equal priorities.
         foreach (var (_, add) in conditionalFormats.OrderBy(rule => rule.Priority))
@@ -261,6 +299,43 @@ internal static class WorksheetReader
     }
 
     // Margins only change how the sheet prints: ones Excel would not take are skipped.
+    private static void ReadPageSetup(XmlReader reader, Worksheet sheet, bool fitToPage)
+    {
+        if (reader.GetAttribute("orientation") == "landscape")
+            sheet.PageOrientation = PageOrientation.Landscape;
+        if (Count(reader.GetAttribute("paperSize")) is >= 1 and var paper)
+            sheet.PaperSize = (PaperSize)paper;
+        if (Count(reader.GetAttribute("scale")) is { } scale)
+            sheet.LoadPrintScale(scale);
+        if (fitToPage)
+            sheet.FitToPages = new PageFit(Math.Min(Count(reader.GetAttribute("fitToWidth")) ?? 1, 32767), Math.Min(Count(reader.GetAttribute("fitToHeight")) ?? 1, 32767));
+
+        static int? Count(string? text) =>
+            int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value) ? value : null;
+    }
+
+    // A different first or even page shows only what the file gives it: a missing element is blank
+    // there. One the same as the odd page's is read as none of its own, the model's null.
+    private static void ReadHeaderFooter(XElement element, Worksheet sheet)
+    {
+        var oddEven = (string?)element.Attribute("differentOddEven") is "1" or "true";
+        var first = (string?)element.Attribute("differentFirst") is "1" or "true";
+        string[] names = ["oddHeader", "oddFooter", "evenHeader", "evenFooter", "firstHeader", "firstFooter"];
+        var texts = names.Select(name => element.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value).ToArray();
+        for (var i = 0; i < names.Length; i++)
+        {
+            if (i < 2)
+            {
+                if (texts[i] is { } odd)
+                    sheet.LoadHeaderFooter(i, HeaderFooter.Parse(odd));
+            }
+            else if ((i < 4 ? oddEven : first) && (texts[i] ?? "") != (texts[i % 2] ?? ""))
+            {
+                sheet.LoadHeaderFooter(i, HeaderFooter.Parse(texts[i] ?? ""));
+            }
+        }
+    }
+
     private static PageMargins? PageMarginsOf(XmlReader reader)
     {
         var normal = PageMargins.Normal;
@@ -280,7 +355,7 @@ internal static class WorksheetReader
     private const double MaxColumnWidth = 255;
     private const double MaxRowHeight = 409;
 
-    private static void ReadColumns(XmlReader reader, Worksheet sheet)
+    private static void ReadColumns(XmlReader reader, Worksheet sheet, SavedCells saved)
     {
         if (!int.TryParse(reader.GetAttribute("min"), NumberStyles.None, CultureInfo.InvariantCulture, out var min)
             || !int.TryParse(reader.GetAttribute("max"), NumberStyles.None, CultureInfo.InvariantCulture, out var max)
@@ -289,12 +364,38 @@ internal static class WorksheetReader
 
         var width = Size(reader.GetAttribute("width"), MaxColumnWidth);
         var hidden = reader.GetAttribute("hidden") is "1" or "true";
+        var style = reader.GetAttribute("style");
         for (var column = min; column <= max; column++)
         {
             if (width is not null)
                 sheet.SetColumnWidth(column, width);
+            ReadLineStyle(style, saved, sheet, rows: false, column);
+            ReadOutline(reader, sheet, rows: false, column);
             if (hidden)
                 sheet.SetColumnHidden(column, true);
+        }
+    }
+
+    private static void ReadOutline(XmlReader reader, Worksheet sheet, bool rows, int index) =>
+        sheet.LoadOutline(rows, index,
+            int.TryParse(reader.GetAttribute("outlineLevel"), NumberStyles.None, CultureInfo.InvariantCulture, out var level) ? level : 0,
+            reader.GetAttribute("collapsed") is "1" or "true");
+
+    // A row's or column's style index (none for index 0 or one the file lacks): its look and its
+    // number format. A format on the default look is the format alone.
+    private static void ReadLineStyle(string? index, SavedCells saved, Worksheet sheet, bool rows, int at)
+    {
+        if (!int.TryParse(index, NumberStyles.None, CultureInfo.InvariantCulture, out var s) || s <= 0 || s >= saved.Styles.Count)
+            return;
+        var xf = saved.Styles[s];
+        if (xf.Format is { } format)
+            sheet.LoadLineFormat(rows, at, format);
+        if (xf.Format is null || xf.Style != sheet.Workbook.DefaultStyle)
+        {
+            if (rows)
+                sheet.SetRowStyle(at, xf.Style);
+            else
+                sheet.SetColumnStyle(at, xf.Style);
         }
     }
 
@@ -428,7 +529,7 @@ internal static class WorksheetReader
                     cell.Value = reader.ReadElementContentAsString();
                     break;
                 case "is":
-                    cell.InlineText = XmlText.ReadStringItem(reader);
+                    cell.InlineText = XmlText.ReadStringItem(reader, out cell.InlineRuns);
                     break;
                 default:
                     reader.Skip();
@@ -438,6 +539,16 @@ internal static class WorksheetReader
 
         reader.Read();
         return cell;
+    }
+
+    /// <summary>The rich text runs a file saved in a constant's text, inline or shared; null for plain text.</summary>
+    internal static RichText? SavedRich(CellXml cell, SavedCells saved)
+    {
+        if (cell.FormulaText is { Length: > 0 } || cell.FormulaType is not null)
+            return null;
+        if (cell.Type == "inlineStr")
+            return saved.Rich(cell.InlineRuns);
+        return cell.Type == "s" && int.TryParse(cell.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index) ? saved.SharedRich(index) : null;
     }
 
     /// <summary>The value a file saved in a cell, the newer errors (#SPILL!, #CALC!) included.</summary>

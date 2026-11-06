@@ -74,6 +74,32 @@ The height of rows without one of their own, in points. Null when not given; Exc
 
 - `ArgumentOutOfRangeException`: The height is outside 0 to 409.
 
+<a id="evenpagefooter"></a>
+### EvenPageFooter
+
+```csharp
+public HeaderFooter? EvenPageFooter { get; set; }
+```
+
+The footer of even pages; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="evenpageheader"></a>
+### EvenPageHeader
+
+```csharp
+public HeaderFooter? EvenPageHeader { get; set; }
+```
+
+The header of even pages, as Page Setup's Different odd and even pages sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -82,6 +108,41 @@ public bool FilterMode { get; set; }
 ```
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
+<a id="firstpagefooter"></a>
+### FirstPageFooter
+
+```csharp
+public HeaderFooter? FirstPageFooter { get; set; }
+```
+
+The footer of the first page; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) there.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="firstpageheader"></a>
+### FirstPageHeader
+
+```csharp
+public HeaderFooter? FirstPageHeader { get; set; }
+```
+
+The header of the first page, as Page Setup's Different first page sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) there.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
+<a id="fittopages"></a>
+### FitToPages
+
+```csharp
+public PageFit? FitToPages { get; set; }
+```
+
+The pages the sheet is shrunk to fit when printed, as Page Setup > Fit to sets it; null prints at [Worksheet.PrintScale](SharpCell.Worksheet.md#printscale) instead.
 
 <a id="frozencolumns"></a>
 ### FrozenColumns
@@ -118,6 +179,15 @@ public bool IsRemoved { get; }
 
 Whether [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took the sheet out of its workbook; it can then be read but not changed.
 
+<a id="maxoutlinelevel"></a>
+### MaxOutlineLevel
+
+```csharp
+public static int MaxOutlineLevel { get; }
+```
+
+The deepest outline level Excel allows.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -151,6 +221,50 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 
 The cells with a note, row by row and left to right, with their notes.
 
+<a id="outlinesummarybelow"></a>
+### OutlineSummaryBelow
+
+```csharp
+public bool OutlineSummaryBelow { get; set; }
+```
+
+Whether a group's summary row is the one below it, as Excel has it unless Data > Outline settings say otherwise.
+
+<a id="outlinesummaryright"></a>
+### OutlineSummaryRight
+
+```csharp
+public bool OutlineSummaryRight { get; set; }
+```
+
+Whether a group's summary column is the one right of it, as Excel has it unless set otherwise.
+
+<a id="pagefooter"></a>
+### PageFooter
+
+```csharp
+public HeaderFooter? PageFooter { get; set; }
+```
+
+The footer of every printed page, or of the odd ones when [Worksheet.EvenPageFooter](SharpCell.Worksheet.md#evenpagefooter) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="pageheader"></a>
+### PageHeader
+
+```csharp
+public HeaderFooter? PageHeader { get; set; }
+```
+
+The header of every printed page, or of the odd ones when [Worksheet.EvenPageHeader](SharpCell.Worksheet.md#evenpageheader) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="pagemargins"></a>
 ### PageMargins
 
@@ -177,6 +291,19 @@ How the sheet is turned on the printed page; [PageOrientation.Portrait](SharpCel
 
 - `ArgumentOutOfRangeException`: The value is not a defined orientation.
 
+<a id="papersize"></a>
+### PaperSize
+
+```csharp
+public PaperSize PaperSize { get; set; }
+```
+
+The paper the sheet prints on; [PaperSize.Letter](SharpCell.PaperSize.md#letter) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not a positive number.
+
 <a id="printarea"></a>
 ### PrintArea
 
@@ -189,6 +316,19 @@ The cells that print, as Excel's Print Area sets them: one range such as `A1:F40
 **Exceptions**
 
 - `ArgumentException`: The text is not A1 ranges of this sheet separated by commas.
+
+<a id="printscale"></a>
+### PrintScale
+
+```csharp
+public int PrintScale { get; set; }
+```
+
+The size the sheet prints at, in percent of its own, as Page Setup > Adjust to sets it: 10 to 400, 100 unless set otherwise. Ignored while [Worksheet.FitToPages](SharpCell.Worksheet.md#fittopages) is set, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 10 to 400.
 
 <a id="printtitlecolumns"></a>
 ### PrintTitleColumns
@@ -456,6 +596,77 @@ Takes the cells of a range out of every data validation rule; a rule left withou
 - `ArgumentException`: The range is not an A1 range.
 - `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
+<a id="collapsecolumngroup-int"></a>
+### CollapseColumnGroup(int)
+
+```csharp
+public void CollapseColumnGroup(int column)
+```
+
+Collapses the group a column is in at its own level, hiding its columns.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The column is in no group.
+
+<a id="collapserowgroup-int"></a>
+### CollapseRowGroup(int)
+
+```csharp
+public void CollapseRowGroup(int row)
+```
+
+Collapses the group a row is in at its own level, as the group's minus button does: the group's rows are hidden and its summary row is marked collapsed. Groups inside it stay as they are.
+
+**Parameters**
+
+- `row`: Any row of the group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The row is in no group.
+
+<a id="columnnumberformat-int"></a>
+### ColumnNumberFormat(int)
+
+```csharp
+public string? ColumnNumberFormat(int column)
+```
+
+The number format of a column's cells without a style or format of their own and whose row has none; null for General or none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="columnoutlinelevel-int"></a>
+### ColumnOutlineLevel(int)
+
+```csharp
+public int ColumnOutlineLevel(int column)
+```
+
+A column's outline level: 0 outside any group, up to [Worksheet.MaxOutlineLevel](SharpCell.Worksheet.md#maxoutlinelevel).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="columnstyle-int"></a>
+### ColumnStyle(int)
+
+```csharp
+public CellStyle? ColumnStyle(int column)
+```
+
+The style of a column's cells that have none of their own and whose row has none; null when the column has none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="columnwidth-int"></a>
 ### ColumnWidth(int)
 
@@ -509,6 +720,67 @@ Deletes rows, as Excel's Delete Sheet Rows does: cells below move up. A referenc
 - `InvalidOperationException`: The rows hold part of an array formula, or a table's header or totals row or all its data rows without the whole table.
 - `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell.
 
+<a id="expandcolumngroup-int"></a>
+### ExpandColumnGroup(int)
+
+```csharp
+public void ExpandColumnGroup(int column)
+```
+
+Expands the group a column is in at its own level, apart from collapsed groups inside it.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The column is in no group.
+
+<a id="expandrowgroup-int"></a>
+### ExpandRowGroup(int)
+
+```csharp
+public void ExpandRowGroup(int row)
+```
+
+Expands the group a row is in at its own level, as the group's plus button does: its rows are shown, apart from those of groups inside it that stay collapsed.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The row is in no group.
+
+<a id="groupcolumns-int-int"></a>
+### GroupColumns(int, int)
+
+```csharp
+public void GroupColumns(int first, int last)
+```
+
+Groups columns, as Excel's Data > Group does: each goes one level deeper.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or first is after last.
+- `InvalidOperationException`: A column is already at level 7.
+
+<a id="grouprows-int-int"></a>
+### GroupRows(int, int)
+
+```csharp
+public void GroupRows(int first, int last)
+```
+
+Groups rows, as Excel's Data > Group does: each goes one level deeper. Their summary row is the one after them (or before, with [Worksheet.OutlineSummaryBelow](SharpCell.Worksheet.md#outlinesummarybelow) false).
+
+**Parameters**
+
+- `first`: The first row.
+- `last`: The last row.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or first is after last.
+- `InvalidOperationException`: A row is already at level 7.
+
 <a id="insertcolumns-int-int"></a>
 ### InsertColumns(int, int)
 
@@ -549,6 +821,19 @@ Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, style
 - `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula (Ctrl+Shift+Enter).
 - `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell (such as a link to another workbook), so its references could not follow.
 
+<a id="iscolumngroupcollapsed-int"></a>
+### IsColumnGroupCollapsed(int)
+
+```csharp
+public bool IsColumnGroupCollapsed(int column)
+```
+
+Whether the group a column is in at its own level is collapsed; false for a column in no group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="iscolumnhidden-int"></a>
 ### IsColumnHidden(int)
 
@@ -561,6 +846,19 @@ Whether a column is hidden.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="isrowgroupcollapsed-int"></a>
+### IsRowGroupCollapsed(int)
+
+```csharp
+public bool IsRowGroupCollapsed(int row)
+```
+
+Whether the group a row is in at its own level is collapsed; false for a row in no group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
 
 <a id="isrowhidden-int"></a>
 ### IsRowHidden(int)
@@ -749,6 +1047,45 @@ A row's own height in points; null when it has none.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="rownumberformat-int"></a>
+### RowNumberFormat(int)
+
+```csharp
+public string? RowNumberFormat(int row)
+```
+
+The number format of a row's cells without a style or format of their own, as Excel keeps it for a row formatted as a whole; null for General or none. It comes before the column's.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowoutlinelevel-int"></a>
+### RowOutlineLevel(int)
+
+```csharp
+public int RowOutlineLevel(int row)
+```
+
+A row's outline level: 0 outside any group, up to [Worksheet.MaxOutlineLevel](SharpCell.Worksheet.md#maxoutlinelevel).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowstyle-int"></a>
+### RowStyle(int)
+
+```csharp
+public CellStyle? RowStyle(int row)
+```
+
+The style of a row's cells that have none of their own, as Excel keeps it for a row formatted as a whole; null when the row has none. It comes before the column's style.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
 <a id="setautofilter-string"></a>
 ### SetAutoFilter(string)
 
@@ -775,6 +1112,46 @@ public void SetColumnHidden(int column, bool hidden)
 ```
 
 Hides or shows a column. Unlike hidden rows, hidden columns change no result, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="setcolumnnumberformat-int-string"></a>
+### SetColumnNumberFormat(int, string)
+
+```csharp
+public void SetColumnNumberFormat(int column, string? code)
+```
+
+Gives a column a number format for its cells without one of their own, as formatting a whole column in Excel does; null or General takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The code is not a number format.
+
+<a id="setcolumnoutlinelevel-int-int"></a>
+### SetColumnOutlineLevel(int, int)
+
+```csharp
+public void SetColumnOutlineLevel(int column, int level)
+```
+
+Sets a column's outline level as it is, 0 to take it out of every group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet, or the level outside 0 to 7.
+
+<a id="setcolumnstyle-int-cellstyle"></a>
+### SetColumnStyle(int, CellStyle)
+
+```csharp
+public void SetColumnStyle(int column, CellStyle? style)
+```
+
+Gives a column a style for its cells without one of their own, as formatting a whole column in Excel does; null takes it away.
 
 **Exceptions**
 
@@ -819,6 +1196,46 @@ Hides or shows a row. SUBTOTAL with codes 101–111 and AGGREGATE with options 1
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="setrownumberformat-int-string"></a>
+### SetRowNumberFormat(int, string)
+
+```csharp
+public void SetRowNumberFormat(int row, string? code)
+```
+
+Gives a row a number format for its cells without one of their own, as formatting a whole row in Excel does; null or General takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The code is not a number format.
+
+<a id="setrowoutlinelevel-int-int"></a>
+### SetRowOutlineLevel(int, int)
+
+```csharp
+public void SetRowOutlineLevel(int row, int level)
+```
+
+Sets a row's outline level as it is, 0 to take it out of every group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet, or the level outside 0 to 7.
+
+<a id="setrowstyle-int-cellstyle"></a>
+### SetRowStyle(int, CellStyle)
+
+```csharp
+public void SetRowStyle(int row, CellStyle? style)
+```
+
+Gives a row a style for its cells without one of their own, the empty ones included, as formatting a whole row in Excel does; null takes it away. Cells with a style of their own keep it, where Excel's Format command would change theirs too.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
 <a id="tostring"></a>
 ### ToString()
 
@@ -827,6 +1244,32 @@ public override string ToString()
 ```
 
 The sheet name.
+
+<a id="ungroupcolumns-int-int"></a>
+### UngroupColumns(int, int)
+
+```csharp
+public void UngroupColumns(int first, int last)
+```
+
+Takes columns one level out, as Excel's Data > Ungroup does.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or first is after last.
+
+<a id="ungrouprows-int-int"></a>
+### UngroupRows(int, int)
+
+```csharp
+public void UngroupRows(int first, int last)
+```
+
+Takes rows one level out, as Excel's Data > Ungroup does; rows outside any group stay so.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or first is after last.
 
 <a id="unmerge-string"></a>
 ### Unmerge(string)

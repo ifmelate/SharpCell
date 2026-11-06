@@ -48,7 +48,16 @@ The style of a new workbook's cells: [CellFont.Default](SharpCell.CellFont.md#de
 public CellColor? Fill { get; init; }
 ```
 
-The colour the cell is filled with; null for none. Only solid fills are read from files.
+The colour the cell is filled with; null for none. With a [CellStyle.FillPattern](SharpCell.CellStyle.md#fillpattern) other than solid it is the background the pattern is drawn on, as Excel's Format Cells > Fill > Background Color is.
+
+<a id="fillpattern"></a>
+### FillPattern
+
+```csharp
+public CellFillPattern FillPattern { get; init; }
+```
+
+The pattern of the fill, as Excel's Format Cells > Fill > Pattern Style sets it; [CellFillPattern.Solid](SharpCell.CellFillPattern.md#solid) unless set otherwise, which fills the cell with [CellStyle.Fill](SharpCell.CellStyle.md#fill).
 
 <a id="font"></a>
 ### Font
@@ -67,6 +76,15 @@ public bool FormulaHidden { get; init; }
 ```
 
 Whether the cell's formula is hidden from the formula bar while its sheet is protected.
+
+<a id="gradient"></a>
+### Gradient
+
+```csharp
+public CellGradient? Gradient { get; init; }
+```
+
+A gradient the cell is filled with instead of [CellStyle.Fill](SharpCell.CellStyle.md#fill); null for none.
 
 <a id="horizontalalignment"></a>
 ### HorizontalAlignment
@@ -108,6 +126,28 @@ public bool Locked { get; init; }
 
 Whether the cell is locked: it cannot be changed while its sheet is protected (see [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection)). Excel's default is true; set false for input cells.
 
+<a id="name"></a>
+### Name
+
+```csharp
+public string? Name { get; init; }
+```
+
+The named cell style this style is based on, as Excel's Home > Cell Styles applies them, such as `Good` or `Heading 1`; null for Normal. The look is this record's own: take one from [Workbook.NamedStyles](SharpCell.Workbook.md#namedstyles) to give a cell a named style's look and name.
+
+**Exceptions**
+
+- `ArgumentException`: The name is empty or only white space.
+
+<a id="patterncolor"></a>
+### PatternColor
+
+```csharp
+public CellColor? PatternColor { get; init; }
+```
+
+The colour a pattern other than solid is drawn in; null for automatic, which Excel shows black.
+
 <a id="rightborder"></a>
 ### RightBorder
 
@@ -116,6 +156,28 @@ public CellBorder? RightBorder { get; init; }
 ```
 
 The right edge of the border; null for none.
+
+<a id="shrinktofit"></a>
+### ShrinkToFit
+
+```csharp
+public bool ShrinkToFit { get; init; }
+```
+
+Text made smaller until it fits the cell's width, as Format Cells > Alignment > Shrink to fit.
+
+<a id="textrotation"></a>
+### TextRotation
+
+```csharp
+public int TextRotation { get; init; }
+```
+
+The angle of the text in degrees, as Format Cells > Alignment > Orientation sets it: positive turns it counter-clockwise (up), negative clockwise (down); 0 unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The angle is outside -90 to 90.
 
 <a id="topborder"></a>
 ### TopBorder
@@ -134,6 +196,15 @@ public CellVerticalAlignment VerticalAlignment { get; init; }
 ```
 
 Where the text sits from top to bottom of the cell; Excel's default is the bottom.
+
+<a id="verticaltext"></a>
+### VerticalText
+
+```csharp
+public bool VerticalText { get; init; }
+```
+
+Text written top to bottom, one character under another, as Excel's vertical Text orientation; [CellStyle.TextRotation](SharpCell.CellStyle.md#textrotation) then does not apply.
 
 <a id="wraptext"></a>
 ### WrapText

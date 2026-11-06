@@ -16,12 +16,7 @@ internal static class ThemeReader
     private static readonly string[] Order = ["lt1", "dk1", "lt2", "dk2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"];
 
     /// <summary>The Office theme of Excel 2013 to 2022, for files without a theme part.</summary>
-    public static readonly CellColor[] Office =
-    [
-        CellColor.FromRgb(0xFFFFFF), CellColor.FromRgb(0x000000), CellColor.FromRgb(0xE7E6E6), CellColor.FromRgb(0x44546A),
-        CellColor.FromRgb(0x4472C4), CellColor.FromRgb(0xED7D31), CellColor.FromRgb(0xA5A5A5), CellColor.FromRgb(0xFFC000),
-        CellColor.FromRgb(0x5B9BD5), CellColor.FromRgb(0x70AD47), CellColor.FromRgb(0x0563C1), CellColor.FromRgb(0x954F72),
-    ];
+    public static CellColor[] Office => Workbook.OfficeTheme;
 
     /// <summary>The theme's colours; the Office theme's for any the part lacks or cannot give.</summary>
     public static CellColor[] Read(Package package, string? part)

@@ -253,14 +253,19 @@ public sealed partial class Worksheet
         if (edit.Whole && edit.Rows)
         {
             MoveIndexes(_rowHeights, edit, CellAddress.MaxRow);
+            MoveIndexes(_rowStyles, edit, CellAddress.MaxRow);
+            MoveIndexes(_rowFormats, edit, CellAddress.MaxRow);
             MoveIndexes(_hiddenRows, edit, CellAddress.MaxRow);
         }
         else if (edit.Whole)
         {
             MoveIndexes(_columnWidths, edit, CellAddress.MaxColumn);
+            MoveIndexes(_columnStyles, edit, CellAddress.MaxColumn);
+            MoveIndexes(_columnFormats, edit, CellAddress.MaxColumn);
             MoveIndexes(_hiddenColumns, edit, CellAddress.MaxColumn);
         }
 
+        MoveOutline(edit);   // after the hidden rows and columns moved: rows inserted in a collapsed group are hidden
         for (var i = _merged.Count - 1; i >= 0; i--)
         {
             if (edit.Map(_merged[i]) is { IsSingleCell: false } merged)
@@ -317,7 +322,7 @@ public sealed partial class Worksheet
             map[address] = value;
     }
 
-    private static void MoveIndexes(Dictionary<int, double> map, SheetEdit edit, int max)
+    private static void MoveIndexes<T>(Dictionary<int, T> map, SheetEdit edit, int max)
     {
         var moved = map.Select(pair => (Index: edit.Map(pair.Key, max), pair.Value)).Where(p => p.Index is not null).ToList();
         map.Clear();

@@ -133,6 +133,96 @@ public sealed partial class Workbook
     private CellStyle _defaultStyle = CellStyle.Default;
 
     /// <summary>
+    /// The workbook's named cell styles other than Normal (which is <see cref="DefaultStyle"/>), by
+    /// name, case ignored as in Excel: those of the file for a workbook read with SharpCell.Xlsx, and
+    /// any added with <see cref="SetNamedStyle"/>. Each has its <see cref="CellStyle.Name"/>; giving
+    /// one to <see cref="Cell.Style"/> applies it.
+    /// </summary>
+    public IReadOnlyDictionary<string, CellStyle> NamedStyles => _namedStyles;
+
+    private Dictionary<string, CellStyle> _namedStyles = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Adds a named cell style, or changes the look of one, as Excel's New Cell Style and Modify do.
+    /// Cells already given the style keep the look they had; give them the returned style again to
+    /// change theirs. A built-in name such as <c>Good</c>, <c>Heading 1</c> or <c>20% - Accent1</c>
+    /// is saved as Excel's built-in style of that name.
+    /// </summary>
+    /// <param name="name">The name; not Normal, whose look is <see cref="DefaultStyle"/>.</param>
+    /// <param name="look">How cells with the style look; its own name is replaced.</param>
+    /// <returns>The style with its name, to give to cells.</returns>
+    /// <exception cref="ArgumentException">The name is empty or Normal.</exception>
+    /// <exception cref="ArgumentNullException">The look is null.</exception>
+    public CellStyle SetNamedStyle(string name, CellStyle look)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(look);
+        if (name.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Normal is the workbook's DefaultStyle.", nameof(name));
+        ThrowIfInCustomFunction();
+        var style = look with { Name = name };
+        _namedStyles.Remove(name);   // a name spelled differently replaces the old spelling too
+        _namedStyles[name] = style;
+        return style;
+    }
+
+    /// <summary>
+    /// Removes a named cell style, as Excel's Delete does: cells with it lose their style of their own
+    /// and show the default one again.
+    /// </summary>
+    /// <returns>Whether there was such a style.</returns>
+    public bool RemoveNamedStyle(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ThrowIfInCustomFunction();
+        if (!_namedStyles.Remove(name))
+            return false;
+        foreach (var sheet in _sheets)
+            sheet.ForgetNamedStyle(name);
+        return true;
+    }
+
+    /// <summary>Adds a named style as read; nothing checks here.</summary>
+    internal void LoadNamedStyle(CellStyle style) => _namedStyles[style.Name!] = style;
+
+    /// <summary>
+    /// The RGB of the theme's twelve colours, by <see cref="SharpCell.ThemeColor"/>: those of the
+    /// file's theme for a file read with SharpCell.Xlsx, of Excel's Office theme (2013 to 2022) for
+    /// a new workbook.
+    /// </summary>
+    public IReadOnlyList<CellColor> ThemeColors => _themeColors;
+
+    private CellColor[] _themeColors = (CellColor[])OfficeTheme.Clone();
+
+    // The Office theme of Excel 2013 to 2022, in Excel's index order: lt1, dk1, lt2, dk2, accents, links.
+    internal static readonly CellColor[] OfficeTheme =
+    [
+        CellColor.FromRgb(0xFFFFFF), CellColor.FromRgb(0x000000), CellColor.FromRgb(0xE7E6E6), CellColor.FromRgb(0x44546A),
+        CellColor.FromRgb(0x4472C4), CellColor.FromRgb(0xED7D31), CellColor.FromRgb(0xA5A5A5), CellColor.FromRgb(0xFFC000),
+        CellColor.FromRgb(0x5B9BD5), CellColor.FromRgb(0x70AD47), CellColor.FromRgb(0x0563C1), CellColor.FromRgb(0x954F72),
+    ];
+
+    /// <summary>
+    /// A colour of the theme, as Excel's colour palette offers it: the theme colour lightened or
+    /// darkened by a tint. It is saved as a theme colour, so it changes with the theme in Excel.
+    /// Excel's palette uses tints 0.8, 0.6 and 0.4 (lighter 80%, 60%, 40%) and -0.25 and -0.5 (darker).
+    /// </summary>
+    /// <param name="color">The theme colour.</param>
+    /// <param name="tint">From -1 (black) through 0 (the colour itself) to 1 (white).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The colour is not one of the twelve, or the tint is outside -1 to 1.</exception>
+    public CellColor ThemeColor(ThemeColor color, double tint = 0)
+    {
+        if ((int)color is < 0 or > 11)
+            throw new ArgumentOutOfRangeException(nameof(color), color, "A theme has twelve colours.");
+        if (tint is not (>= -1 and <= 1))
+            throw new ArgumentOutOfRangeException(nameof(tint), tint, "A tint goes from -1 to 1.");
+        return CellColor.OfTheme(_themeColors[(int)color], color, tint);
+    }
+
+    /// <summary>Sets the theme's colours as read, in Excel's index order.</summary>
+    internal void LoadThemeColors(CellColor[] colors) => _themeColors = (CellColor[])colors.Clone();
+
+    /// <summary>
     /// Culture for text-to-number conversion, number-to-text conversion and text ordering.
     /// The process culture is never used. Defaults to the invariant culture.
     /// </summary>
@@ -314,6 +404,8 @@ public sealed partial class Workbook
         {
             _culture = _culture,
             _defaultStyle = _defaultStyle,
+            _themeColors = _themeColors,
+            _namedStyles = new Dictionary<string, CellStyle>(_namedStyles, StringComparer.OrdinalIgnoreCase),
             _dateSystem = _dateSystem,
             _iteration = _iteration,
             _structureProtected = _structureProtected,

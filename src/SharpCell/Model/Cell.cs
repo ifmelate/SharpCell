@@ -64,12 +64,37 @@ public sealed partial class Cell
                 data.IsDirty = false;
                 data.IsLegacy = false;
                 data.FixedArray = null;
+                data.Rich = null;
 
                 // Typing into a spilled cell makes it the user's: it now blocks the spill.
                 data.SpillAnchor = null;
             }
 
             calculation.AfterChange(key, data);
+        }
+    }
+
+    /// <summary>
+    /// The cell's text in runs of different fonts, as Excel formats characters of a cell; null when
+    /// the cell holds plain text or anything else. Setting it sets <see cref="Value"/> to the whole
+    /// text; setting <see cref="Value"/> or <see cref="Formula"/> takes the runs away, and setting null
+    /// leaves the text plain. A formula's text result never has runs, as in Excel.
+    /// </summary>
+    public RichText? RichText
+    {
+        get => Worksheet.Store.Get(Row, Column) is { FormulaText: null, Rich: { } rich } ? rich : null;
+        set
+        {
+            if (value is null)
+            {
+                Worksheet.ThrowIfCannotChange();
+                if (Worksheet.Store.Get(Row, Column) is { } existing)
+                    existing.Rich = null;
+                return;
+            }
+
+            Value = CellValue.Text(value.Text);
+            Worksheet.Store.Get(Row, Column)!.Rich = value;
         }
     }
 
@@ -128,6 +153,7 @@ public sealed partial class Cell
         data.Formula = node;
         data.IsLegacy = legacy;
         data.FixedArray = null;
+        data.Rich = null;
         data.Value = CellValue.Empty;
         data.SpillAnchor = null;
         calculation.AfterChange(key, data);
@@ -215,7 +241,7 @@ public sealed partial class Cell
     /// <exception cref="ArgumentException">The code is not a number format.</exception>
     public string NumberFormat
     {
-        get => Worksheet.FormatAt(Row, Column)?.FormatCode ?? "General";
+        get => Worksheet.ShownFormatAt(Row, Column)?.FormatCode ?? "General";
         set
         {
             ArgumentNullException.ThrowIfNull(value);
@@ -223,6 +249,10 @@ public sealed partial class Cell
             if (value.Length == 0 || value.Equals("General", StringComparison.OrdinalIgnoreCase))
             {
                 Worksheet.SetFormat(Row, Column, null);
+
+                // In a formatted row or column, General of its own takes the cell's own style, as its own cell format in Excel.
+                if (Worksheet.ShownFormatAt(Row, Column) is not null)
+                    Worksheet.SetStyle(Row, Column, Worksheet.ShownStyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle);
                 return;
             }
 
@@ -234,13 +264,14 @@ public sealed partial class Cell
 
     /// <summary>
     /// How the cell looks: font, fill, borders and alignment. A cell without a style of its own has
+    /// its row's (<see cref="Worksheet.RowStyle"/>), else its column's, else
     /// <see cref="Workbook.DefaultStyle"/>; setting null gives it back. Styles are read from .xlsx
     /// files; they play no part in calculation, and a style alone does not make a cell hold something.
     /// </summary>
     [AllowNull]
     public CellStyle Style
     {
-        get => Worksheet.StyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle;
+        get => Worksheet.ShownStyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle;
         set
         {
             Worksheet.ThrowIfCannotChange();
@@ -335,7 +366,7 @@ public sealed partial class Cell
         get
         {
             var value = Value;
-            var format = Worksheet.FormatAt(Row, Column);
+            var format = Worksheet.ShownFormatAt(Row, Column);
             var workbook = Worksheet.Workbook;
             return value.Kind switch
             {

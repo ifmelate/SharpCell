@@ -134,6 +134,15 @@ The cells and ranges the cell's formula read in its last calculation: references
 
 - `InvalidOperationException`: The formula is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
 
+<a id="richtext"></a>
+### RichText
+
+```csharp
+public RichText? RichText { get; set; }
+```
+
+The cell's text in runs of different fonts, as Excel formats characters of a cell; null when the cell holds plain text or anything else. Setting it sets [Cell.Value](SharpCell.Cell.md#value) to the whole text; setting [Cell.Value](SharpCell.Cell.md#value) or [Cell.Formula](SharpCell.Cell.md#formula) takes the runs away, and setting null leaves the text plain. A formula's text result never has runs, as in Excel.
+
 <a id="row"></a>
 ### Row
 
@@ -150,7 +159,7 @@ The row number, from 1.
 public CellStyle Style { get; set; }
 ```
 
-How the cell looks: font, fill, borders and alignment. A cell without a style of its own has [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle); setting null gives it back. Styles are read from .xlsx files; they play no part in calculation, and a style alone does not make a cell hold something.
+How the cell looks: font, fill, borders and alignment. A cell without a style of its own has its row's ([Worksheet.RowStyle](SharpCell.Worksheet.md#rowstyle-int)), else its column's, else [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle); setting null gives it back. Styles are read from .xlsx files; they play no part in calculation, and a style alone does not make a cell hold something.
 
 <a id="text"></a>
 ### Text

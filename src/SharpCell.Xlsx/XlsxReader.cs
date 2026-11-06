@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using System.Xml.Linq;
 using SharpCell.Parsing;
 
 namespace SharpCell.Xlsx;
@@ -128,6 +129,9 @@ internal static class WorkbookReader
         }
 
         var saved = ReadSavedCells(package, relationships);
+        workbook.LoadThemeColors(saved.Theme);
+        foreach (var named in saved.NamedStyles)
+            workbook.LoadNamedStyle(named);
         if (saved.Styles.Count > 0)
             workbook.DefaultStyle = saved.Styles[0].Style;
 
@@ -326,8 +330,9 @@ internal static class WorkbookReader
     internal static SavedCells ReadSavedCells(Package package, Dictionary<string, Relationship> relationships)
     {
         var sharedStringsPart = FirstOfType(relationships, "sharedStrings")?.Target;
+        var runs = new Dictionary<int, List<(string Text, XElement? Properties)>>();
         var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
-            ? SharedStrings.Read(package, sharedStringsPart)
+            ? SharedStrings.Read(package, sharedStringsPart, out runs)
             : [];
         var rich = RichValues.Read(package,
             FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
@@ -336,7 +341,8 @@ internal static class WorkbookReader
         var stylesPart = FirstOfType(relationships, "styles")?.Target;
         var theme = ThemeReader.Read(package, FirstOfType(relationships, "theme")?.Target);
         var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : new StyleSheet();
-        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme) };
+        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme), Theme = theme, NamedStyles = styles.NamedStyles,
+            SharedRuns = runs, RunFont = styles.Font ?? StylesReader.DefaultFonts(theme) };
     }
 
     internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)

@@ -1488,16 +1488,14 @@ maintainer.
 | 0.10 | Copying cells as Excel pastes them, formulas, links and data validation following (`CellRange.CopyTo`) |
 | 0.11 | Conditional formats worked out as Excel shows them, notes, page setup, inserting and deleting cells with a shift |
 | 0.12 | Renaming, removing, moving and hiding sheets; Excel's filter; sorting ranges; ranges as `DataTable`s, objects and CSV; benchmarks, and `SUMIFS`-style functions several times faster |
+| 0.13 | How sheets look: outlines, rich text, styles and number formats of whole rows and columns, named cell styles, pattern and gradient fills, turned and shrunk text, theme colours kept as such; paper size, scaling, fitting to pages, headers and footers |
 
-## Next: 0.13, how sheets look
+## Next: 0.14, fitting columns to their contents
 
-- Grouping rows and columns into outlines that collapse and expand.
-- Rich text in cells: runs of different fonts in one cell.
-- Styles of whole rows and columns, named cell styles, pattern and gradient fills, rotated and
-  shrunk text, theme colours written as such.
-- Headers and footers, paper size, scaling and fitting to pages.
-- Fitting column widths to their contents. This needs font metrics, which the engine does not
-  carry; it may come as a separate package.
+- Column widths fitted to what their cells show, as double-clicking a column's edge in Excel does,
+  without installed fonts or native libraries: width tables of the free fonts made to measure as
+  Office's do (Carlito for Calibri, Liberation for Arial, Times New Roman and Courier New, Intos for
+  Aptos), an estimate for other fonts, and a hook for a font engine of the caller's choice.
 
 ## Later
 
@@ -1893,6 +1891,15 @@ The cells and ranges the cell's formula read in its last calculation: references
 
 - `InvalidOperationException`: The formula is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
 
+<a id="richtext"></a>
+### RichText
+
+```csharp
+public RichText? RichText { get; set; }
+```
+
+The cell's text in runs of different fonts, as Excel formats characters of a cell; null when the cell holds plain text or anything else. Setting it sets [Cell.Value](SharpCell.Cell.md#value) to the whole text; setting [Cell.Value](SharpCell.Cell.md#value) or [Cell.Formula](SharpCell.Cell.md#formula) takes the runs away, and setting null leaves the text plain. A formula's text result never has runs, as in Excel.
+
 <a id="row"></a>
 ### Row
 
@@ -1909,7 +1916,7 @@ The row number, from 1.
 public CellStyle Style { get; set; }
 ```
 
-How the cell looks: font, fill, borders and alignment. A cell without a style of its own has [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle); setting null gives it back. Styles are read from .xlsx files; they play no part in calculation, and a style alone does not make a cell hold something.
+How the cell looks: font, fill, borders and alignment. A cell without a style of its own has its row's ([Worksheet.RowStyle](SharpCell.Worksheet.md#rowstyle-int)), else its column's, else [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle); setting null gives it back. Styles are read from .xlsx files; they play no part in calculation, and a style alone does not make a cell hold something.
 
 <a id="text"></a>
 ### Text
@@ -2056,7 +2063,7 @@ public readonly struct CellColor
 
 Namespace `SharpCell` · package `SharpCell`
 
-A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
+A colour as Excel shows it, in sRGB. A colour of the workbook's theme also knows its place in the theme ([CellColor.Theme](SharpCell.CellColor.md#theme)) and how much lighter or darker it is ([CellColor.Tint](SharpCell.CellColor.md#tint)), and is saved that way, so it follows the theme as in Excel; make one with [Workbook.ThemeColor](SharpCell.Workbook.md#themecolor-themecolor-double). Indexed colours of a file are turned into plain RGB. Excel ignores the alpha channel, so there is none. Colours compare by value, the theme and tint included: a theme colour is not equal to the plain colour of the same RGB.
 
 ## Constructors
 
@@ -2067,7 +2074,7 @@ A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are tur
 public CellColor(byte R, byte G, byte B)
 ```
 
-A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
+A colour as Excel shows it, in sRGB. A colour of the workbook's theme also knows its place in the theme ([CellColor.Theme](SharpCell.CellColor.md#theme)) and how much lighter or darker it is ([CellColor.Tint](SharpCell.CellColor.md#tint)), and is saved that way, so it follows the theme as in Excel; make one with [Workbook.ThemeColor](SharpCell.Workbook.md#themecolor-themecolor-double). Indexed colours of a file are turned into plain RGB. Excel ignores the alpha channel, so there is none. Colours compare by value, the theme and tint included: a theme colour is not equal to the plain colour of the same RGB.
 
 **Parameters**
 
@@ -2104,6 +2111,28 @@ public byte R { get; init; }
 
 Red, 0 to 255.
 
+<a id="theme"></a>
+### Theme
+
+```csharp
+public ThemeColor? Theme { get; init; }
+```
+
+The theme colour this is, or null for a plain colour.
+
+<a id="tint"></a>
+### Tint
+
+```csharp
+public double Tint { get; init; }
+```
+
+How much the theme colour is darkened (from -1, black) or lightened (to 1, white), as Excel's colour palette shows its shades; 0 for the colour itself and for plain colours.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The tint is outside -1 to 1.
+
 ## Methods
 
 <a id="fromrgb-int"></a>
@@ -2123,6 +2152,43 @@ public override string ToString()
 ```
 
 The colour as `#RRGGBB`.
+
+---
+
+<!-- page: api/SharpCell.CellFillPattern.md -->
+
+# CellFillPattern
+
+```csharp
+public enum CellFillPattern
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The pattern of a cell's fill, as Excel's Format Cells > Fill > Pattern Style lists them: drawn in [CellStyle.PatternColor](SharpCell.CellStyle.md#patterncolor) over [CellStyle.Fill](SharpCell.CellStyle.md#fill).
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="solid"></a>`Solid` | 0 | No pattern: the cell is filled with [CellStyle.Fill](SharpCell.CellStyle.md#fill). |
+| <a id="darkgray"></a>`DarkGray` | 1 | 75% gray dots. |
+| <a id="mediumgray"></a>`MediumGray` | 2 | 50% gray dots. |
+| <a id="lightgray"></a>`LightGray` | 3 | 25% gray dots. |
+| <a id="gray125"></a>`Gray125` | 4 | 12.5% gray dots. |
+| <a id="gray0625"></a>`Gray0625` | 5 | 6.25% gray dots. |
+| <a id="darkhorizontal"></a>`DarkHorizontal` | 6 | Thick horizontal stripes. |
+| <a id="darkvertical"></a>`DarkVertical` | 7 | Thick vertical stripes. |
+| <a id="darkdown"></a>`DarkDown` | 8 | Thick stripes down to the right. |
+| <a id="darkup"></a>`DarkUp` | 9 | Thick stripes up to the right. |
+| <a id="darkgrid"></a>`DarkGrid` | 10 | A thick grid. |
+| <a id="darktrellis"></a>`DarkTrellis` | 11 | A thick diagonal crosshatch. |
+| <a id="lighthorizontal"></a>`LightHorizontal` | 12 | Thin horizontal stripes. |
+| <a id="lightvertical"></a>`LightVertical` | 13 | Thin vertical stripes. |
+| <a id="lightdown"></a>`LightDown` | 14 | Thin stripes down to the right. |
+| <a id="lightup"></a>`LightUp` | 15 | Thin stripes up to the right. |
+| <a id="lightgrid"></a>`LightGrid` | 16 | A thin grid. |
+| <a id="lighttrellis"></a>`LightTrellis` | 17 | A thin diagonal crosshatch. |
 
 ---
 
@@ -2200,6 +2266,15 @@ The font family, such as `Calibri`.
 
 - `ArgumentException`: The name is empty.
 
+<a id="script"></a>
+### Script
+
+```csharp
+public CellFontScript Script { get; init; }
+```
+
+Text raised or lowered and made smaller, as Format Cells > Font > Superscript and Subscript.
+
 <a id="size"></a>
 ### Size
 
@@ -2230,6 +2305,202 @@ public CellUnderline Underline { get; init; }
 ```
 
 The underline, if any.
+
+---
+
+<!-- page: api/SharpCell.CellFontScript.md -->
+
+# CellFontScript
+
+```csharp
+public enum CellFontScript
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Where text sits against the line, as Excel's Superscript and Subscript effects put it.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="normal"></a>`Normal` | 0 | On the line. |
+| <a id="superscript"></a>`Superscript` | 1 | Raised and smaller, such as the 2 of m². |
+| <a id="subscript"></a>`Subscript` | 2 | Lowered and smaller, such as the 2 of H₂O. |
+
+---
+
+<!-- page: api/SharpCell.CellGradient.md -->
+
+# CellGradient
+
+```csharp
+public sealed class CellGradient
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A gradient fill, as Excel's Format Cells > Fill > Fill Effects makes: two or more colours blending in a line or from a rectangle outwards. A record: gradients compare by value, stops included.
+
+## Constructors
+
+<a id="ctor-ienumerable-gradientstop"></a>
+### CellGradient(IEnumerable<GradientStop>)
+
+```csharp
+public CellGradient(IEnumerable<GradientStop> stops)
+```
+
+A gradient through the stops, linear at 0 degrees (left to right) unless set otherwise.
+
+**Parameters**
+
+- `stops`: Two or more stops; they are kept in order of position.
+
+**Exceptions**
+
+- `ArgumentException`: There are fewer than two stops.
+
+## Properties
+
+<a id="angle"></a>
+### Angle
+
+```csharp
+public double Angle { get; init; }
+```
+
+The direction of a linear gradient in degrees, clockwise from left to right.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The angle is not a finite number.
+
+<a id="bottom"></a>
+### Bottom
+
+```csharp
+public double Bottom { get; init; }
+```
+
+Where the inner rectangle ends from the bottom, 0 to 1 of the cell's height.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 0 to 1.
+
+<a id="left"></a>
+### Left
+
+```csharp
+public double Left { get; init; }
+```
+
+Where a path gradient's inner rectangle starts from the left, 0 to 1 of the cell's width.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 0 to 1.
+
+<a id="right"></a>
+### Right
+
+```csharp
+public double Right { get; init; }
+```
+
+Where the inner rectangle ends from the right, 0 to 1 of the cell's width.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 0 to 1.
+
+<a id="stops"></a>
+### Stops
+
+```csharp
+public IReadOnlyList<GradientStop> Stops { get; }
+```
+
+The stops in order of position.
+
+<a id="top"></a>
+### Top
+
+```csharp
+public double Top { get; init; }
+```
+
+Where the inner rectangle starts from the top, 0 to 1 of the cell's height.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 0 to 1.
+
+<a id="type"></a>
+### Type
+
+```csharp
+public CellGradientType Type { get; init; }
+```
+
+How the gradient runs; [CellGradientType.Linear](SharpCell.CellGradientType.md#linear) unless set otherwise.
+
+## Methods
+
+<a id="equals-cellgradient"></a>
+### Equals(CellGradient)
+
+```csharp
+public bool Equals(CellGradient? other)
+```
+
+Whether the gradients are the same, stop by stop.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash of the gradient, from its stops and shape.
+
+<a id="linear-cellcolor-cellcolor-double"></a>
+### Linear(CellColor, CellColor, double)
+
+```csharp
+public static CellGradient Linear(CellColor from, CellColor to, double angle = 0)
+```
+
+A linear gradient from one colour to another, as Excel's two-colour shading styles.
+
+**Parameters**
+
+- `from`: The colour at the start.
+- `to`: The colour at the end.
+- `angle`: The direction in degrees: 0 left to right, 90 top to bottom, 45 and 135 diagonally.
+
+---
+
+<!-- page: api/SharpCell.CellGradientType.md -->
+
+# CellGradientType
+
+```csharp
+public enum CellGradientType
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How a gradient runs across a cell.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="linear"></a>`Linear` | 0 | In a straight line at [CellGradient.Angle](SharpCell.CellGradient.md#angle). |
+| <a id="path"></a>`Path` | 1 | Outwards from a rectangle inside the cell, given by [CellGradient.Left](SharpCell.CellGradient.md#left), [CellGradient.Top](SharpCell.CellGradient.md#top), [CellGradient.Right](SharpCell.CellGradient.md#right) and [CellGradient.Bottom](SharpCell.CellGradient.md#bottom). |
 
 ---
 
@@ -2622,7 +2893,16 @@ The style of a new workbook's cells: [CellFont.Default](SharpCell.CellFont.md#de
 public CellColor? Fill { get; init; }
 ```
 
-The colour the cell is filled with; null for none. Only solid fills are read from files.
+The colour the cell is filled with; null for none. With a [CellStyle.FillPattern](SharpCell.CellStyle.md#fillpattern) other than solid it is the background the pattern is drawn on, as Excel's Format Cells > Fill > Background Color is.
+
+<a id="fillpattern"></a>
+### FillPattern
+
+```csharp
+public CellFillPattern FillPattern { get; init; }
+```
+
+The pattern of the fill, as Excel's Format Cells > Fill > Pattern Style sets it; [CellFillPattern.Solid](SharpCell.CellFillPattern.md#solid) unless set otherwise, which fills the cell with [CellStyle.Fill](SharpCell.CellStyle.md#fill).
 
 <a id="font"></a>
 ### Font
@@ -2641,6 +2921,15 @@ public bool FormulaHidden { get; init; }
 ```
 
 Whether the cell's formula is hidden from the formula bar while its sheet is protected.
+
+<a id="gradient"></a>
+### Gradient
+
+```csharp
+public CellGradient? Gradient { get; init; }
+```
+
+A gradient the cell is filled with instead of [CellStyle.Fill](SharpCell.CellStyle.md#fill); null for none.
 
 <a id="horizontalalignment"></a>
 ### HorizontalAlignment
@@ -2682,6 +2971,28 @@ public bool Locked { get; init; }
 
 Whether the cell is locked: it cannot be changed while its sheet is protected (see [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection)). Excel's default is true; set false for input cells.
 
+<a id="name"></a>
+### Name
+
+```csharp
+public string? Name { get; init; }
+```
+
+The named cell style this style is based on, as Excel's Home > Cell Styles applies them, such as `Good` or `Heading 1`; null for Normal. The look is this record's own: take one from [Workbook.NamedStyles](SharpCell.Workbook.md#namedstyles) to give a cell a named style's look and name.
+
+**Exceptions**
+
+- `ArgumentException`: The name is empty or only white space.
+
+<a id="patterncolor"></a>
+### PatternColor
+
+```csharp
+public CellColor? PatternColor { get; init; }
+```
+
+The colour a pattern other than solid is drawn in; null for automatic, which Excel shows black.
+
 <a id="rightborder"></a>
 ### RightBorder
 
@@ -2690,6 +3001,28 @@ public CellBorder? RightBorder { get; init; }
 ```
 
 The right edge of the border; null for none.
+
+<a id="shrinktofit"></a>
+### ShrinkToFit
+
+```csharp
+public bool ShrinkToFit { get; init; }
+```
+
+Text made smaller until it fits the cell's width, as Format Cells > Alignment > Shrink to fit.
+
+<a id="textrotation"></a>
+### TextRotation
+
+```csharp
+public int TextRotation { get; init; }
+```
+
+The angle of the text in degrees, as Format Cells > Alignment > Orientation sets it: positive turns it counter-clockwise (up), negative clockwise (down); 0 unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The angle is outside -90 to 90.
 
 <a id="topborder"></a>
 ### TopBorder
@@ -2708,6 +3041,15 @@ public CellVerticalAlignment VerticalAlignment { get; init; }
 ```
 
 Where the text sits from top to bottom of the cell; Excel's default is the bottom.
+
+<a id="verticaltext"></a>
+### VerticalText
+
+```csharp
+public bool VerticalText { get; init; }
+```
+
+Text written top to bottom, one character under another, as Excel's vertical Text orientation; [CellStyle.TextRotation](SharpCell.CellStyle.md#textrotation) then does not apply.
 
 <a id="wraptext"></a>
 ### WrapText
@@ -4961,6 +5303,220 @@ The 0-based positions of scalar parameters. A scalar parameter receives one valu
 
 ---
 
+<!-- page: api/SharpCell.GradientStop.md -->
+
+# GradientStop
+
+```csharp
+public readonly struct GradientStop
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A colour of a gradient at a position across it, from 0 (the start) to 1 (the end).
+
+## Constructors
+
+<a id="ctor-double-cellcolor"></a>
+### GradientStop(double, CellColor)
+
+```csharp
+public GradientStop(double position, CellColor color)
+```
+
+A stop of a gradient.
+
+**Parameters**
+
+- `position`: Where the colour is, from 0 to 1.
+- `color`: The colour.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The position is outside 0 to 1.
+
+## Properties
+
+<a id="color"></a>
+### Color
+
+```csharp
+public CellColor Color { get; }
+```
+
+The colour.
+
+<a id="position"></a>
+### Position
+
+```csharp
+public double Position { get; }
+```
+
+Where the colour is, from 0 to 1.
+
+---
+
+<!-- page: api/SharpCell.HeaderFooter.md -->
+
+# HeaderFooter
+
+```csharp
+public sealed class HeaderFooter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A printed header or footer: its left, centre and right sections, in Excel's codes. Text prints as written, apart from codes such as [HeaderFooter.PageNumber](SharpCell.HeaderFooter.md#pagenumber) (`&P`), `&B` for bold or `&"Arial,Italic"` for a font; `&&` prints one ampersand, and [HeaderFooter.Escape](SharpCell.HeaderFooter.md#escape-string) doubles those of plain text. Null or empty leaves a section blank.
+
+## Constructors
+
+<a id="ctor-string-string-string"></a>
+### HeaderFooter(string, string, string)
+
+```csharp
+public HeaderFooter(string? Left = null, string? Center = null, string? Right = null)
+```
+
+A printed header or footer: its left, centre and right sections, in Excel's codes. Text prints as written, apart from codes such as [HeaderFooter.PageNumber](SharpCell.HeaderFooter.md#pagenumber) (`&P`), `&B` for bold or `&"Arial,Italic"` for a font; `&&` prints one ampersand, and [HeaderFooter.Escape](SharpCell.HeaderFooter.md#escape-string) doubles those of plain text. Null or empty leaves a section blank.
+
+**Parameters**
+
+- `Left`: The section on the left, or null.
+- `Center`: The section in the middle, or null.
+- `Right`: The section on the right, or null.
+
+## Properties
+
+<a id="center"></a>
+### Center
+
+```csharp
+public string? Center { get; init; }
+```
+
+The section in the middle, or null.
+
+<a id="date"></a>
+### Date
+
+```csharp
+public static string Date { get; }
+```
+
+The code for the date of printing.
+
+<a id="filename"></a>
+### FileName
+
+```csharp
+public static string FileName { get; }
+```
+
+The code for the file's name.
+
+<a id="filepath"></a>
+### FilePath
+
+```csharp
+public static string FilePath { get; }
+```
+
+The code for the file's folder and name.
+
+<a id="left"></a>
+### Left
+
+```csharp
+public string? Left { get; init; }
+```
+
+The section on the left, or null.
+
+<a id="pagecount"></a>
+### PageCount
+
+```csharp
+public static string PageCount { get; }
+```
+
+The code for the number of pages.
+
+<a id="pagenumber"></a>
+### PageNumber
+
+```csharp
+public static string PageNumber { get; }
+```
+
+The code for the page number.
+
+<a id="right"></a>
+### Right
+
+```csharp
+public string? Right { get; init; }
+```
+
+The section on the right, or null.
+
+<a id="sheetname"></a>
+### SheetName
+
+```csharp
+public static string SheetName { get; }
+```
+
+The code for the sheet's name.
+
+<a id="time"></a>
+### Time
+
+```csharp
+public static string Time { get; }
+```
+
+The code for the time of printing.
+
+## Methods
+
+<a id="escape-string"></a>
+### Escape(string)
+
+```csharp
+public static string Escape(string text)
+```
+
+Plain text with its ampersands doubled, so that it prints as written.
+
+**Exceptions**
+
+- `ArgumentNullException`: The text is null.
+
+<a id="parse-string"></a>
+### Parse(string)
+
+```csharp
+public static HeaderFooter Parse(string code)
+```
+
+Splits a header or footer as an .xlsx file stores it, such as `&LLeft&CMiddle`, into its sections. Text before any section code belongs to the middle, as in Excel.
+
+**Exceptions**
+
+- `ArgumentNullException`: The text is null.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The header or footer as an .xlsx file stores it, such as `&LLeft&CMiddle`; empty when every section is blank.
+
+---
+
 <!-- page: api/SharpCell.Hyperlink.md -->
 
 # Hyperlink
@@ -5304,6 +5860,60 @@ The text.
 
 ---
 
+<!-- page: api/SharpCell.PageFit.md -->
+
+# PageFit
+
+```csharp
+public readonly struct PageFit
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How many pages a printed sheet is shrunk to fit, as Excel's Page Setup > Fit to does: so many pages wide by so many tall. 0 leaves that direction to as many pages as it takes, as a blank box does in Excel; `new PageFit(1, 0)` fits all columns on one page wide.
+
+## Constructors
+
+<a id="ctor-int-int"></a>
+### PageFit(int, int)
+
+```csharp
+public PageFit(int wide, int tall)
+```
+
+A fit of so many pages wide by so many tall.
+
+**Parameters**
+
+- `wide`: Pages across, 0 for as many as it takes.
+- `tall`: Pages down, 0 for as many as it takes.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A count is negative or above 32767.
+
+## Properties
+
+<a id="tall"></a>
+### Tall
+
+```csharp
+public int Tall { get; }
+```
+
+Pages down; 0 for as many as it takes.
+
+<a id="wide"></a>
+### Wide
+
+```csharp
+public int Wide { get; }
+```
+
+Pages across; 0 for as many as it takes.
+
+---
+
 <!-- page: api/SharpCell.PageMargins.md -->
 
 # PageMargins
@@ -5461,6 +6071,68 @@ How a sheet is turned on the printed page, as in Excel's Page Layout > Orientati
 
 ---
 
+<!-- page: api/SharpCell.PaperSize.md -->
+
+# PaperSize
+
+```csharp
+public enum PaperSize
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The paper a sheet prints on, by the number Excel stores (as its `XlPaperSize` does). A file may hold a number not named here, from a printer's own sizes; it is kept as it is.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="letter"></a>`Letter` | 1 | Letter, 8.5 by 11 inches; what a sheet prints on unless set otherwise. |
+| <a id="lettersmall"></a>`LetterSmall` | 2 | Letter Small, 8.5 by 11 inches. |
+| <a id="tabloid"></a>`Tabloid` | 3 | Tabloid, 11 by 17 inches. |
+| <a id="ledger"></a>`Ledger` | 4 | Ledger, 17 by 11 inches. |
+| <a id="legal"></a>`Legal` | 5 | Legal, 8.5 by 14 inches. |
+| <a id="statement"></a>`Statement` | 6 | Statement, 5.5 by 8.5 inches. |
+| <a id="executive"></a>`Executive` | 7 | Executive, 7.25 by 10.5 inches. |
+| <a id="a3"></a>`A3` | 8 | A3, 297 by 420 mm. |
+| <a id="a4"></a>`A4` | 9 | A4, 210 by 297 mm. |
+| <a id="a4small"></a>`A4Small` | 10 | A4 Small, 210 by 297 mm. |
+| <a id="a5"></a>`A5` | 11 | A5, 148 by 210 mm. |
+| <a id="b4"></a>`B4` | 12 | B4 (JIS), 257 by 364 mm. |
+| <a id="b5"></a>`B5` | 13 | B5 (JIS), 182 by 257 mm. |
+| <a id="folio"></a>`Folio` | 14 | Folio, 8.5 by 13 inches. |
+| <a id="quarto"></a>`Quarto` | 15 | Quarto, 215 by 275 mm. |
+| <a id="size10x14"></a>`Size10x14` | 16 | 10 by 14 inches. |
+| <a id="size11x17"></a>`Size11x17` | 17 | 11 by 17 inches. |
+| <a id="note"></a>`Note` | 18 | Note, 8.5 by 11 inches. |
+| <a id="envelope9"></a>`Envelope9` | 19 | Envelope #9, 3.875 by 8.875 inches. |
+| <a id="envelope10"></a>`Envelope10` | 20 | Envelope #10, 4.125 by 9.5 inches. |
+| <a id="envelope11"></a>`Envelope11` | 21 | Envelope #11, 4.5 by 10.375 inches. |
+| <a id="envelope12"></a>`Envelope12` | 22 | Envelope #12, 4.75 by 11 inches. |
+| <a id="envelope14"></a>`Envelope14` | 23 | Envelope #14, 5 by 11.5 inches. |
+| <a id="csheet"></a>`CSheet` | 24 | C size sheet, 17 by 22 inches. |
+| <a id="dsheet"></a>`DSheet` | 25 | D size sheet, 22 by 34 inches. |
+| <a id="esheet"></a>`ESheet` | 26 | E size sheet, 34 by 44 inches. |
+| <a id="envelopedl"></a>`EnvelopeDL` | 27 | Envelope DL, 110 by 220 mm. |
+| <a id="envelopec5"></a>`EnvelopeC5` | 28 | Envelope C5, 162 by 229 mm. |
+| <a id="envelopec3"></a>`EnvelopeC3` | 29 | Envelope C3, 324 by 458 mm. |
+| <a id="envelopec4"></a>`EnvelopeC4` | 30 | Envelope C4, 229 by 324 mm. |
+| <a id="envelopec6"></a>`EnvelopeC6` | 31 | Envelope C6, 114 by 162 mm. |
+| <a id="envelopec65"></a>`EnvelopeC65` | 32 | Envelope C65, 114 by 229 mm. |
+| <a id="envelopeb4"></a>`EnvelopeB4` | 33 | Envelope B4, 250 by 353 mm. |
+| <a id="envelopeb5"></a>`EnvelopeB5` | 34 | Envelope B5, 176 by 250 mm. |
+| <a id="envelopeb6"></a>`EnvelopeB6` | 35 | Envelope B6, 176 by 125 mm. |
+| <a id="envelopeitaly"></a>`EnvelopeItaly` | 36 | Envelope Italy, 110 by 230 mm. |
+| <a id="envelopemonarch"></a>`EnvelopeMonarch` | 37 | Envelope Monarch, 3.875 by 7.5 inches. |
+| <a id="envelopepersonal"></a>`EnvelopePersonal` | 38 | Envelope 6 3/4, 3.625 by 6.5 inches. |
+| <a id="fanfoldus"></a>`FanfoldUS` | 39 | US Standard Fanfold, 14.875 by 11 inches. |
+| <a id="fanfoldstandardgerman"></a>`FanfoldStandardGerman` | 40 | German Standard Fanfold, 8.5 by 12 inches. |
+| <a id="fanfoldlegalgerman"></a>`FanfoldLegalGerman` | 41 | German Legal Fanfold, 8.5 by 13 inches. |
+| <a id="a2"></a>`A2` | 66 | A2, 420 by 594 mm. |
+| <a id="a6"></a>`A6` | 70 | A6, 105 by 148 mm. |
+
+---
+
 <!-- page: api/SharpCell.RangeRow.md -->
 
 # RangeRow
@@ -5541,6 +6213,106 @@ public IReadOnlyList<Cell> ChangedCells { get; }
 ```
 
 The cells whose values calculation changed since the previous [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) (or since the workbook was loaded or cloned): formula cells, and cells a spill filled, changed or left (those are now empty). Cells you changed yourself are not included, nor cells that changed and changed back. In the order of their sheets in the workbook, then by row and column.
+
+---
+
+<!-- page: api/SharpCell.RichText.md -->
+
+# RichText
+
+```csharp
+public sealed class RichText
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A cell's text in stretches of different fonts, as Excel keeps text formatted character by character: a word in bold, a unit in superscript. The cell's value is the whole text; runs without text of their own are dropped. A record: rich texts compare by value, run by run.
+
+## Constructors
+
+<a id="ctor-ienumerable-textrun"></a>
+### RichText(IEnumerable<TextRun>)
+
+```csharp
+public RichText(IEnumerable<TextRun> runs)
+```
+
+Rich text made of the runs, in order.
+
+**Exceptions**
+
+- `ArgumentException`: The runs hold no text, or more than 32,767 characters.
+
+<a id="ctor-textrun"></a>
+### RichText(TextRun[])
+
+```csharp
+public RichText(params TextRun[] runs)
+```
+
+Rich text made of the runs, in order.
+
+**Exceptions**
+
+- `ArgumentException`: The runs hold no text, or more than 32,767 characters.
+
+## Properties
+
+<a id="maxlength"></a>
+### MaxLength
+
+```csharp
+public static int MaxLength { get; }
+```
+
+The most characters a cell holds, as in Excel.
+
+<a id="runs"></a>
+### Runs
+
+```csharp
+public IReadOnlyList<TextRun> Runs { get; }
+```
+
+The runs, in order, none of them empty.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string Text { get; }
+```
+
+The whole text, as the cell's value has it.
+
+## Methods
+
+<a id="equals-richtext"></a>
+### Equals(RichText)
+
+```csharp
+public bool Equals(RichText? other)
+```
+
+Whether the texts have the same runs.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash of the runs.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The whole text.
 
 ---
 
@@ -5914,6 +6686,87 @@ The table name.
 
 ---
 
+<!-- page: api/SharpCell.TextRun.md -->
+
+# TextRun
+
+```csharp
+public readonly struct TextRun
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A stretch of a cell's text in one font.
+
+## Constructors
+
+<a id="ctor-string-cellfont"></a>
+### TextRun(string, CellFont)
+
+```csharp
+public TextRun(string Text, CellFont? Font = null)
+```
+
+A stretch of a cell's text in one font.
+
+**Parameters**
+
+- `Text`: The text.
+- `Font`: Its font; null for the cell's own font.
+
+## Properties
+
+<a id="font"></a>
+### Font
+
+```csharp
+public CellFont? Font { get; init; }
+```
+
+Its font; null for the cell's own font.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string Text { get; init; }
+```
+
+The text.
+
+---
+
+<!-- page: api/SharpCell.ThemeColor.md -->
+
+# ThemeColor
+
+```csharp
+public enum ThemeColor
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The twelve colours of a workbook's theme, by the index .xlsx files give them, as Excel's colour palette names them.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="background1"></a>`Background1` | 0 | Background 1, the theme's first light colour (white in the Office theme). |
+| <a id="text1"></a>`Text1` | 1 | Text 1, the theme's first dark colour (black in the Office theme). |
+| <a id="background2"></a>`Background2` | 2 | Background 2, the second light colour. |
+| <a id="text2"></a>`Text2` | 3 | Text 2, the second dark colour. |
+| <a id="accent1"></a>`Accent1` | 4 | Accent 1. |
+| <a id="accent2"></a>`Accent2` | 5 | Accent 2. |
+| <a id="accent3"></a>`Accent3` | 6 | Accent 3. |
+| <a id="accent4"></a>`Accent4` | 7 | Accent 4. |
+| <a id="accent5"></a>`Accent5` | 8 | Accent 5. |
+| <a id="accent6"></a>`Accent6` | 9 | Accent 6. |
+| <a id="hyperlink"></a>`Hyperlink` | 10 | The colour of hyperlinks. |
+| <a id="followedhyperlink"></a>`FollowedHyperlink` | 11 | The colour of followed hyperlinks. |
+
+---
+
 <!-- page: api/SharpCell.TimePeriod.md -->
 
 # TimePeriod
@@ -6129,6 +6982,15 @@ public IterationSettings Iteration { get; set; }
 
 Iterative calculation of circular references, off by default as in Excel; the .xlsx reader sets it from the file. Changing it calculates every formula again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
+<a id="namedstyles"></a>
+### NamedStyles
+
+```csharp
+public IReadOnlyDictionary<string, CellStyle> NamedStyles { get; }
+```
+
+The workbook's named cell styles other than Normal (which is [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle)), by name, case ignored as in Excel: those of the file for a workbook read with SharpCell.Xlsx, and any added with [Workbook.SetNamedStyle](SharpCell.Workbook.md#setnamedstyle-string-cellstyle). Each has its [CellStyle.Name](SharpCell.CellStyle.md#name); giving one to [Cell.Style](SharpCell.Cell.md#style) applies it.
+
 <a id="sheets"></a>
 ### Sheets
 
@@ -6146,6 +7008,15 @@ public IReadOnlyList<Table> Tables { get; }
 ```
 
 The tables of all sheets, in the order they were added.
+
+<a id="themecolors"></a>
+### ThemeColors
+
+```csharp
+public IReadOnlyList<CellColor> ThemeColors { get; }
+```
+
+The RGB of the theme's twelve colours, by [ThemeColor](SharpCell.ThemeColor.md): those of the file's theme for a file read with SharpCell.Xlsx, of Excel's Office theme (2013 to 2022) for a new workbook.
 
 <a id="item-string"></a>
 ### this[string]
@@ -6268,6 +7139,17 @@ Calculates every formula that is out of date: those whose inputs changed since t
 
 - `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
 
+<a id="removenamedstyle-string"></a>
+### RemoveNamedStyle(string)
+
+```csharp
+public bool RemoveNamedStyle(string name)
+```
+
+Removes a named cell style, as Excel's Delete does: cells with it lose their style of their own and show the default one again.
+
+**Returns:** Whether there was such a style.
+
 <a id="removesheet-worksheet"></a>
 ### RemoveSheet(Worksheet)
 
@@ -6286,6 +7168,45 @@ Removes a sheet, as Excel's Delete Sheet does. References to it become `#REF!` (
 - `ArgumentException`: The sheet is not in this workbook.
 - `InvalidOperationException`: It is the last visible sheet while hidden ones remain: a workbook keeps at least one visible sheet.
 - `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not be broken as Excel breaks it.
+
+<a id="setnamedstyle-string-cellstyle"></a>
+### SetNamedStyle(string, CellStyle)
+
+```csharp
+public CellStyle SetNamedStyle(string name, CellStyle look)
+```
+
+Adds a named cell style, or changes the look of one, as Excel's New Cell Style and Modify do. Cells already given the style keep the look they had; give them the returned style again to change theirs. A built-in name such as `Good`, `Heading 1` or `20% - Accent1` is saved as Excel's built-in style of that name.
+
+**Parameters**
+
+- `name`: The name; not Normal, whose look is [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle).
+- `look`: How cells with the style look; its own name is replaced.
+
+**Returns:** The style with its name, to give to cells.
+
+**Exceptions**
+
+- `ArgumentException`: The name is empty or Normal.
+- `ArgumentNullException`: The look is null.
+
+<a id="themecolor-themecolor-double"></a>
+### ThemeColor(ThemeColor, double)
+
+```csharp
+public CellColor ThemeColor(ThemeColor color, double tint = 0)
+```
+
+A colour of the theme, as Excel's colour palette offers it: the theme colour lightened or darkened by a tint. It is saved as a theme colour, so it changes with the theme in Excel. Excel's palette uses tints 0.8, 0.6 and 0.4 (lighter 80%, 60%, 40%) and -0.25 and -0.5 (darker).
+
+**Parameters**
+
+- `color`: The theme colour.
+- `tint`: From -1 (black) through 0 (the colour itself) to 1 (white).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The colour is not one of the twelve, or the tint is outside -1 to 1.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)
@@ -6396,6 +7317,32 @@ The height of rows without one of their own, in points. Null when not given; Exc
 
 - `ArgumentOutOfRangeException`: The height is outside 0 to 409.
 
+<a id="evenpagefooter"></a>
+### EvenPageFooter
+
+```csharp
+public HeaderFooter? EvenPageFooter { get; set; }
+```
+
+The footer of even pages; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="evenpageheader"></a>
+### EvenPageHeader
+
+```csharp
+public HeaderFooter? EvenPageHeader { get; set; }
+```
+
+The header of even pages, as Page Setup's Different odd and even pages sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -6404,6 +7351,41 @@ public bool FilterMode { get; set; }
 ```
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
+<a id="firstpagefooter"></a>
+### FirstPageFooter
+
+```csharp
+public HeaderFooter? FirstPageFooter { get; set; }
+```
+
+The footer of the first page; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) there.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="firstpageheader"></a>
+### FirstPageHeader
+
+```csharp
+public HeaderFooter? FirstPageHeader { get; set; }
+```
+
+The header of the first page, as Page Setup's Different first page sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) there.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
+<a id="fittopages"></a>
+### FitToPages
+
+```csharp
+public PageFit? FitToPages { get; set; }
+```
+
+The pages the sheet is shrunk to fit when printed, as Page Setup > Fit to sets it; null prints at [Worksheet.PrintScale](SharpCell.Worksheet.md#printscale) instead.
 
 <a id="frozencolumns"></a>
 ### FrozenColumns
@@ -6440,6 +7422,15 @@ public bool IsRemoved { get; }
 
 Whether [Workbook.RemoveSheet](SharpCell.Workbook.md#removesheet-worksheet) took the sheet out of its workbook; it can then be read but not changed.
 
+<a id="maxoutlinelevel"></a>
+### MaxOutlineLevel
+
+```csharp
+public static int MaxOutlineLevel { get; }
+```
+
+The deepest outline level Excel allows.
+
 <a id="mergedareas"></a>
 ### MergedAreas
 
@@ -6473,6 +7464,50 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 
 The cells with a note, row by row and left to right, with their notes.
 
+<a id="outlinesummarybelow"></a>
+### OutlineSummaryBelow
+
+```csharp
+public bool OutlineSummaryBelow { get; set; }
+```
+
+Whether a group's summary row is the one below it, as Excel has it unless Data > Outline settings say otherwise.
+
+<a id="outlinesummaryright"></a>
+### OutlineSummaryRight
+
+```csharp
+public bool OutlineSummaryRight { get; set; }
+```
+
+Whether a group's summary column is the one right of it, as Excel has it unless set otherwise.
+
+<a id="pagefooter"></a>
+### PageFooter
+
+```csharp
+public HeaderFooter? PageFooter { get; set; }
+```
+
+The footer of every printed page, or of the odd ones when [Worksheet.EvenPageFooter](SharpCell.Worksheet.md#evenpagefooter) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="pageheader"></a>
+### PageHeader
+
+```csharp
+public HeaderFooter? PageHeader { get; set; }
+```
+
+The header of every printed page, or of the odd ones when [Worksheet.EvenPageHeader](SharpCell.Worksheet.md#evenpageheader) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="pagemargins"></a>
 ### PageMargins
 
@@ -6499,6 +7534,19 @@ How the sheet is turned on the printed page; [PageOrientation.Portrait](SharpCel
 
 - `ArgumentOutOfRangeException`: The value is not a defined orientation.
 
+<a id="papersize"></a>
+### PaperSize
+
+```csharp
+public PaperSize PaperSize { get; set; }
+```
+
+The paper the sheet prints on; [PaperSize.Letter](SharpCell.PaperSize.md#letter) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not a positive number.
+
 <a id="printarea"></a>
 ### PrintArea
 
@@ -6511,6 +7559,19 @@ The cells that print, as Excel's Print Area sets them: one range such as `A1:F40
 **Exceptions**
 
 - `ArgumentException`: The text is not A1 ranges of this sheet separated by commas.
+
+<a id="printscale"></a>
+### PrintScale
+
+```csharp
+public int PrintScale { get; set; }
+```
+
+The size the sheet prints at, in percent of its own, as Page Setup > Adjust to sets it: 10 to 400, 100 unless set otherwise. Ignored while [Worksheet.FitToPages](SharpCell.Worksheet.md#fittopages) is set, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 10 to 400.
 
 <a id="printtitlecolumns"></a>
 ### PrintTitleColumns
@@ -6778,6 +7839,77 @@ Takes the cells of a range out of every data validation rule; a rule left withou
 - `ArgumentException`: The range is not an A1 range.
 - `NotSupportedException`: The range takes the first cell of a rule read from a file whose formula SharpCell cannot read, so the formula could not be moved to the rule's new first cell.
 
+<a id="collapsecolumngroup-int"></a>
+### CollapseColumnGroup(int)
+
+```csharp
+public void CollapseColumnGroup(int column)
+```
+
+Collapses the group a column is in at its own level, hiding its columns.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The column is in no group.
+
+<a id="collapserowgroup-int"></a>
+### CollapseRowGroup(int)
+
+```csharp
+public void CollapseRowGroup(int row)
+```
+
+Collapses the group a row is in at its own level, as the group's minus button does: the group's rows are hidden and its summary row is marked collapsed. Groups inside it stay as they are.
+
+**Parameters**
+
+- `row`: Any row of the group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The row is in no group.
+
+<a id="columnnumberformat-int"></a>
+### ColumnNumberFormat(int)
+
+```csharp
+public string? ColumnNumberFormat(int column)
+```
+
+The number format of a column's cells without a style or format of their own and whose row has none; null for General or none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="columnoutlinelevel-int"></a>
+### ColumnOutlineLevel(int)
+
+```csharp
+public int ColumnOutlineLevel(int column)
+```
+
+A column's outline level: 0 outside any group, up to [Worksheet.MaxOutlineLevel](SharpCell.Worksheet.md#maxoutlinelevel).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="columnstyle-int"></a>
+### ColumnStyle(int)
+
+```csharp
+public CellStyle? ColumnStyle(int column)
+```
+
+The style of a column's cells that have none of their own and whose row has none; null when the column has none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="columnwidth-int"></a>
 ### ColumnWidth(int)
 
@@ -6831,6 +7963,67 @@ Deletes rows, as Excel's Delete Sheet Rows does: cells below move up. A referenc
 - `InvalidOperationException`: The rows hold part of an array formula, or a table's header or totals row or all its data rows without the whole table.
 - `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell.
 
+<a id="expandcolumngroup-int"></a>
+### ExpandColumnGroup(int)
+
+```csharp
+public void ExpandColumnGroup(int column)
+```
+
+Expands the group a column is in at its own level, apart from collapsed groups inside it.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The column is in no group.
+
+<a id="expandrowgroup-int"></a>
+### ExpandRowGroup(int)
+
+```csharp
+public void ExpandRowGroup(int row)
+```
+
+Expands the group a row is in at its own level, as the group's plus button does: its rows are shown, apart from those of groups inside it that stay collapsed.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The row is in no group.
+
+<a id="groupcolumns-int-int"></a>
+### GroupColumns(int, int)
+
+```csharp
+public void GroupColumns(int first, int last)
+```
+
+Groups columns, as Excel's Data > Group does: each goes one level deeper.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or first is after last.
+- `InvalidOperationException`: A column is already at level 7.
+
+<a id="grouprows-int-int"></a>
+### GroupRows(int, int)
+
+```csharp
+public void GroupRows(int first, int last)
+```
+
+Groups rows, as Excel's Data > Group does: each goes one level deeper. Their summary row is the one after them (or before, with [Worksheet.OutlineSummaryBelow](SharpCell.Worksheet.md#outlinesummarybelow) false).
+
+**Parameters**
+
+- `first`: The first row.
+- `last`: The last row.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or first is after last.
+- `InvalidOperationException`: A row is already at level 7.
+
 <a id="insertcolumns-int-int"></a>
 ### InsertColumns(int, int)
 
@@ -6871,6 +8064,19 @@ Inserts empty rows before `row`, as Excel's Insert Sheet Rows does. Cells, style
 - `InvalidOperationException`: Content would be pushed past the last row, or the rows would split an array formula (Ctrl+Shift+Enter).
 - `NotSupportedException`: A formula on this sheet, or one naming it, cannot be read by SharpCell (such as a link to another workbook), so its references could not follow.
 
+<a id="iscolumngroupcollapsed-int"></a>
+### IsColumnGroupCollapsed(int)
+
+```csharp
+public bool IsColumnGroupCollapsed(int column)
+```
+
+Whether the group a column is in at its own level is collapsed; false for a column in no group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="iscolumnhidden-int"></a>
 ### IsColumnHidden(int)
 
@@ -6883,6 +8089,19 @@ Whether a column is hidden.
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="isrowgroupcollapsed-int"></a>
+### IsRowGroupCollapsed(int)
+
+```csharp
+public bool IsRowGroupCollapsed(int row)
+```
+
+Whether the group a row is in at its own level is collapsed; false for a row in no group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
 
 <a id="isrowhidden-int"></a>
 ### IsRowHidden(int)
@@ -7071,6 +8290,45 @@ A row's own height in points; null when it has none.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="rownumberformat-int"></a>
+### RowNumberFormat(int)
+
+```csharp
+public string? RowNumberFormat(int row)
+```
+
+The number format of a row's cells without a style or format of their own, as Excel keeps it for a row formatted as a whole; null for General or none. It comes before the column's.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowoutlinelevel-int"></a>
+### RowOutlineLevel(int)
+
+```csharp
+public int RowOutlineLevel(int row)
+```
+
+A row's outline level: 0 outside any group, up to [Worksheet.MaxOutlineLevel](SharpCell.Worksheet.md#maxoutlinelevel).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="rowstyle-int"></a>
+### RowStyle(int)
+
+```csharp
+public CellStyle? RowStyle(int row)
+```
+
+The style of a row's cells that have none of their own, as Excel keeps it for a row formatted as a whole; null when the row has none. It comes before the column's style.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
 <a id="setautofilter-string"></a>
 ### SetAutoFilter(string)
 
@@ -7097,6 +8355,46 @@ public void SetColumnHidden(int column, bool hidden)
 ```
 
 Hides or shows a column. Unlike hidden rows, hidden columns change no result, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="setcolumnnumberformat-int-string"></a>
+### SetColumnNumberFormat(int, string)
+
+```csharp
+public void SetColumnNumberFormat(int column, string? code)
+```
+
+Gives a column a number format for its cells without one of their own, as formatting a whole column in Excel does; null or General takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The code is not a number format.
+
+<a id="setcolumnoutlinelevel-int-int"></a>
+### SetColumnOutlineLevel(int, int)
+
+```csharp
+public void SetColumnOutlineLevel(int column, int level)
+```
+
+Sets a column's outline level as it is, 0 to take it out of every group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet, or the level outside 0 to 7.
+
+<a id="setcolumnstyle-int-cellstyle"></a>
+### SetColumnStyle(int, CellStyle)
+
+```csharp
+public void SetColumnStyle(int column, CellStyle? style)
+```
+
+Gives a column a style for its cells without one of their own, as formatting a whole column in Excel does; null takes it away.
 
 **Exceptions**
 
@@ -7141,6 +8439,46 @@ Hides or shows a row. SUBTOTAL with codes 101–111 and AGGREGATE with options 1
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="setrownumberformat-int-string"></a>
+### SetRowNumberFormat(int, string)
+
+```csharp
+public void SetRowNumberFormat(int row, string? code)
+```
+
+Gives a row a number format for its cells without one of their own, as formatting a whole row in Excel does; null or General takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The code is not a number format.
+
+<a id="setrowoutlinelevel-int-int"></a>
+### SetRowOutlineLevel(int, int)
+
+```csharp
+public void SetRowOutlineLevel(int row, int level)
+```
+
+Sets a row's outline level as it is, 0 to take it out of every group.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet, or the level outside 0 to 7.
+
+<a id="setrowstyle-int-cellstyle"></a>
+### SetRowStyle(int, CellStyle)
+
+```csharp
+public void SetRowStyle(int row, CellStyle? style)
+```
+
+Gives a row a style for its cells without one of their own, the empty ones included, as formatting a whole row in Excel does; null takes it away. Cells with a style of their own keep it, where Excel's Format command would change theirs too.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
 <a id="tostring"></a>
 ### ToString()
 
@@ -7149,6 +8487,32 @@ public override string ToString()
 ```
 
 The sheet name.
+
+<a id="ungroupcolumns-int-int"></a>
+### UngroupColumns(int, int)
+
+```csharp
+public void UngroupColumns(int first, int last)
+```
+
+Takes columns one level out, as Excel's Data > Ungroup does.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A column is outside the sheet, or first is after last.
+
+<a id="ungrouprows-int-int"></a>
+### UngroupRows(int, int)
+
+```csharp
+public void UngroupRows(int first, int last)
+```
+
+Takes rows one level out, as Excel's Data > Ungroup does; rows outside any group stay so.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A row is outside the sheet, or first is after last.
 
 <a id="unmerge-string"></a>
 ### Unmerge(string)

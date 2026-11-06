@@ -41,11 +41,25 @@ internal sealed class SheetLook
         HiddenColumns = new HashSet<int>(sheet.HiddenColumns);
         RowHeights = new Dictionary<int, double>(sheet.RowHeights);
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
+        RowStyles = new Dictionary<int, CellStyle>(sheet.RowStyles);
+        ColumnStyles = new Dictionary<int, CellStyle>(sheet.ColumnStyles);
+        RowFormats = sheet.RowFormats.ToDictionary(pair => pair.Key, pair => pair.Value.FormatCode);
+        ColumnFormats = sheet.ColumnFormats.ToDictionary(pair => pair.Key, pair => pair.Value.FormatCode);
+        RowLevels = new Dictionary<int, int>(sheet.RowLevels);
+        ColumnLevels = new Dictionary<int, int>(sheet.ColumnLevels);
+        CollapsedRows = new HashSet<int>(sheet.CollapsedRows);
+        CollapsedColumns = new HashSet<int>(sheet.CollapsedColumns);
+        SummaryBelow = sheet.OutlineSummaryBelow;
+        SummaryRight = sheet.OutlineSummaryRight;
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
         Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
         ConditionalFormats = [.. sheet.ConditionalRules.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas], rule.Format))];
         Orientation = sheet.PageOrientation;
+        PaperSize = sheet.PaperSize;
+        PrintScale = sheet.PrintScale;
+        FitToPages = sheet.FitToPages;
+        HeaderFooters = [.. sheet.HeaderFooters];
         Margins = sheet.PageMargins;
         PrintAreas = [.. sheet.PrintAreas];
         TitleRows = sheet.TitleRows;
@@ -75,6 +89,16 @@ internal sealed class SheetLook
         HiddenColumns = look.HiddenColumns.Select(column => map.MapColumn(sheet, column)).OfType<int>().ToHashSet();
         RowHeights = Moved(look.RowHeights, row => map.MapRow(sheet, row));
         HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
+        RowStyles = Moved(look.RowStyles, row => map.MapRow(sheet, row));
+        ColumnStyles = Moved(look.ColumnStyles, column => map.MapColumn(sheet, column));
+        RowFormats = Moved(look.RowFormats, row => map.MapRow(sheet, row));
+        ColumnFormats = Moved(look.ColumnFormats, column => map.MapColumn(sheet, column));
+        RowLevels = Moved(look.RowLevels, row => map.MapRow(sheet, row));
+        ColumnLevels = Moved(look.ColumnLevels, column => map.MapColumn(sheet, column));
+        CollapsedRows = look.CollapsedRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
+        CollapsedColumns = look.CollapsedColumns.Select(column => map.MapColumn(sheet, column)).OfType<int>().ToHashSet();
+        SummaryBelow = look.SummaryBelow;
+        SummaryRight = look.SummaryRight;
         Merged = [.. look.Merged.Select(area => map.Map(sheet, area)).OfType<Area>().Where(area => !area.IsSingleCell)];
         var hyperlinks = new Dictionary<CellAddress, Hyperlink>();
         foreach (var (address, link) in look.Hyperlinks)
@@ -97,6 +121,10 @@ internal sealed class SheetLook
         ConditionalFormats = [.. look.ConditionalFormats.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas.SelectMany(area => SheetEditMap.MapCells(sheet, area))], rule.Format))
             .Where(rule => rule.Item1.Count > 0)];
         Orientation = look.Orientation;
+        PaperSize = look.PaperSize;
+        PrintScale = look.PrintScale;
+        FitToPages = look.FitToPages;
+        HeaderFooters = look.HeaderFooters;
         Margins = look.Margins;
         PrintAreas = [.. look.PrintAreas.Select(area => map.Map(sheet, area)).OfType<Area>()];
         TitleRows = look.TitleRows is { } rows ? map.MapSpan(sheet, rows: true, rows.First, rows.Last) : null;
@@ -125,9 +153,9 @@ internal sealed class SheetLook
     /// <summary>The sheet as read, with its rows and columns where the sheet's edits moved them.</summary>
     public SheetLook Mapped(SheetEditMap map, Worksheet sheet) => map.HasEdits(sheet) ? new SheetLook(this, map, sheet) : this;
 
-    private static Dictionary<int, double> Moved(IReadOnlyDictionary<int, double> sizes, Func<int, int?> map)
+    private static Dictionary<int, T> Moved<T>(IReadOnlyDictionary<int, T> sizes, Func<int, int?> map)
     {
-        var moved = new Dictionary<int, double>();
+        var moved = new Dictionary<int, T>();
         foreach (var (index, size) in sizes)
         {
             if (map(index) is { } to)
@@ -145,6 +173,26 @@ internal sealed class SheetLook
 
     public IReadOnlySet<int> HiddenRows { get; }
 
+    public IReadOnlyDictionary<int, CellStyle> RowStyles { get; }
+
+    public IReadOnlyDictionary<int, CellStyle> ColumnStyles { get; }
+
+    public IReadOnlyDictionary<int, string> RowFormats { get; }
+
+    public IReadOnlyDictionary<int, string> ColumnFormats { get; }
+
+    public IReadOnlyDictionary<int, int> RowLevels { get; }
+
+    public IReadOnlyDictionary<int, int> ColumnLevels { get; }
+
+    public IReadOnlySet<int> CollapsedRows { get; }
+
+    public IReadOnlySet<int> CollapsedColumns { get; }
+
+    public bool SummaryBelow { get; }
+
+    public bool SummaryRight { get; }
+
     public IReadOnlyList<Area> Merged { get; }
 
     /// <summary>The links the model held, by cell; elements the model leaves out are not here.</summary>
@@ -154,6 +202,14 @@ internal sealed class SheetLook
     public IReadOnlyList<(IReadOnlyList<Area> Areas, ConditionalFormat Format)> ConditionalFormats { get; }
 
     public PageOrientation Orientation { get; }
+
+    public PaperSize PaperSize { get; }
+
+    public int PrintScale { get; }
+
+    public PageFit? FitToPages { get; }
+
+    public IReadOnlyList<HeaderFooter?> HeaderFooters { get; }
 
     public PageMargins Margins { get; }
 
@@ -207,12 +263,36 @@ internal sealed class SheetLook
 
     public bool TabColorChanged(Worksheet sheet) => TabColor != sheet.TabColor;
 
-    public bool ColumnsChanged(Worksheet sheet) => !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns);
+    public bool ColumnsChanged(Worksheet sheet) =>
+        !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns) || !Same(ColumnStyles, sheet.ColumnStyles)
+        || !Same(ColumnLevels, sheet.ColumnLevels) || !CollapsedColumns.SetEquals(sheet.CollapsedColumns) || !SameFormats(ColumnFormats, sheet.ColumnFormats);
 
-    public bool RowsChanged(Worksheet sheet) => !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows);
+    public bool RowsChanged(Worksheet sheet) =>
+        !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows) || !Same(RowStyles, sheet.RowStyles)
+        || !Same(RowLevels, sheet.RowLevels) || !CollapsedRows.SetEquals(sheet.CollapsedRows) || !SameFormats(RowFormats, sheet.RowFormats);
 
     public bool RowChanged(Worksheet sheet, int row) =>
-        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row);
+        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row) || RowStyleChanged(sheet, row)
+        || RowLevels.GetValueOrDefault(row) != sheet.RowOutlineLevel(row) || CollapsedRows.Contains(row) != sheet.CollapsedRows.Contains(row);
+
+    /// <summary>Whether a row's style or number format differs from the file's: its s attribute is then written again.</summary>
+    public bool RowStyleChanged(Worksheet sheet, int row) =>
+        !Equals(LoadedRowStyle(row), sheet.RowStyle(row)) || RowFormats.GetValueOrDefault(row) != sheet.RowNumberFormat(row);
+
+    public bool ColumnStyleChanged(Worksheet sheet, int column) =>
+        !Equals(LoadedColumnStyle(column), sheet.ColumnStyle(column)) || ColumnFormats.GetValueOrDefault(column) != sheet.ColumnNumberFormat(column);
+
+    private static bool SameFormats(IReadOnlyDictionary<int, string> a, IReadOnlyDictionary<int, SharpCell.Functions.NumberFormat> b) =>
+        a.Count == b.Count && a.All(pair => b.TryGetValue(pair.Key, out var format) && format.FormatCode == pair.Value);
+
+    public bool OutlineSummaryChanged(Worksheet sheet) => SummaryBelow != sheet.OutlineSummaryBelow || SummaryRight != sheet.OutlineSummaryRight;
+
+    public bool OutlineLevelsChanged(Worksheet sheet) =>
+        (RowLevels.Count == 0 ? 0 : RowLevels.Values.Max()) != sheet.MaxRowLevel || (ColumnLevels.Count == 0 ? 0 : ColumnLevels.Values.Max()) != sheet.MaxColumnLevel;
+
+    public CellStyle? LoadedRowStyle(int row) => RowStyles.TryGetValue(row, out var style) ? style : null;
+
+    public CellStyle? LoadedColumnStyle(int column) => ColumnStyles.TryGetValue(column, out var style) ? style : null;
 
     public double? LoadedHeight(int row) => RowHeights.TryGetValue(row, out var height) ? height : null;
 
@@ -239,7 +319,12 @@ internal sealed class SheetLook
         return false;
     }
 
-    public bool OrientationChanged(Worksheet sheet) => Orientation != sheet.PageOrientation;
+    public bool PageSetupChanged(Worksheet sheet) =>
+        Orientation != sheet.PageOrientation || PaperSize != sheet.PaperSize || PrintScale != sheet.PrintScale || FitToPages != sheet.FitToPages;
+
+    public bool FitChanged(Worksheet sheet) => FitToPages.HasValue != sheet.FitToPages.HasValue;
+
+    public bool HeaderFootersChanged(Worksheet sheet) => !HeaderFooters.SequenceEqual(sheet.HeaderFooters);
 
     public bool MarginsChanged(Worksheet sheet) => !Margins.Equals(sheet.PageMargins);
 
@@ -275,10 +360,11 @@ internal sealed class SheetLook
 
     public bool ViewChanged(Worksheet sheet) => PanesChanged(sheet) || ShowGridlines != sheet.ShowGridlines;
 
-    public bool DefaultsChanged(Worksheet sheet) => DefaultColumnWidth != sheet.DefaultColumnWidth || DefaultRowHeight != sheet.DefaultRowHeight;
+    public bool DefaultsChanged(Worksheet sheet) =>
+        DefaultColumnWidth != sheet.DefaultColumnWidth || DefaultRowHeight != sheet.DefaultRowHeight || OutlineLevelsChanged(sheet);
 
     public bool FilterChanged(Worksheet sheet) => FilterMode != sheet.FilterMode;
 
-    private static bool Same(IReadOnlyDictionary<int, double> a, IReadOnlyDictionary<int, double> b) =>
-        a.Count == b.Count && a.All(pair => b.TryGetValue(pair.Key, out var value) && value == pair.Value);
+    private static bool Same<T>(IReadOnlyDictionary<int, T> a, IReadOnlyDictionary<int, T> b) =>
+        a.Count == b.Count && a.All(pair => b.TryGetValue(pair.Key, out var value) && EqualityComparer<T>.Default.Equals(value, pair.Value));
 }

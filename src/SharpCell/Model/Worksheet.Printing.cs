@@ -17,6 +17,10 @@ public sealed partial class Worksheet
     private (int First, int Last)? _titleColumns;
     private readonly SortedSet<int> _rowBreaks = [];
     private readonly SortedSet<int> _columnBreaks = [];
+    private PaperSize _paperSize = PaperSize.Letter;
+    private int _printScale = 100;
+    private PageFit? _fitToPages;
+    private readonly HeaderFooter?[] _headerFooters = new HeaderFooter?[6];
 
     /// <summary>How the sheet is turned on the printed page; <see cref="SharpCell.PageOrientation.Portrait"/> unless set otherwise.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is not a defined orientation.</exception>
@@ -44,6 +48,98 @@ public sealed partial class Worksheet
             _margins = value;
         }
     }
+
+    /// <summary>The paper the sheet prints on; <see cref="SharpCell.PaperSize.Letter"/> unless set otherwise.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The value is not a positive number.</exception>
+    public PaperSize PaperSize
+    {
+        get => _paperSize;
+        set
+        {
+            if ((int)value < 1)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Paper sizes are numbered from 1.");
+            ThrowIfCannotChange();
+            _paperSize = value;
+        }
+    }
+
+    /// <summary>
+    /// The size the sheet prints at, in percent of its own, as Page Setup &gt; Adjust to sets it: 10
+    /// to 400, 100 unless set otherwise. Ignored while <see cref="FitToPages"/> is set, as in Excel.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The value is outside 10 to 400.</exception>
+    public int PrintScale
+    {
+        get => _printScale;
+        set
+        {
+            if (value is < 10 or > 400)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Excel prints at 10% to 400%.");
+            ThrowIfCannotChange();
+            _printScale = value;
+        }
+    }
+
+    /// <summary>
+    /// The pages the sheet is shrunk to fit when printed, as Page Setup &gt; Fit to sets it; null
+    /// prints at <see cref="PrintScale"/> instead.
+    /// </summary>
+    public PageFit? FitToPages
+    {
+        get => _fitToPages;
+        set
+        {
+            ThrowIfCannotChange();
+            _fitToPages = value;
+        }
+    }
+
+    /// <summary>The header of every printed page, or of the odd ones when <see cref="EvenPageHeader"/> is set; null for none.</summary>
+    /// <exception cref="ArgumentException">The header is longer than Excel's 255 characters.</exception>
+    public HeaderFooter? PageHeader { get => _headerFooters[0]; set => SetHeaderFooter(0, value); }
+
+    /// <summary>The footer of every printed page, or of the odd ones when <see cref="EvenPageFooter"/> is set; null for none.</summary>
+    /// <exception cref="ArgumentException">The footer is longer than Excel's 255 characters.</exception>
+    public HeaderFooter? PageFooter { get => _headerFooters[1]; set => SetHeaderFooter(1, value); }
+
+    /// <summary>
+    /// The header of even pages, as Page Setup's Different odd and even pages sets it; null prints
+    /// <see cref="PageHeader"/> on them.
+    /// </summary>
+    /// <exception cref="ArgumentException">The header is longer than Excel's 255 characters.</exception>
+    public HeaderFooter? EvenPageHeader { get => _headerFooters[2]; set => SetHeaderFooter(2, value); }
+
+    /// <summary>The footer of even pages; null prints <see cref="PageFooter"/> on them.</summary>
+    /// <exception cref="ArgumentException">The footer is longer than Excel's 255 characters.</exception>
+    public HeaderFooter? EvenPageFooter { get => _headerFooters[3]; set => SetHeaderFooter(3, value); }
+
+    /// <summary>
+    /// The header of the first page, as Page Setup's Different first page sets it; null prints
+    /// <see cref="PageHeader"/> there.
+    /// </summary>
+    /// <exception cref="ArgumentException">The header is longer than Excel's 255 characters.</exception>
+    public HeaderFooter? FirstPageHeader { get => _headerFooters[4]; set => SetHeaderFooter(4, value); }
+
+    /// <summary>The footer of the first page; null prints <see cref="PageFooter"/> there.</summary>
+    /// <exception cref="ArgumentException">The footer is longer than Excel's 255 characters.</exception>
+    public HeaderFooter? FirstPageFooter { get => _headerFooters[5]; set => SetHeaderFooter(5, value); }
+
+    /// <summary>The six headers and footers: odd (or every) header and footer, even, then first.</summary>
+    internal IReadOnlyList<HeaderFooter?> HeaderFooters => _headerFooters;
+
+    private void SetHeaderFooter(int index, HeaderFooter? value)
+    {
+        if (value is not null && value.ToString().Length > 255)
+            throw new ArgumentException("Excel keeps a header or footer to 255 characters, codes included.", nameof(value));
+        ThrowIfCannotChange();
+        _headerFooters[index] = value;
+    }
+
+    /// <summary>Sets the headers and footers as read, in the order of <see cref="HeaderFooters"/>; nothing checks here.</summary>
+    internal void LoadHeaderFooter(int index, HeaderFooter? value) => _headerFooters[index] = value;
+
+    /// <summary>Sets the scale as read, kept in Excel's range.</summary>
+    internal void LoadPrintScale(int scale) => _printScale = Math.Clamp(scale, 10, 400);
 
     /// <summary>
     /// The cells that print, as Excel's Print Area sets them: one range such as <c>A1:F40</c>, or
@@ -201,6 +297,10 @@ public sealed partial class Worksheet
         _titleColumns = source._titleColumns;
         _rowBreaks.UnionWith(source._rowBreaks);
         _columnBreaks.UnionWith(source._columnBreaks);
+        _paperSize = source._paperSize;
+        _printScale = source._printScale;
+        _fitToPages = source._fitToPages;
+        source._headerFooters.CopyTo(_headerFooters, 0);
     }
 
     private static List<Area> ParseAreas(string text, string parameter)

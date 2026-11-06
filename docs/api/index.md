@@ -14,7 +14,11 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellBorder](SharpCell.CellBorder.md) | One edge of a cell's border. |
 | [CellBorderStyle](SharpCell.CellBorderStyle.md) | The lines Excel draws borders with. |
 | [CellColor](SharpCell.CellColor.md) | A colour as Excel shows it, in sRGB. |
+| [CellFillPattern](SharpCell.CellFillPattern.md) | The pattern of a cell's fill, as Excel's Format Cells > Fill > Pattern Style lists them: drawn in [CellStyle.PatternColor](SharpCell.CellStyle.md#patterncolor) over [CellStyle.Fill](SharpCell.CellStyle.md#fill). |
 | [CellFont](SharpCell.CellFont.md) | The font of a cell's text. |
+| [CellFontScript](SharpCell.CellFontScript.md) | Where text sits against the line, as Excel's Superscript and Subscript effects put it. |
+| [CellGradient](SharpCell.CellGradient.md) | A gradient fill, as Excel's Format Cells > Fill > Fill Effects makes: two or more colours blending in a line or from a rectangle outwards. |
+| [CellGradientType](SharpCell.CellGradientType.md) | How a gradient runs across a cell. |
 | [CellHorizontalAlignment](SharpCell.CellHorizontalAlignment.md) | Where a cell's text sits across the cell. |
 | [CellRange](SharpCell.CellRange.md) | A rectangle of cells on one sheet, such as `A1:C10`. |
 | [CellStyle](SharpCell.CellStyle.md) | How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden). |
@@ -44,19 +48,26 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [FunctionArguments](SharpCell.FunctionArguments.md) | The arguments of one call of a function added through [Workbook.Functions](SharpCell.Workbook.md#functions). |
 | [FunctionCollection](SharpCell.FunctionCollection.md) | The functions a workbook's formulas can call besides Excel's: add one with [FunctionCollection.Add](SharpCell.FunctionCollection.md#add-string-func-functionarguments-cellvalue-functionoptions), and formulas calling it by name (ignoring case) use it from the next calculation on. |
 | [FunctionOptions](SharpCell.FunctionOptions.md) | How a function added through [Workbook.Functions](SharpCell.Workbook.md#functions) takes its arguments. |
+| [GradientStop](SharpCell.GradientStop.md) | A colour of a gradient at a position across it, from 0 (the start) to 1 (the end). |
+| [HeaderFooter](SharpCell.HeaderFooter.md) | A printed header or footer: its left, centre and right sections, in Excel's codes. |
 | [Hyperlink](SharpCell.Hyperlink.md) | A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook. |
 | [InsertShift](SharpCell.InsertShift.md) | Where the cells beside inserted cells go, as in Excel's Insert dialog. |
 | [IterationSettings](SharpCell.IterationSettings.md) | Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0. |
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
 | [Note](SharpCell.Note.md) | A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it. |
+| [PageFit](SharpCell.PageFit.md) | How many pages a printed sheet is shrunk to fit, as Excel's Page Setup > Fit to does: so many pages wide by so many tall. |
 | [PageMargins](SharpCell.PageMargins.md) | The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges. |
 | [PageOrientation](SharpCell.PageOrientation.md) | How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation. |
+| [PaperSize](SharpCell.PaperSize.md) | The paper a sheet prints on, by the number Excel stores (as its `XlPaperSize` does). |
 | [RangeRow](SharpCell.RangeRow.md) | A row of a range read by [`CellRange.ReadRows<T>`](SharpCell.CellRange.md#readrows-func-rangerow-t): its cells by header or by column. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
+| [RichText](SharpCell.RichText.md) | A cell's text in stretches of different fonts, as Excel keeps text formatted character by character: a word in bold, a unit in superscript. |
 | [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
 | [SheetVisibility](SharpCell.SheetVisibility.md) | Whether a sheet's tab shows in Excel. |
 | [SortKey](SharpCell.SortKey.md) | A key of [CellRange.Sort](SharpCell.CellRange.md#sort-sortkey): the column rows are put in order by. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
+| [TextRun](SharpCell.TextRun.md) | A stretch of a cell's text in one font. |
+| [ThemeColor](SharpCell.ThemeColor.md) | The twelve colours of a workbook's theme, by the index .xlsx files give them, as Excel's colour palette names them. |
 | [TimePeriod](SharpCell.TimePeriod.md) | The periods of Excel's A Date Occurring rule, counted from today. |
 | [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |
 | [ValidationOperator](SharpCell.ValidationOperator.md) | How a value is compared with a rule's formulas; lists and custom rules do not compare. |

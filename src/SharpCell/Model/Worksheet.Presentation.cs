@@ -18,6 +18,8 @@ public sealed partial class Worksheet
     private readonly Dictionary<int, double> _columnWidths = [];
     private readonly Dictionary<int, double> _rowHeights = [];
     private readonly HashSet<int> _hiddenColumns = [];
+    private readonly Dictionary<int, CellStyle> _rowStyles = [];
+    private readonly Dictionary<int, CellStyle> _columnStyles = [];
     private readonly List<Area> _merged = [];
     private double? _defaultColumnWidth;
     private double? _defaultRowHeight;
@@ -109,6 +111,63 @@ public sealed partial class Worksheet
     internal CellStyle? StyleAt(int row, int column) =>
         _styles.Count != 0 && _styles.TryGetValue(new CellAddress(row, column), out var style) ? style : null;
 
+    /// <summary>The style a cell shows without the workbook default: its own, else its row's, else its column's; null for none.</summary>
+    internal CellStyle? ShownStyleAt(int row, int column) =>
+        StyleAt(row, column)
+        ?? (_rowStyles.Count != 0 && _rowStyles.TryGetValue(row, out var rowStyle) ? rowStyle : null)
+        ?? (_columnStyles.Count != 0 && _columnStyles.TryGetValue(column, out var columnStyle) ? columnStyle : null);
+
+    /// <summary>
+    /// The style of a row's cells that have none of their own, as Excel keeps it for a row
+    /// formatted as a whole; null when the row has none. It comes before the column's style.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
+    public CellStyle? RowStyle(int row)
+    {
+        CheckRow(row);
+        return _rowStyles.Count != 0 && _rowStyles.TryGetValue(row, out var style) ? style : null;
+    }
+
+    /// <summary>
+    /// Gives a row a style for its cells without one of their own, the empty ones included, as
+    /// formatting a whole row in Excel does; null takes it away. Cells with a style of their own keep
+    /// it, where Excel's Format command would change theirs too.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
+    public void SetRowStyle(int row, CellStyle? style)
+    {
+        CheckRow(row);
+        ThrowIfCannotChange();
+        if (style is null)
+            _rowStyles.Remove(row);
+        else
+            _rowStyles[row] = style;
+    }
+
+    /// <summary>The style of a column's cells that have none of their own and whose row has none; null when the column has none.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The column is outside the sheet.</exception>
+    public CellStyle? ColumnStyle(int column)
+    {
+        CheckColumn(column);
+        return _columnStyles.Count != 0 && _columnStyles.TryGetValue(column, out var style) ? style : null;
+    }
+
+    /// <summary>Gives a column a style for its cells without one of their own, as formatting a whole column in Excel does; null takes it away.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The column is outside the sheet.</exception>
+    public void SetColumnStyle(int column, CellStyle? style)
+    {
+        CheckColumn(column);
+        ThrowIfCannotChange();
+        if (style is null)
+            _columnStyles.Remove(column);
+        else
+            _columnStyles[column] = style;
+    }
+
+    internal IReadOnlyDictionary<int, CellStyle> RowStyles => _rowStyles;
+
+    internal IReadOnlyDictionary<int, CellStyle> ColumnStyles => _columnStyles;
+
     /// <summary>Sets or (with null) removes the style of a cell.</summary>
     internal void SetStyle(int row, int column, CellStyle? style)
     {
@@ -116,6 +175,19 @@ public sealed partial class Worksheet
             _styles.Remove(new CellAddress(row, column));
         else
             _styles[new CellAddress(row, column)] = style;
+    }
+
+    /// <summary>Cells, rows and columns with a removed named style lose their style.</summary>
+    internal void ForgetNamedStyle(string name)
+    {
+        foreach (var address in _styles.Where(pair => Named(pair.Value)).Select(pair => pair.Key).ToList())
+            _styles.Remove(address);
+        foreach (var row in _rowStyles.Where(pair => Named(pair.Value)).Select(pair => pair.Key).ToList())
+            _rowStyles.Remove(row);
+        foreach (var column in _columnStyles.Where(pair => Named(pair.Value)).Select(pair => pair.Key).ToList())
+            _columnStyles.Remove(column);
+
+        bool Named(CellStyle style) => string.Equals(style.Name, name, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The cells with a style of their own, in no particular order.</summary>
@@ -308,6 +380,10 @@ public sealed partial class Worksheet
         foreach (var (row, height) in source._rowHeights)
             _rowHeights.Add(row, height);
         _hiddenColumns.UnionWith(source._hiddenColumns);
+        foreach (var (row, style) in source._rowStyles)
+            _rowStyles.Add(row, style);
+        foreach (var (column, style) in source._columnStyles)
+            _columnStyles.Add(column, style);
         _merged.AddRange(source._merged);
         _defaultColumnWidth = source._defaultColumnWidth;
         _defaultRowHeight = source._defaultRowHeight;

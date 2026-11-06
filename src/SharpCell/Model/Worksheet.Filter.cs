@@ -126,7 +126,7 @@ public sealed partial class Worksheet
                         return criteria.Blanks;
                     if (shown.Contains(Text(row)))
                         return true;
-                    return criteria.Dates.Count > 0 && value.Kind == CellValueKind.Number && FormatAt(row, column) is { ShowsDate: true }
+                    return criteria.Dates.Count > 0 && value.Kind == CellValueKind.Number && ShownFormatAt(row, column) is { ShowsDate: true }
                         && DateSerial.TryToDateTime(value.AsNumber(), Workbook.DateSystem, out var date)
                         && criteria.Dates.Any(group => group.Contains(date));
                 };
