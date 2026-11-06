@@ -60,13 +60,16 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [FunctionArguments](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionArguments.md): The arguments of one call of a function added through Workbook.Functions.
 - [FunctionCollection](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionCollection.md): The functions a workbook's formulas can call besides Excel's: add one with FunctionCollection.Add, and formulas calling it by name (ignoring case) use it from the next calculation on.
 - [FunctionOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionOptions.md): How a function added through Workbook.Functions takes its arguments.
+- [HeaderFooter](https://ifmelate.github.io/SharpCell/api/SharpCell.HeaderFooter.md): A printed header or footer: its left, centre and right sections, in Excel's codes.
 - [Hyperlink](https://ifmelate.github.io/SharpCell/api/SharpCell.Hyperlink.md): A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook.
 - [InsertShift](https://ifmelate.github.io/SharpCell/api/SharpCell.InsertShift.md): Where the cells beside inserted cells go, as in Excel's Insert dialog.
 - [IterationSettings](https://ifmelate.github.io/SharpCell/api/SharpCell.IterationSettings.md): Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0.
 - [LambdaValue](https://ifmelate.github.io/SharpCell/api/SharpCell.LambdaValue.md): A function value produced by `LAMBDA`.
 - [Note](https://ifmelate.github.io/SharpCell/api/SharpCell.Note.md): A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it.
+- [PageFit](https://ifmelate.github.io/SharpCell/api/SharpCell.PageFit.md): How many pages a printed sheet is shrunk to fit, as Excel's Page Setup > Fit to does: so many pages wide by so many tall.
 - [PageMargins](https://ifmelate.github.io/SharpCell/api/SharpCell.PageMargins.md): The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges.
 - [PageOrientation](https://ifmelate.github.io/SharpCell/api/SharpCell.PageOrientation.md): How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation.
+- [PaperSize](https://ifmelate.github.io/SharpCell/api/SharpCell.PaperSize.md): The paper a sheet prints on, by the number Excel stores (as its `XlPaperSize` does).
 - [RangeRow](https://ifmelate.github.io/SharpCell/api/SharpCell.RangeRow.md): A row of a range read by `CellRange.ReadRows<T>`: its cells by header or by column.
 - [RecalculationResult](https://ifmelate.github.io/SharpCell/api/SharpCell.RecalculationResult.md): What one Workbook.Recalculate did.
 - [SheetProtection](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetProtection.md): What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else.

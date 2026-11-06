@@ -4961,6 +4961,166 @@ The 0-based positions of scalar parameters. A scalar parameter receives one valu
 
 ---
 
+<!-- page: api/SharpCell.HeaderFooter.md -->
+
+# HeaderFooter
+
+```csharp
+public sealed class HeaderFooter
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A printed header or footer: its left, centre and right sections, in Excel's codes. Text prints as written, apart from codes such as [HeaderFooter.PageNumber](SharpCell.HeaderFooter.md#pagenumber) (`&P`), `&B` for bold or `&"Arial,Italic"` for a font; `&&` prints one ampersand, and [HeaderFooter.Escape](SharpCell.HeaderFooter.md#escape-string) doubles those of plain text. Null or empty leaves a section blank.
+
+## Constructors
+
+<a id="ctor-string-string-string"></a>
+### HeaderFooter(string, string, string)
+
+```csharp
+public HeaderFooter(string? Left = null, string? Center = null, string? Right = null)
+```
+
+A printed header or footer: its left, centre and right sections, in Excel's codes. Text prints as written, apart from codes such as [HeaderFooter.PageNumber](SharpCell.HeaderFooter.md#pagenumber) (`&P`), `&B` for bold or `&"Arial,Italic"` for a font; `&&` prints one ampersand, and [HeaderFooter.Escape](SharpCell.HeaderFooter.md#escape-string) doubles those of plain text. Null or empty leaves a section blank.
+
+**Parameters**
+
+- `Left`: The section on the left, or null.
+- `Center`: The section in the middle, or null.
+- `Right`: The section on the right, or null.
+
+## Properties
+
+<a id="center"></a>
+### Center
+
+```csharp
+public string? Center { get; init; }
+```
+
+The section in the middle, or null.
+
+<a id="date"></a>
+### Date
+
+```csharp
+public static string Date { get; }
+```
+
+The code for the date of printing.
+
+<a id="filename"></a>
+### FileName
+
+```csharp
+public static string FileName { get; }
+```
+
+The code for the file's name.
+
+<a id="filepath"></a>
+### FilePath
+
+```csharp
+public static string FilePath { get; }
+```
+
+The code for the file's folder and name.
+
+<a id="left"></a>
+### Left
+
+```csharp
+public string? Left { get; init; }
+```
+
+The section on the left, or null.
+
+<a id="pagecount"></a>
+### PageCount
+
+```csharp
+public static string PageCount { get; }
+```
+
+The code for the number of pages.
+
+<a id="pagenumber"></a>
+### PageNumber
+
+```csharp
+public static string PageNumber { get; }
+```
+
+The code for the page number.
+
+<a id="right"></a>
+### Right
+
+```csharp
+public string? Right { get; init; }
+```
+
+The section on the right, or null.
+
+<a id="sheetname"></a>
+### SheetName
+
+```csharp
+public static string SheetName { get; }
+```
+
+The code for the sheet's name.
+
+<a id="time"></a>
+### Time
+
+```csharp
+public static string Time { get; }
+```
+
+The code for the time of printing.
+
+## Methods
+
+<a id="escape-string"></a>
+### Escape(string)
+
+```csharp
+public static string Escape(string text)
+```
+
+Plain text with its ampersands doubled, so that it prints as written.
+
+**Exceptions**
+
+- `ArgumentNullException`: The text is null.
+
+<a id="parse-string"></a>
+### Parse(string)
+
+```csharp
+public static HeaderFooter Parse(string code)
+```
+
+Splits a header or footer as an .xlsx file stores it, such as `&LLeft&CMiddle`, into its sections. Text before any section code belongs to the middle, as in Excel.
+
+**Exceptions**
+
+- `ArgumentNullException`: The text is null.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The header or footer as an .xlsx file stores it, such as `&LLeft&CMiddle`; empty when every section is blank.
+
+---
+
 <!-- page: api/SharpCell.Hyperlink.md -->
 
 # Hyperlink
@@ -5304,6 +5464,60 @@ The text.
 
 ---
 
+<!-- page: api/SharpCell.PageFit.md -->
+
+# PageFit
+
+```csharp
+public readonly struct PageFit
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+How many pages a printed sheet is shrunk to fit, as Excel's Page Setup > Fit to does: so many pages wide by so many tall. 0 leaves that direction to as many pages as it takes, as a blank box does in Excel; `new PageFit(1, 0)` fits all columns on one page wide.
+
+## Constructors
+
+<a id="ctor-int-int"></a>
+### PageFit(int, int)
+
+```csharp
+public PageFit(int wide, int tall)
+```
+
+A fit of so many pages wide by so many tall.
+
+**Parameters**
+
+- `wide`: Pages across, 0 for as many as it takes.
+- `tall`: Pages down, 0 for as many as it takes.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: A count is negative or above 32767.
+
+## Properties
+
+<a id="tall"></a>
+### Tall
+
+```csharp
+public int Tall { get; }
+```
+
+Pages down; 0 for as many as it takes.
+
+<a id="wide"></a>
+### Wide
+
+```csharp
+public int Wide { get; }
+```
+
+Pages across; 0 for as many as it takes.
+
+---
+
 <!-- page: api/SharpCell.PageMargins.md -->
 
 # PageMargins
@@ -5458,6 +5672,68 @@ How a sheet is turned on the printed page, as in Excel's Page Layout > Orientati
 |---|---|---|
 | <a id="portrait"></a>`Portrait` | 0 | Taller than wide; Excel's default. |
 | <a id="landscape"></a>`Landscape` | 1 | Wider than tall. |
+
+---
+
+<!-- page: api/SharpCell.PaperSize.md -->
+
+# PaperSize
+
+```csharp
+public enum PaperSize
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+The paper a sheet prints on, by the number Excel stores (as its `XlPaperSize` does). A file may hold a number not named here, from a printer's own sizes; it is kept as it is.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="letter"></a>`Letter` | 1 | Letter, 8.5 by 11 inches; what a sheet prints on unless set otherwise. |
+| <a id="lettersmall"></a>`LetterSmall` | 2 | Letter Small, 8.5 by 11 inches. |
+| <a id="tabloid"></a>`Tabloid` | 3 | Tabloid, 11 by 17 inches. |
+| <a id="ledger"></a>`Ledger` | 4 | Ledger, 17 by 11 inches. |
+| <a id="legal"></a>`Legal` | 5 | Legal, 8.5 by 14 inches. |
+| <a id="statement"></a>`Statement` | 6 | Statement, 5.5 by 8.5 inches. |
+| <a id="executive"></a>`Executive` | 7 | Executive, 7.25 by 10.5 inches. |
+| <a id="a3"></a>`A3` | 8 | A3, 297 by 420 mm. |
+| <a id="a4"></a>`A4` | 9 | A4, 210 by 297 mm. |
+| <a id="a4small"></a>`A4Small` | 10 | A4 Small, 210 by 297 mm. |
+| <a id="a5"></a>`A5` | 11 | A5, 148 by 210 mm. |
+| <a id="b4"></a>`B4` | 12 | B4 (JIS), 257 by 364 mm. |
+| <a id="b5"></a>`B5` | 13 | B5 (JIS), 182 by 257 mm. |
+| <a id="folio"></a>`Folio` | 14 | Folio, 8.5 by 13 inches. |
+| <a id="quarto"></a>`Quarto` | 15 | Quarto, 215 by 275 mm. |
+| <a id="size10x14"></a>`Size10x14` | 16 | 10 by 14 inches. |
+| <a id="size11x17"></a>`Size11x17` | 17 | 11 by 17 inches. |
+| <a id="note"></a>`Note` | 18 | Note, 8.5 by 11 inches. |
+| <a id="envelope9"></a>`Envelope9` | 19 | Envelope #9, 3.875 by 8.875 inches. |
+| <a id="envelope10"></a>`Envelope10` | 20 | Envelope #10, 4.125 by 9.5 inches. |
+| <a id="envelope11"></a>`Envelope11` | 21 | Envelope #11, 4.5 by 10.375 inches. |
+| <a id="envelope12"></a>`Envelope12` | 22 | Envelope #12, 4.75 by 11 inches. |
+| <a id="envelope14"></a>`Envelope14` | 23 | Envelope #14, 5 by 11.5 inches. |
+| <a id="csheet"></a>`CSheet` | 24 | C size sheet, 17 by 22 inches. |
+| <a id="dsheet"></a>`DSheet` | 25 | D size sheet, 22 by 34 inches. |
+| <a id="esheet"></a>`ESheet` | 26 | E size sheet, 34 by 44 inches. |
+| <a id="envelopedl"></a>`EnvelopeDL` | 27 | Envelope DL, 110 by 220 mm. |
+| <a id="envelopec5"></a>`EnvelopeC5` | 28 | Envelope C5, 162 by 229 mm. |
+| <a id="envelopec3"></a>`EnvelopeC3` | 29 | Envelope C3, 324 by 458 mm. |
+| <a id="envelopec4"></a>`EnvelopeC4` | 30 | Envelope C4, 229 by 324 mm. |
+| <a id="envelopec6"></a>`EnvelopeC6` | 31 | Envelope C6, 114 by 162 mm. |
+| <a id="envelopec65"></a>`EnvelopeC65` | 32 | Envelope C65, 114 by 229 mm. |
+| <a id="envelopeb4"></a>`EnvelopeB4` | 33 | Envelope B4, 250 by 353 mm. |
+| <a id="envelopeb5"></a>`EnvelopeB5` | 34 | Envelope B5, 176 by 250 mm. |
+| <a id="envelopeb6"></a>`EnvelopeB6` | 35 | Envelope B6, 176 by 125 mm. |
+| <a id="envelopeitaly"></a>`EnvelopeItaly` | 36 | Envelope Italy, 110 by 230 mm. |
+| <a id="envelopemonarch"></a>`EnvelopeMonarch` | 37 | Envelope Monarch, 3.875 by 7.5 inches. |
+| <a id="envelopepersonal"></a>`EnvelopePersonal` | 38 | Envelope 6 3/4, 3.625 by 6.5 inches. |
+| <a id="fanfoldus"></a>`FanfoldUS` | 39 | US Standard Fanfold, 14.875 by 11 inches. |
+| <a id="fanfoldstandardgerman"></a>`FanfoldStandardGerman` | 40 | German Standard Fanfold, 8.5 by 12 inches. |
+| <a id="fanfoldlegalgerman"></a>`FanfoldLegalGerman` | 41 | German Legal Fanfold, 8.5 by 13 inches. |
+| <a id="a2"></a>`A2` | 66 | A2, 420 by 594 mm. |
+| <a id="a6"></a>`A6` | 70 | A6, 105 by 148 mm. |
 
 ---
 
@@ -6396,6 +6672,32 @@ The height of rows without one of their own, in points. Null when not given; Exc
 
 - `ArgumentOutOfRangeException`: The height is outside 0 to 409.
 
+<a id="evenpagefooter"></a>
+### EvenPageFooter
+
+```csharp
+public HeaderFooter? EvenPageFooter { get; set; }
+```
+
+The footer of even pages; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="evenpageheader"></a>
+### EvenPageHeader
+
+```csharp
+public HeaderFooter? EvenPageHeader { get; set; }
+```
+
+The header of even pages, as Page Setup's Different odd and even pages sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -6404,6 +6706,41 @@ public bool FilterMode { get; set; }
 ```
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
+<a id="firstpagefooter"></a>
+### FirstPageFooter
+
+```csharp
+public HeaderFooter? FirstPageFooter { get; set; }
+```
+
+The footer of the first page; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) there.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="firstpageheader"></a>
+### FirstPageHeader
+
+```csharp
+public HeaderFooter? FirstPageHeader { get; set; }
+```
+
+The header of the first page, as Page Setup's Different first page sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) there.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
+<a id="fittopages"></a>
+### FitToPages
+
+```csharp
+public PageFit? FitToPages { get; set; }
+```
+
+The pages the sheet is shrunk to fit when printed, as Page Setup > Fit to sets it; null prints at [Worksheet.PrintScale](SharpCell.Worksheet.md#printscale) instead.
 
 <a id="frozencolumns"></a>
 ### FrozenColumns
@@ -6473,6 +6810,32 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 
 The cells with a note, row by row and left to right, with their notes.
 
+<a id="pagefooter"></a>
+### PageFooter
+
+```csharp
+public HeaderFooter? PageFooter { get; set; }
+```
+
+The footer of every printed page, or of the odd ones when [Worksheet.EvenPageFooter](SharpCell.Worksheet.md#evenpagefooter) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="pageheader"></a>
+### PageHeader
+
+```csharp
+public HeaderFooter? PageHeader { get; set; }
+```
+
+The header of every printed page, or of the odd ones when [Worksheet.EvenPageHeader](SharpCell.Worksheet.md#evenpageheader) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="pagemargins"></a>
 ### PageMargins
 
@@ -6499,6 +6862,19 @@ How the sheet is turned on the printed page; [PageOrientation.Portrait](SharpCel
 
 - `ArgumentOutOfRangeException`: The value is not a defined orientation.
 
+<a id="papersize"></a>
+### PaperSize
+
+```csharp
+public PaperSize PaperSize { get; set; }
+```
+
+The paper the sheet prints on; [PaperSize.Letter](SharpCell.PaperSize.md#letter) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not a positive number.
+
 <a id="printarea"></a>
 ### PrintArea
 
@@ -6511,6 +6887,19 @@ The cells that print, as Excel's Print Area sets them: one range such as `A1:F40
 **Exceptions**
 
 - `ArgumentException`: The text is not A1 ranges of this sheet separated by commas.
+
+<a id="printscale"></a>
+### PrintScale
+
+```csharp
+public int PrintScale { get; set; }
+```
+
+The size the sheet prints at, in percent of its own, as Page Setup > Adjust to sets it: 10 to 400, 100 unless set otherwise. Ignored while [Worksheet.FitToPages](SharpCell.Worksheet.md#fittopages) is set, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 10 to 400.
 
 <a id="printtitlecolumns"></a>
 ### PrintTitleColumns

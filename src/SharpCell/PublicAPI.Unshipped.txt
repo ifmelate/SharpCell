@@ -1,1 +1,99 @@
 #nullable enable
+SharpCell.HeaderFooter
+SharpCell.HeaderFooter.<Clone>$() -> SharpCell.HeaderFooter!
+SharpCell.HeaderFooter.Center.get -> string?
+SharpCell.HeaderFooter.Center.init -> void
+SharpCell.HeaderFooter.Deconstruct(out string? Left, out string? Center, out string? Right) -> void
+SharpCell.HeaderFooter.Equals(SharpCell.HeaderFooter? other) -> bool
+SharpCell.HeaderFooter.HeaderFooter(string? Left = null, string? Center = null, string? Right = null) -> void
+SharpCell.HeaderFooter.Left.get -> string?
+SharpCell.HeaderFooter.Left.init -> void
+SharpCell.HeaderFooter.Right.get -> string?
+SharpCell.HeaderFooter.Right.init -> void
+SharpCell.PageFit
+SharpCell.PageFit.Equals(SharpCell.PageFit other) -> bool
+SharpCell.PageFit.PageFit() -> void
+SharpCell.PageFit.PageFit(int wide, int tall) -> void
+SharpCell.PageFit.Tall.get -> int
+SharpCell.PageFit.Wide.get -> int
+SharpCell.PaperSize
+SharpCell.PaperSize.A2 = 66 -> SharpCell.PaperSize
+SharpCell.PaperSize.A3 = 8 -> SharpCell.PaperSize
+SharpCell.PaperSize.A4 = 9 -> SharpCell.PaperSize
+SharpCell.PaperSize.A4Small = 10 -> SharpCell.PaperSize
+SharpCell.PaperSize.A5 = 11 -> SharpCell.PaperSize
+SharpCell.PaperSize.A6 = 70 -> SharpCell.PaperSize
+SharpCell.PaperSize.B4 = 12 -> SharpCell.PaperSize
+SharpCell.PaperSize.B5 = 13 -> SharpCell.PaperSize
+SharpCell.PaperSize.CSheet = 24 -> SharpCell.PaperSize
+SharpCell.PaperSize.DSheet = 25 -> SharpCell.PaperSize
+SharpCell.PaperSize.ESheet = 26 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope10 = 20 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope11 = 21 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope12 = 22 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope14 = 23 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope9 = 19 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeB4 = 33 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeB5 = 34 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeB6 = 35 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC3 = 29 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC4 = 30 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC5 = 28 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC6 = 31 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC65 = 32 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeDL = 27 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeItaly = 36 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeMonarch = 37 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopePersonal = 38 -> SharpCell.PaperSize
+SharpCell.PaperSize.Executive = 7 -> SharpCell.PaperSize
+SharpCell.PaperSize.FanfoldLegalGerman = 41 -> SharpCell.PaperSize
+SharpCell.PaperSize.FanfoldStandardGerman = 40 -> SharpCell.PaperSize
+SharpCell.PaperSize.FanfoldUS = 39 -> SharpCell.PaperSize
+SharpCell.PaperSize.Folio = 14 -> SharpCell.PaperSize
+SharpCell.PaperSize.Ledger = 4 -> SharpCell.PaperSize
+SharpCell.PaperSize.Legal = 5 -> SharpCell.PaperSize
+SharpCell.PaperSize.Letter = 1 -> SharpCell.PaperSize
+SharpCell.PaperSize.LetterSmall = 2 -> SharpCell.PaperSize
+SharpCell.PaperSize.Note = 18 -> SharpCell.PaperSize
+SharpCell.PaperSize.Quarto = 15 -> SharpCell.PaperSize
+SharpCell.PaperSize.Size10x14 = 16 -> SharpCell.PaperSize
+SharpCell.PaperSize.Size11x17 = 17 -> SharpCell.PaperSize
+SharpCell.PaperSize.Statement = 6 -> SharpCell.PaperSize
+SharpCell.PaperSize.Tabloid = 3 -> SharpCell.PaperSize
+SharpCell.Worksheet.EvenPageFooter.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.EvenPageFooter.set -> void
+SharpCell.Worksheet.EvenPageHeader.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.EvenPageHeader.set -> void
+SharpCell.Worksheet.FirstPageFooter.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.FirstPageFooter.set -> void
+SharpCell.Worksheet.FirstPageHeader.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.FirstPageHeader.set -> void
+SharpCell.Worksheet.FitToPages.get -> SharpCell.PageFit?
+SharpCell.Worksheet.FitToPages.set -> void
+SharpCell.Worksheet.PageFooter.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.PageFooter.set -> void
+SharpCell.Worksheet.PageHeader.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.PageHeader.set -> void
+SharpCell.Worksheet.PaperSize.get -> SharpCell.PaperSize
+SharpCell.Worksheet.PaperSize.set -> void
+SharpCell.Worksheet.PrintScale.get -> int
+SharpCell.Worksheet.PrintScale.set -> void
+override SharpCell.HeaderFooter.Equals(object? obj) -> bool
+override SharpCell.HeaderFooter.GetHashCode() -> int
+override SharpCell.HeaderFooter.ToString() -> string!
+override SharpCell.PageFit.GetHashCode() -> int
+static SharpCell.HeaderFooter.Escape(string! text) -> string!
+static SharpCell.HeaderFooter.Parse(string! code) -> SharpCell.HeaderFooter!
+static SharpCell.HeaderFooter.operator !=(SharpCell.HeaderFooter? left, SharpCell.HeaderFooter? right) -> bool
+static SharpCell.HeaderFooter.operator ==(SharpCell.HeaderFooter? left, SharpCell.HeaderFooter? right) -> bool
+static SharpCell.PageFit.operator !=(SharpCell.PageFit left, SharpCell.PageFit right) -> bool
+static SharpCell.PageFit.operator ==(SharpCell.PageFit left, SharpCell.PageFit right) -> bool
+~override SharpCell.PageFit.Equals(object obj) -> bool
+~override SharpCell.PageFit.ToString() -> string
+static SharpCell.HeaderFooter.Date.get -> string!
+static SharpCell.HeaderFooter.FileName.get -> string!
+static SharpCell.HeaderFooter.FilePath.get -> string!
+static SharpCell.HeaderFooter.PageCount.get -> string!
+static SharpCell.HeaderFooter.PageNumber.get -> string!
+static SharpCell.HeaderFooter.SheetName.get -> string!
+static SharpCell.HeaderFooter.Time.get -> string!

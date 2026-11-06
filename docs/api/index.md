@@ -44,13 +44,16 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [FunctionArguments](SharpCell.FunctionArguments.md) | The arguments of one call of a function added through [Workbook.Functions](SharpCell.Workbook.md#functions). |
 | [FunctionCollection](SharpCell.FunctionCollection.md) | The functions a workbook's formulas can call besides Excel's: add one with [FunctionCollection.Add](SharpCell.FunctionCollection.md#add-string-func-functionarguments-cellvalue-functionoptions), and formulas calling it by name (ignoring case) use it from the next calculation on. |
 | [FunctionOptions](SharpCell.FunctionOptions.md) | How a function added through [Workbook.Functions](SharpCell.Workbook.md#functions) takes its arguments. |
+| [HeaderFooter](SharpCell.HeaderFooter.md) | A printed header or footer: its left, centre and right sections, in Excel's codes. |
 | [Hyperlink](SharpCell.Hyperlink.md) | A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook. |
 | [InsertShift](SharpCell.InsertShift.md) | Where the cells beside inserted cells go, as in Excel's Insert dialog. |
 | [IterationSettings](SharpCell.IterationSettings.md) | Iterative calculation, Excel's "Enable iterative calculation": circular references are calculated over and over until they settle, instead of giving 0. |
 | [LambdaValue](SharpCell.LambdaValue.md) | A function value produced by `LAMBDA`. |
 | [Note](SharpCell.Note.md) | A note on a cell: Excel's Insert Note (called a comment before Excel 365), shown in a box beside the cell, by default only while the pointer rests on it. |
+| [PageFit](SharpCell.PageFit.md) | How many pages a printed sheet is shrunk to fit, as Excel's Page Setup > Fit to does: so many pages wide by so many tall. |
 | [PageMargins](SharpCell.PageMargins.md) | The margins of a printed sheet in inches, as in Excel's Page Setup > Margins: the space around the cells, and how far the header and footer are from the top and bottom edges. |
 | [PageOrientation](SharpCell.PageOrientation.md) | How a sheet is turned on the printed page, as in Excel's Page Layout > Orientation. |
+| [PaperSize](SharpCell.PaperSize.md) | The paper a sheet prints on, by the number Excel stores (as its `XlPaperSize` does). |
 | [RangeRow](SharpCell.RangeRow.md) | A row of a range read by [`CellRange.ReadRows<T>`](SharpCell.CellRange.md#readrows-func-rangerow-t): its cells by header or by column. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
 | [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |

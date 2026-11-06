@@ -88,7 +88,9 @@ internal sealed class WorksheetWriter
     private readonly bool _conditionalFormatsChanged;
     private bool _conditionalFormatsWritten;
     private readonly bool _marginsChanged;
-    private readonly bool _orientationChanged;
+    private readonly bool _pageSetupChanged;
+    private readonly bool _fitChanged;
+    private readonly bool _headerFootersChanged;
     private readonly bool _rowBreaksChanged;
     private readonly bool _columnBreaksChanged;
 
@@ -137,16 +139,18 @@ internal sealed class WorksheetWriter
         if (_conditionalFormatsChanged)
             _pending.Add("conditionalFormatting");
         _marginsChanged = _look.MarginsChanged(sheet);
-        _orientationChanged = _look.OrientationChanged(sheet);
+        _pageSetupChanged = _look.PageSetupChanged(sheet);
+        _fitChanged = _look.FitChanged(sheet);
+        _headerFootersChanged = _look.HeaderFootersChanged(sheet);
         _rowBreaksChanged = _look.BreaksChanged(sheet, rows: true);
         _columnBreaksChanged = _look.BreaksChanged(sheet, rows: false);
-        foreach (var (name, changed) in new[] { ("pageMargins", _marginsChanged), ("pageSetup", _orientationChanged), ("rowBreaks", _rowBreaksChanged), ("colBreaks", _columnBreaksChanged) })
+        foreach (var (name, changed) in new[] { ("pageMargins", _marginsChanged), ("pageSetup", _pageSetupChanged), ("headerFooter", _headerFootersChanged), ("rowBreaks", _rowBreaksChanged), ("colBreaks", _columnBreaksChanged) })
         {
             if (changed)
                 _pending.Add(name);
         }
 
-        if ((_filterChanged && sheet.FilterMode) || (_tabColorChanged && sheet.TabColor is not null))
+        if ((_filterChanged && sheet.FilterMode) || (_tabColorChanged && sheet.TabColor is not null) || (_fitChanged && sheet.FitToPages is not null))
             _pending.Add("sheetPr");
         if (_viewChanged)
             _pending.Add("sheetViews");
@@ -265,7 +269,7 @@ internal sealed class WorksheetWriter
                         Shifted((XElement)XNode.ReadFrom(reader))?.WriteTo(writer);
                         break;
                     case "tableParts" when _newTables.Count > 0 || _removedTables.Count > 0:
-                    case "sheetPr" when _filterChanged || _tabColorChanged:
+                    case "sheetPr" when _filterChanged || _tabColorChanged || _fitChanged:
                     case "sheetViews" when _viewChanged:
                     case "sheetFormatPr" when _defaultsChanged:
                     case "cols" when _columnsChanged:
@@ -274,7 +278,8 @@ internal sealed class WorksheetWriter
                     case "dataValidations" when _validationsChanged:
                     case "hyperlinks" when _hyperlinks is not null:
                     case "pageMargins" when _marginsChanged:
-                    case "pageSetup" when _orientationChanged:
+                    case "pageSetup" when _pageSetupChanged:
+                    case "headerFooter" when _headerFootersChanged:
                     case "rowBreaks" when _rowBreaksChanged:
                     case "colBreaks" when _columnBreaksChanged:
                     case "legacyDrawing" when _notes is { RemoveLegacyDrawing: true } || _notes?.LegacyDrawingId is not null:
@@ -345,6 +350,7 @@ internal sealed class WorksheetWriter
         "legacyDrawing" => LegacyDrawing(),
         "pageMargins" => Margins(),
         "pageSetup" => PageSetup(source),
+        "headerFooter" => HeaderFooterElement(source),
         "rowBreaks" => PageBreaks(rows: true),
         "colBreaks" => PageBreaks(rows: false),
         _ => MergeCells(),
@@ -521,12 +527,56 @@ internal sealed class WorksheetWriter
             new XAttribute("header", WorksheetParts.Number(margins.Header)), new XAttribute("footer", WorksheetParts.Number(margins.Footer)));
     }
 
-    // The file's page setup (paper, scaling, printer settings) with the model's orientation.
+    // The file's page setup (printer settings and what the model does not hold) with the model's
+    // orientation, paper, scale and fit. Defaults the file leaves out stay out.
     private XElement PageSetup(XElement? source)
     {
         var element = source ?? new XElement(_ns + "pageSetup");
         element.SetAttributeValue("orientation", _sheet.PageOrientation == PageOrientation.Landscape ? "landscape" : "portrait");
+        if (_sheet.PaperSize != PaperSize.Letter || element.Attribute("paperSize") is not null)
+            element.SetAttributeValue("paperSize", (int)_sheet.PaperSize);
+        if (_sheet.PrintScale != 100 || element.Attribute("scale") is not null)
+            element.SetAttributeValue("scale", _sheet.PrintScale);
+        var fit = _sheet.FitToPages;
+        element.SetAttributeValue("fitToWidth", fit?.Wide);
+        element.SetAttributeValue("fitToHeight", fit?.Tall);
         return element;
+    }
+
+    // The headers and footers; a different first or even page without one of its own repeats the
+    // odd page's, which is what the model's null means.
+    private XElement? HeaderFooterElement(XElement? source)
+    {
+        var texts = _sheet.HeaderFooters;
+        if (texts.All(text => text is null))
+            return null;
+        var element = source ?? new XElement(_ns + "headerFooter");
+        element.RemoveNodes();
+        var oddEven = texts[2] is not null || texts[3] is not null;
+        var first = texts[4] is not null || texts[5] is not null;
+        element.SetAttributeValue("differentOddEven", oddEven ? "1" : null);
+        element.SetAttributeValue("differentFirst", first ? "1" : null);
+        Add("oddHeader", texts[0]);
+        Add("oddFooter", texts[1]);
+        if (oddEven)
+        {
+            Add("evenHeader", texts[2] ?? texts[0]);
+            Add("evenFooter", texts[3] ?? texts[1]);
+        }
+
+        if (first)
+        {
+            Add("firstHeader", texts[4] ?? texts[0]);
+            Add("firstFooter", texts[5] ?? texts[1]);
+        }
+
+        return element;
+
+        void Add(string name, HeaderFooter? text)
+        {
+            if (text is { IsBlank: false })
+                element.Add(new XElement(_ns + name, text.ToString()));
+        }
     }
 
     // Manual page breaks; a break's id is the last row (or column) before it, from 1, and max the
@@ -568,6 +618,17 @@ internal sealed class WorksheetWriter
     {
         element ??= new XElement(_ns + "sheetPr");
         element.SetAttributeValue("filterMode", _sheet.FilterMode ? "1" : null);
+        if (_fitChanged)
+        {
+            // pageSetUpPr is sheetPr's last child, after tabColor and outlinePr.
+            var setup = element.Element(_ns + "pageSetUpPr");
+            if (setup is null && _sheet.FitToPages is not null)
+                element.Add(setup = new XElement(_ns + "pageSetUpPr"));
+            setup?.SetAttributeValue("fitToPage", _sheet.FitToPages is null ? null : "1");
+            if (setup is { HasAttributes: false })
+                setup.Remove();
+        }
+
         if (!_tabColorChanged)
             return element;
         // The tab colour is sheetPr's first child.

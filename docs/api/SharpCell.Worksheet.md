@@ -74,6 +74,32 @@ The height of rows without one of their own, in points. Null when not given; Exc
 
 - `ArgumentOutOfRangeException`: The height is outside 0 to 409.
 
+<a id="evenpagefooter"></a>
+### EvenPageFooter
+
+```csharp
+public HeaderFooter? EvenPageFooter { get; set; }
+```
+
+The footer of even pages; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="evenpageheader"></a>
+### EvenPageHeader
+
+```csharp
+public HeaderFooter? EvenPageHeader { get; set; }
+```
+
+The header of even pages, as Page Setup's Different odd and even pages sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) on them.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="filtermode"></a>
 ### FilterMode
 
@@ -82,6 +108,41 @@ public bool FilterMode { get; set; }
 ```
 
 Whether the sheet has a filter with criteria, like `Worksheet.FilterMode` in Excel. Excel then treats every hidden row of the sheet as filtered out, so SUBTOTAL with codes 1–11 skips them as well; without a filter it counts them. AGGREGATE does not look at it.
+
+<a id="firstpagefooter"></a>
+### FirstPageFooter
+
+```csharp
+public HeaderFooter? FirstPageFooter { get; set; }
+```
+
+The footer of the first page; null prints [Worksheet.PageFooter](SharpCell.Worksheet.md#pagefooter) there.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="firstpageheader"></a>
+### FirstPageHeader
+
+```csharp
+public HeaderFooter? FirstPageHeader { get; set; }
+```
+
+The header of the first page, as Page Setup's Different first page sets it; null prints [Worksheet.PageHeader](SharpCell.Worksheet.md#pageheader) there.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
+<a id="fittopages"></a>
+### FitToPages
+
+```csharp
+public PageFit? FitToPages { get; set; }
+```
+
+The pages the sheet is shrunk to fit when printed, as Page Setup > Fit to sets it; null prints at [Worksheet.PrintScale](SharpCell.Worksheet.md#printscale) instead.
 
 <a id="frozencolumns"></a>
 ### FrozenColumns
@@ -151,6 +212,32 @@ public IReadOnlyList<(Cell, Note)> Notes { get; }
 
 The cells with a note, row by row and left to right, with their notes.
 
+<a id="pagefooter"></a>
+### PageFooter
+
+```csharp
+public HeaderFooter? PageFooter { get; set; }
+```
+
+The footer of every printed page, or of the odd ones when [Worksheet.EvenPageFooter](SharpCell.Worksheet.md#evenpagefooter) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The footer is longer than Excel's 255 characters.
+
+<a id="pageheader"></a>
+### PageHeader
+
+```csharp
+public HeaderFooter? PageHeader { get; set; }
+```
+
+The header of every printed page, or of the odd ones when [Worksheet.EvenPageHeader](SharpCell.Worksheet.md#evenpageheader) is set; null for none.
+
+**Exceptions**
+
+- `ArgumentException`: The header is longer than Excel's 255 characters.
+
 <a id="pagemargins"></a>
 ### PageMargins
 
@@ -177,6 +264,19 @@ How the sheet is turned on the printed page; [PageOrientation.Portrait](SharpCel
 
 - `ArgumentOutOfRangeException`: The value is not a defined orientation.
 
+<a id="papersize"></a>
+### PaperSize
+
+```csharp
+public PaperSize PaperSize { get; set; }
+```
+
+The paper the sheet prints on; [PaperSize.Letter](SharpCell.PaperSize.md#letter) unless set otherwise.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is not a positive number.
+
 <a id="printarea"></a>
 ### PrintArea
 
@@ -189,6 +289,19 @@ The cells that print, as Excel's Print Area sets them: one range such as `A1:F40
 **Exceptions**
 
 - `ArgumentException`: The text is not A1 ranges of this sheet separated by commas.
+
+<a id="printscale"></a>
+### PrintScale
+
+```csharp
+public int PrintScale { get; set; }
+```
+
+The size the sheet prints at, in percent of its own, as Page Setup > Adjust to sets it: 10 to 400, 100 unless set otherwise. Ignored while [Worksheet.FitToPages](SharpCell.Worksheet.md#fittopages) is set, as in Excel.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The value is outside 10 to 400.
 
 <a id="printtitlecolumns"></a>
 ### PrintTitleColumns

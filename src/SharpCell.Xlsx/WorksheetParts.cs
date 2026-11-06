@@ -46,6 +46,10 @@ internal sealed class SheetLook
         Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
         ConditionalFormats = [.. sheet.ConditionalRules.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas], rule.Format))];
         Orientation = sheet.PageOrientation;
+        PaperSize = sheet.PaperSize;
+        PrintScale = sheet.PrintScale;
+        FitToPages = sheet.FitToPages;
+        HeaderFooters = [.. sheet.HeaderFooters];
         Margins = sheet.PageMargins;
         PrintAreas = [.. sheet.PrintAreas];
         TitleRows = sheet.TitleRows;
@@ -97,6 +101,10 @@ internal sealed class SheetLook
         ConditionalFormats = [.. look.ConditionalFormats.Select(rule => ((IReadOnlyList<Area>)[.. rule.Areas.SelectMany(area => SheetEditMap.MapCells(sheet, area))], rule.Format))
             .Where(rule => rule.Item1.Count > 0)];
         Orientation = look.Orientation;
+        PaperSize = look.PaperSize;
+        PrintScale = look.PrintScale;
+        FitToPages = look.FitToPages;
+        HeaderFooters = look.HeaderFooters;
         Margins = look.Margins;
         PrintAreas = [.. look.PrintAreas.Select(area => map.Map(sheet, area)).OfType<Area>()];
         TitleRows = look.TitleRows is { } rows ? map.MapSpan(sheet, rows: true, rows.First, rows.Last) : null;
@@ -154,6 +162,14 @@ internal sealed class SheetLook
     public IReadOnlyList<(IReadOnlyList<Area> Areas, ConditionalFormat Format)> ConditionalFormats { get; }
 
     public PageOrientation Orientation { get; }
+
+    public PaperSize PaperSize { get; }
+
+    public int PrintScale { get; }
+
+    public PageFit? FitToPages { get; }
+
+    public IReadOnlyList<HeaderFooter?> HeaderFooters { get; }
 
     public PageMargins Margins { get; }
 
@@ -239,7 +255,12 @@ internal sealed class SheetLook
         return false;
     }
 
-    public bool OrientationChanged(Worksheet sheet) => Orientation != sheet.PageOrientation;
+    public bool PageSetupChanged(Worksheet sheet) =>
+        Orientation != sheet.PageOrientation || PaperSize != sheet.PaperSize || PrintScale != sheet.PrintScale || FitToPages != sheet.FitToPages;
+
+    public bool FitChanged(Worksheet sheet) => FitToPages.HasValue != sheet.FitToPages.HasValue;
+
+    public bool HeaderFootersChanged(Worksheet sheet) => !HeaderFooters.SequenceEqual(sheet.HeaderFooters);
 
     public bool MarginsChanged(Worksheet sheet) => !Margins.Equals(sheet.PageMargins);
 
