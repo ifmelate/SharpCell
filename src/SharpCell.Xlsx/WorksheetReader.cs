@@ -69,8 +69,8 @@ internal static class WorksheetReader
                 // Excel writes ht for rows grown to fit a larger font too, not only for customHeight.
                 if (Size(reader.GetAttribute("ht"), MaxRowHeight) is { } height && row <= CellAddress.MaxRow)
                     sheet.SetRowHeight(row, height);
-                if (reader.GetAttribute("customFormat") is "1" or "true" && row <= CellAddress.MaxRow && StyleOf(reader.GetAttribute("s"), saved) is { } rowStyle)
-                    sheet.SetRowStyle(row, rowStyle);
+                if (reader.GetAttribute("customFormat") is "1" or "true" && row <= CellAddress.MaxRow)
+                    ReadLineStyle(reader.GetAttribute("s"), saved, sheet, rows: true, row);
                 if (row <= CellAddress.MaxRow)
                     ReadOutline(reader, sheet, rows: true, row);
                 reader.Read();
@@ -254,12 +254,19 @@ internal static class WorksheetReader
                 var xf = saved.Styles[style];
                 if (xf.Format is { } format)
                     sheet.SetFormat(row, column, format);
-                if (xf.Style != sheet.Workbook.DefaultStyle || sheet.ShownStyleAt(row, column) is not null)
+                // Only a style unlike the one its row or column gives it is the cell's own; General
+                // of its own in a formatted row or column needs one too.
+                if (xf.Style != (sheet.ShownStyleAt(row, column) ?? sheet.Workbook.DefaultStyle)
+                    || (xf.Format is null && sheet.ShownFormatAt(row, column) is not null))
                     sheet.SetStyle(row, column, xf.Style);
             }
         }
 
         loader.Complete();
+
+        // Fit to page with no pageSetup element fits to one page each way, its defaults.
+        if (fitToPage && sheet.FitToPages is null)
+            sheet.FitToPages = new PageFit(1, 1);
         foreach (var (richRow, richColumn, rich) in richTexts)
         {
             if (sheet.Store.Get(richRow, richColumn) is { FormulaText: null } data && data.Value.Kind == CellValueKind.Text)
@@ -357,13 +364,12 @@ internal static class WorksheetReader
 
         var width = Size(reader.GetAttribute("width"), MaxColumnWidth);
         var hidden = reader.GetAttribute("hidden") is "1" or "true";
-        var style = StyleOf(reader.GetAttribute("style"), saved);
+        var style = reader.GetAttribute("style");
         for (var column = min; column <= max; column++)
         {
             if (width is not null)
                 sheet.SetColumnWidth(column, width);
-            if (style is not null)
-                sheet.SetColumnStyle(column, style);
+            ReadLineStyle(style, saved, sheet, rows: false, column);
             ReadOutline(reader, sheet, rows: false, column);
             if (hidden)
                 sheet.SetColumnHidden(column, true);
@@ -375,9 +381,23 @@ internal static class WorksheetReader
             int.TryParse(reader.GetAttribute("outlineLevel"), NumberStyles.None, CultureInfo.InvariantCulture, out var level) ? level : 0,
             reader.GetAttribute("collapsed") is "1" or "true");
 
-    // The look of a row's or column's style index; null for none, index 0 or one the file lacks.
-    private static CellStyle? StyleOf(string? index, SavedCells saved) =>
-        int.TryParse(index, NumberStyles.None, CultureInfo.InvariantCulture, out var s) && s > 0 && s < saved.Styles.Count ? saved.Styles[s].Style : null;
+    // A row's or column's style index (none for index 0 or one the file lacks): its look and its
+    // number format. A format on the default look is the format alone.
+    private static void ReadLineStyle(string? index, SavedCells saved, Worksheet sheet, bool rows, int at)
+    {
+        if (!int.TryParse(index, NumberStyles.None, CultureInfo.InvariantCulture, out var s) || s <= 0 || s >= saved.Styles.Count)
+            return;
+        var xf = saved.Styles[s];
+        if (xf.Format is { } format)
+            sheet.LoadLineFormat(rows, at, format);
+        if (xf.Format is null || xf.Style != sheet.Workbook.DefaultStyle)
+        {
+            if (rows)
+                sheet.SetRowStyle(at, xf.Style);
+            else
+                sheet.SetColumnStyle(at, xf.Style);
+        }
+    }
 
     // A whole count of frozen rows or columns that leaves some to scroll; 0 for anything else.
     private static int Count(string? text, int max) =>
@@ -528,8 +548,7 @@ internal static class WorksheetReader
             return null;
         if (cell.Type == "inlineStr")
             return saved.Rich(cell.InlineRuns);
-        return cell.Type == "s" && int.TryParse(cell.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index)
-            && saved.SharedRuns.TryGetValue(index, out var runs) ? saved.Rich(runs) : null;
+        return cell.Type == "s" && int.TryParse(cell.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index) ? saved.SharedRich(index) : null;
     }
 
     /// <summary>The value a file saved in a cell, the newer errors (#SPILL!, #CALC!) included.</summary>

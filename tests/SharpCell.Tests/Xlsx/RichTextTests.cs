@@ -62,7 +62,7 @@ public class RichTextTests
 
     private static (byte[] Original, Workbook Workbook) Load()
     {
-        var original = new TestXlsx { SharedStrings = Shared }.RawSheet("S", """
+        var original = new TestXlsx { SharedStrings = Shared, Theme = CellStyleReaderTests.Theme(dk1: "000000", lt1: "FFFFFF", accent1: "4472C4") }.RawSheet("S", """
             <sheetData><row r="1">
               <c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c>
               <c r="D1" t="inlineStr"><is><r><rPr><strike/><vertAlign val="subscript"/><sz val="11"/><rFont val="Calibri"/></rPr><t>H</t></r><r><t>2O</t></r></is></c>

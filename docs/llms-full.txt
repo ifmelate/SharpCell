@@ -2374,6 +2374,10 @@ public double Angle { get; init; }
 
 The direction of a linear gradient in degrees, clockwise from left to right.
 
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The angle is not a finite number.
+
 <a id="bottom"></a>
 ### Bottom
 
@@ -7869,6 +7873,19 @@ Collapses the group a row is in at its own level, as the group's minus button do
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 - `ArgumentException`: The row is in no group.
 
+<a id="columnnumberformat-int"></a>
+### ColumnNumberFormat(int)
+
+```csharp
+public string? ColumnNumberFormat(int column)
+```
+
+The number format of a column's cells without a style or format of their own and whose row has none; null for General or none.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+
 <a id="columnoutlinelevel-int"></a>
 ### ColumnOutlineLevel(int)
 
@@ -8275,6 +8292,19 @@ A row's own height in points; null when it has none.
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
 
+<a id="rownumberformat-int"></a>
+### RowNumberFormat(int)
+
+```csharp
+public string? RowNumberFormat(int row)
+```
+
+The number format of a row's cells without a style or format of their own, as Excel keeps it for a row formatted as a whole; null for General or none. It comes before the column's.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+
 <a id="rowoutlinelevel-int"></a>
 ### RowOutlineLevel(int)
 
@@ -8331,6 +8361,20 @@ Hides or shows a column. Unlike hidden rows, hidden columns change no result, as
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The column is outside the sheet.
+
+<a id="setcolumnnumberformat-int-string"></a>
+### SetColumnNumberFormat(int, string)
+
+```csharp
+public void SetColumnNumberFormat(int column, string? code)
+```
+
+Gives a column a number format for its cells without one of their own, as formatting a whole column in Excel does; null or General takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The column is outside the sheet.
+- `ArgumentException`: The code is not a number format.
 
 <a id="setcolumnoutlinelevel-int-int"></a>
 ### SetColumnOutlineLevel(int, int)
@@ -8396,6 +8440,20 @@ Hides or shows a row. SUBTOTAL with codes 101–111 and AGGREGATE with options 1
 **Exceptions**
 
 - `ArgumentOutOfRangeException`: The row is outside the sheet.
+
+<a id="setrownumberformat-int-string"></a>
+### SetRowNumberFormat(int, string)
+
+```csharp
+public void SetRowNumberFormat(int row, string? code)
+```
+
+Gives a row a number format for its cells without one of their own, as formatting a whole row in Excel does; null or General takes it away.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The row is outside the sheet.
+- `ArgumentException`: The code is not a number format.
 
 <a id="setrowoutlinelevel-int-int"></a>
 ### SetRowOutlineLevel(int, int)

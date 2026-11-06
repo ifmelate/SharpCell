@@ -262,21 +262,50 @@ public sealed partial class Worksheet
         }
     }
 
-    // Levels and collapsed marks follow inserted and deleted whole rows or columns; rows inserted
-    // inside a group join it at the shallower of the levels around them, as in Excel.
+    // Levels and collapsed marks follow inserted and deleted whole rows or columns. Rows inserted
+    // inside a group join it at the shallower of the levels around them, as in Excel, and are hidden
+    // when it is collapsed. A deleted summary row passes its collapsed mark on to the row that takes
+    // its place, so the group's hidden rows keep a button to show them.
     private void MoveOutline(SheetEdit edit)
     {
         if (!edit.Whole)
             return;
-        var levels = edit.Rows ? _rowLevels : _columnLevels;
-        var max = edit.Rows ? CellAddress.MaxRow : CellAddress.MaxColumn;
+        var rows = edit.Rows;
+        var levels = rows ? _rowLevels : _columnLevels;
+        var collapsed = rows ? _collapsedRows : _collapsedColumns;
+        var max = rows ? CellAddress.MaxRow : CellAddress.MaxColumn;
+        var summaryDeleted = edit.Delete && collapsed.Any(index => index >= edit.At && index < edit.At + edit.Count);
         MoveIndexes(levels, edit, max);
-        MoveIndexes(edit.Rows ? _collapsedRows : _collapsedColumns, edit, max);
-        if (edit.Delete || edit.At <= 1)
+        MoveIndexes(collapsed, edit, max);
+        if (edit.Delete)
+        {
+            if (summaryDeleted)
+            {
+                var below = rows ? _summaryBelow : _summaryRight;
+                var heir = below ? edit.At : edit.At - 1;
+                if (heir is >= 1 && heir <= max)
+                    collapsed.Add(heir);
+            }
+
+            return;
+        }
+
+        if (edit.At <= 1)
             return;
         var inside = Math.Min(levels.GetValueOrDefault(edit.At - 1), levels.GetValueOrDefault(edit.At + edit.Count));
-        for (var index = edit.At; inside > 0 && index < edit.At + edit.Count && index <= max; index++)
+        if (inside == 0)
+            return;
+        var hidden = IsHidden(edit.At - 1) && IsHidden(edit.At + edit.Count);
+        for (var index = edit.At; index < edit.At + edit.Count && index <= max; index++)
+        {
             levels[index] = inside;
+            if (hidden && rows)
+                _hiddenRows.Add(index);
+            else if (hidden)
+                _hiddenColumns.Add(index);
+        }
+
+        bool IsHidden(int index) => index <= max && (rows ? _hiddenRows.Contains(index) : _hiddenColumns.Contains(index));
     }
 
     private void CopyOutlineFrom(Worksheet source)

@@ -40,6 +40,10 @@ public double Angle { get; init; }
 
 The direction of a linear gradient in degrees, clockwise from left to right.
 
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The angle is not a finite number.
+
 <a id="bottom"></a>
 ### Bottom
 

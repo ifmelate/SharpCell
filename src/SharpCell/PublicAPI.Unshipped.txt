@@ -247,3 +247,7 @@ static SharpCell.TextRun.operator !=(SharpCell.TextRun left, SharpCell.TextRun r
 static SharpCell.TextRun.operator ==(SharpCell.TextRun left, SharpCell.TextRun right) -> bool
 ~override SharpCell.TextRun.Equals(object obj) -> bool
 ~override SharpCell.TextRun.ToString() -> string
+SharpCell.Worksheet.ColumnNumberFormat(int column) -> string?
+SharpCell.Worksheet.RowNumberFormat(int row) -> string?
+SharpCell.Worksheet.SetColumnNumberFormat(int column, string? code) -> void
+SharpCell.Worksheet.SetRowNumberFormat(int row, string? code) -> void

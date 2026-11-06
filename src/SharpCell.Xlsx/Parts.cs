@@ -159,10 +159,24 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
     /// <summary>Turns a run's properties (rPr) into a font with the file's theme and palette.</summary>
     public Func<XElement, CellFont> RunFont { get; init; } = _ => CellFont.Default;
 
+    private readonly Dictionary<int, RichText?> _sharedRich = [];
+
+    /// <summary>The rich text of a shared string, made once however many cells use it; null for plain text.</summary>
+    public RichText? SharedRich(int index)
+    {
+        if (!SharedRuns.TryGetValue(index, out var runs))
+            return null;
+        if (!_sharedRich.TryGetValue(index, out var rich))
+            _sharedRich[index] = rich = Rich(runs);
+        return rich;
+    }
+
     /// <summary>Rich text from a string item's runs; null for none, or for one run without properties.</summary>
     public RichText? Rich(List<(string Text, XElement? Properties)>? runs)
     {
-        if (runs is null || runs.All(run => run.Text.Length == 0) || (runs.Count(run => run.Text.Length > 0) == 1 && runs.All(run => run.Properties is null)))
+        // Text longer than Excel allows stays plain: the value is read as it is, the runs are not.
+        if (runs is null || runs.All(run => run.Text.Length == 0) || (runs.Count(run => run.Text.Length > 0) == 1 && runs.All(run => run.Properties is null))
+            || runs.Sum(run => run.Text.Length) > RichText.MaxLength)
             return null;
         return new RichText(runs.Select(run => new TextRun(run.Text, run.Properties is null ? null : RunFont(run.Properties))));
     }

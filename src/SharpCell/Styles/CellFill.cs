@@ -102,7 +102,7 @@ public readonly record struct GradientStop
 public sealed record CellGradient
 {
     private readonly GradientStop[] _stops;
-    private readonly double _left, _right, _top, _bottom;
+    private readonly double _left, _right, _top, _bottom, _angle;
 
     /// <summary>A gradient through the stops, linear at 0 degrees (left to right) unless set otherwise.</summary>
     /// <param name="stops">Two or more stops; they are kept in order of position.</param>
@@ -129,7 +129,12 @@ public sealed record CellGradient
     public CellGradientType Type { get; init; }
 
     /// <summary>The direction of a linear gradient in degrees, clockwise from left to right.</summary>
-    public double Angle { get; init; }
+    /// <exception cref="ArgumentOutOfRangeException">The angle is not a finite number.</exception>
+    public double Angle
+    {
+        get => _angle;
+        init => _angle = double.IsFinite(value) ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "An angle is a finite number of degrees.");
+    }
 
     /// <summary>Where a path gradient's inner rectangle starts from the left, 0 to 1 of the cell's width.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is outside 0 to 1.</exception>

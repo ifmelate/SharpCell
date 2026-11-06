@@ -232,6 +232,81 @@ public sealed partial class Worksheet
             _formats[new CellAddress(row, column)] = format;
     }
 
+    private readonly Dictionary<int, Functions.NumberFormat> _rowFormats = [];
+    private readonly Dictionary<int, Functions.NumberFormat> _columnFormats = [];
+
+    /// <summary>
+    /// The number format a cell shows: its own; for a cell without a style or format of its own, its
+    /// row's when the row is formatted, else its column's. A cell with a style of its own (its own
+    /// cell format in Excel) shows General when it has no number format.
+    /// </summary>
+    internal Functions.NumberFormat? ShownFormatAt(int row, int column)
+    {
+        if (FormatAt(row, column) is { } own)
+            return own;
+        if (_rowFormats.Count == 0 && _columnFormats.Count == 0 || StyleAt(row, column) is not null)
+            return null;
+        if (_rowFormats.TryGetValue(row, out var rowFormat))
+            return rowFormat;
+        return RowStyles.ContainsKey(row) ? null : _columnFormats.GetValueOrDefault(column);
+    }
+
+    /// <summary>
+    /// The number format of a row's cells without a style or format of their own, as Excel keeps it
+    /// for a row formatted as a whole; null for General or none. It comes before the column's.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
+    public string? RowNumberFormat(int row)
+    {
+        CheckRow(row);
+        return _rowFormats.GetValueOrDefault(row)?.FormatCode;
+    }
+
+    /// <summary>Gives a row a number format for its cells without one of their own, as formatting a whole row in Excel does; null or General takes it away.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The row is outside the sheet.</exception>
+    /// <exception cref="ArgumentException">The code is not a number format.</exception>
+    public void SetRowNumberFormat(int row, string? code)
+    {
+        CheckRow(row);
+        SetLineFormat(_rowFormats, row, code);
+    }
+
+    /// <summary>The number format of a column's cells without a style or format of their own and whose row has none; null for General or none.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The column is outside the sheet.</exception>
+    public string? ColumnNumberFormat(int column)
+    {
+        CheckColumn(column);
+        return _columnFormats.GetValueOrDefault(column)?.FormatCode;
+    }
+
+    /// <summary>Gives a column a number format for its cells without one of their own, as formatting a whole column in Excel does; null or General takes it away.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The column is outside the sheet.</exception>
+    /// <exception cref="ArgumentException">The code is not a number format.</exception>
+    public void SetColumnNumberFormat(int column, string? code)
+    {
+        CheckColumn(column);
+        SetLineFormat(_columnFormats, column, code);
+    }
+
+    internal IReadOnlyDictionary<int, Functions.NumberFormat> RowFormats => _rowFormats;
+
+    internal IReadOnlyDictionary<int, Functions.NumberFormat> ColumnFormats => _columnFormats;
+
+    /// <summary>Sets a row's or column's number format as read.</summary>
+    internal void LoadLineFormat(bool rows, int index, Functions.NumberFormat format) => (rows ? _rowFormats : _columnFormats)[index] = format;
+
+    private void SetLineFormat(Dictionary<int, Functions.NumberFormat> formats, int index, string? code)
+    {
+        Functions.NumberFormat? format = null;
+        if (code is not null && !code.Equals("General", StringComparison.OrdinalIgnoreCase) && !Functions.NumberFormat.TryParse(code, out format))
+            throw new ArgumentException($"'{code}' is not a number format code.", nameof(code));
+        ThrowIfCannotChange();
+        if (format is null)
+            formats.Remove(index);
+        else
+            formats[index] = format;
+    }
+
     /// <summary>The cells with a number format other than General, in no particular order.</summary>
     internal IReadOnlyDictionary<CellAddress, Functions.NumberFormat> Formats => _formats;
 
@@ -286,6 +361,10 @@ public sealed partial class Worksheet
         _hiddenRows.UnionWith(source._hiddenRows);
         foreach (var (address, format) in source._formats)
             _formats.Add(address, format);
+        foreach (var (row, format) in source._rowFormats)
+            _rowFormats.Add(row, format);
+        foreach (var (column, format) in source._columnFormats)
+            _columnFormats.Add(column, format);
         _filterMode = source._filterMode;
         _visibility = source._visibility;
         _tabColor = source._tabColor;

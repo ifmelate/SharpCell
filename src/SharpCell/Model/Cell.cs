@@ -241,7 +241,7 @@ public sealed partial class Cell
     /// <exception cref="ArgumentException">The code is not a number format.</exception>
     public string NumberFormat
     {
-        get => Worksheet.FormatAt(Row, Column)?.FormatCode ?? "General";
+        get => Worksheet.ShownFormatAt(Row, Column)?.FormatCode ?? "General";
         set
         {
             ArgumentNullException.ThrowIfNull(value);
@@ -249,6 +249,10 @@ public sealed partial class Cell
             if (value.Length == 0 || value.Equals("General", StringComparison.OrdinalIgnoreCase))
             {
                 Worksheet.SetFormat(Row, Column, null);
+
+                // In a formatted row or column, General of its own takes the cell's own style, as its own cell format in Excel.
+                if (Worksheet.ShownFormatAt(Row, Column) is not null)
+                    Worksheet.SetStyle(Row, Column, Worksheet.ShownStyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle);
                 return;
             }
 
@@ -362,7 +366,7 @@ public sealed partial class Cell
         get
         {
             var value = Value;
-            var format = Worksheet.FormatAt(Row, Column);
+            var format = Worksheet.ShownFormatAt(Row, Column);
             var workbook = Worksheet.Workbook;
             return value.Kind switch
             {

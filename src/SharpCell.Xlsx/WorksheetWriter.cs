@@ -178,6 +178,8 @@ internal sealed class WorksheetWriter
             rows.UnionWith(sheet.RowHeights.Keys);
             rows.UnionWith(sheet.HiddenRows);
             rows.UnionWith(sheet.RowStyles.Keys);
+            rows.UnionWith(_look.RowFormats.Keys);
+            rows.UnionWith(sheet.RowFormats.Keys);
             rows.UnionWith(_look.RowLevels.Keys);
             rows.UnionWith(_look.CollapsedRows);
             rows.UnionWith(sheet.RowLevels.Keys);
@@ -742,6 +744,8 @@ internal sealed class WorksheetWriter
         touched.UnionWith(_sheet.HiddenColumns);
         touched.UnionWith(_look.ColumnStyles.Keys);
         touched.UnionWith(_sheet.ColumnStyles.Keys);
+        touched.UnionWith(_look.ColumnFormats.Keys);
+        touched.UnionWith(_sheet.ColumnFormats.Keys);
         touched.UnionWith(_look.ColumnLevels.Keys);
         touched.UnionWith(_sheet.ColumnLevels.Keys);
         touched.UnionWith(_look.CollapsedColumns);
@@ -761,8 +765,12 @@ internal sealed class WorksheetWriter
 
             if (hidden != _look.HiddenColumns.Contains(column))
                 Set(attributes, "hidden", hidden ? "1" : null);
-            if (!Equals(style, _look.LoadedColumnStyle(column)))
-                Set(attributes, "style", style is null ? null : _styles.XfFor(0, style, "General").ToString(CultureInfo.InvariantCulture));
+            if (_look.ColumnStyleChanged(_sheet, column))
+            {
+                var code = _sheet.ColumnNumberFormat(column);
+                Set(attributes, "style", style is null && code is null ? null
+                    : _styles.XfFor(0, style ?? _sheet.Workbook.DefaultStyle, code ?? "General").ToString(CultureInfo.InvariantCulture));
+            }
             var level = _sheet.ColumnOutlineLevel(column);
             if (level != _look.ColumnLevels.GetValueOrDefault(column))
                 Set(attributes, "outlineLevel", level == 0 ? null : level.ToString(CultureInfo.InvariantCulture));
@@ -834,7 +842,7 @@ internal sealed class WorksheetWriter
                 merged.Select(area => new XElement(_ns + "mergeCell", new XAttribute("ref", Format(area)))));
     }
 
-    private void WriteRowAttributes(XmlWriter writer, int row)
+    private void WriteRowAttributes(XmlWriter writer, int row, bool writeStyle = true)
     {
         if (_sheet.RowHeight(row) is { } height)
         {
@@ -844,9 +852,10 @@ internal sealed class WorksheetWriter
 
         if (_sheet.IsRowHidden(row))
             writer.WriteAttributeString("hidden", "1");
-        if (_sheet.RowStyle(row) is { } style)
+        if (writeStyle && (_sheet.RowStyle(row) is not null || _sheet.RowNumberFormat(row) is not null))
         {
-            writer.WriteAttributeString("s", _styles.XfFor(0, style, "General").ToString(CultureInfo.InvariantCulture));
+            var style = _sheet.RowStyle(row) ?? _sheet.Workbook.DefaultStyle;
+            writer.WriteAttributeString("s", _styles.XfFor(0, style, _sheet.RowNumberFormat(row) ?? "General").ToString(CultureInfo.InvariantCulture));
             writer.WriteAttributeString("customFormat", "1");
         }
 
@@ -968,6 +977,7 @@ internal sealed class WorksheetWriter
         while (_nextChangedRow < _changedRows.Count && _changedRows[_nextChangedRow] <= row)
             _nextChangedRow++;
         var sized = _rowsChanged && _look.RowChanged(_sheet, row);
+        var restyled = sized && _look.RowStyleChanged(_sheet, row);
         if (sized || _shifted)
         {
             // The row's number, height and hidden flag as the sheet has them now; its other attributes
@@ -980,7 +990,7 @@ internal sealed class WorksheetWriter
                 do
                 {
                     var skip = reader.NamespaceURI.Length == 0
-                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || (sized && reader.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat" or "outlineLevel" or "collapsed"));
+                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || ((sized && reader.LocalName is "ht" or "customHeight" or "hidden" or "outlineLevel" or "collapsed") || (restyled && reader.LocalName is "s" or "customFormat")));
                     if (!skip)
                         writer.WriteAttributeString(reader.Prefix, reader.LocalName, reader.NamespaceURI, reader.Value);
                 }
@@ -989,7 +999,7 @@ internal sealed class WorksheetWriter
             }
 
             if (sized)
-                WriteRowAttributes(writer, row);
+                WriteRowAttributes(writer, row, writeStyle: restyled);
             reader.Read();
         }
         else
@@ -1095,17 +1105,18 @@ internal sealed class WorksheetWriter
             while (_nextChangedRow < _changedRows.Count && _changedRows[_nextChangedRow] <= row)
                 _nextChangedRow++;
             var sized = _rowsChanged && _look.RowChanged(_sheet, row);
+            var restyled = rowElement is null || (sized && _look.RowStyleChanged(_sheet, row));
             writer.WriteStartElement(_prefix, "row", _ns.NamespaceName);
             writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
             foreach (var attribute in rowElement?.Attributes() ?? [])
             {
-                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat" or "outlineLevel" or "collapsed");
+                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden" or "outlineLevel" or "collapsed") || (restyled && attribute.Name.LocalName is "s" or "customFormat");
                 if (!skip && !attribute.IsNamespaceDeclaration)
                     writer.WriteAttributeString(attribute.Name.LocalName, attribute.Name.NamespaceName, attribute.Value);
             }
 
             if (sized || (rowElement is null && _look.RowChanged(_sheet, row)))
-                WriteRowAttributes(writer, row);
+                WriteRowAttributes(writer, row, writeStyle: restyled);
             cells.Sort((a, b) => a.Column.CompareTo(b.Column));
             foreach (var (column, source, cell) in cells)
             {
@@ -1302,14 +1313,24 @@ internal sealed class WorksheetWriter
     private int? TargetStyle(int? sourceStyle, int row, int column, CellAddress? sourceAddress)
     {
         var style = _sheet.ShownStyleAt(row, column) ?? _sheet.Workbook.DefaultStyle;
-        var code = _sheet.FormatAt(row, column)?.FormatCode ?? "General";
-        var loadedStyle = sourceAddress is { } at && _source.Styles.TryGetValue(at, out var own) ? own : _plan.Source.Look.DefaultStyle;
-        var loadedCode = sourceAddress is { } place && _source.Formats.TryGetValue(place, out var format) ? format : "General";
+        var code = _sheet.ShownFormatAt(row, column)?.FormatCode ?? "General";
+        // What the cell showed when read: its own style, else its row's or column's, as for the model.
+        var loadedStyle = sourceAddress is { } at && _source.Styles.TryGetValue(at, out var own) ? own
+            : sourceAddress is not null ? _look.LoadedRowStyle(row) ?? _look.LoadedColumnStyle(column) ?? _plan.Source.Look.DefaultStyle
+            : _plan.Source.Look.DefaultStyle;
+        var loadedCode = sourceAddress is { } place && _source.Formats.TryGetValue(place, out var format) ? format
+            : sourceAddress is { } cell && !_source.Styles.ContainsKey(cell) ? LoadedLineFormat(row, column) : "General";
         if (style == loadedStyle && code == loadedCode)
             return sourceStyle;
         var index = _styles.XfFor(sourceStyle ?? 0, style, code);
         return index == 0 && sourceStyle is null ? null : index;
     }
+
+    // The number format a cell without a style of its own showed from its row or column when read.
+    private string LoadedLineFormat(int row, int column) =>
+        _look.RowFormats.TryGetValue(row, out var rowFormat) ? rowFormat
+        : _look.RowStyles.ContainsKey(row) ? "General"
+        : _look.ColumnFormats.GetValueOrDefault(column) ?? "General";
 
     // The source cell with the model's content, or null when it has none.
     private XElement? Content(XElement source, int row, int column, CellAddress sourceAddress)
@@ -1522,7 +1543,7 @@ internal sealed class WorksheetWriter
 
     // Rich text inline: a run per font, rPr as a font element named rFont; a run in the cell's font has none.
     private XElement RichElement(RichText rich) => new(_ns + "is", rich.Runs.Select(run => new XElement(_ns + "r",
-        run.Font is { } font ? Renamed(StylesWriter.FontElement(font, "rPr", "rFont")) : null,
+        run.Font is { } font ? Renamed(StylesWriter.FontElement(_styles.Portable(font), "rPr", "rFont")) : null,
         new XElement(_ns + "t", new XAttribute(XNamespace.Xml + "space", "preserve"), XmlText.Encode(run.Text)))));
 
     // The styles part's namespace for the worksheet's, which is the same SpreadsheetML one under any prefix.

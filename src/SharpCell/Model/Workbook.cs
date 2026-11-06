@@ -161,6 +161,7 @@ public sealed partial class Workbook
             throw new ArgumentException("Normal is the workbook's DefaultStyle.", nameof(name));
         ThrowIfInCustomFunction();
         var style = look with { Name = name };
+        _namedStyles.Remove(name);   // a name spelled differently replaces the old spelling too
         _namedStyles[name] = style;
         return style;
     }

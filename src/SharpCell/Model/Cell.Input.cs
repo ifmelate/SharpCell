@@ -35,7 +35,7 @@ public sealed partial class Cell
                 Formula = formula;
             else
                 Value = entry.Value;
-            if (entry.NumberFormat is { } format && Worksheet.FormatAt(Row, Column) is null)
+            if (entry.NumberFormat is { } format && Worksheet.ShownFormatAt(Row, Column) is null)
                 NumberFormat = format;
         }
     }

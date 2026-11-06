@@ -35,7 +35,7 @@ public class FillAndRotationTests
     private static (byte[] Original, Workbook Workbook) Load()
     {
         var cells = string.Concat(Enumerable.Range(0, 10).Select(i => $"<c r=\"{(char)('A' + i)}1\" s=\"{i}\"><v>1</v></c>"));
-        var original = new TestXlsx { Styles = Styles }.RawSheet("S", $"<sheetData><row r=\"1\">{cells}</row></sheetData>").Build().ToArray();
+        var original = new TestXlsx { Styles = Styles, Theme = CellStyleReaderTests.Theme(dk1: "000000", lt1: "FFFFFF", accent1: "4472C4") }.RawSheet("S", $"<sheetData><row r=\"1\">{cells}</row></sheetData>").Build().ToArray();
         return (original, XlsxReader.Load(new MemoryStream(original)));
     }
 
@@ -138,5 +138,36 @@ public class FillAndRotationTests
         Assert.Equal(a, b);
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
         Assert.NotEqual(a, CellGradient.Linear(CellColor.FromRgb(1), CellColor.FromRgb(3), 90));
+    }
+
+    [Fact]
+    public void A_file_without_a_theme_saves_theme_colours_as_their_rgb()
+    {
+        var original = new TestXlsx { Styles = Styles }.RawSheet("S", "<sheetData/>").Build().ToArray();
+        var workbook = XlsxReader.Load(new MemoryStream(original));
+        var accent = workbook.ThemeColor(ThemeColor.Accent1, 0.4);
+        workbook["S"]["A1"].Value = "x";
+        workbook["S"]["A1"].Style = CellStyle.Default with { Fill = accent };
+        workbook["S"]["A2"].RichText = new RichText(new TextRun("a", CellFont.Default with { Color = accent }), new TextRun("b"));
+
+        var saved = XlsxWriterTests.Save(workbook);
+
+        Assert.Contains($"<fgColor rgb=\"FF{accent.R:X2}{accent.G:X2}{accent.B:X2}\" />", XlsxWriterTests.Part(saved, "xl/styles.xml"));
+        Assert.DoesNotContain("theme=", XlsxWriterTests.Part(saved, "xl/worksheets/sheet1.xml"));
+        Assert.Equal(new CellColor(accent.R, accent.G, accent.B), XlsxWriterTests.Reload(saved)["S"]["A1"].Style.Fill);
+    }
+
+    [Fact]
+    public void A_new_workbook_saves_its_theme_so_theme_colours_show_as_it_says()
+    {
+        var workbook = new Workbook();
+        workbook.AddSheet("S")["A1"].Style = CellStyle.Default with { Fill = workbook.ThemeColor(ThemeColor.Accent6) };
+
+        var saved = XlsxWriterTests.Save(workbook);
+
+        var errors = SavedFileValidationTests.Errors(saved);
+        Assert.True(errors.Count == 0, string.Join("\n", errors));
+        Assert.Contains("<a:accent6><a:srgbClr val=\"70AD47\"/>", XlsxWriterTests.Part(saved, "xl/theme/theme1.xml"));
+        Assert.Equal(workbook.ThemeColor(ThemeColor.Accent6), XlsxWriterTests.Reload(saved)["S"]["A1"].Style.Fill);
     }
 }

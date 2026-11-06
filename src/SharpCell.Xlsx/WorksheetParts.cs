@@ -43,6 +43,8 @@ internal sealed class SheetLook
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
         RowStyles = new Dictionary<int, CellStyle>(sheet.RowStyles);
         ColumnStyles = new Dictionary<int, CellStyle>(sheet.ColumnStyles);
+        RowFormats = sheet.RowFormats.ToDictionary(pair => pair.Key, pair => pair.Value.FormatCode);
+        ColumnFormats = sheet.ColumnFormats.ToDictionary(pair => pair.Key, pair => pair.Value.FormatCode);
         RowLevels = new Dictionary<int, int>(sheet.RowLevels);
         ColumnLevels = new Dictionary<int, int>(sheet.ColumnLevels);
         CollapsedRows = new HashSet<int>(sheet.CollapsedRows);
@@ -89,6 +91,8 @@ internal sealed class SheetLook
         HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
         RowStyles = Moved(look.RowStyles, row => map.MapRow(sheet, row));
         ColumnStyles = Moved(look.ColumnStyles, column => map.MapColumn(sheet, column));
+        RowFormats = Moved(look.RowFormats, row => map.MapRow(sheet, row));
+        ColumnFormats = Moved(look.ColumnFormats, column => map.MapColumn(sheet, column));
         RowLevels = Moved(look.RowLevels, row => map.MapRow(sheet, row));
         ColumnLevels = Moved(look.ColumnLevels, column => map.MapColumn(sheet, column));
         CollapsedRows = look.CollapsedRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
@@ -172,6 +176,10 @@ internal sealed class SheetLook
     public IReadOnlyDictionary<int, CellStyle> RowStyles { get; }
 
     public IReadOnlyDictionary<int, CellStyle> ColumnStyles { get; }
+
+    public IReadOnlyDictionary<int, string> RowFormats { get; }
+
+    public IReadOnlyDictionary<int, string> ColumnFormats { get; }
 
     public IReadOnlyDictionary<int, int> RowLevels { get; }
 
@@ -257,15 +265,25 @@ internal sealed class SheetLook
 
     public bool ColumnsChanged(Worksheet sheet) =>
         !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns) || !Same(ColumnStyles, sheet.ColumnStyles)
-        || !Same(ColumnLevels, sheet.ColumnLevels) || !CollapsedColumns.SetEquals(sheet.CollapsedColumns);
+        || !Same(ColumnLevels, sheet.ColumnLevels) || !CollapsedColumns.SetEquals(sheet.CollapsedColumns) || !SameFormats(ColumnFormats, sheet.ColumnFormats);
 
     public bool RowsChanged(Worksheet sheet) =>
         !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows) || !Same(RowStyles, sheet.RowStyles)
-        || !Same(RowLevels, sheet.RowLevels) || !CollapsedRows.SetEquals(sheet.CollapsedRows);
+        || !Same(RowLevels, sheet.RowLevels) || !CollapsedRows.SetEquals(sheet.CollapsedRows) || !SameFormats(RowFormats, sheet.RowFormats);
 
     public bool RowChanged(Worksheet sheet, int row) =>
-        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row) || !Equals(LoadedRowStyle(row), sheet.RowStyle(row))
+        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row) || RowStyleChanged(sheet, row)
         || RowLevels.GetValueOrDefault(row) != sheet.RowOutlineLevel(row) || CollapsedRows.Contains(row) != sheet.CollapsedRows.Contains(row);
+
+    /// <summary>Whether a row's style or number format differs from the file's: its s attribute is then written again.</summary>
+    public bool RowStyleChanged(Worksheet sheet, int row) =>
+        !Equals(LoadedRowStyle(row), sheet.RowStyle(row)) || RowFormats.GetValueOrDefault(row) != sheet.RowNumberFormat(row);
+
+    public bool ColumnStyleChanged(Worksheet sheet, int column) =>
+        !Equals(LoadedColumnStyle(column), sheet.ColumnStyle(column)) || ColumnFormats.GetValueOrDefault(column) != sheet.ColumnNumberFormat(column);
+
+    private static bool SameFormats(IReadOnlyDictionary<int, string> a, IReadOnlyDictionary<int, SharpCell.Functions.NumberFormat> b) =>
+        a.Count == b.Count && a.All(pair => b.TryGetValue(pair.Key, out var format) && format.FormatCode == pair.Value);
 
     public bool OutlineSummaryChanged(Worksheet sheet) => SummaryBelow != sheet.OutlineSummaryBelow || SummaryRight != sheet.OutlineSummaryRight;
 

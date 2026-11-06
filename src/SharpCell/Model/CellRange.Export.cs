@@ -71,7 +71,7 @@ public sealed partial class CellRange
                 if (value.Kind == CellValueKind.Empty)
                     continue;
                 kinds.Add(value.Kind);
-                dates &= value.Kind == CellValueKind.Number && Worksheet.FormatAt(row, column) is { ShowsDate: true }
+                dates &= value.Kind == CellValueKind.Number && Worksheet.ShownFormatAt(row, column) is { ShowsDate: true }
                     && DateSerial.TryToDateTime(value.AsNumber(), system, out _);
             }
 

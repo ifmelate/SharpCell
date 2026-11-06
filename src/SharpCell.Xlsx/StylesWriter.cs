@@ -36,6 +36,9 @@ internal sealed class StylesWriter
     private readonly PackageEdit _edit;
     private readonly string _workbookPart;
     private readonly CellColor[] _theme;
+
+    // Without a theme part a theme colour cannot be referred to: it is saved as its RGB.
+    private readonly bool _hasTheme;
     private string? _part;
     private XDocument? _document;
     private StyleSheet _read = new();
@@ -59,8 +62,9 @@ internal sealed class StylesWriter
         ["40% - Accent6"] = 51, ["60% - Accent6"] = 52, ["Explanatory Text"] = 53,
     };
 
-    private StylesWriter(PackageEdit edit, string workbookPart, string? part, CellColor[] theme)
+    private StylesWriter(PackageEdit edit, string workbookPart, string? part, CellColor[] theme, bool hasTheme)
     {
+        _hasTheme = hasTheme;
         _edit = edit;
         _workbookPart = workbookPart;
         _part = part;
@@ -70,8 +74,10 @@ internal sealed class StylesWriter
     public static StylesWriter Open(PackageEdit edit, string workbookPart, Dictionary<string, Relationship> relationships)
     {
         var part = WorkbookReader.FirstOfType(relationships, "styles")?.Target;
-        var theme = ThemeReader.Read(edit.Package, WorkbookReader.FirstOfType(relationships, "theme")?.Target);
-        return new StylesWriter(edit, workbookPart, part is not null && edit.Package.Exists(part) ? part : null, theme);
+        var themePart = WorkbookReader.FirstOfType(relationships, "theme")?.Target;
+        var theme = ThemeReader.Read(edit.Package, themePart);
+        return new StylesWriter(edit, workbookPart, part is not null && edit.Package.Exists(part) ? part : null, theme,
+            themePart is not null && edit.Package.Exists(themePart));
     }
 
     /// <summary>The index of a cell style with this look and format, based on the style at <paramref name="baseIndex"/>.</summary>
@@ -82,6 +88,8 @@ internal sealed class StylesWriter
     {
         if (_cache.TryGetValue((baseIndex, style, formatCode), out var cached))
             return cached;
+        var key = style;
+        style = Portable(style);
         Load();
         if (baseIndex < 0 || baseIndex >= _xfs.Count)
             baseIndex = 0;
@@ -98,7 +106,7 @@ internal sealed class StylesWriter
             _changed = true;
         }
 
-        _cache[(baseIndex, style, formatCode)] = index;
+        _cache[(baseIndex, key, formatCode)] = index;
         return index;
     }
 
@@ -112,6 +120,15 @@ internal sealed class StylesWriter
     /// <summary>The index of a differential format for a conditional format's look, added when the file has none like it.</summary>
     public int DxfFor(ConditionalStyle style)
     {
+        if (!_hasTheme)
+        {
+            style = style with
+            {
+                FontColor = Plain(style.FontColor), Fill = Plain(style.Fill), LeftBorder = Plain(style.LeftBorder),
+                RightBorder = Plain(style.RightBorder), TopBorder = Plain(style.TopBorder), BottomBorder = Plain(style.BottomBorder),
+            };
+        }
+
         Load();
         var index = _read.Dxfs.IndexOf(style);
         if (index >= 0)
@@ -145,6 +162,7 @@ internal sealed class StylesWriter
     /// <summary>Changes the first cell style, which cells without a style of their own show, and the Normal style.</summary>
     public void SetDefault(CellStyle style)
     {
+        style = Portable(style);
         Load();
         var old = _read.Xfs[0];
         Apply(_xfs[0], old, style, old.Format?.FormatCode ?? "General");
@@ -221,7 +239,7 @@ internal sealed class StylesWriter
             SetProtection(xf, style);
         if (formatCode != (old.Format?.FormatCode ?? "General"))
             Set(xf, "numFmtId", NumberFormatId(formatCode), "applyNumberFormat");
-        if (!string.Equals(style.Name, was.Name, StringComparison.Ordinal))
+        if (!string.Equals(style.Name, was.Name, StringComparison.OrdinalIgnoreCase))
             xf.SetAttributeValue("xfId", style.Name is { } name ? MasterFor(name, style) : 0);
     }
 
@@ -234,15 +252,22 @@ internal sealed class StylesWriter
         if (now.Count == loaded.Count && now.All(pair => loaded.TryGetValue(pair.Key, out var was) && was == pair.Value))
             return;
         Load();
-        foreach (var (name, style) in now)
+        foreach (var (name, named) in now)
         {
+            var style = Portable(named);
             if (!_named.TryGetValue(name, out var index))
             {
                 MasterFor(name, style);
             }
-            else if (loaded.TryGetValue(name, out var was) && was != style && index < _masters.Count)
+            else if (loaded.TryGetValue(name, out var was) && was != named && index < _masters.Count)
             {
                 Apply(_masters[index], new CellXf(null, was), style, "General");
+                foreach (var entry in _document!.Root!.Element(Main + "cellStyles")?.Elements(Main + "cellStyle") ?? [])
+                {
+                    if (string.Equals((string?)entry.Attribute("name"), name, StringComparison.OrdinalIgnoreCase))
+                        entry.SetAttributeValue("name", name);   // the spelling the workbook has now
+                }
+
                 _cache.Clear();
                 _changed = true;
             }
@@ -466,6 +491,29 @@ internal sealed class StylesWriter
         _changed = true;
         return section;
     }
+
+    /// <summary>The style as this file can hold it: theme colours as their RGB when the file has no theme part.</summary>
+    public CellStyle Portable(CellStyle style) => _hasTheme ? style : style with
+    {
+        Font = Portable(style.Font),
+        Fill = Plain(style.Fill),
+        PatternColor = Plain(style.PatternColor),
+        Gradient = style.Gradient is { } gradient
+            ? new CellGradient(gradient.Stops.Select(stop => new GradientStop(stop.Position, Plain(stop.Color)!.Value)))
+                { Type = gradient.Type, Angle = gradient.Angle, Left = gradient.Left, Right = gradient.Right, Top = gradient.Top, Bottom = gradient.Bottom }
+            : null,
+        LeftBorder = Plain(style.LeftBorder),
+        RightBorder = Plain(style.RightBorder),
+        TopBorder = Plain(style.TopBorder),
+        BottomBorder = Plain(style.BottomBorder),
+    };
+
+    /// <summary>The font as this file can hold it.</summary>
+    public CellFont Portable(CellFont font) => _hasTheme ? font : font with { Color = Plain(font.Color) };
+
+    private static CellColor? Plain(CellColor? color) => color is { Theme: not null } value ? new CellColor(value.R, value.G, value.B) : color;
+
+    private static CellBorder? Plain(CellBorder? border) => border is { Color: { Theme: not null } } ? border with { Color = Plain(border.Color) } : border;
 
     // A theme colour is saved as one, with its tint, so that it follows the theme in Excel.
     internal static XElement Color(string name, CellColor color) => color.Theme is { } theme

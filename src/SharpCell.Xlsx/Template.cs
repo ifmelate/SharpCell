@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.IO.Compression;
 using System.Text;
 
@@ -26,6 +28,7 @@ internal static class Template
             + "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
             + "<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>"
             + "<Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>"
+            + "<Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/>"
             + "</Types>"),
         ("_rels/.rels", Head
             + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
@@ -37,6 +40,7 @@ internal static class Template
         ("xl/_rels/workbook.xml.rels", Head
             + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
             + "<Relationship Id=\"rId1\" Type=\"" + Relationships + "/styles\" Target=\"styles.xml\"/>"
+            + "<Relationship Id=\"rId2\" Type=\"" + Relationships + "/theme\" Target=\"theme/theme1.xml\"/>"
             + "</Relationships>"),
         ("xl/styles.xml", Head
             + "<styleSheet xmlns=\"" + Main + "\">"
@@ -55,7 +59,7 @@ internal static class Template
         var output = new MemoryStream();
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {
-            foreach (var (name, content) in Parts)
+            foreach (var (name, content) in Parts.Append(("xl/theme/theme1.xml", Theme(workbook.ThemeColors))))
             {
                 var entry = zip.CreateEntry(name, CompressionLevel.Optimal);
                 entry.LastWriteTime = EntryTime;
@@ -68,5 +72,28 @@ internal static class Template
         var empty = XlsxReader.Load(bytes, XlsxLimits.Default);
         return new XlsxSource(bytes, XlsxLimits.Default, "xl/workbook.xml", new System.Collections.Generic.Dictionary<Worksheet, SheetSource>(),
             WorkbookLook.Of(empty, new System.Collections.Generic.Dictionary<Worksheet, string>()), []);
+    }
+
+    // The workbook's theme colours as a theme part, so that theme colours in its cells show as the
+    // workbook says; the Office theme's fonts and effects with them. The part lists dk1 before lt1.
+    private static string Theme(IReadOnlyList<CellColor> colors)
+    {
+        const string A = "http://schemas.openxmlformats.org/drawingml/2006/main";
+        string[] names = ["dk1", "lt1", "dk2", "lt2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"];
+        int[] index = [1, 0, 3, 2, 4, 5, 6, 7, 8, 9, 10, 11];
+        var scheme = string.Concat(names.Select((name, i) => $"<a:{name}><a:srgbClr val=\"{colors[index[i]].ToString()[1..]}\"/></a:{name}>"));
+        const string fill = "<a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill>";
+        const string line = "<a:ln w=\"6350\"><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill></a:ln>";
+        const string effect = "<a:effectStyle><a:effectLst/></a:effectStyle>";
+        return Head
+            + $"<a:theme xmlns:a=\"{A}\" name=\"Office Theme\"><a:themeElements>"
+            + $"<a:clrScheme name=\"Office\">{scheme}</a:clrScheme>"
+            + "<a:fontScheme name=\"Office\">"
+            + "<a:majorFont><a:latin typeface=\"Calibri Light\"/><a:ea typeface=\"\"/><a:cs typeface=\"\"/></a:majorFont>"
+            + "<a:minorFont><a:latin typeface=\"Calibri\"/><a:ea typeface=\"\"/><a:cs typeface=\"\"/></a:minorFont></a:fontScheme>"
+            + "<a:fmtScheme name=\"Office\">"
+            + $"<a:fillStyleLst>{fill}{fill}{fill}</a:fillStyleLst><a:lnStyleLst>{line}{line}{line}</a:lnStyleLst>"
+            + $"<a:effectStyleLst>{effect}{effect}{effect}</a:effectStyleLst><a:bgFillStyleLst>{fill}{fill}{fill}</a:bgFillStyleLst>"
+            + "</a:fmtScheme></a:themeElements></a:theme>";
     }
 }
