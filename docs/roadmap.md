@@ -20,16 +20,14 @@ maintainer.
 | 0.10 | Copying cells as Excel pastes them, formulas, links and data validation following (`CellRange.CopyTo`) |
 | 0.11 | Conditional formats worked out as Excel shows them, notes, page setup, inserting and deleting cells with a shift |
 | 0.12 | Renaming, removing, moving and hiding sheets; Excel's filter; sorting ranges; ranges as `DataTable`s, objects and CSV; benchmarks, and `SUMIFS`-style functions several times faster |
+| 0.13 | How sheets look: outlines, rich text, styles and number formats of whole rows and columns, named cell styles, pattern and gradient fills, turned and shrunk text, theme colours kept as such; paper size, scaling, fitting to pages, headers and footers |
 
-## Next: 0.13, how sheets look
+## Next: 0.14, fitting columns to their contents
 
-- Grouping rows and columns into outlines that collapse and expand.
-- Rich text in cells: runs of different fonts in one cell.
-- Styles of whole rows and columns, named cell styles, pattern and gradient fills, rotated and
-  shrunk text, theme colours written as such.
-- Headers and footers, paper size, scaling and fitting to pages.
-- Fitting column widths to their contents. This needs font metrics, which the engine does not
-  carry; it may come as a separate package.
+- Column widths fitted to what their cells show, as double-clicking a column's edge in Excel does,
+  without installed fonts or native libraries: width tables of the free fonts made to measure as
+  Office's do (Carlito for Calibri, Liberation for Arial, Times New Roman and Courier New, Intos for
+  Aptos), an estimate for other fonts, and a hook for a font engine of the caller's choice.
 
 ## Later
 
