@@ -9,6 +9,9 @@ override SharpCell.CellColor.ToString() -> string!
 override SharpCell.CellFont.Equals(object? obj) -> bool
 override SharpCell.CellFont.GetHashCode() -> int
 override SharpCell.CellFont.ToString() -> string!
+override SharpCell.CellGradient.Equals(object? obj) -> bool
+override SharpCell.CellGradient.GetHashCode() -> int
+override SharpCell.CellGradient.ToString() -> string!
 override SharpCell.CellRange.Equals(object? obj) -> bool
 override SharpCell.CellRange.GetHashCode() -> int
 override SharpCell.CellRange.ToString() -> string!
@@ -33,6 +36,10 @@ override SharpCell.DataValidation.ToString() -> string!
 override SharpCell.DefinedName.ToString() -> string!
 override SharpCell.FilterCondition.GetHashCode() -> int
 override SharpCell.FilterDate.GetHashCode() -> int
+override SharpCell.GradientStop.GetHashCode() -> int
+override SharpCell.HeaderFooter.Equals(object? obj) -> bool
+override SharpCell.HeaderFooter.GetHashCode() -> int
+override SharpCell.HeaderFooter.ToString() -> string!
 override SharpCell.Hyperlink.Equals(object? obj) -> bool
 override SharpCell.Hyperlink.GetHashCode() -> int
 override SharpCell.Hyperlink.ToString() -> string!
@@ -42,14 +49,19 @@ override SharpCell.IterationSettings.ToString() -> string!
 override SharpCell.Note.Equals(object? obj) -> bool
 override SharpCell.Note.GetHashCode() -> int
 override SharpCell.Note.ToString() -> string!
+override SharpCell.PageFit.GetHashCode() -> int
 override SharpCell.PageMargins.Equals(object? obj) -> bool
 override SharpCell.PageMargins.GetHashCode() -> int
 override SharpCell.PageMargins.ToString() -> string!
+override SharpCell.RichText.Equals(object? obj) -> bool
+override SharpCell.RichText.GetHashCode() -> int
+override SharpCell.RichText.ToString() -> string!
 override SharpCell.SheetProtection.Equals(object? obj) -> bool
 override SharpCell.SheetProtection.GetHashCode() -> int
 override SharpCell.SheetProtection.ToString() -> string!
 override SharpCell.SortKey.GetHashCode() -> int
 override SharpCell.Table.ToString() -> string!
+override SharpCell.TextRun.GetHashCode() -> int
 override SharpCell.Worksheet.ToString() -> string!
 SharpCell.AutoFilter
 SharpCell.AutoFilter.Apply() -> void
@@ -82,6 +94,8 @@ SharpCell.Cell.Note.set -> void
 SharpCell.Cell.NumberFormat.get -> string!
 SharpCell.Cell.NumberFormat.set -> void
 SharpCell.Cell.Precedents.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>!
+SharpCell.Cell.RichText.get -> SharpCell.RichText?
+SharpCell.Cell.RichText.set -> void
 SharpCell.Cell.Row.get -> int
 SharpCell.Cell.Style.get -> SharpCell.CellStyle!
 SharpCell.Cell.Style.set -> void
@@ -124,6 +138,29 @@ SharpCell.CellColor.G.get -> byte
 SharpCell.CellColor.G.init -> void
 SharpCell.CellColor.R.get -> byte
 SharpCell.CellColor.R.init -> void
+SharpCell.CellColor.Theme.get -> SharpCell.ThemeColor?
+SharpCell.CellColor.Theme.init -> void
+SharpCell.CellColor.Tint.get -> double
+SharpCell.CellColor.Tint.init -> void
+SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkDown = 8 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkGray = 1 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkGrid = 10 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkHorizontal = 6 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkTrellis = 11 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkUp = 9 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkVertical = 7 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.Gray0625 = 5 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.Gray125 = 4 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightDown = 14 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightGray = 3 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightGrid = 16 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightHorizontal = 12 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightTrellis = 17 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightUp = 15 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightVertical = 13 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.MediumGray = 2 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.Solid = 0 -> SharpCell.CellFillPattern
 SharpCell.CellFont
 SharpCell.CellFont.<Clone>$() -> SharpCell.CellFont!
 SharpCell.CellFont.Bold.get -> bool
@@ -136,12 +173,38 @@ SharpCell.CellFont.Italic.get -> bool
 SharpCell.CellFont.Italic.init -> void
 SharpCell.CellFont.Name.get -> string!
 SharpCell.CellFont.Name.init -> void
+SharpCell.CellFont.Script.get -> SharpCell.CellFontScript
+SharpCell.CellFont.Script.init -> void
 SharpCell.CellFont.Size.get -> double
 SharpCell.CellFont.Size.init -> void
 SharpCell.CellFont.Strikethrough.get -> bool
 SharpCell.CellFont.Strikethrough.init -> void
 SharpCell.CellFont.Underline.get -> SharpCell.CellUnderline
 SharpCell.CellFont.Underline.init -> void
+SharpCell.CellFontScript
+SharpCell.CellFontScript.Normal = 0 -> SharpCell.CellFontScript
+SharpCell.CellFontScript.Subscript = 2 -> SharpCell.CellFontScript
+SharpCell.CellFontScript.Superscript = 1 -> SharpCell.CellFontScript
+SharpCell.CellGradient
+SharpCell.CellGradient.<Clone>$() -> SharpCell.CellGradient!
+SharpCell.CellGradient.Angle.get -> double
+SharpCell.CellGradient.Angle.init -> void
+SharpCell.CellGradient.Bottom.get -> double
+SharpCell.CellGradient.Bottom.init -> void
+SharpCell.CellGradient.CellGradient(System.Collections.Generic.IEnumerable<SharpCell.GradientStop>! stops) -> void
+SharpCell.CellGradient.Equals(SharpCell.CellGradient? other) -> bool
+SharpCell.CellGradient.Left.get -> double
+SharpCell.CellGradient.Left.init -> void
+SharpCell.CellGradient.Right.get -> double
+SharpCell.CellGradient.Right.init -> void
+SharpCell.CellGradient.Stops.get -> System.Collections.Generic.IReadOnlyList<SharpCell.GradientStop>!
+SharpCell.CellGradient.Top.get -> double
+SharpCell.CellGradient.Top.init -> void
+SharpCell.CellGradient.Type.get -> SharpCell.CellGradientType
+SharpCell.CellGradient.Type.init -> void
+SharpCell.CellGradientType
+SharpCell.CellGradientType.Linear = 0 -> SharpCell.CellGradientType
+SharpCell.CellGradientType.Path = 1 -> SharpCell.CellGradientType
 SharpCell.CellHorizontalAlignment
 SharpCell.CellHorizontalAlignment.Center = 2 -> SharpCell.CellHorizontalAlignment
 SharpCell.CellHorizontalAlignment.CenterContinuous = 6 -> SharpCell.CellHorizontalAlignment
@@ -179,10 +242,14 @@ SharpCell.CellStyle.CellStyle() -> void
 SharpCell.CellStyle.Equals(SharpCell.CellStyle? other) -> bool
 SharpCell.CellStyle.Fill.get -> SharpCell.CellColor?
 SharpCell.CellStyle.Fill.init -> void
+SharpCell.CellStyle.FillPattern.get -> SharpCell.CellFillPattern
+SharpCell.CellStyle.FillPattern.init -> void
 SharpCell.CellStyle.Font.get -> SharpCell.CellFont!
 SharpCell.CellStyle.Font.init -> void
 SharpCell.CellStyle.FormulaHidden.get -> bool
 SharpCell.CellStyle.FormulaHidden.init -> void
+SharpCell.CellStyle.Gradient.get -> SharpCell.CellGradient?
+SharpCell.CellStyle.Gradient.init -> void
 SharpCell.CellStyle.HorizontalAlignment.get -> SharpCell.CellHorizontalAlignment
 SharpCell.CellStyle.HorizontalAlignment.init -> void
 SharpCell.CellStyle.Indent.get -> int
@@ -191,12 +258,22 @@ SharpCell.CellStyle.LeftBorder.get -> SharpCell.CellBorder?
 SharpCell.CellStyle.LeftBorder.init -> void
 SharpCell.CellStyle.Locked.get -> bool
 SharpCell.CellStyle.Locked.init -> void
+SharpCell.CellStyle.Name.get -> string?
+SharpCell.CellStyle.Name.init -> void
+SharpCell.CellStyle.PatternColor.get -> SharpCell.CellColor?
+SharpCell.CellStyle.PatternColor.init -> void
 SharpCell.CellStyle.RightBorder.get -> SharpCell.CellBorder?
 SharpCell.CellStyle.RightBorder.init -> void
+SharpCell.CellStyle.ShrinkToFit.get -> bool
+SharpCell.CellStyle.ShrinkToFit.init -> void
+SharpCell.CellStyle.TextRotation.get -> int
+SharpCell.CellStyle.TextRotation.init -> void
 SharpCell.CellStyle.TopBorder.get -> SharpCell.CellBorder?
 SharpCell.CellStyle.TopBorder.init -> void
 SharpCell.CellStyle.VerticalAlignment.get -> SharpCell.CellVerticalAlignment
 SharpCell.CellStyle.VerticalAlignment.init -> void
+SharpCell.CellStyle.VerticalText.get -> bool
+SharpCell.CellStyle.VerticalText.init -> void
 SharpCell.CellStyle.WrapText.get -> bool
 SharpCell.CellStyle.WrapText.init -> void
 SharpCell.CellUnderline
@@ -493,6 +570,23 @@ SharpCell.FunctionOptions.MinArguments.get -> int
 SharpCell.FunctionOptions.MinArguments.init -> void
 SharpCell.FunctionOptions.ScalarParameters.get -> System.Collections.Generic.IReadOnlyList<int>!
 SharpCell.FunctionOptions.ScalarParameters.init -> void
+SharpCell.GradientStop
+SharpCell.GradientStop.Color.get -> SharpCell.CellColor
+SharpCell.GradientStop.Equals(SharpCell.GradientStop other) -> bool
+SharpCell.GradientStop.GradientStop() -> void
+SharpCell.GradientStop.GradientStop(double position, SharpCell.CellColor color) -> void
+SharpCell.GradientStop.Position.get -> double
+SharpCell.HeaderFooter
+SharpCell.HeaderFooter.<Clone>$() -> SharpCell.HeaderFooter!
+SharpCell.HeaderFooter.Center.get -> string?
+SharpCell.HeaderFooter.Center.init -> void
+SharpCell.HeaderFooter.Deconstruct(out string? Left, out string? Center, out string? Right) -> void
+SharpCell.HeaderFooter.Equals(SharpCell.HeaderFooter? other) -> bool
+SharpCell.HeaderFooter.HeaderFooter(string? Left = null, string? Center = null, string? Right = null) -> void
+SharpCell.HeaderFooter.Left.get -> string?
+SharpCell.HeaderFooter.Left.init -> void
+SharpCell.HeaderFooter.Right.get -> string?
+SharpCell.HeaderFooter.Right.init -> void
 SharpCell.Hyperlink
 SharpCell.Hyperlink.Equals(SharpCell.Hyperlink? other) -> bool
 SharpCell.Hyperlink.Hyperlink(string! target, string? tooltip = null) -> void
@@ -516,6 +610,12 @@ SharpCell.Note.IsVisible.get -> bool
 SharpCell.Note.IsVisible.init -> void
 SharpCell.Note.Note(string! text, string? author = null) -> void
 SharpCell.Note.Text.get -> string!
+SharpCell.PageFit
+SharpCell.PageFit.Equals(SharpCell.PageFit other) -> bool
+SharpCell.PageFit.PageFit() -> void
+SharpCell.PageFit.PageFit(int wide, int tall) -> void
+SharpCell.PageFit.Tall.get -> int
+SharpCell.PageFit.Wide.get -> int
 SharpCell.PageMargins
 SharpCell.PageMargins.<Clone>$() -> SharpCell.PageMargins!
 SharpCell.PageMargins.Bottom.get -> double
@@ -535,6 +635,50 @@ SharpCell.PageMargins.Top.init -> void
 SharpCell.PageOrientation
 SharpCell.PageOrientation.Landscape = 1 -> SharpCell.PageOrientation
 SharpCell.PageOrientation.Portrait = 0 -> SharpCell.PageOrientation
+SharpCell.PaperSize
+SharpCell.PaperSize.A2 = 66 -> SharpCell.PaperSize
+SharpCell.PaperSize.A3 = 8 -> SharpCell.PaperSize
+SharpCell.PaperSize.A4 = 9 -> SharpCell.PaperSize
+SharpCell.PaperSize.A4Small = 10 -> SharpCell.PaperSize
+SharpCell.PaperSize.A5 = 11 -> SharpCell.PaperSize
+SharpCell.PaperSize.A6 = 70 -> SharpCell.PaperSize
+SharpCell.PaperSize.B4 = 12 -> SharpCell.PaperSize
+SharpCell.PaperSize.B5 = 13 -> SharpCell.PaperSize
+SharpCell.PaperSize.CSheet = 24 -> SharpCell.PaperSize
+SharpCell.PaperSize.DSheet = 25 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope10 = 20 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope11 = 21 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope12 = 22 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope14 = 23 -> SharpCell.PaperSize
+SharpCell.PaperSize.Envelope9 = 19 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeB4 = 33 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeB5 = 34 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeB6 = 35 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC3 = 29 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC4 = 30 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC5 = 28 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC6 = 31 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeC65 = 32 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeDL = 27 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeItaly = 36 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopeMonarch = 37 -> SharpCell.PaperSize
+SharpCell.PaperSize.EnvelopePersonal = 38 -> SharpCell.PaperSize
+SharpCell.PaperSize.ESheet = 26 -> SharpCell.PaperSize
+SharpCell.PaperSize.Executive = 7 -> SharpCell.PaperSize
+SharpCell.PaperSize.FanfoldLegalGerman = 41 -> SharpCell.PaperSize
+SharpCell.PaperSize.FanfoldStandardGerman = 40 -> SharpCell.PaperSize
+SharpCell.PaperSize.FanfoldUS = 39 -> SharpCell.PaperSize
+SharpCell.PaperSize.Folio = 14 -> SharpCell.PaperSize
+SharpCell.PaperSize.Ledger = 4 -> SharpCell.PaperSize
+SharpCell.PaperSize.Legal = 5 -> SharpCell.PaperSize
+SharpCell.PaperSize.Letter = 1 -> SharpCell.PaperSize
+SharpCell.PaperSize.LetterSmall = 2 -> SharpCell.PaperSize
+SharpCell.PaperSize.Note = 18 -> SharpCell.PaperSize
+SharpCell.PaperSize.Quarto = 15 -> SharpCell.PaperSize
+SharpCell.PaperSize.Size10x14 = 16 -> SharpCell.PaperSize
+SharpCell.PaperSize.Size11x17 = 17 -> SharpCell.PaperSize
+SharpCell.PaperSize.Statement = 6 -> SharpCell.PaperSize
+SharpCell.PaperSize.Tabloid = 3 -> SharpCell.PaperSize
 SharpCell.RangeRow
 SharpCell.RangeRow.HasColumn(string! header) -> bool
 SharpCell.RangeRow.RangeRow() -> void
@@ -543,6 +687,13 @@ SharpCell.RangeRow.this[int column].get -> SharpCell.Cell!
 SharpCell.RangeRow.this[string! header].get -> SharpCell.Cell!
 SharpCell.RecalculationResult
 SharpCell.RecalculationResult.ChangedCells.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Cell!>!
+SharpCell.RichText
+SharpCell.RichText.<Clone>$() -> SharpCell.RichText!
+SharpCell.RichText.Equals(SharpCell.RichText? other) -> bool
+SharpCell.RichText.RichText(params SharpCell.TextRun[]! runs) -> void
+SharpCell.RichText.RichText(System.Collections.Generic.IEnumerable<SharpCell.TextRun>! runs) -> void
+SharpCell.RichText.Runs.get -> System.Collections.Generic.IReadOnlyList<SharpCell.TextRun>!
+SharpCell.RichText.Text.get -> string!
 SharpCell.SheetProtection
 SharpCell.SheetProtection.AutoFilter.get -> bool
 SharpCell.SheetProtection.AutoFilter.init -> void
@@ -597,6 +748,28 @@ SharpCell.Table.HasTotalsRow.get -> bool
 SharpCell.Table.Name.get -> string!
 SharpCell.Table.Range.get -> string!
 SharpCell.Table.Worksheet.get -> SharpCell.Worksheet!
+SharpCell.TextRun
+SharpCell.TextRun.Deconstruct(out string! Text, out SharpCell.CellFont? Font) -> void
+SharpCell.TextRun.Equals(SharpCell.TextRun other) -> bool
+SharpCell.TextRun.Font.get -> SharpCell.CellFont?
+SharpCell.TextRun.Font.init -> void
+SharpCell.TextRun.Text.get -> string!
+SharpCell.TextRun.Text.init -> void
+SharpCell.TextRun.TextRun() -> void
+SharpCell.TextRun.TextRun(string! Text, SharpCell.CellFont? Font = null) -> void
+SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent1 = 4 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent2 = 5 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent3 = 6 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent4 = 7 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent5 = 8 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent6 = 9 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Background1 = 0 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Background2 = 2 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.FollowedHyperlink = 11 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Hyperlink = 10 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Text1 = 1 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Text2 = 3 -> SharpCell.ThemeColor
 SharpCell.TimePeriod
 SharpCell.TimePeriod.Last7Days = 3 -> SharpCell.TimePeriod
 SharpCell.TimePeriod.LastMonth = 7 -> SharpCell.TimePeriod
@@ -650,11 +823,16 @@ SharpCell.Workbook.IsWindowsProtected.get -> bool
 SharpCell.Workbook.Iteration.get -> SharpCell.IterationSettings!
 SharpCell.Workbook.Iteration.set -> void
 SharpCell.Workbook.MoveSheet(SharpCell.Worksheet! sheet, int index) -> void
+SharpCell.Workbook.NamedStyles.get -> System.Collections.Generic.IReadOnlyDictionary<string!, SharpCell.CellStyle!>!
 SharpCell.Workbook.Protect(string? password = null, bool structure = true, bool windows = false) -> void
 SharpCell.Workbook.Recalculate(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> SharpCell.RecalculationResult!
+SharpCell.Workbook.RemoveNamedStyle(string! name) -> bool
 SharpCell.Workbook.RemoveSheet(SharpCell.Worksheet! sheet) -> void
+SharpCell.Workbook.SetNamedStyle(string! name, SharpCell.CellStyle! look) -> SharpCell.CellStyle!
 SharpCell.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Worksheet!>!
 SharpCell.Workbook.Tables.get -> System.Collections.Generic.IReadOnlyList<SharpCell.Table!>!
+SharpCell.Workbook.ThemeColor(SharpCell.ThemeColor color, double tint = 0) -> SharpCell.CellColor
+SharpCell.Workbook.ThemeColors.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellColor>!
 SharpCell.Workbook.this[string! name].get -> SharpCell.Worksheet!
 SharpCell.Workbook.TryGetSheet(string! name, out SharpCell.Worksheet? sheet) -> bool
 SharpCell.Workbook.TryGetTable(string! name, out SharpCell.Table? table) -> bool
@@ -671,7 +849,12 @@ SharpCell.Worksheet.Cells.get -> System.Collections.Generic.IEnumerable<SharpCel
 SharpCell.Worksheet.ClearConditionalFormats() -> void
 SharpCell.Worksheet.ClearConditionalFormats(string! range) -> void
 SharpCell.Worksheet.ClearValidation(string! range) -> void
+SharpCell.Worksheet.CollapseColumnGroup(int column) -> void
+SharpCell.Worksheet.CollapseRowGroup(int row) -> void
+SharpCell.Worksheet.ColumnNumberFormat(int column) -> string?
+SharpCell.Worksheet.ColumnOutlineLevel(int column) -> int
 SharpCell.Worksheet.ColumnPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
+SharpCell.Worksheet.ColumnStyle(int column) -> SharpCell.CellStyle?
 SharpCell.Worksheet.ColumnWidth(int column) -> double?
 SharpCell.Worksheet.ConditionalFormats.get -> System.Collections.Generic.IReadOnlyList<(System.Collections.Generic.IReadOnlyList<SharpCell.CellRange!>! Ranges, SharpCell.ConditionalFormat! Format)>!
 SharpCell.Worksheet.DefaultColumnWidth.get -> double?
@@ -680,16 +863,32 @@ SharpCell.Worksheet.DefaultRowHeight.get -> double?
 SharpCell.Worksheet.DefaultRowHeight.set -> void
 SharpCell.Worksheet.DeleteColumns(int column, int count = 1) -> void
 SharpCell.Worksheet.DeleteRows(int row, int count = 1) -> void
+SharpCell.Worksheet.EvenPageFooter.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.EvenPageFooter.set -> void
+SharpCell.Worksheet.EvenPageHeader.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.EvenPageHeader.set -> void
+SharpCell.Worksheet.ExpandColumnGroup(int column) -> void
+SharpCell.Worksheet.ExpandRowGroup(int row) -> void
 SharpCell.Worksheet.FilterMode.get -> bool
 SharpCell.Worksheet.FilterMode.set -> void
+SharpCell.Worksheet.FirstPageFooter.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.FirstPageFooter.set -> void
+SharpCell.Worksheet.FirstPageHeader.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.FirstPageHeader.set -> void
+SharpCell.Worksheet.FitToPages.get -> SharpCell.PageFit?
+SharpCell.Worksheet.FitToPages.set -> void
 SharpCell.Worksheet.FrozenColumns.get -> int
 SharpCell.Worksheet.FrozenColumns.set -> void
 SharpCell.Worksheet.FrozenRows.get -> int
 SharpCell.Worksheet.FrozenRows.set -> void
+SharpCell.Worksheet.GroupColumns(int first, int last) -> void
+SharpCell.Worksheet.GroupRows(int first, int last) -> void
 SharpCell.Worksheet.InsertColumns(int column, int count = 1) -> void
 SharpCell.Worksheet.InsertRows(int row, int count = 1) -> void
+SharpCell.Worksheet.IsColumnGroupCollapsed(int column) -> bool
 SharpCell.Worksheet.IsColumnHidden(int column) -> bool
 SharpCell.Worksheet.IsRemoved.get -> bool
+SharpCell.Worksheet.IsRowGroupCollapsed(int row) -> bool
 SharpCell.Worksheet.IsRowHidden(int row) -> bool
 SharpCell.Worksheet.LoadCsv(string! topLeft, System.IO.TextReader! reader, char delimiter = ',', bool formulas = false) -> SharpCell.CellRange!
 SharpCell.Worksheet.LoadDataTable(string! topLeft, System.Data.DataTable! table, bool headers = true) -> SharpCell.CellRange!
@@ -699,12 +898,24 @@ SharpCell.Worksheet.MergedAreas.get -> System.Collections.Generic.IReadOnlyList<
 SharpCell.Worksheet.Name.get -> string!
 SharpCell.Worksheet.Name.set -> void
 SharpCell.Worksheet.Notes.get -> System.Collections.Generic.IReadOnlyList<(SharpCell.Cell! Cell, SharpCell.Note! Note)>!
+SharpCell.Worksheet.OutlineSummaryBelow.get -> bool
+SharpCell.Worksheet.OutlineSummaryBelow.set -> void
+SharpCell.Worksheet.OutlineSummaryRight.get -> bool
+SharpCell.Worksheet.OutlineSummaryRight.set -> void
+SharpCell.Worksheet.PageFooter.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.PageFooter.set -> void
+SharpCell.Worksheet.PageHeader.get -> SharpCell.HeaderFooter?
+SharpCell.Worksheet.PageHeader.set -> void
 SharpCell.Worksheet.PageMargins.get -> SharpCell.PageMargins!
 SharpCell.Worksheet.PageMargins.set -> void
 SharpCell.Worksheet.PageOrientation.get -> SharpCell.PageOrientation
 SharpCell.Worksheet.PageOrientation.set -> void
+SharpCell.Worksheet.PaperSize.get -> SharpCell.PaperSize
+SharpCell.Worksheet.PaperSize.set -> void
 SharpCell.Worksheet.PrintArea.get -> string?
 SharpCell.Worksheet.PrintArea.set -> void
+SharpCell.Worksheet.PrintScale.get -> int
+SharpCell.Worksheet.PrintScale.set -> void
 SharpCell.Worksheet.PrintTitleColumns.get -> string?
 SharpCell.Worksheet.PrintTitleColumns.set -> void
 SharpCell.Worksheet.PrintTitleRows.get -> string?
@@ -716,18 +927,29 @@ SharpCell.Worksheet.RemoveAutoFilter() -> void
 SharpCell.Worksheet.RemoveColumnPageBreak(int column) -> void
 SharpCell.Worksheet.RemoveRowPageBreak(int row) -> void
 SharpCell.Worksheet.RowHeight(int row) -> double?
+SharpCell.Worksheet.RowNumberFormat(int row) -> string?
+SharpCell.Worksheet.RowOutlineLevel(int row) -> int
 SharpCell.Worksheet.RowPageBreaks.get -> System.Collections.Generic.IReadOnlyList<int>!
+SharpCell.Worksheet.RowStyle(int row) -> SharpCell.CellStyle?
 SharpCell.Worksheet.SetAutoFilter(string! range) -> SharpCell.AutoFilter!
 SharpCell.Worksheet.SetColumnHidden(int column, bool hidden) -> void
+SharpCell.Worksheet.SetColumnNumberFormat(int column, string? code) -> void
+SharpCell.Worksheet.SetColumnOutlineLevel(int column, int level) -> void
+SharpCell.Worksheet.SetColumnStyle(int column, SharpCell.CellStyle? style) -> void
 SharpCell.Worksheet.SetColumnWidth(int column, double? width) -> void
 SharpCell.Worksheet.SetRowHeight(int row, double? height) -> void
 SharpCell.Worksheet.SetRowHidden(int row, bool hidden) -> void
+SharpCell.Worksheet.SetRowNumberFormat(int row, string? code) -> void
+SharpCell.Worksheet.SetRowOutlineLevel(int row, int level) -> void
+SharpCell.Worksheet.SetRowStyle(int row, SharpCell.CellStyle? style) -> void
 SharpCell.Worksheet.ShowGridlines.get -> bool
 SharpCell.Worksheet.ShowGridlines.set -> void
 SharpCell.Worksheet.TabColor.get -> SharpCell.CellColor?
 SharpCell.Worksheet.TabColor.set -> void
 SharpCell.Worksheet.this[int row, int column].get -> SharpCell.Cell!
 SharpCell.Worksheet.this[string! address].get -> SharpCell.Cell!
+SharpCell.Worksheet.UngroupColumns(int first, int last) -> void
+SharpCell.Worksheet.UngroupRows(int first, int last) -> void
 SharpCell.Worksheet.Unmerge(string! address) -> void
 SharpCell.Worksheet.Unprotect() -> void
 SharpCell.Worksheet.UsedRange.get -> SharpCell.CellRange?
@@ -743,6 +965,9 @@ static SharpCell.CellColor.operator ==(SharpCell.CellColor left, SharpCell.CellC
 static SharpCell.CellFont.Default.get -> SharpCell.CellFont!
 static SharpCell.CellFont.operator !=(SharpCell.CellFont? left, SharpCell.CellFont? right) -> bool
 static SharpCell.CellFont.operator ==(SharpCell.CellFont? left, SharpCell.CellFont? right) -> bool
+static SharpCell.CellGradient.Linear(SharpCell.CellColor from, SharpCell.CellColor to, double angle = 0) -> SharpCell.CellGradient!
+static SharpCell.CellGradient.operator !=(SharpCell.CellGradient? left, SharpCell.CellGradient? right) -> bool
+static SharpCell.CellGradient.operator ==(SharpCell.CellGradient? left, SharpCell.CellGradient? right) -> bool
 static SharpCell.CellStyle.Default.get -> SharpCell.CellStyle!
 static SharpCell.CellStyle.operator !=(SharpCell.CellStyle? left, SharpCell.CellStyle? right) -> bool
 static SharpCell.CellStyle.operator ==(SharpCell.CellStyle? left, SharpCell.CellStyle? right) -> bool
@@ -809,17 +1034,44 @@ static SharpCell.FilterCondition.operator !=(SharpCell.FilterCondition left, Sha
 static SharpCell.FilterCondition.operator ==(SharpCell.FilterCondition left, SharpCell.FilterCondition right) -> bool
 static SharpCell.FilterDate.operator !=(SharpCell.FilterDate left, SharpCell.FilterDate right) -> bool
 static SharpCell.FilterDate.operator ==(SharpCell.FilterDate left, SharpCell.FilterDate right) -> bool
+static SharpCell.GradientStop.operator !=(SharpCell.GradientStop left, SharpCell.GradientStop right) -> bool
+static SharpCell.GradientStop.operator ==(SharpCell.GradientStop left, SharpCell.GradientStop right) -> bool
+static SharpCell.HeaderFooter.Date.get -> string!
+static SharpCell.HeaderFooter.Escape(string! text) -> string!
+static SharpCell.HeaderFooter.FileName.get -> string!
+static SharpCell.HeaderFooter.FilePath.get -> string!
+static SharpCell.HeaderFooter.operator !=(SharpCell.HeaderFooter? left, SharpCell.HeaderFooter? right) -> bool
+static SharpCell.HeaderFooter.operator ==(SharpCell.HeaderFooter? left, SharpCell.HeaderFooter? right) -> bool
+static SharpCell.HeaderFooter.PageCount.get -> string!
+static SharpCell.HeaderFooter.PageNumber.get -> string!
+static SharpCell.HeaderFooter.Parse(string! code) -> SharpCell.HeaderFooter!
+static SharpCell.HeaderFooter.SheetName.get -> string!
+static SharpCell.HeaderFooter.Time.get -> string!
+static SharpCell.PageFit.operator !=(SharpCell.PageFit left, SharpCell.PageFit right) -> bool
+static SharpCell.PageFit.operator ==(SharpCell.PageFit left, SharpCell.PageFit right) -> bool
 static SharpCell.PageMargins.Narrow.get -> SharpCell.PageMargins!
 static SharpCell.PageMargins.Normal.get -> SharpCell.PageMargins!
 static SharpCell.PageMargins.operator !=(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
 static SharpCell.PageMargins.operator ==(SharpCell.PageMargins? left, SharpCell.PageMargins? right) -> bool
 static SharpCell.PageMargins.Wide.get -> SharpCell.PageMargins!
+static SharpCell.RichText.MaxLength.get -> int
+static SharpCell.RichText.operator !=(SharpCell.RichText? left, SharpCell.RichText? right) -> bool
+static SharpCell.RichText.operator ==(SharpCell.RichText? left, SharpCell.RichText? right) -> bool
 static SharpCell.SortKey.operator !=(SharpCell.SortKey left, SharpCell.SortKey right) -> bool
 static SharpCell.SortKey.operator ==(SharpCell.SortKey left, SharpCell.SortKey right) -> bool
+static SharpCell.TextRun.operator !=(SharpCell.TextRun left, SharpCell.TextRun right) -> bool
+static SharpCell.TextRun.operator ==(SharpCell.TextRun left, SharpCell.TextRun right) -> bool
+static SharpCell.Worksheet.MaxOutlineLevel.get -> int
 ~override SharpCell.CellColor.Equals(object obj) -> bool
 ~override SharpCell.FilterCondition.Equals(object obj) -> bool
 ~override SharpCell.FilterCondition.ToString() -> string
 ~override SharpCell.FilterDate.Equals(object obj) -> bool
 ~override SharpCell.FilterDate.ToString() -> string
+~override SharpCell.GradientStop.Equals(object obj) -> bool
+~override SharpCell.GradientStop.ToString() -> string
+~override SharpCell.PageFit.Equals(object obj) -> bool
+~override SharpCell.PageFit.ToString() -> string
 ~override SharpCell.SortKey.Equals(object obj) -> bool
 ~override SharpCell.SortKey.ToString() -> string
+~override SharpCell.TextRun.Equals(object obj) -> bool
+~override SharpCell.TextRun.ToString() -> string
