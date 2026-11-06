@@ -41,6 +41,8 @@ internal sealed class SheetLook
         HiddenColumns = new HashSet<int>(sheet.HiddenColumns);
         RowHeights = new Dictionary<int, double>(sheet.RowHeights);
         HiddenRows = new HashSet<int>(sheet.HiddenRows);
+        RowStyles = new Dictionary<int, CellStyle>(sheet.RowStyles);
+        ColumnStyles = new Dictionary<int, CellStyle>(sheet.ColumnStyles);
         Merged = [.. sheet.MergedAreaList];
         Hyperlinks = new Dictionary<CellAddress, Hyperlink>(sheet.Hyperlinks);
         Notes = new Dictionary<CellAddress, Note>(sheet.NoteMap);
@@ -79,6 +81,8 @@ internal sealed class SheetLook
         HiddenColumns = look.HiddenColumns.Select(column => map.MapColumn(sheet, column)).OfType<int>().ToHashSet();
         RowHeights = Moved(look.RowHeights, row => map.MapRow(sheet, row));
         HiddenRows = look.HiddenRows.Select(row => map.MapRow(sheet, row)).OfType<int>().ToHashSet();
+        RowStyles = Moved(look.RowStyles, row => map.MapRow(sheet, row));
+        ColumnStyles = Moved(look.ColumnStyles, column => map.MapColumn(sheet, column));
         Merged = [.. look.Merged.Select(area => map.Map(sheet, area)).OfType<Area>().Where(area => !area.IsSingleCell)];
         var hyperlinks = new Dictionary<CellAddress, Hyperlink>();
         foreach (var (address, link) in look.Hyperlinks)
@@ -133,9 +137,9 @@ internal sealed class SheetLook
     /// <summary>The sheet as read, with its rows and columns where the sheet's edits moved them.</summary>
     public SheetLook Mapped(SheetEditMap map, Worksheet sheet) => map.HasEdits(sheet) ? new SheetLook(this, map, sheet) : this;
 
-    private static Dictionary<int, double> Moved(IReadOnlyDictionary<int, double> sizes, Func<int, int?> map)
+    private static Dictionary<int, T> Moved<T>(IReadOnlyDictionary<int, T> sizes, Func<int, int?> map)
     {
-        var moved = new Dictionary<int, double>();
+        var moved = new Dictionary<int, T>();
         foreach (var (index, size) in sizes)
         {
             if (map(index) is { } to)
@@ -152,6 +156,10 @@ internal sealed class SheetLook
     public IReadOnlyDictionary<int, double> RowHeights { get; }
 
     public IReadOnlySet<int> HiddenRows { get; }
+
+    public IReadOnlyDictionary<int, CellStyle> RowStyles { get; }
+
+    public IReadOnlyDictionary<int, CellStyle> ColumnStyles { get; }
 
     public IReadOnlyList<Area> Merged { get; }
 
@@ -223,12 +231,18 @@ internal sealed class SheetLook
 
     public bool TabColorChanged(Worksheet sheet) => TabColor != sheet.TabColor;
 
-    public bool ColumnsChanged(Worksheet sheet) => !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns);
+    public bool ColumnsChanged(Worksheet sheet) =>
+        !Same(ColumnWidths, sheet.ColumnWidths) || !HiddenColumns.SetEquals(sheet.HiddenColumns) || !Same(ColumnStyles, sheet.ColumnStyles);
 
-    public bool RowsChanged(Worksheet sheet) => !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows);
+    public bool RowsChanged(Worksheet sheet) =>
+        !Same(RowHeights, sheet.RowHeights) || !HiddenRows.SetEquals(sheet.HiddenRows) || !Same(RowStyles, sheet.RowStyles);
 
     public bool RowChanged(Worksheet sheet, int row) =>
-        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row);
+        LoadedHeight(row) != sheet.RowHeight(row) || HiddenRows.Contains(row) != sheet.IsRowHidden(row) || !Equals(LoadedRowStyle(row), sheet.RowStyle(row));
+
+    public CellStyle? LoadedRowStyle(int row) => RowStyles.TryGetValue(row, out var style) ? style : null;
+
+    public CellStyle? LoadedColumnStyle(int column) => ColumnStyles.TryGetValue(column, out var style) ? style : null;
 
     public double? LoadedHeight(int row) => RowHeights.TryGetValue(row, out var height) ? height : null;
 
@@ -300,6 +314,6 @@ internal sealed class SheetLook
 
     public bool FilterChanged(Worksheet sheet) => FilterMode != sheet.FilterMode;
 
-    private static bool Same(IReadOnlyDictionary<int, double> a, IReadOnlyDictionary<int, double> b) =>
-        a.Count == b.Count && a.All(pair => b.TryGetValue(pair.Key, out var value) && value == pair.Value);
+    private static bool Same<T>(IReadOnlyDictionary<int, T> a, IReadOnlyDictionary<int, T> b) =>
+        a.Count == b.Count && a.All(pair => b.TryGetValue(pair.Key, out var value) && EqualityComparer<T>.Default.Equals(value, pair.Value));
 }

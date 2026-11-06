@@ -67,6 +67,8 @@ internal static class WorksheetReader
                 // Excel writes ht for rows grown to fit a larger font too, not only for customHeight.
                 if (Size(reader.GetAttribute("ht"), MaxRowHeight) is { } height && row <= CellAddress.MaxRow)
                     sheet.SetRowHeight(row, height);
+                if (reader.GetAttribute("customFormat") is "1" or "true" && row <= CellAddress.MaxRow && StyleOf(reader.GetAttribute("s"), saved) is { } rowStyle)
+                    sheet.SetRowStyle(row, rowStyle);
                 reader.Read();
                 continue;
             }
@@ -168,7 +170,7 @@ internal static class WorksheetReader
             // them is skipped rather than refusing the file.
             if (reader.Depth == 2 && reader.LocalName == "col")
             {
-                ReadColumns(reader, sheet);
+                ReadColumns(reader, sheet, saved);
                 reader.Read();
                 continue;
             }
@@ -231,13 +233,14 @@ internal static class WorksheetReader
 
             // A style the styles part does not have (or no styles part) leaves the cell General with
             // the default style: a style only changes how a cell is shown, so it never stops a file
-            // from loading. A cell with the default style keeps none of its own.
-            if (cell.Style is { } style && style < saved.Styles.Count)
+            // from loading. A cell with the default style keeps none of its own, unless its row or
+            // column has a style: the cell's own Normal then still shows instead.
+            if ((cell.Style ?? 0) is var style && style < saved.Styles.Count)
             {
                 var xf = saved.Styles[style];
                 if (xf.Format is { } format)
                     sheet.SetFormat(row, column, format);
-                if (xf.Style != sheet.Workbook.DefaultStyle)
+                if (xf.Style != sheet.Workbook.DefaultStyle || sheet.ShownStyleAt(row, column) is not null)
                     sheet.SetStyle(row, column, xf.Style);
             }
         }
@@ -326,7 +329,7 @@ internal static class WorksheetReader
     private const double MaxColumnWidth = 255;
     private const double MaxRowHeight = 409;
 
-    private static void ReadColumns(XmlReader reader, Worksheet sheet)
+    private static void ReadColumns(XmlReader reader, Worksheet sheet, SavedCells saved)
     {
         if (!int.TryParse(reader.GetAttribute("min"), NumberStyles.None, CultureInfo.InvariantCulture, out var min)
             || !int.TryParse(reader.GetAttribute("max"), NumberStyles.None, CultureInfo.InvariantCulture, out var max)
@@ -335,14 +338,21 @@ internal static class WorksheetReader
 
         var width = Size(reader.GetAttribute("width"), MaxColumnWidth);
         var hidden = reader.GetAttribute("hidden") is "1" or "true";
+        var style = StyleOf(reader.GetAttribute("style"), saved);
         for (var column = min; column <= max; column++)
         {
             if (width is not null)
                 sheet.SetColumnWidth(column, width);
+            if (style is not null)
+                sheet.SetColumnStyle(column, style);
             if (hidden)
                 sheet.SetColumnHidden(column, true);
         }
     }
+
+    // The look of a row's or column's style index; null for none, index 0 or one the file lacks.
+    private static CellStyle? StyleOf(string? index, SavedCells saved) =>
+        int.TryParse(index, NumberStyles.None, CultureInfo.InvariantCulture, out var s) && s > 0 && s < saved.Styles.Count ? saved.Styles[s].Style : null;
 
     // A whole count of frozen rows or columns that leaves some to scroll; 0 for anything else.
     private static int Count(string? text, int max) =>

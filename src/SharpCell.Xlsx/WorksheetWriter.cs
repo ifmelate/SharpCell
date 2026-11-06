@@ -172,8 +172,10 @@ internal sealed class WorksheetWriter
         {
             var rows = new SortedSet<int>(_look.RowHeights.Keys);
             rows.UnionWith(_look.HiddenRows);
+            rows.UnionWith(_look.RowStyles.Keys);
             rows.UnionWith(sheet.RowHeights.Keys);
             rows.UnionWith(sheet.HiddenRows);
+            rows.UnionWith(sheet.RowStyles.Keys);
             _changedRows.AddRange(rows.Where(row => _look.RowChanged(sheet, row)));
         }
     }
@@ -710,10 +712,13 @@ internal sealed class WorksheetWriter
         touched.UnionWith(_look.HiddenColumns);
         touched.UnionWith(_sheet.ColumnWidths.Keys);
         touched.UnionWith(_sheet.HiddenColumns);
+        touched.UnionWith(_look.ColumnStyles.Keys);
+        touched.UnionWith(_sheet.ColumnStyles.Keys);
         foreach (var column in touched)
         {
             var width = _sheet.ColumnWidth(column);
             var hidden = _sheet.IsColumnHidden(column);
+            var style = _sheet.ColumnStyle(column);
             if (!columns.TryGetValue(column, out var attributes))
                 columns[column] = attributes = [];
             if (width != _look.LoadedWidth(column))
@@ -724,6 +729,8 @@ internal sealed class WorksheetWriter
 
             if (hidden != _look.HiddenColumns.Contains(column))
                 Set(attributes, "hidden", hidden ? "1" : null);
+            if (!Equals(style, _look.LoadedColumnStyle(column)))
+                Set(attributes, "style", style is null ? null : _styles.XfFor(0, style, "General").ToString(CultureInfo.InvariantCulture));
             if (attributes.Count == 0)
                 columns.Remove(column);
         }
@@ -799,6 +806,11 @@ internal sealed class WorksheetWriter
 
         if (_sheet.IsRowHidden(row))
             writer.WriteAttributeString("hidden", "1");
+        if (_sheet.RowStyle(row) is { } style)
+        {
+            writer.WriteAttributeString("s", _styles.XfFor(0, style, "General").ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("customFormat", "1");
+        }
     }
 
     // Widened to the cells the sheet now has; never narrowed (a larger one is also valid), except
@@ -925,7 +937,7 @@ internal sealed class WorksheetWriter
                 do
                 {
                     var skip = reader.NamespaceURI.Length == 0
-                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || (sized && reader.LocalName is "ht" or "customHeight" or "hidden"));
+                        && (reader.LocalName == "r" || (_shifted && reader.LocalName == "spans") || (sized && reader.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat"));
                     if (!skip)
                         writer.WriteAttributeString(reader.Prefix, reader.LocalName, reader.NamespaceURI, reader.Value);
                 }
@@ -1044,7 +1056,7 @@ internal sealed class WorksheetWriter
             writer.WriteAttributeString("r", row.ToString(CultureInfo.InvariantCulture));
             foreach (var attribute in rowElement?.Attributes() ?? [])
             {
-                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden");
+                var skip = attribute.Name.LocalName is "r" or "spans" || (sized && attribute.Name.LocalName is "ht" or "customHeight" or "hidden" or "s" or "customFormat");
                 if (!skip && !attribute.IsNamespaceDeclaration)
                     writer.WriteAttributeString(attribute.Name.LocalName, attribute.Name.NamespaceName, attribute.Value);
             }
@@ -1246,7 +1258,7 @@ internal sealed class WorksheetWriter
     // or made from the cell's old one. Cells without a style of their own show the workbook default.
     private int? TargetStyle(int? sourceStyle, int row, int column, CellAddress? sourceAddress)
     {
-        var style = _sheet.StyleAt(row, column) ?? _sheet.Workbook.DefaultStyle;
+        var style = _sheet.ShownStyleAt(row, column) ?? _sheet.Workbook.DefaultStyle;
         var code = _sheet.FormatAt(row, column)?.FormatCode ?? "General";
         var loadedStyle = sourceAddress is { } at && _source.Styles.TryGetValue(at, out var own) ? own : _plan.Source.Look.DefaultStyle;
         var loadedCode = sourceAddress is { } place && _source.Formats.TryGetValue(place, out var format) ? format : "General";

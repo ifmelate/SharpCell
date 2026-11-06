@@ -184,3 +184,7 @@ static SharpCell.GradientStop.operator !=(SharpCell.GradientStop left, SharpCell
 static SharpCell.GradientStop.operator ==(SharpCell.GradientStop left, SharpCell.GradientStop right) -> bool
 ~override SharpCell.GradientStop.Equals(object obj) -> bool
 ~override SharpCell.GradientStop.ToString() -> string
+SharpCell.Worksheet.ColumnStyle(int column) -> SharpCell.CellStyle?
+SharpCell.Worksheet.RowStyle(int row) -> SharpCell.CellStyle?
+SharpCell.Worksheet.SetColumnStyle(int column, SharpCell.CellStyle? style) -> void
+SharpCell.Worksheet.SetRowStyle(int row, SharpCell.CellStyle? style) -> void

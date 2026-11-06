@@ -234,13 +234,14 @@ public sealed partial class Cell
 
     /// <summary>
     /// How the cell looks: font, fill, borders and alignment. A cell without a style of its own has
+    /// its row's (<see cref="Worksheet.RowStyle"/>), else its column's, else
     /// <see cref="Workbook.DefaultStyle"/>; setting null gives it back. Styles are read from .xlsx
     /// files; they play no part in calculation, and a style alone does not make a cell hold something.
     /// </summary>
     [AllowNull]
     public CellStyle Style
     {
-        get => Worksheet.StyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle;
+        get => Worksheet.ShownStyleAt(Row, Column) ?? Worksheet.Workbook.DefaultStyle;
         set
         {
             Worksheet.ThrowIfCannotChange();
