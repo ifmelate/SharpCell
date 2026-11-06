@@ -51,6 +51,9 @@ internal sealed class StyleSheet
     /// <summary>The named styles other than Normal, each with its name, in the file's order.</summary>
     public List<CellStyle> NamedStyles { get; } = [];
 
+    /// <summary>Turns a font element (or a rich text run's rPr) into a font.</summary>
+    public Func<XElement, CellFont>? Font { get; set; }
+
     /// <summary>Turns a colour element (rgb, theme or indexed, with a tint) into RGB; null for automatic or unreadable.</summary>
     public Func<XElement?, CellColor?>? Color { get; set; }
 }
@@ -158,6 +161,7 @@ internal static class StylesReader
             : DefaultPalette.Select(CellColor.FromRgb).ToArray();
         var colors = new Colors(theme, palette);
         sheet.Color = colors.Color;
+        sheet.Font = colors.Font;
 
         var fonts = sheet.Fonts;
         fonts.AddRange(Items(root, "fonts", "font").Select(colors.Font));
@@ -255,6 +259,9 @@ internal static class StylesReader
     /// <summary>Colours for a file without a styles part: the theme's and the default indexed palette.</summary>
     public static Func<XElement?, CellColor?> DefaultColors(CellColor[] theme) => new Colors(theme, DefaultPalette.Select(CellColor.FromRgb).ToArray()).Color;
 
+    /// <summary>Fonts for a file without a styles part: colours from the theme and the default indexed palette.</summary>
+    public static Func<XElement, CellFont> DefaultFonts(CellColor[] theme) => new Colors(theme, DefaultPalette.Select(CellColor.FromRgb).ToArray()).Font;
+
     /// <summary>An <c>RRGGBB</c> or <c>AARRGGBB</c> colour; the alpha is ignored, as Excel does.</summary>
     public static CellColor? ParseRgb(string? text)
     {
@@ -322,8 +329,14 @@ internal static class StylesReader
                 Strikethrough = Flag(font, "strike"),
                 Underline = Child(font, "u") is { } u ? Lookup(Underlines, u.Attribute("val")?.Value ?? "single") ?? CellUnderline.Single : CellUnderline.None,
                 Color = Color(Child(font, "color")),
+                Script = Child(font, "vertAlign")?.Attribute("val")?.Value switch
+                {
+                    "superscript" => CellFontScript.Superscript,
+                    "subscript" => CellFontScript.Subscript,
+                    _ => CellFontScript.Normal,
+                },
             };
-            if (Child(font, "name")?.Attribute("val")?.Value is { } name && !string.IsNullOrWhiteSpace(name))
+            if ((Child(font, "name") ?? Child(font, "rFont"))?.Attribute("val")?.Value is { } name && !string.IsNullOrWhiteSpace(name))
                 result = result with { Name = name };
             if (double.TryParse(Child(font, "sz")?.Attribute("val")?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var size)
                 && size is >= 1 and <= 409)

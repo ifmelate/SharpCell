@@ -72,6 +72,15 @@ The font family, such as `Calibri`.
 
 - `ArgumentException`: The name is empty.
 
+<a id="script"></a>
+### Script
+
+```csharp
+public CellFontScript Script { get; init; }
+```
+
+Text raised or lowered and made smaller, as Format Cells > Font > Superscript and Subscript.
+
 <a id="size"></a>
 ### Size
 

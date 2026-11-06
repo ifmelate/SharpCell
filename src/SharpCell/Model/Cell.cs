@@ -64,12 +64,37 @@ public sealed partial class Cell
                 data.IsDirty = false;
                 data.IsLegacy = false;
                 data.FixedArray = null;
+                data.Rich = null;
 
                 // Typing into a spilled cell makes it the user's: it now blocks the spill.
                 data.SpillAnchor = null;
             }
 
             calculation.AfterChange(key, data);
+        }
+    }
+
+    /// <summary>
+    /// The cell's text in runs of different fonts, as Excel formats characters of a cell; null when
+    /// the cell holds plain text or anything else. Setting it sets <see cref="Value"/> to the whole
+    /// text; setting <see cref="Value"/> or <see cref="Formula"/> takes the runs away, and setting null
+    /// leaves the text plain. A formula's text result never has runs, as in Excel.
+    /// </summary>
+    public RichText? RichText
+    {
+        get => Worksheet.Store.Get(Row, Column) is { FormulaText: null, Rich: { } rich } ? rich : null;
+        set
+        {
+            if (value is null)
+            {
+                Worksheet.ThrowIfCannotChange();
+                if (Worksheet.Store.Get(Row, Column) is { } existing)
+                    existing.Rich = null;
+                return;
+            }
+
+            Value = CellValue.Text(value.Text);
+            Worksheet.Store.Get(Row, Column)!.Rich = value;
         }
     }
 
@@ -128,6 +153,7 @@ public sealed partial class Cell
         data.Formula = node;
         data.IsLegacy = legacy;
         data.FixedArray = null;
+        data.Rich = null;
         data.Value = CellValue.Empty;
         data.SpillAnchor = null;
         calculation.AfterChange(key, data);

@@ -212,3 +212,38 @@ SharpCell.Worksheet.SetRowOutlineLevel(int row, int level) -> void
 SharpCell.Worksheet.UngroupColumns(int first, int last) -> void
 SharpCell.Worksheet.UngroupRows(int first, int last) -> void
 static SharpCell.Worksheet.MaxOutlineLevel.get -> int
+SharpCell.Cell.RichText.get -> SharpCell.RichText?
+SharpCell.Cell.RichText.set -> void
+SharpCell.CellFont.Script.get -> SharpCell.CellFontScript
+SharpCell.CellFont.Script.init -> void
+SharpCell.CellFontScript
+SharpCell.CellFontScript.Normal = 0 -> SharpCell.CellFontScript
+SharpCell.CellFontScript.Subscript = 2 -> SharpCell.CellFontScript
+SharpCell.CellFontScript.Superscript = 1 -> SharpCell.CellFontScript
+SharpCell.RichText
+SharpCell.RichText.<Clone>$() -> SharpCell.RichText!
+SharpCell.RichText.Equals(SharpCell.RichText? other) -> bool
+SharpCell.RichText.RichText(System.Collections.Generic.IEnumerable<SharpCell.TextRun>! runs) -> void
+SharpCell.RichText.RichText(params SharpCell.TextRun[]! runs) -> void
+SharpCell.RichText.Runs.get -> System.Collections.Generic.IReadOnlyList<SharpCell.TextRun>!
+SharpCell.RichText.Text.get -> string!
+SharpCell.TextRun
+SharpCell.TextRun.Deconstruct(out string! Text, out SharpCell.CellFont? Font) -> void
+SharpCell.TextRun.Equals(SharpCell.TextRun other) -> bool
+SharpCell.TextRun.Font.get -> SharpCell.CellFont?
+SharpCell.TextRun.Font.init -> void
+SharpCell.TextRun.Text.get -> string!
+SharpCell.TextRun.Text.init -> void
+SharpCell.TextRun.TextRun() -> void
+SharpCell.TextRun.TextRun(string! Text, SharpCell.CellFont? Font = null) -> void
+override SharpCell.RichText.Equals(object? obj) -> bool
+override SharpCell.RichText.GetHashCode() -> int
+override SharpCell.RichText.ToString() -> string!
+override SharpCell.TextRun.GetHashCode() -> int
+static SharpCell.RichText.MaxLength.get -> int
+static SharpCell.RichText.operator !=(SharpCell.RichText? left, SharpCell.RichText? right) -> bool
+static SharpCell.RichText.operator ==(SharpCell.RichText? left, SharpCell.RichText? right) -> bool
+static SharpCell.TextRun.operator !=(SharpCell.TextRun left, SharpCell.TextRun right) -> bool
+static SharpCell.TextRun.operator ==(SharpCell.TextRun left, SharpCell.TextRun right) -> bool
+~override SharpCell.TextRun.Equals(object obj) -> bool
+~override SharpCell.TextRun.ToString() -> string

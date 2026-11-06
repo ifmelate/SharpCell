@@ -158,7 +158,7 @@ public sealed partial class CellRange
         foreach (var cell in Worksheet.Store.Enumerate(area.FirstRow, area.FirstColumn, area.LastRow, area.LastColumn))
         {
             var (row, column) = Moved((cell.Row - area.FirstRow, cell.Column - area.FirstColumn));
-            cells.Add(new Copied(row, column, cell.Data.Value, cell.Data.Formula, cell.Data.IsLegacy));
+            cells.Add(new Copied(row, column, cell.Data.Value, cell.Data.Formula, cell.Data.IsLegacy, cell.Data.Rich));
         }
 
         var positions = cells.Select(cell => (cell.Row, cell.Column)).ToHashSet();

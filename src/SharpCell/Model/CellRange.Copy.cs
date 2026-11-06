@@ -63,7 +63,7 @@ public sealed partial class CellRange
             // A formula copied along spills again into the copies of its cells.
             if (data.Formula is null && data.SpillAnchor is { } anchor && anchor.Sheet == Worksheet && Area.Contains(anchor.Row, anchor.Column))
                 continue;
-            cells.Add(new Copied(row, column, data.Value, data.Formula, data.IsLegacy));
+            cells.Add(new Copied(row, column, data.Value, data.Formula, data.IsLegacy, data.Rich));
         }
 
         var styles = Within(Worksheet.Styles, Area);
@@ -129,6 +129,10 @@ public sealed partial class CellRange
                 var node = ReferenceShift.Copy(formula, origin);
                 cell.SetFormula("=" + FormulaPrinter.Print(node, origin), node, copied.Legacy);
             }
+            else if (copied.Rich is { } rich)
+            {
+                cell.RichText = rich;
+            }
             else
             {
                 cell.Value = copied.Value;
@@ -184,5 +188,5 @@ public sealed partial class CellRange
     }
 
     // A cell read for copying, at its offset from the range's top-left cell.
-    private readonly record struct Copied(int Row, int Column, CellValue Value, FormulaNode? Formula, bool Legacy);
+    private readonly record struct Copied(int Row, int Column, CellValue Value, FormulaNode? Formula, bool Legacy, RichText? Rich = null);
 }

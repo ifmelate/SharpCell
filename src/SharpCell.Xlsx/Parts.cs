@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -90,8 +91,12 @@ internal static class XmlText
     /// runs concatenated; phonetic guides (<c>rPh</c>) are not part of the value. Leaves the reader
     /// after the item.
     /// </summary>
-    public static string ReadStringItem(XmlReader reader)
+    public static string ReadStringItem(XmlReader reader) => ReadStringItem(reader, out _);
+
+    /// <summary>The text of a string item, and its rich text runs (text and rPr) when it has any.</summary>
+    public static string ReadStringItem(XmlReader reader, out List<(string Text, XElement? Properties)>? runs)
     {
+        runs = null;
         if (reader.IsEmptyElement)
         {
             reader.Read();
@@ -109,9 +114,22 @@ internal static class XmlText
                 continue;
             }
 
+            if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "r")
+            {
+                if (runs is null && sb.Length > 0)
+                    runs = [(Decode(sb.ToString()), null)];   // plain text before the first run
+                var run = (XElement)XNode.ReadFrom(reader);
+                var text = Decode(string.Concat(run.Elements().Where(e => e.Name.LocalName == "t").Select(t => t.Value)));
+                sb.Append(text);
+                (runs ??= []).Add((text, run.Elements().FirstOrDefault(e => e.Name.LocalName == "rPr")));
+                continue;
+            }
+
             if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "t")
             {
-                sb.Append(reader.ReadElementContentAsString());
+                var text = reader.ReadElementContentAsString();
+                sb.Append(text);
+                runs?.Add((Decode(text), null));
                 continue;
             }
 
@@ -119,7 +137,7 @@ internal static class XmlText
         }
 
         reader.Read();
-        return Decode(sb.ToString());
+        return runs is null ? Decode(sb.ToString()) : string.Concat(runs.Select(run => run.Text));
     }
 }
 
@@ -135,6 +153,20 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
     /// <summary>The named styles other than Normal, with their names.</summary>
     public IReadOnlyList<CellStyle> NamedStyles { get; init; } = [];
 
+    /// <summary>The runs of shared strings that have them, by index.</summary>
+    public IReadOnlyDictionary<int, List<(string Text, XElement? Properties)>> SharedRuns { get; init; } = new Dictionary<int, List<(string, XElement?)>>();
+
+    /// <summary>Turns a run's properties (rPr) into a font with the file's theme and palette.</summary>
+    public Func<XElement, CellFont> RunFont { get; init; } = _ => CellFont.Default;
+
+    /// <summary>Rich text from a string item's runs; null for none, or for one run without properties.</summary>
+    public RichText? Rich(List<(string Text, XElement? Properties)>? runs)
+    {
+        if (runs is null || runs.All(run => run.Text.Length == 0) || (runs.Count(run => run.Text.Length > 0) == 1 && runs.All(run => run.Properties is null)))
+            return null;
+        return new RichText(runs.Select(run => new TextRun(run.Text, run.Properties is null ? null : RunFont(run.Properties))));
+    }
+
     /// <summary>The theme's colours in Excel's index order; the Office theme's when the file has none.</summary>
     public CellColor[] Theme { get; init; } = Workbook.OfficeTheme;
 
@@ -147,28 +179,38 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
     public CellMetadata? Metadata { get; } = metadata;
 
     /// <summary>The value saved in a &lt;c&gt; element, and whether its formula belongs to an Excel data table.</summary>
-    public (CellValue Value, bool IsDataTable) Read(XElement cell, Worksheet sheet, int row, int column)
+    public (CellValue Value, bool IsDataTable, RichText? Rich) Read(XElement cell, Worksheet sheet, int row, int column)
     {
         using var reader = cell.CreateReader();
         reader.MoveToContent();
         var xml = WorksheetReader.ReadCell(reader);
-        return (WorksheetReader.SavedValue(xml, this, sheet, new CellAddress(row, column)), xml.FormulaType == "dataTable");
+        return (WorksheetReader.SavedValue(xml, this, sheet, new CellAddress(row, column)), xml.FormulaType == "dataTable", WorksheetReader.SavedRich(xml, this));
     }
 }
 
 internal static class SharedStrings
 {
-    public static List<string> Read(Package package, string part)
+    public static List<string> Read(Package package, string part) => Read(package, part, out _);
+
+    /// <summary>The strings, and the runs of those with rich text by index.</summary>
+    public static List<string> Read(Package package, string part, out Dictionary<int, List<(string Text, XElement? Properties)>> runs)
     {
         var strings = new List<string>();
+        runs = [];
         using var reader = package.OpenXml(part);
         reader.Read();
         while (!reader.EOF)
         {
             if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "si")
-                strings.Add(XmlText.ReadStringItem(reader));
+            {
+                strings.Add(XmlText.ReadStringItem(reader, out var itemRuns));
+                if (itemRuns is not null)
+                    runs[strings.Count - 1] = itemRuns;
+            }
             else
+            {
                 reader.Read();
+            }
         }
 
         return strings;

@@ -134,6 +134,15 @@ The cells and ranges the cell's formula read in its last calculation: references
 
 - `InvalidOperationException`: The formula is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
 
+<a id="richtext"></a>
+### RichText
+
+```csharp
+public RichText? RichText { get; set; }
+```
+
+The cell's text in runs of different fonts, as Excel formats characters of a cell; null when the cell holds plain text or anything else. Setting it sets [Cell.Value](SharpCell.Cell.md#value) to the whole text; setting [Cell.Value](SharpCell.Cell.md#value) or [Cell.Formula](SharpCell.Cell.md#formula) takes the runs away, and setting null leaves the text plain. A formula's text result never has runs, as in Excel.
+
 <a id="row"></a>
 ### Row
 

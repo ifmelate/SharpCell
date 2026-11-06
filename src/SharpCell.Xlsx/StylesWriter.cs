@@ -339,7 +339,13 @@ internal sealed class StylesWriter
         var index = _read.Fonts.IndexOf(font);
         if (index >= 0)
             return index;
-        var element = new XElement(Main + "font");
+        return Add("fonts", FontElement(font, "font", "name"), _read.Fonts, font);
+    }
+
+    /// <summary>A font element; rich text runs call it rPr and name the font rFont.</summary>
+    internal static XElement FontElement(CellFont font, string elementName, string nameElement)
+    {
+        var element = new XElement(Main + elementName);
         if (font.Bold)
             element.Add(new XElement(Main + "b"));
         if (font.Italic)
@@ -349,10 +355,12 @@ internal sealed class StylesWriter
         if (font.Underline != CellUnderline.None)
             element.Add(new XElement(Main + "u", font.Underline == CellUnderline.Single ? null : new XAttribute("val", Name(StylesReader.Underlines, font.Underline))));
         element.Add(new XElement(Main + "sz", new XAttribute("val", font.Size.ToString("R", CultureInfo.InvariantCulture))));
+        if (font.Script != CellFontScript.Normal)
+            element.Add(new XElement(Main + "vertAlign", new XAttribute("val", font.Script == CellFontScript.Superscript ? "superscript" : "subscript")));
         if (font.Color is { } color)
             element.Add(Color("color", color));
-        element.Add(new XElement(Main + "name", new XAttribute("val", font.Name)));
-        return Add("fonts", element, _read.Fonts, font);
+        element.Add(new XElement(Main + nameElement, new XAttribute("val", font.Name)));
+        return element;
     }
 
     // A fill equal to one of the file's is reused, apart from the reserved gray125 at index 1.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using System.Xml.Linq;
 using SharpCell.Parsing;
 
 namespace SharpCell.Xlsx;
@@ -329,8 +330,9 @@ internal static class WorkbookReader
     internal static SavedCells ReadSavedCells(Package package, Dictionary<string, Relationship> relationships)
     {
         var sharedStringsPart = FirstOfType(relationships, "sharedStrings")?.Target;
+        var runs = new Dictionary<int, List<(string Text, XElement? Properties)>>();
         var sharedStrings = sharedStringsPart is not null && package.Exists(sharedStringsPart)
-            ? SharedStrings.Read(package, sharedStringsPart)
+            ? SharedStrings.Read(package, sharedStringsPart, out runs)
             : [];
         var rich = RichValues.Read(package,
             FirstOfType(relationships, "rdRichValue")?.Target ?? "xl/richData/rdrichvalue.xml",
@@ -339,7 +341,8 @@ internal static class WorkbookReader
         var stylesPart = FirstOfType(relationships, "styles")?.Target;
         var theme = ThemeReader.Read(package, FirstOfType(relationships, "theme")?.Target);
         var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : new StyleSheet();
-        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme), Theme = theme, NamedStyles = styles.NamedStyles };
+        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme), Theme = theme, NamedStyles = styles.NamedStyles,
+            SharedRuns = runs, RunFont = styles.Font ?? StylesReader.DefaultFonts(theme) };
     }
 
     internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)

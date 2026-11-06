@@ -1378,7 +1378,7 @@ internal sealed class WorksheetWriter
         }
 
         var value = data is null ? CellValue.Empty : CellEncoding.Storable(data.Value);
-        var unchanged = value.Equals(saved.Value);
+        var unchanged = value.Equals(saved.Value) && Equals(data?.Rich, saved.Rich);
 
         // A data table: Excel calculates it and the reader takes its value as a constant.
         if (saved.IsDataTable)
@@ -1509,7 +1509,7 @@ internal sealed class WorksheetWriter
             cell.SetAttributeValue("vm", _metadata.VmOf(error, wanted, wanted is null && isFormula && ReadsError(data!, error)));
         }
 
-        if (CellEncoding.ValueElement(_ns, value, isFormula) is { } element)
+        if ((data is { Rich: { } rich, FormulaText: null } && !isFormula ? RichElement(rich) : CellEncoding.ValueElement(_ns, value, isFormula)) is { } element)
         {
             if (cell.Element(_ns + "f") is { } formula)
                 formula.AddAfterSelf(element);
@@ -1518,6 +1518,19 @@ internal sealed class WorksheetWriter
         }
 
         return cell;
+    }
+
+    // Rich text inline: a run per font, rPr as a font element named rFont; a run in the cell's font has none.
+    private XElement RichElement(RichText rich) => new(_ns + "is", rich.Runs.Select(run => new XElement(_ns + "r",
+        run.Font is { } font ? Renamed(StylesWriter.FontElement(font, "rPr", "rFont")) : null,
+        new XElement(_ns + "t", new XAttribute(XNamespace.Xml + "space", "preserve"), XmlText.Encode(run.Text)))));
+
+    // The styles part's namespace for the worksheet's, which is the same SpreadsheetML one under any prefix.
+    private XElement Renamed(XElement element)
+    {
+        foreach (var e in element.DescendantsAndSelf())
+            e.Name = _ns + e.Name.LocalName;
+        return element;
     }
 
     private int ParseRow(string text) =>

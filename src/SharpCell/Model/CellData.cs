@@ -59,6 +59,9 @@ internal sealed class CellData
     /// </summary>
     public Area? FixedArray;
 
+    /// <summary>The runs of a constant's text in different fonts; null for plain text and anything else.</summary>
+    public RichText? Rich;
+
     /// <summary>
     /// A copy for another workbook whose sheets <paramref name="map"/> gives. The parsed formula is
     /// immutable and shared; what the last unfinished evaluation read is not needed outside it.
@@ -75,5 +78,6 @@ internal sealed class CellData
         SpillArea = SpillArea,
         SpillWatch = SpillWatch,
         FixedArray = FixedArray,
+        Rich = Rich,
     };
 }

@@ -1893,6 +1893,15 @@ The cells and ranges the cell's formula read in its last calculation: references
 
 - `InvalidOperationException`: The formula is out of date: call [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) first.
 
+<a id="richtext"></a>
+### RichText
+
+```csharp
+public RichText? RichText { get; set; }
+```
+
+The cell's text in runs of different fonts, as Excel formats characters of a cell; null when the cell holds plain text or anything else. Setting it sets [Cell.Value](SharpCell.Cell.md#value) to the whole text; setting [Cell.Value](SharpCell.Cell.md#value) or [Cell.Formula](SharpCell.Cell.md#formula) takes the runs away, and setting null leaves the text plain. A formula's text result never has runs, as in Excel.
+
 <a id="row"></a>
 ### Row
 
@@ -2259,6 +2268,15 @@ The font family, such as `Calibri`.
 
 - `ArgumentException`: The name is empty.
 
+<a id="script"></a>
+### Script
+
+```csharp
+public CellFontScript Script { get; init; }
+```
+
+Text raised or lowered and made smaller, as Format Cells > Font > Superscript and Subscript.
+
 <a id="size"></a>
 ### Size
 
@@ -2289,6 +2307,28 @@ public CellUnderline Underline { get; init; }
 ```
 
 The underline, if any.
+
+---
+
+<!-- page: api/SharpCell.CellFontScript.md -->
+
+# CellFontScript
+
+```csharp
+public enum CellFontScript
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+Where text sits against the line, as Excel's Superscript and Subscript effects put it.
+
+## Values
+
+| Name | Value | Description |
+|---|---|---|
+| <a id="normal"></a>`Normal` | 0 | On the line. |
+| <a id="superscript"></a>`Superscript` | 1 | Raised and smaller, such as the 2 of m². |
+| <a id="subscript"></a>`Subscript` | 2 | Lowered and smaller, such as the 2 of H₂O. |
 
 ---
 
@@ -6174,6 +6214,106 @@ The cells whose values calculation changed since the previous [Workbook.Recalcul
 
 ---
 
+<!-- page: api/SharpCell.RichText.md -->
+
+# RichText
+
+```csharp
+public sealed class RichText
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A cell's text in stretches of different fonts, as Excel keeps text formatted character by character: a word in bold, a unit in superscript. The cell's value is the whole text; runs without text of their own are dropped. A record: rich texts compare by value, run by run.
+
+## Constructors
+
+<a id="ctor-ienumerable-textrun"></a>
+### RichText(IEnumerable<TextRun>)
+
+```csharp
+public RichText(IEnumerable<TextRun> runs)
+```
+
+Rich text made of the runs, in order.
+
+**Exceptions**
+
+- `ArgumentException`: The runs hold no text, or more than 32,767 characters.
+
+<a id="ctor-textrun"></a>
+### RichText(TextRun[])
+
+```csharp
+public RichText(params TextRun[] runs)
+```
+
+Rich text made of the runs, in order.
+
+**Exceptions**
+
+- `ArgumentException`: The runs hold no text, or more than 32,767 characters.
+
+## Properties
+
+<a id="maxlength"></a>
+### MaxLength
+
+```csharp
+public static int MaxLength { get; }
+```
+
+The most characters a cell holds, as in Excel.
+
+<a id="runs"></a>
+### Runs
+
+```csharp
+public IReadOnlyList<TextRun> Runs { get; }
+```
+
+The runs, in order, none of them empty.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string Text { get; }
+```
+
+The whole text, as the cell's value has it.
+
+## Methods
+
+<a id="equals-richtext"></a>
+### Equals(RichText)
+
+```csharp
+public bool Equals(RichText? other)
+```
+
+Whether the texts have the same runs.
+
+<a id="gethashcode"></a>
+### GetHashCode()
+
+```csharp
+public override int GetHashCode()
+```
+
+A hash of the runs.
+
+<a id="tostring"></a>
+### ToString()
+
+```csharp
+public override string ToString()
+```
+
+The whole text.
+
+---
+
 <!-- page: api/SharpCell.SheetProtection.md -->
 
 # SheetProtection
@@ -6541,6 +6681,56 @@ public override string ToString()
 ```
 
 The table name.
+
+---
+
+<!-- page: api/SharpCell.TextRun.md -->
+
+# TextRun
+
+```csharp
+public readonly struct TextRun
+```
+
+Namespace `SharpCell` · package `SharpCell`
+
+A stretch of a cell's text in one font.
+
+## Constructors
+
+<a id="ctor-string-cellfont"></a>
+### TextRun(string, CellFont)
+
+```csharp
+public TextRun(string Text, CellFont? Font = null)
+```
+
+A stretch of a cell's text in one font.
+
+**Parameters**
+
+- `Text`: The text.
+- `Font`: Its font; null for the cell's own font.
+
+## Properties
+
+<a id="font"></a>
+### Font
+
+```csharp
+public CellFont? Font { get; init; }
+```
+
+Its font; null for the cell's own font.
+
+<a id="text"></a>
+### Text
+
+```csharp
+public string Text { get; init; }
+```
+
+The text.
 
 ---
 

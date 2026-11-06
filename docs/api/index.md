@@ -16,6 +16,7 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [CellColor](SharpCell.CellColor.md) | A colour as Excel shows it, in sRGB. |
 | [CellFillPattern](SharpCell.CellFillPattern.md) | The pattern of a cell's fill, as Excel's Format Cells > Fill > Pattern Style lists them: drawn in [CellStyle.PatternColor](SharpCell.CellStyle.md#patterncolor) over [CellStyle.Fill](SharpCell.CellStyle.md#fill). |
 | [CellFont](SharpCell.CellFont.md) | The font of a cell's text. |
+| [CellFontScript](SharpCell.CellFontScript.md) | Where text sits against the line, as Excel's Superscript and Subscript effects put it. |
 | [CellGradient](SharpCell.CellGradient.md) | A gradient fill, as Excel's Format Cells > Fill > Fill Effects makes: two or more colours blending in a line or from a rectangle outwards. |
 | [CellGradientType](SharpCell.CellGradientType.md) | How a gradient runs across a cell. |
 | [CellHorizontalAlignment](SharpCell.CellHorizontalAlignment.md) | Where a cell's text sits across the cell. |
@@ -60,10 +61,12 @@ Every public type of the SharpCell packages. Each page lists the type's members 
 | [PaperSize](SharpCell.PaperSize.md) | The paper a sheet prints on, by the number Excel stores (as its `XlPaperSize` does). |
 | [RangeRow](SharpCell.RangeRow.md) | A row of a range read by [`CellRange.ReadRows<T>`](SharpCell.CellRange.md#readrows-func-rangerow-t): its cells by header or by column. |
 | [RecalculationResult](SharpCell.RecalculationResult.md) | What one [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken) did. |
+| [RichText](SharpCell.RichText.md) | A cell's text in stretches of different fonts, as Excel keeps text formatted character by character: a word in bold, a unit in superscript. |
 | [SheetProtection](SharpCell.SheetProtection.md) | What users may still do on a protected sheet, as Excel's Protect Sheet dialog lists it: by default they may select cells and nothing else. |
 | [SheetVisibility](SharpCell.SheetVisibility.md) | Whether a sheet's tab shows in Excel. |
 | [SortKey](SharpCell.SortKey.md) | A key of [CellRange.Sort](SharpCell.CellRange.md#sort-sortkey): the column rows are put in order by. |
 | [Table](SharpCell.Table.md) | An Excel table: a named range with column names, an optional header row and an optional totals row. |
+| [TextRun](SharpCell.TextRun.md) | A stretch of a cell's text in one font. |
 | [ThemeColor](SharpCell.ThemeColor.md) | The twelve colours of a workbook's theme, by the index .xlsx files give them, as Excel's colour palette names them. |
 | [TimePeriod](SharpCell.TimePeriod.md) | The periods of Excel's A Date Occurring rule, counted from today. |
 | [ValidationErrorStyle](SharpCell.ValidationErrorStyle.md) | What Excel does when a value breaks a rule. |

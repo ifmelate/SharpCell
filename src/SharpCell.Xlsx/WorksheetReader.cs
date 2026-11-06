@@ -28,6 +28,7 @@ internal static class WorksheetReader
         public string? SharedIndex;
         public string? Value;
         public string? InlineText;
+        public List<(string Text, XElement? Properties)>? InlineRuns;
     }
 
     public static void Read(Package package, string part, Worksheet sheet, SavedCells saved)
@@ -42,6 +43,7 @@ internal static class WorksheetReader
         var links = new List<HyperlinkElement>();
         var conditionalFormats = new List<(int Priority, Action<Worksheet> Add)>();
         var fitToPage = false;
+        var richTexts = new List<(int Row, int Column, RichText Rich)>();
         reader.Read();
         while (!reader.EOF)
         {
@@ -237,7 +239,11 @@ internal static class WorksheetReader
             if (cell.FormulaType != "dataTable" && (cell.FormulaText is { Length: > 0 } || cell.FormulaType == "shared"))
                 LoadFormula(loader, cell, origin, cached, saved.Metadata, shared);
             else
+            {
                 loader.SetValue(row, column, cached);
+                if (SavedRich(cell, saved) is { } rich)
+                    richTexts.Add((row, column, rich));
+            }
 
             // A style the styles part does not have (or no styles part) leaves the cell General with
             // the default style: a style only changes how a cell is shown, so it never stops a file
@@ -254,6 +260,11 @@ internal static class WorksheetReader
         }
 
         loader.Complete();
+        foreach (var (richRow, richColumn, rich) in richTexts)
+        {
+            if (sheet.Store.Get(richRow, richColumn) is { FormulaText: null } data && data.Value.Kind == CellValueKind.Text)
+                data.Rich = rich;
+        }
 
         // Rules go in priority order; OrderBy keeps the file's order for equal priorities.
         foreach (var (_, add) in conditionalFormats.OrderBy(rule => rule.Priority))
@@ -498,7 +509,7 @@ internal static class WorksheetReader
                     cell.Value = reader.ReadElementContentAsString();
                     break;
                 case "is":
-                    cell.InlineText = XmlText.ReadStringItem(reader);
+                    cell.InlineText = XmlText.ReadStringItem(reader, out cell.InlineRuns);
                     break;
                 default:
                     reader.Skip();
@@ -508,6 +519,17 @@ internal static class WorksheetReader
 
         reader.Read();
         return cell;
+    }
+
+    /// <summary>The rich text runs a file saved in a constant's text, inline or shared; null for plain text.</summary>
+    internal static RichText? SavedRich(CellXml cell, SavedCells saved)
+    {
+        if (cell.FormulaText is { Length: > 0 } || cell.FormulaType is not null)
+            return null;
+        if (cell.Type == "inlineStr")
+            return saved.Rich(cell.InlineRuns);
+        return cell.Type == "s" && int.TryParse(cell.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index)
+            && saved.SharedRuns.TryGetValue(index, out var runs) ? saved.Rich(runs) : null;
     }
 
     /// <summary>The value a file saved in a cell, the newer errors (#SPILL!, #CALC!) included.</summary>
