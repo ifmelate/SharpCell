@@ -30,7 +30,10 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [CellBorder](https://ifmelate.github.io/SharpCell/api/SharpCell.CellBorder.md): One edge of a cell's border.
 - [CellBorderStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellBorderStyle.md): The lines Excel draws borders with.
 - [CellColor](https://ifmelate.github.io/SharpCell/api/SharpCell.CellColor.md): A colour as Excel shows it, in sRGB.
+- [CellFillPattern](https://ifmelate.github.io/SharpCell/api/SharpCell.CellFillPattern.md): The pattern of a cell's fill, as Excel's Format Cells > Fill > Pattern Style lists them: drawn in CellStyle.PatternColor over CellStyle.Fill.
 - [CellFont](https://ifmelate.github.io/SharpCell/api/SharpCell.CellFont.md): The font of a cell's text.
+- [CellGradient](https://ifmelate.github.io/SharpCell/api/SharpCell.CellGradient.md): A gradient fill, as Excel's Format Cells > Fill > Fill Effects makes: two or more colours blending in a line or from a rectangle outwards.
+- [CellGradientType](https://ifmelate.github.io/SharpCell/api/SharpCell.CellGradientType.md): How a gradient runs across a cell.
 - [CellHorizontalAlignment](https://ifmelate.github.io/SharpCell/api/SharpCell.CellHorizontalAlignment.md): Where a cell's text sits across the cell.
 - [CellRange](https://ifmelate.github.io/SharpCell/api/SharpCell.CellRange.md): A rectangle of cells on one sheet, such as `A1:C10`.
 - [CellStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.CellStyle.md): How a cell looks in Excel: font, fill, borders, alignment and protection (locked, formula hidden).
@@ -60,6 +63,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [FunctionArguments](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionArguments.md): The arguments of one call of a function added through Workbook.Functions.
 - [FunctionCollection](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionCollection.md): The functions a workbook's formulas can call besides Excel's: add one with FunctionCollection.Add, and formulas calling it by name (ignoring case) use it from the next calculation on.
 - [FunctionOptions](https://ifmelate.github.io/SharpCell/api/SharpCell.FunctionOptions.md): How a function added through Workbook.Functions takes its arguments.
+- [GradientStop](https://ifmelate.github.io/SharpCell/api/SharpCell.GradientStop.md): A colour of a gradient at a position across it, from 0 (the start) to 1 (the end).
 - [HeaderFooter](https://ifmelate.github.io/SharpCell/api/SharpCell.HeaderFooter.md): A printed header or footer: its left, centre and right sections, in Excel's codes.
 - [Hyperlink](https://ifmelate.github.io/SharpCell/api/SharpCell.Hyperlink.md): A hyperlink on a cell: a web or e-mail address, a file, or a place in the workbook.
 - [InsertShift](https://ifmelate.github.io/SharpCell/api/SharpCell.InsertShift.md): Where the cells beside inserted cells go, as in Excel's Insert dialog.
@@ -76,6 +80,7 @@ Packages: `SharpCell` (the engine, no dependencies) and `SharpCell.Xlsx` (reads 
 - [SheetVisibility](https://ifmelate.github.io/SharpCell/api/SharpCell.SheetVisibility.md): Whether a sheet's tab shows in Excel.
 - [SortKey](https://ifmelate.github.io/SharpCell/api/SharpCell.SortKey.md): A key of CellRange.Sort: the column rows are put in order by.
 - [Table](https://ifmelate.github.io/SharpCell/api/SharpCell.Table.md): An Excel table: a named range with column names, an optional header row and an optional totals row.
+- [ThemeColor](https://ifmelate.github.io/SharpCell/api/SharpCell.ThemeColor.md): The twelve colours of a workbook's theme, by the index .xlsx files give them, as Excel's colour palette names them.
 - [TimePeriod](https://ifmelate.github.io/SharpCell/api/SharpCell.TimePeriod.md): The periods of Excel's A Date Occurring rule, counted from today.
 - [ValidationErrorStyle](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationErrorStyle.md): What Excel does when a value breaks a rule.
 - [ValidationOperator](https://ifmelate.github.io/SharpCell/api/SharpCell.ValidationOperator.md): How a value is compared with a rule's formulas; lists and custom rules do not compare.

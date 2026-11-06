@@ -173,7 +173,7 @@ internal sealed class StylesWriter
         if (_xfs.Count == 0)
         {
             var xf = new XElement(Main + "xf", new XAttribute("numFmtId", 0), new XAttribute("fontId", Font(CellFont.Default)),
-                new XAttribute("fillId", Fill(null)), new XAttribute("borderId", Border(BorderEdges.None)));
+                new XAttribute("fillId", Fill(FillLook.None)), new XAttribute("borderId", Border(BorderEdges.None)));
             Section("cellXfs").Add(xf);
             _xfs.Add(xf);
             _read.Xfs.Add(new CellXf(null, CellStyle.Default with { Font = CellFont.Default }));
@@ -187,13 +187,13 @@ internal sealed class StylesWriter
         var was = old.Style;
         if (style.Font != was.Font)
             Set(xf, "fontId", Font(style.Font), "applyFont");
-        if (style.Fill != was.Fill)
-            Set(xf, "fillId", Fill(style.Fill), "applyFill");
+        if (FillLook.Of(style) != FillLook.Of(was))
+            Set(xf, "fillId", Fill(FillLook.Of(style)), "applyFill");
         var edges = new BorderEdges(style.LeftBorder, style.RightBorder, style.TopBorder, style.BottomBorder);
         if (edges != new BorderEdges(was.LeftBorder, was.RightBorder, was.TopBorder, was.BottomBorder))
             Set(xf, "borderId", Border(edges), "applyBorder");
-        if ((style.HorizontalAlignment, style.VerticalAlignment, style.WrapText, style.Indent)
-            != (was.HorizontalAlignment, was.VerticalAlignment, was.WrapText, was.Indent))
+        if ((style.HorizontalAlignment, style.VerticalAlignment, style.WrapText, style.Indent, style.TextRotation, style.VerticalText, style.ShrinkToFit)
+            != (was.HorizontalAlignment, was.VerticalAlignment, was.WrapText, was.Indent, was.TextRotation, was.VerticalText, was.ShrinkToFit))
             SetAlignment(xf, style);
         if ((style.Locked, style.FormulaHidden) != (was.Locked, was.FormulaHidden))
             SetProtection(xf, style);
@@ -219,7 +219,9 @@ internal sealed class StylesWriter
         alignment.SetAttributeValue("horizontal", style.HorizontalAlignment == CellHorizontalAlignment.General ? null : Name(StylesReader.Horizontal, style.HorizontalAlignment));
         alignment.SetAttributeValue("vertical", style.VerticalAlignment == CellVerticalAlignment.Bottom ? null : Name(StylesReader.Vertical, style.VerticalAlignment));
         alignment.SetAttributeValue("wrapText", style.WrapText ? "1" : null);
+        alignment.SetAttributeValue("textRotation", style.VerticalText ? 255 : style.TextRotation > 0 ? style.TextRotation : style.TextRotation < 0 ? 90 - style.TextRotation : null);
         alignment.SetAttributeValue("indent", style.Indent == 0 ? null : style.Indent.ToString(CultureInfo.InvariantCulture));
+        alignment.SetAttributeValue("shrinkToFit", style.ShrinkToFit ? "1" : null);
         if (!alignment.HasAttributes && !alignment.HasElements)
             alignment.Remove();
         xf.SetAttributeValue("applyAlignment", 1);
@@ -266,23 +268,44 @@ internal sealed class StylesWriter
         return Add("fonts", element, _read.Fonts, font);
     }
 
-    private int Fill(CellColor? color)
+    // A fill equal to one of the file's is reused, apart from the reserved gray125 at index 1.
+    private int Fill(FillLook fill)
     {
-        if (color is null)
+        for (var i = 0; i < _read.Fills.Count; i++)
         {
-            var empty = _read.EmptyFills.IndexOf(true);
-            if (empty >= 0)
-                return empty;
-            _read.EmptyFills.Add(true);
-            return Add("fills", new XElement(Main + "fill", new XElement(Main + "patternFill", new XAttribute("patternType", "none"))), _read.Fills, null);
+            if (i != 1 && _read.Fills[i] == fill)
+                return i;
         }
 
-        var index = _read.Fills.IndexOf(color);
-        if (index >= 0)
-            return index;
-        _read.EmptyFills.Add(false);
-        return Add("fills", new XElement(Main + "fill", new XElement(Main + "patternFill", new XAttribute("patternType", "solid"),
-            Color("fgColor", color.Value), new XElement(Main + "bgColor", new XAttribute("indexed", 64)))), _read.Fills, color);
+        XElement content;
+        if (fill.Gradient is { } gradient)
+        {
+            content = new XElement(Main + "gradientFill",
+                gradient.Type == CellGradientType.Path ? new XAttribute("type", "path") : null,
+                gradient.Type == CellGradientType.Linear && gradient.Angle != 0 ? new XAttribute("degree", Number(gradient.Angle)) : null,
+                gradient.Type == CellGradientType.Path ? Edges() : null,
+                gradient.Stops.Select(stop => new XElement(Main + "stop", new XAttribute("position", Number(stop.Position)), Color("color", stop.Color))));
+
+            IEnumerable<XAttribute> Edges() =>
+                new[] { ("left", gradient.Left), ("right", gradient.Right), ("top", gradient.Top), ("bottom", gradient.Bottom) }
+                    .Where(edge => edge.Item2 != 0).Select(edge => new XAttribute(edge.Item1, Number(edge.Item2)));
+        }
+        else if (fill.Pattern == CellFillPattern.Solid)
+        {
+            content = fill.Color is { } color
+                ? new XElement(Main + "patternFill", new XAttribute("patternType", "solid"), Color("fgColor", color), new XElement(Main + "bgColor", new XAttribute("indexed", 64)))
+                : new XElement(Main + "patternFill", new XAttribute("patternType", "none"));
+        }
+        else
+        {
+            content = new XElement(Main + "patternFill", new XAttribute("patternType", Name(StylesReader.Patterns, fill.Pattern)),
+                fill.PatternColor is { } pattern ? Color("fgColor", pattern) : null,
+                fill.Color is { } background ? Color("bgColor", background) : null);
+        }
+
+        return Add("fills", new XElement(Main + "fill", content), _read.Fills, fill);
+
+        static string Number(double value) => value.ToString("R", CultureInfo.InvariantCulture);
     }
 
     private int Border(BorderEdges edges)
@@ -349,8 +372,10 @@ internal sealed class StylesWriter
         return section;
     }
 
-    private static XElement Color(string name, CellColor color) =>
-        new(Main + name, new XAttribute("rgb", string.Create(CultureInfo.InvariantCulture, $"FF{color.R:X2}{color.G:X2}{color.B:X2}")));
+    // A theme colour is saved as one, with its tint, so that it follows the theme in Excel.
+    internal static XElement Color(string name, CellColor color) => color.Theme is { } theme
+        ? new(Main + name, new XAttribute("theme", (int)theme), color.Tint == 0 ? null : new XAttribute("tint", color.Tint.ToString("R", CultureInfo.InvariantCulture)))
+        : new(Main + name, new XAttribute("rgb", string.Create(CultureInfo.InvariantCulture, $"FF{color.R:X2}{color.G:X2}{color.B:X2}")));
 
     private static string Name<T>(Dictionary<string, T> map, T value) where T : struct =>
         map.First(pair => EqualityComparer<T>.Default.Equals(pair.Value, value)).Key;

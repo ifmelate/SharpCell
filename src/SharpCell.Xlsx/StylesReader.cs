@@ -11,6 +11,17 @@ namespace SharpCell.Xlsx;
 /// <summary>A cell style of <c>cellXfs</c>: its number format (null for General) and how it looks.</summary>
 internal sealed record CellXf(NumberFormat? Format, CellStyle Style);
 
+/// <summary>
+/// A fill as the model holds it: a colour (solid, or the background of a pattern), a pattern and its
+/// colour, or a gradient. <see cref="Other"/> marks a fill the model cannot hold, which is never reused.
+/// </summary>
+internal sealed record FillLook(CellColor? Color, CellFillPattern Pattern, CellColor? PatternColor, CellGradient? Gradient, bool Other = false)
+{
+    public static readonly FillLook None = new(null, CellFillPattern.Solid, null, null);
+
+    public static FillLook Of(CellStyle style) => new(style.Fill, style.FillPattern, style.PatternColor, style.Gradient);
+}
+
 /// <summary>The four edges of a border as read.</summary>
 internal sealed record BorderEdges(CellBorder? Left, CellBorder? Right, CellBorder? Top, CellBorder? Bottom)
 {
@@ -27,11 +38,8 @@ internal sealed class StyleSheet
 
     public List<CellFont> Fonts { get; } = [];
 
-    /// <summary>The colour of a solid fill; null for any other fill.</summary>
-    public List<CellColor?> Fills { get; } = [];
-
-    /// <summary>Whether a fill is empty (patternType none); patterns other than solid also read as no colour.</summary>
-    public List<bool> EmptyFills { get; } = [];
+    /// <summary>The fills as the model holds them.</summary>
+    public List<FillLook> Fills { get; } = [];
 
     public List<BorderEdges> Borders { get; } = [];
 
@@ -150,10 +158,8 @@ internal static class StylesReader
 
         var fonts = sheet.Fonts;
         fonts.AddRange(Items(root, "fonts", "font").Select(colors.Font));
-        var fills = Items(root, "fills", "fill").Select(colors.Fill).ToList();
-        sheet.Fills.AddRange(fills.Select(f => f.Color));
-        sheet.EmptyFills.AddRange(Items(root, "fills", "fill").Select(f =>
-            Child(f, "patternFill") is { } pattern && (pattern.Attribute("patternType")?.Value ?? "none") == "none"));
+        var fills = sheet.Fills;
+        fills.AddRange(Items(root, "fills", "fill").Select(colors.Fill));
         var borders = sheet.Borders;
         borders.AddRange(Items(root, "borders", "border").Select(colors.Border));
 
@@ -164,10 +170,14 @@ internal static class StylesReader
             // An id the file does not have falls back to its first entry, the Normal style's.
             var font = At(fonts, Int(xf, "fontId") ?? 0) ?? At(fonts, 0) ?? CellFont.Default;
             var border = At(borders, Int(xf, "borderId") ?? 0) ?? At(borders, 0) ?? BorderEdges.None;
+            var fill = At(fills, Int(xf, "fillId") ?? 0) ?? At(fills, 0) ?? FillLook.None;
             var style = CellStyle.Default with
             {
                 Font = font,
-                Fill = (At(fills, Int(xf, "fillId") ?? 0) ?? At(fills, 0))?.Color,
+                Fill = fill.Color,
+                FillPattern = fill.Pattern,
+                PatternColor = fill.PatternColor,
+                Gradient = fill.Gradient,
                 LeftBorder = border.Left,
                 RightBorder = border.Right,
                 TopBorder = border.Top,
@@ -181,7 +191,21 @@ internal static class StylesReader
                     VerticalAlignment = Lookup(Vertical, alignment.Attribute("vertical")?.Value) ?? CellVerticalAlignment.Bottom,
                     WrapText = IsTrue(alignment.Attribute("wrapText")?.Value),
                     Indent = Int(alignment, "indent") is { } indent and <= 250 ? indent : 0,
+                    ShrinkToFit = IsTrue(alignment.Attribute("shrinkToFit")?.Value),
                 };
+                // 0 to 90 turn the text up, 91 to 180 down by the amount past 90, 255 stacks it.
+                switch (Int(alignment, "textRotation"))
+                {
+                    case 255:
+                        style = style with { VerticalText = true };
+                        break;
+                    case { } up and <= 90:
+                        style = style with { TextRotation = up };
+                        break;
+                    case { } down and <= 180:
+                        style = style with { TextRotation = 90 - down };
+                        break;
+                }
             }
             if (Child(xf, "protection") is { } protection)
             {
@@ -218,60 +242,8 @@ internal static class StylesReader
             : null;
     }
 
-    /// <summary>
-    /// A colour with its lightness moved by a tint from -1 (black) to 1 (white), the way OOXML
-    /// defines it: the colour in hue, lightness and saturation, the lightness scaled towards 0 or 1.
-    /// </summary>
-    public static CellColor Tint(CellColor color, double tint)
-    {
-        var (hue, lightness, saturation) = ToHls(color);
-        lightness = tint < 0 ? lightness * (1 + tint) : lightness * (1 - tint) + tint;
-        return FromHls(hue, Math.Clamp(lightness, 0, 1), saturation);
-    }
-
-    private static (double Hue, double Lightness, double Saturation) ToHls(CellColor color)
-    {
-        double r = color.R / 255.0, g = color.G / 255.0, b = color.B / 255.0;
-        var max = Math.Max(r, Math.Max(g, b));
-        var min = Math.Min(r, Math.Min(g, b));
-        var lightness = (max + min) / 2;
-        if (max == min)
-            return (0, lightness, 0);
-        var delta = max - min;
-        var saturation = lightness <= 0.5 ? delta / (max + min) : delta / (2 - max - min);
-        double hue;
-        if (max == r)
-            hue = (g - b) / delta;
-        else if (max == g)
-            hue = 2 + (b - r) / delta;
-        else
-            hue = 4 + (r - g) / delta;
-        hue = (hue / 6) % 1;
-        return (hue < 0 ? hue + 1 : hue, lightness, saturation);
-    }
-
-    private static CellColor FromHls(double hue, double lightness, double saturation)
-    {
-        if (saturation == 0)
-            return new CellColor(Channel(lightness), Channel(lightness), Channel(lightness));
-        var m2 = lightness <= 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation;
-        var m1 = 2 * lightness - m2;
-        return new CellColor(Channel(Component(m1, m2, hue + 1.0 / 3)), Channel(Component(m1, m2, hue)), Channel(Component(m1, m2, hue - 1.0 / 3)));
-    }
-
-    private static double Component(double m1, double m2, double hue)
-    {
-        hue = hue < 0 ? hue + 1 : hue > 1 ? hue - 1 : hue;
-        if (hue < 1.0 / 6)
-            return m1 + (m2 - m1) * hue * 6;
-        if (hue < 0.5)
-            return m2;
-        if (hue < 2.0 / 3)
-            return m1 + (m2 - m1) * (2.0 / 3 - hue) * 6;
-        return m1;
-    }
-
-    private static byte Channel(double value) => (byte)Math.Clamp(Math.Floor(value * 255 + 0.5), 0, 255);
+    /// <summary>A colour with its lightness moved by a tint from -1 (black) to 1 (white), as OOXML defines it.</summary>
+    public static CellColor Tint(CellColor color, double tint) => CellColor.Tinted(color, tint);
 
     private static IEnumerable<XElement> Items(XElement root, string section, string item) =>
         Children(root, section).Take(1).SelectMany(s => Children(s, item));
@@ -304,7 +276,16 @@ internal static class StylesReader
         return NumberFormat.TryParse(code, out var format) ? format : null;
     }
 
-    private sealed record FillColor(CellColor? Color);
+    internal static readonly Dictionary<string, CellFillPattern> Patterns = new(StringComparer.Ordinal)
+    {
+        ["solid"] = CellFillPattern.Solid, ["darkGray"] = CellFillPattern.DarkGray, ["mediumGray"] = CellFillPattern.MediumGray,
+        ["lightGray"] = CellFillPattern.LightGray, ["gray125"] = CellFillPattern.Gray125, ["gray0625"] = CellFillPattern.Gray0625,
+        ["darkHorizontal"] = CellFillPattern.DarkHorizontal, ["darkVertical"] = CellFillPattern.DarkVertical,
+        ["darkDown"] = CellFillPattern.DarkDown, ["darkUp"] = CellFillPattern.DarkUp, ["darkGrid"] = CellFillPattern.DarkGrid,
+        ["darkTrellis"] = CellFillPattern.DarkTrellis, ["lightHorizontal"] = CellFillPattern.LightHorizontal,
+        ["lightVertical"] = CellFillPattern.LightVertical, ["lightDown"] = CellFillPattern.LightDown, ["lightUp"] = CellFillPattern.LightUp,
+        ["lightGrid"] = CellFillPattern.LightGrid, ["lightTrellis"] = CellFillPattern.LightTrellis,
+    };
 
     /// <summary>Turns the colour elements of fonts, fills and borders into RGB.</summary>
     private sealed class Colors(CellColor[] theme, CellColor[] palette)
@@ -353,11 +334,53 @@ internal static class StylesReader
             static bool? State(XElement font, string name) => Child(font, name) is { } flag ? flag.Attribute("val") is not { } val || IsTrue(val.Value) : null;
         }
 
-        // Only solid fills: patterns and gradients have no single colour to show.
-        public FillColor Fill(XElement fill) =>
-            Child(fill, "patternFill") is { } pattern && pattern.Attribute("patternType")?.Value == "solid"
-                ? new FillColor(Color(Child(pattern, "fgColor")))
-                : new FillColor(null);
+        // A solid fill's colour is its fgColor; a pattern is drawn in fgColor over bgColor. Indexed 64
+        // and 65 are the system's automatic colours, which the model holds as null.
+        public FillLook Fill(XElement fill)
+        {
+            if (Child(fill, "gradientFill") is { } gradient)
+                return Gradient(gradient) is { } read ? new FillLook(null, CellFillPattern.Solid, null, read) : FillLook.None with { Other = true };
+            if (Child(fill, "patternFill") is not { } pattern)
+                return FillLook.None with { Other = true };
+            var type = pattern.Attribute("patternType")?.Value ?? "none";
+            if (type == "none")
+                return FillLook.None;
+            if (Lookup(Patterns, type) is not { } kind)
+                return FillLook.None with { Other = true };
+            return kind == CellFillPattern.Solid
+                ? new FillLook(Automatic(Child(pattern, "fgColor")), kind, null, null)
+                : new FillLook(Automatic(Child(pattern, "bgColor")), kind, Automatic(Child(pattern, "fgColor")), null);
+        }
+
+        private CellColor? Automatic(XElement? color) => Int(color ?? new XElement("x"), "indexed") is 64 or 65 ? null : Color(color);
+
+        private CellGradient? Gradient(XElement element)
+        {
+            var stops = new List<GradientStop>();
+            foreach (var stop in Children(element, "stop"))
+            {
+                if (!double.TryParse(stop.Attribute("position")?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var position) || position is < 0 or > 1)
+                    return null;
+                stops.Add(new GradientStop(position, Color(Child(stop, "color")) ?? new CellColor(0, 0, 0)));
+            }
+
+            if (stops.Count < 2)
+                return null;
+            return new CellGradient(stops)
+            {
+                Type = element.Attribute("type")?.Value == "path" ? CellGradientType.Path : CellGradientType.Linear,
+                Angle = Number(element, "degree"),
+                Left = Edge(element, "left"),
+                Right = Edge(element, "right"),
+                Top = Edge(element, "top"),
+                Bottom = Edge(element, "bottom"),
+            };
+
+            static double Number(XElement element, string name) =>
+                double.TryParse(element.Attribute(name)?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && double.IsFinite(value) ? value : 0;
+
+            static double Edge(XElement element, string name) => Math.Clamp(Number(element, name), 0, 1);
+        }
 
         public BorderEdges Border(XElement border) => new(
             Edge(Child(border, "left") ?? Child(border, "start")),
@@ -376,18 +399,18 @@ internal static class StylesReader
                 return null;
 
             CellColor? found;
+            var tinted = double.TryParse(color.Attribute("tint")?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var tint)
+                && tint is >= -1 and <= 1 and not 0;
             if (color.Attribute("rgb") is { } rgb)
                 found = ParseRgb(rgb.Value);
             else if (Int(color, "theme") is { } index)
-                found = index < theme.Length ? theme[index] : null;
+                return index < theme.Length ? CellColor.OfTheme(theme[index], (ThemeColor)index, tinted ? tint : 0) : null;
             else if (Int(color, "indexed") is { } entry)
                 found = entry < palette.Length ? palette[entry] : entry < DefaultPalette.Length ? CellColor.FromRgb(DefaultPalette[entry]) : null;
             else
                 found = null;
 
-            if (found is { } value
-                && double.TryParse(color.Attribute("tint")?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var tint)
-                && tint is >= -1 and <= 1 and not 0)
+            if (found is { } value && tinted)
                 return Tint(value, tint);
             return found;
         }

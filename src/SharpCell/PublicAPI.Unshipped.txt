@@ -97,3 +97,90 @@ static SharpCell.HeaderFooter.PageCount.get -> string!
 static SharpCell.HeaderFooter.PageNumber.get -> string!
 static SharpCell.HeaderFooter.SheetName.get -> string!
 static SharpCell.HeaderFooter.Time.get -> string!
+SharpCell.CellColor.Theme.get -> SharpCell.ThemeColor?
+SharpCell.CellColor.Theme.init -> void
+SharpCell.CellColor.Tint.get -> double
+SharpCell.CellColor.Tint.init -> void
+SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent1 = 4 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent2 = 5 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent3 = 6 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent4 = 7 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent5 = 8 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Accent6 = 9 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Background1 = 0 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Background2 = 2 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.FollowedHyperlink = 11 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Hyperlink = 10 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Text1 = 1 -> SharpCell.ThemeColor
+SharpCell.ThemeColor.Text2 = 3 -> SharpCell.ThemeColor
+SharpCell.Workbook.ThemeColor(SharpCell.ThemeColor color, double tint = 0) -> SharpCell.CellColor
+SharpCell.Workbook.ThemeColors.get -> System.Collections.Generic.IReadOnlyList<SharpCell.CellColor>!
+SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkDown = 8 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkGray = 1 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkGrid = 10 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkHorizontal = 6 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkTrellis = 11 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkUp = 9 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.DarkVertical = 7 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.Gray0625 = 5 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.Gray125 = 4 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightDown = 14 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightGray = 3 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightGrid = 16 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightHorizontal = 12 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightTrellis = 17 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightUp = 15 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.LightVertical = 13 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.MediumGray = 2 -> SharpCell.CellFillPattern
+SharpCell.CellFillPattern.Solid = 0 -> SharpCell.CellFillPattern
+SharpCell.CellGradient
+SharpCell.CellGradient.<Clone>$() -> SharpCell.CellGradient!
+SharpCell.CellGradient.Angle.get -> double
+SharpCell.CellGradient.Angle.init -> void
+SharpCell.CellGradient.Bottom.get -> double
+SharpCell.CellGradient.Bottom.init -> void
+SharpCell.CellGradient.CellGradient(System.Collections.Generic.IEnumerable<SharpCell.GradientStop>! stops) -> void
+SharpCell.CellGradient.Equals(SharpCell.CellGradient? other) -> bool
+SharpCell.CellGradient.Left.get -> double
+SharpCell.CellGradient.Left.init -> void
+SharpCell.CellGradient.Right.get -> double
+SharpCell.CellGradient.Right.init -> void
+SharpCell.CellGradient.Stops.get -> System.Collections.Generic.IReadOnlyList<SharpCell.GradientStop>!
+SharpCell.CellGradient.Top.get -> double
+SharpCell.CellGradient.Top.init -> void
+SharpCell.CellGradient.Type.get -> SharpCell.CellGradientType
+SharpCell.CellGradient.Type.init -> void
+SharpCell.CellGradientType
+SharpCell.CellGradientType.Linear = 0 -> SharpCell.CellGradientType
+SharpCell.CellGradientType.Path = 1 -> SharpCell.CellGradientType
+SharpCell.CellStyle.FillPattern.get -> SharpCell.CellFillPattern
+SharpCell.CellStyle.FillPattern.init -> void
+SharpCell.CellStyle.Gradient.get -> SharpCell.CellGradient?
+SharpCell.CellStyle.Gradient.init -> void
+SharpCell.CellStyle.PatternColor.get -> SharpCell.CellColor?
+SharpCell.CellStyle.PatternColor.init -> void
+SharpCell.CellStyle.ShrinkToFit.get -> bool
+SharpCell.CellStyle.ShrinkToFit.init -> void
+SharpCell.CellStyle.TextRotation.get -> int
+SharpCell.CellStyle.TextRotation.init -> void
+SharpCell.CellStyle.VerticalText.get -> bool
+SharpCell.CellStyle.VerticalText.init -> void
+SharpCell.GradientStop
+SharpCell.GradientStop.Color.get -> SharpCell.CellColor
+SharpCell.GradientStop.Equals(SharpCell.GradientStop other) -> bool
+SharpCell.GradientStop.GradientStop() -> void
+SharpCell.GradientStop.GradientStop(double position, SharpCell.CellColor color) -> void
+SharpCell.GradientStop.Position.get -> double
+override SharpCell.CellGradient.Equals(object? obj) -> bool
+override SharpCell.CellGradient.GetHashCode() -> int
+override SharpCell.CellGradient.ToString() -> string!
+override SharpCell.GradientStop.GetHashCode() -> int
+static SharpCell.CellGradient.Linear(SharpCell.CellColor from, SharpCell.CellColor to, double angle = 0) -> SharpCell.CellGradient!
+static SharpCell.CellGradient.operator !=(SharpCell.CellGradient? left, SharpCell.CellGradient? right) -> bool
+static SharpCell.CellGradient.operator ==(SharpCell.CellGradient? left, SharpCell.CellGradient? right) -> bool
+static SharpCell.GradientStop.operator !=(SharpCell.GradientStop left, SharpCell.GradientStop right) -> bool
+static SharpCell.GradientStop.operator ==(SharpCell.GradientStop left, SharpCell.GradientStop right) -> bool
+~override SharpCell.GradientStop.Equals(object obj) -> bool
+~override SharpCell.GradientStop.ToString() -> string

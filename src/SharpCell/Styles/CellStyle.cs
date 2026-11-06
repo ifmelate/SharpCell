@@ -12,6 +12,7 @@ public sealed record CellStyle
 {
     private readonly CellFont _font = CellFont.Default;
     private readonly int _indent;
+    private readonly int _textRotation;
 
     /// <summary>A style like <see cref="Default"/>; set properties in an initializer.</summary>
     public CellStyle()
@@ -28,8 +29,24 @@ public sealed record CellStyle
         init => _font = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    /// <summary>The colour the cell is filled with; null for none. Only solid fills are read from files.</summary>
+    /// <summary>
+    /// The colour the cell is filled with; null for none. With a <see cref="FillPattern"/> other than
+    /// solid it is the background the pattern is drawn on, as Excel's Format Cells &gt; Fill &gt;
+    /// Background Color is.
+    /// </summary>
     public CellColor? Fill { get; init; }
+
+    /// <summary>
+    /// The pattern of the fill, as Excel's Format Cells &gt; Fill &gt; Pattern Style sets it;
+    /// <see cref="CellFillPattern.Solid"/> unless set otherwise, which fills the cell with <see cref="Fill"/>.
+    /// </summary>
+    public CellFillPattern FillPattern { get; init; }
+
+    /// <summary>The colour a pattern other than solid is drawn in; null for automatic, which Excel shows black.</summary>
+    public CellColor? PatternColor { get; init; }
+
+    /// <summary>A gradient the cell is filled with instead of <see cref="Fill"/>; null for none.</summary>
+    public CellGradient? Gradient { get; init; }
 
     /// <summary>The left edge of the border; null for none.</summary>
     public CellBorder? LeftBorder { get; init; }
@@ -63,6 +80,28 @@ public sealed record CellStyle
 
     /// <summary>Whether the cell's formula is hidden from the formula bar while its sheet is protected.</summary>
     public bool FormulaHidden { get; init; }
+
+    /// <summary>
+    /// The angle of the text in degrees, as Format Cells &gt; Alignment &gt; Orientation sets it:
+    /// positive turns it counter-clockwise (up), negative clockwise (down); 0 unless set otherwise.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The angle is outside -90 to 90.</exception>
+    public int TextRotation
+    {
+        get => _textRotation;
+        init
+        {
+            if (value is < -90 or > 90)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Excel turns text from -90 to 90 degrees.");
+            _textRotation = value;
+        }
+    }
+
+    /// <summary>Text written top to bottom, one character under another, as Excel's vertical Text orientation; <see cref="TextRotation"/> then does not apply.</summary>
+    public bool VerticalText { get; init; }
+
+    /// <summary>Text made smaller until it fits the cell's width, as Format Cells &gt; Alignment &gt; Shrink to fit.</summary>
+    public bool ShrinkToFit { get; init; }
 
     /// <summary>The indent, in steps of the width of three characters of the default font; 0 to 250.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The indent is outside 0 to 250.</exception>

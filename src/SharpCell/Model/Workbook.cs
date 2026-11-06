@@ -133,6 +133,43 @@ public sealed partial class Workbook
     private CellStyle _defaultStyle = CellStyle.Default;
 
     /// <summary>
+    /// The RGB of the theme's twelve colours, by <see cref="SharpCell.ThemeColor"/>: those of the
+    /// file's theme for a file read with SharpCell.Xlsx, of Excel's Office theme (2013 to 2022) for
+    /// a new workbook.
+    /// </summary>
+    public IReadOnlyList<CellColor> ThemeColors => _themeColors;
+
+    private CellColor[] _themeColors = (CellColor[])OfficeTheme.Clone();
+
+    // The Office theme of Excel 2013 to 2022, in Excel's index order: lt1, dk1, lt2, dk2, accents, links.
+    internal static readonly CellColor[] OfficeTheme =
+    [
+        CellColor.FromRgb(0xFFFFFF), CellColor.FromRgb(0x000000), CellColor.FromRgb(0xE7E6E6), CellColor.FromRgb(0x44546A),
+        CellColor.FromRgb(0x4472C4), CellColor.FromRgb(0xED7D31), CellColor.FromRgb(0xA5A5A5), CellColor.FromRgb(0xFFC000),
+        CellColor.FromRgb(0x5B9BD5), CellColor.FromRgb(0x70AD47), CellColor.FromRgb(0x0563C1), CellColor.FromRgb(0x954F72),
+    ];
+
+    /// <summary>
+    /// A colour of the theme, as Excel's colour palette offers it: the theme colour lightened or
+    /// darkened by a tint. It is saved as a theme colour, so it changes with the theme in Excel.
+    /// Excel's palette uses tints 0.8, 0.6 and 0.4 (lighter 80%, 60%, 40%) and -0.25 and -0.5 (darker).
+    /// </summary>
+    /// <param name="color">The theme colour.</param>
+    /// <param name="tint">From -1 (black) through 0 (the colour itself) to 1 (white).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The colour is not one of the twelve, or the tint is outside -1 to 1.</exception>
+    public CellColor ThemeColor(ThemeColor color, double tint = 0)
+    {
+        if ((int)color is < 0 or > 11)
+            throw new ArgumentOutOfRangeException(nameof(color), color, "A theme has twelve colours.");
+        if (tint is not (>= -1 and <= 1))
+            throw new ArgumentOutOfRangeException(nameof(tint), tint, "A tint goes from -1 to 1.");
+        return CellColor.OfTheme(_themeColors[(int)color], color, tint);
+    }
+
+    /// <summary>Sets the theme's colours as read, in Excel's index order.</summary>
+    internal void LoadThemeColors(CellColor[] colors) => _themeColors = (CellColor[])colors.Clone();
+
+    /// <summary>
     /// Culture for text-to-number conversion, number-to-text conversion and text ordering.
     /// The process culture is never used. Defaults to the invariant culture.
     /// </summary>
@@ -314,6 +351,7 @@ public sealed partial class Workbook
         {
             _culture = _culture,
             _defaultStyle = _defaultStyle,
+            _themeColors = _themeColors,
             _dateSystem = _dateSystem,
             _iteration = _iteration,
             _structureProtected = _structureProtected,

@@ -126,6 +126,15 @@ public IReadOnlyList<Table> Tables { get; }
 
 The tables of all sheets, in the order they were added.
 
+<a id="themecolors"></a>
+### ThemeColors
+
+```csharp
+public IReadOnlyList<CellColor> ThemeColors { get; }
+```
+
+The RGB of the theme's twelve colours, by [ThemeColor](SharpCell.ThemeColor.md): those of the file's theme for a file read with SharpCell.Xlsx, of Excel's Office theme (2013 to 2022) for a new workbook.
+
 <a id="item-string"></a>
 ### this[string]
 
@@ -265,6 +274,24 @@ Removes a sheet, as Excel's Delete Sheet does. References to it become `#REF!` (
 - `ArgumentException`: The sheet is not in this workbook.
 - `InvalidOperationException`: It is the last visible sheet while hidden ones remain: a workbook keeps at least one visible sheet.
 - `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not be broken as Excel breaks it.
+
+<a id="themecolor-themecolor-double"></a>
+### ThemeColor(ThemeColor, double)
+
+```csharp
+public CellColor ThemeColor(ThemeColor color, double tint = 0)
+```
+
+A colour of the theme, as Excel's colour palette offers it: the theme colour lightened or darkened by a tint. It is saved as a theme colour, so it changes with the theme in Excel. Excel's palette uses tints 0.8, 0.6 and 0.4 (lighter 80%, 60%, 40%) and -0.25 and -0.5 (darker).
+
+**Parameters**
+
+- `color`: The theme colour.
+- `tint`: From -1 (black) through 0 (the colour itself) to 1 (white).
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The colour is not one of the twelve, or the tint is outside -1 to 1.
 
 <a id="trygetsheet-string-worksheet"></a>
 ### TryGetSheet(string, Worksheet)

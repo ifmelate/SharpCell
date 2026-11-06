@@ -132,6 +132,9 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
 
     public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
 
+    /// <summary>The theme's colours in Excel's index order; the Office theme's when the file has none.</summary>
+    public CellColor[] Theme { get; init; } = Workbook.OfficeTheme;
+
     /// <summary>Turns a colour element into RGB with the file's theme and palette.</summary>
     public Func<XElement?, CellColor?> Color { get; init; } = _ => null;
 

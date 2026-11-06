@@ -8,7 +8,7 @@ public readonly struct CellColor
 
 Namespace `SharpCell` · package `SharpCell`
 
-A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
+A colour as Excel shows it, in sRGB. A colour of the workbook's theme also knows its place in the theme ([CellColor.Theme](SharpCell.CellColor.md#theme)) and how much lighter or darker it is ([CellColor.Tint](SharpCell.CellColor.md#tint)), and is saved that way, so it follows the theme as in Excel; make one with [Workbook.ThemeColor](SharpCell.Workbook.md#themecolor-themecolor-double). Indexed colours of a file are turned into plain RGB. Excel ignores the alpha channel, so there is none. Colours compare by value, the theme and tint included: a theme colour is not equal to the plain colour of the same RGB.
 
 ## Constructors
 
@@ -19,7 +19,7 @@ A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are tur
 public CellColor(byte R, byte G, byte B)
 ```
 
-A colour as Excel shows it, in sRGB. Theme and indexed colours of a file are turned into these when it is read; Excel ignores the alpha channel, so there is none. Colours compare by value.
+A colour as Excel shows it, in sRGB. A colour of the workbook's theme also knows its place in the theme ([CellColor.Theme](SharpCell.CellColor.md#theme)) and how much lighter or darker it is ([CellColor.Tint](SharpCell.CellColor.md#tint)), and is saved that way, so it follows the theme as in Excel; make one with [Workbook.ThemeColor](SharpCell.Workbook.md#themecolor-themecolor-double). Indexed colours of a file are turned into plain RGB. Excel ignores the alpha channel, so there is none. Colours compare by value, the theme and tint included: a theme colour is not equal to the plain colour of the same RGB.
 
 **Parameters**
 
@@ -55,6 +55,28 @@ public byte R { get; init; }
 ```
 
 Red, 0 to 255.
+
+<a id="theme"></a>
+### Theme
+
+```csharp
+public ThemeColor? Theme { get; init; }
+```
+
+The theme colour this is, or null for a plain colour.
+
+<a id="tint"></a>
+### Tint
+
+```csharp
+public double Tint { get; init; }
+```
+
+How much the theme colour is darkened (from -1, black) or lightened (to 1, white), as Excel's colour palette shows its shades; 0 for the colour itself and for plain colours.
+
+**Exceptions**
+
+- `ArgumentOutOfRangeException`: The tint is outside -1 to 1.
 
 ## Methods
 

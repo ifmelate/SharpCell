@@ -128,6 +128,7 @@ internal static class WorkbookReader
         }
 
         var saved = ReadSavedCells(package, relationships);
+        workbook.LoadThemeColors(saved.Theme);
         if (saved.Styles.Count > 0)
             workbook.DefaultStyle = saved.Styles[0].Style;
 
@@ -336,7 +337,7 @@ internal static class WorkbookReader
         var stylesPart = FirstOfType(relationships, "styles")?.Target;
         var theme = ThemeReader.Read(package, FirstOfType(relationships, "theme")?.Target);
         var styles = stylesPart is not null && package.Exists(stylesPart) ? StylesReader.Read(package, stylesPart, theme) : new StyleSheet();
-        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme) };
+        return new SavedCells(sharedStrings, metadata, styles.Xfs, styles.Dxfs) { Color = styles.Color ?? StylesReader.DefaultColors(theme), Theme = theme };
     }
 
     internal static Relationship? FirstOfType(Dictionary<string, Relationship> relationships, string kind)
