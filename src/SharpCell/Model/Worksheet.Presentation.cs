@@ -177,6 +177,19 @@ public sealed partial class Worksheet
             _styles[new CellAddress(row, column)] = style;
     }
 
+    /// <summary>Cells, rows and columns with a removed named style lose their style.</summary>
+    internal void ForgetNamedStyle(string name)
+    {
+        foreach (var address in _styles.Where(pair => Named(pair.Value)).Select(pair => pair.Key).ToList())
+            _styles.Remove(address);
+        foreach (var row in _rowStyles.Where(pair => Named(pair.Value)).Select(pair => pair.Key).ToList())
+            _rowStyles.Remove(row);
+        foreach (var column in _columnStyles.Where(pair => Named(pair.Value)).Select(pair => pair.Key).ToList())
+            _columnStyles.Remove(column);
+
+        bool Named(CellStyle style) => string.Equals(style.Name, name, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>The cells with a style of their own, in no particular order.</summary>
     internal IReadOnlyDictionary<CellAddress, CellStyle> Styles => _styles;
 

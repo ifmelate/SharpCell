@@ -48,6 +48,9 @@ internal sealed class StyleSheet
     /// <summary>The differential formats conditional formats point at, by index.</summary>
     public List<ConditionalStyle> Dxfs { get; } = [];
 
+    /// <summary>The named styles other than Normal, each with its name, in the file's order.</summary>
+    public List<CellStyle> NamedStyles { get; } = [];
+
     /// <summary>Turns a colour element (rgb, theme or indexed, with a tint) into RGB; null for automatic or unreadable.</summary>
     public Func<XElement?, CellColor?>? Color { get; set; }
 }
@@ -163,58 +166,24 @@ internal static class StylesReader
         var borders = sheet.Borders;
         borders.AddRange(Items(root, "borders", "border").Select(colors.Border));
 
+        // Named styles: cellStyles name entries of cellStyleXfs; a cell style's xfId says which it is based on.
+        var masters = Items(root, "cellStyleXfs", "xf").Select(xf => Look(xf, fonts, fills, borders)).ToList();
+        var names = new Dictionary<int, string>();
+        foreach (var entry in Items(root, "cellStyles", "cellStyle"))
+        {
+            if (entry.Attribute("name")?.Value is { } name && !string.IsNullOrWhiteSpace(name) && Int(entry, "xfId") is { } id
+                && Int(entry, "builtinId") != 0 && !name.Equals("Normal", StringComparison.OrdinalIgnoreCase) && names.TryAdd(id, name)
+                && id < masters.Count)
+                sheet.NamedStyles.Add(masters[id] with { Name = name });
+        }
+
         var styles = sheet.Xfs;
         var shared = new Dictionary<CellStyle, CellStyle>();
         foreach (var xf in Items(root, "cellXfs", "xf"))
         {
-            // An id the file does not have falls back to its first entry, the Normal style's.
-            var font = At(fonts, Int(xf, "fontId") ?? 0) ?? At(fonts, 0) ?? CellFont.Default;
-            var border = At(borders, Int(xf, "borderId") ?? 0) ?? At(borders, 0) ?? BorderEdges.None;
-            var fill = At(fills, Int(xf, "fillId") ?? 0) ?? At(fills, 0) ?? FillLook.None;
-            var style = CellStyle.Default with
-            {
-                Font = font,
-                Fill = fill.Color,
-                FillPattern = fill.Pattern,
-                PatternColor = fill.PatternColor,
-                Gradient = fill.Gradient,
-                LeftBorder = border.Left,
-                RightBorder = border.Right,
-                TopBorder = border.Top,
-                BottomBorder = border.Bottom,
-            };
-            if (Child(xf, "alignment") is { } alignment)
-            {
-                style = style with
-                {
-                    HorizontalAlignment = Lookup(Horizontal, alignment.Attribute("horizontal")?.Value) ?? CellHorizontalAlignment.General,
-                    VerticalAlignment = Lookup(Vertical, alignment.Attribute("vertical")?.Value) ?? CellVerticalAlignment.Bottom,
-                    WrapText = IsTrue(alignment.Attribute("wrapText")?.Value),
-                    Indent = Int(alignment, "indent") is { } indent and <= 250 ? indent : 0,
-                    ShrinkToFit = IsTrue(alignment.Attribute("shrinkToFit")?.Value),
-                };
-                // 0 to 90 turn the text up, 91 to 180 down by the amount past 90, 255 stacks it.
-                switch (Int(alignment, "textRotation"))
-                {
-                    case 255:
-                        style = style with { VerticalText = true };
-                        break;
-                    case { } up and <= 90:
-                        style = style with { TextRotation = up };
-                        break;
-                    case { } down and <= 180:
-                        style = style with { TextRotation = 90 - down };
-                        break;
-                }
-            }
-            if (Child(xf, "protection") is { } protection)
-            {
-                style = style with
-                {
-                    Locked = protection.Attribute("locked") is null || IsTrue(protection.Attribute("locked")!.Value),
-                    FormulaHidden = IsTrue(protection.Attribute("hidden")?.Value),
-                };
-            }
+            var style = Look(xf, fonts, fills, borders);
+            if (Int(xf, "xfId") is { } master && names.TryGetValue(master, out var styleName))
+                style = style with { Name = styleName };
 
             // Equal styles share one instance: many cellXfs differ only in their number format.
             if (shared.TryGetValue(style, out var same))
@@ -229,10 +198,64 @@ internal static class StylesReader
         return sheet;
     }
 
-    /// <summary>An <c>RRGGBB</c> or <c>AARRGGBB</c> colour; the alpha is ignored, as Excel does.</summary>
+    private static CellStyle Look(XElement xf, List<CellFont> fonts, List<FillLook> fills, List<BorderEdges> borders)
+    {
+        // An id the file does not have falls back to its first entry, the Normal style's.
+        var font = At(fonts, Int(xf, "fontId") ?? 0) ?? At(fonts, 0) ?? CellFont.Default;
+        var border = At(borders, Int(xf, "borderId") ?? 0) ?? At(borders, 0) ?? BorderEdges.None;
+        var fill = At(fills, Int(xf, "fillId") ?? 0) ?? At(fills, 0) ?? FillLook.None;
+        var style = CellStyle.Default with
+        {
+            Font = font,
+            Fill = fill.Color,
+            FillPattern = fill.Pattern,
+            PatternColor = fill.PatternColor,
+            Gradient = fill.Gradient,
+            LeftBorder = border.Left,
+            RightBorder = border.Right,
+            TopBorder = border.Top,
+            BottomBorder = border.Bottom,
+        };
+        if (Child(xf, "alignment") is { } alignment)
+        {
+            style = style with
+            {
+                HorizontalAlignment = Lookup(Horizontal, alignment.Attribute("horizontal")?.Value) ?? CellHorizontalAlignment.General,
+                VerticalAlignment = Lookup(Vertical, alignment.Attribute("vertical")?.Value) ?? CellVerticalAlignment.Bottom,
+                WrapText = IsTrue(alignment.Attribute("wrapText")?.Value),
+                Indent = Int(alignment, "indent") is { } indent and <= 250 ? indent : 0,
+                ShrinkToFit = IsTrue(alignment.Attribute("shrinkToFit")?.Value),
+            };
+            // 0 to 90 turn the text up, 91 to 180 down by the amount past 90, 255 stacks it.
+            switch (Int(alignment, "textRotation"))
+            {
+                case 255:
+                    style = style with { VerticalText = true };
+                    break;
+                case { } up and <= 90:
+                    style = style with { TextRotation = up };
+                    break;
+                case { } down and <= 180:
+                    style = style with { TextRotation = 90 - down };
+                    break;
+            }
+        }
+        if (Child(xf, "protection") is { } protection)
+        {
+            style = style with
+            {
+                Locked = protection.Attribute("locked") is null || IsTrue(protection.Attribute("locked")!.Value),
+                FormulaHidden = IsTrue(protection.Attribute("hidden")?.Value),
+            };
+        }
+
+        return style;
+    }
+
     /// <summary>Colours for a file without a styles part: the theme's and the default indexed palette.</summary>
     public static Func<XElement?, CellColor?> DefaultColors(CellColor[] theme) => new Colors(theme, DefaultPalette.Select(CellColor.FromRgb).ToArray()).Color;
 
+    /// <summary>An <c>RRGGBB</c> or <c>AARRGGBB</c> colour; the alpha is ignored, as Excel does.</summary>
     public static CellColor? ParseRgb(string? text)
     {
         if (text is null || (text.Length != 6 && text.Length != 8))

@@ -133,6 +133,58 @@ public sealed partial class Workbook
     private CellStyle _defaultStyle = CellStyle.Default;
 
     /// <summary>
+    /// The workbook's named cell styles other than Normal (which is <see cref="DefaultStyle"/>), by
+    /// name, case ignored as in Excel: those of the file for a workbook read with SharpCell.Xlsx, and
+    /// any added with <see cref="SetNamedStyle"/>. Each has its <see cref="CellStyle.Name"/>; giving
+    /// one to <see cref="Cell.Style"/> applies it.
+    /// </summary>
+    public IReadOnlyDictionary<string, CellStyle> NamedStyles => _namedStyles;
+
+    private Dictionary<string, CellStyle> _namedStyles = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Adds a named cell style, or changes the look of one, as Excel's New Cell Style and Modify do.
+    /// Cells already given the style keep the look they had; give them the returned style again to
+    /// change theirs. A built-in name such as <c>Good</c>, <c>Heading 1</c> or <c>20% - Accent1</c>
+    /// is saved as Excel's built-in style of that name.
+    /// </summary>
+    /// <param name="name">The name; not Normal, whose look is <see cref="DefaultStyle"/>.</param>
+    /// <param name="look">How cells with the style look; its own name is replaced.</param>
+    /// <returns>The style with its name, to give to cells.</returns>
+    /// <exception cref="ArgumentException">The name is empty or Normal.</exception>
+    /// <exception cref="ArgumentNullException">The look is null.</exception>
+    public CellStyle SetNamedStyle(string name, CellStyle look)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(look);
+        if (name.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Normal is the workbook's DefaultStyle.", nameof(name));
+        ThrowIfInCustomFunction();
+        var style = look with { Name = name };
+        _namedStyles[name] = style;
+        return style;
+    }
+
+    /// <summary>
+    /// Removes a named cell style, as Excel's Delete does: cells with it lose their style of their own
+    /// and show the default one again.
+    /// </summary>
+    /// <returns>Whether there was such a style.</returns>
+    public bool RemoveNamedStyle(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ThrowIfInCustomFunction();
+        if (!_namedStyles.Remove(name))
+            return false;
+        foreach (var sheet in _sheets)
+            sheet.ForgetNamedStyle(name);
+        return true;
+    }
+
+    /// <summary>Adds a named style as read; nothing checks here.</summary>
+    internal void LoadNamedStyle(CellStyle style) => _namedStyles[style.Name!] = style;
+
+    /// <summary>
     /// The RGB of the theme's twelve colours, by <see cref="SharpCell.ThemeColor"/>: those of the
     /// file's theme for a file read with SharpCell.Xlsx, of Excel's Office theme (2013 to 2022) for
     /// a new workbook.
@@ -352,6 +404,7 @@ public sealed partial class Workbook
             _culture = _culture,
             _defaultStyle = _defaultStyle,
             _themeColors = _themeColors,
+            _namedStyles = new Dictionary<string, CellStyle>(_namedStyles, StringComparer.OrdinalIgnoreCase),
             _dateSystem = _dateSystem,
             _iteration = _iteration,
             _structureProtected = _structureProtected,

@@ -132,6 +132,9 @@ internal sealed class SavedCells(IReadOnlyList<string> sharedStrings, CellMetada
 
     public IReadOnlyList<string> SharedStrings { get; } = sharedStrings;
 
+    /// <summary>The named styles other than Normal, with their names.</summary>
+    public IReadOnlyList<CellStyle> NamedStyles { get; init; } = [];
+
     /// <summary>The theme's colours in Excel's index order; the Office theme's when the file has none.</summary>
     public CellColor[] Theme { get; init; } = Workbook.OfficeTheme;
 

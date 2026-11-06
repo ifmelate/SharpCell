@@ -108,6 +108,15 @@ public IterationSettings Iteration { get; set; }
 
 Iterative calculation of circular references, off by default as in Excel; the .xlsx reader sets it from the file. Changing it calculates every formula again at the next [Workbook.Recalculate](SharpCell.Workbook.md#recalculate-cancellationtoken).
 
+<a id="namedstyles"></a>
+### NamedStyles
+
+```csharp
+public IReadOnlyDictionary<string, CellStyle> NamedStyles { get; }
+```
+
+The workbook's named cell styles other than Normal (which is [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle)), by name, case ignored as in Excel: those of the file for a workbook read with SharpCell.Xlsx, and any added with [Workbook.SetNamedStyle](SharpCell.Workbook.md#setnamedstyle-string-cellstyle). Each has its [CellStyle.Name](SharpCell.CellStyle.md#name); giving one to [Cell.Style](SharpCell.Cell.md#style) applies it.
+
 <a id="sheets"></a>
 ### Sheets
 
@@ -256,6 +265,17 @@ Calculates every formula that is out of date: those whose inputs changed since t
 
 - `OperationCanceledException`: The token was cancelled; finished cells keep their new values, and their changes are reported by the next call.
 
+<a id="removenamedstyle-string"></a>
+### RemoveNamedStyle(string)
+
+```csharp
+public bool RemoveNamedStyle(string name)
+```
+
+Removes a named cell style, as Excel's Delete does: cells with it lose their style of their own and show the default one again.
+
+**Returns:** Whether there was such a style.
+
 <a id="removesheet-worksheet"></a>
 ### RemoveSheet(Worksheet)
 
@@ -274,6 +294,27 @@ Removes a sheet, as Excel's Delete Sheet does. References to it become `#REF!` (
 - `ArgumentException`: The sheet is not in this workbook.
 - `InvalidOperationException`: It is the last visible sheet while hidden ones remain: a workbook keeps at least one visible sheet.
 - `NotSupportedException`: A formula naming the sheet cannot be read by SharpCell (such as a link to another workbook), so it could not be broken as Excel breaks it.
+
+<a id="setnamedstyle-string-cellstyle"></a>
+### SetNamedStyle(string, CellStyle)
+
+```csharp
+public CellStyle SetNamedStyle(string name, CellStyle look)
+```
+
+Adds a named cell style, or changes the look of one, as Excel's New Cell Style and Modify do. Cells already given the style keep the look they had; give them the returned style again to change theirs. A built-in name such as `Good`, `Heading 1` or `20% - Accent1` is saved as Excel's built-in style of that name.
+
+**Parameters**
+
+- `name`: The name; not Normal, whose look is [Workbook.DefaultStyle](SharpCell.Workbook.md#defaultstyle).
+- `look`: How cells with the style look; its own name is replaced.
+
+**Returns:** The style with its name, to give to cells.
+
+**Exceptions**
+
+- `ArgumentException`: The name is empty or Normal.
+- `ArgumentNullException`: The look is null.
 
 <a id="themecolor-themecolor-double"></a>
 ### ThemeColor(ThemeColor, double)

@@ -80,6 +80,7 @@ internal sealed class WorkbookLook
     private WorkbookLook(Workbook workbook, IReadOnlyDictionary<Worksheet, string> parts)
     {
         DefaultStyle = workbook.DefaultStyle;
+        NamedStyles = new Dictionary<string, CellStyle>(workbook.NamedStyles, StringComparer.OrdinalIgnoreCase);
         DateSystem = workbook.DateSystem;
         Iteration = workbook.Iteration;
         StructureProtected = workbook.IsStructureProtected;
@@ -94,6 +95,9 @@ internal sealed class WorkbookLook
 
     /// <summary>Cells without a style of their own showed it.</summary>
     public CellStyle DefaultStyle { get; }
+
+    /// <summary>The named styles as read, by name.</summary>
+    public IReadOnlyDictionary<string, CellStyle> NamedStyles { get; }
 
     public DateSystem DateSystem { get; }
 

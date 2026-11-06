@@ -13,6 +13,7 @@ public sealed record CellStyle
     private readonly CellFont _font = CellFont.Default;
     private readonly int _indent;
     private readonly int _textRotation;
+    private readonly string? _name;
 
     /// <summary>A style like <see cref="Default"/>; set properties in an initializer.</summary>
     public CellStyle()
@@ -21,6 +22,23 @@ public sealed record CellStyle
 
     /// <summary>The style of a new workbook's cells: <see cref="CellFont.Default"/>, no fill, no borders, General alignment at the bottom.</summary>
     public static CellStyle Default { get; } = new();
+
+    /// <summary>
+    /// The named cell style this style is based on, as Excel's Home &gt; Cell Styles applies them,
+    /// such as <c>Good</c> or <c>Heading 1</c>; null for Normal. The look is this record's own: take
+    /// one from <see cref="Workbook.NamedStyles"/> to give a cell a named style's look and name.
+    /// </summary>
+    /// <exception cref="ArgumentException">The name is empty or only white space.</exception>
+    public string? Name
+    {
+        get => _name;
+        init
+        {
+            if (value is not null && string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("A style's name cannot be empty.", nameof(value));
+            _name = value is null || value.Equals("Normal", StringComparison.OrdinalIgnoreCase) ? null : value;
+        }
+    }
 
     /// <summary>The font.</summary>
     public CellFont Font

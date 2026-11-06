@@ -188,3 +188,8 @@ SharpCell.Worksheet.ColumnStyle(int column) -> SharpCell.CellStyle?
 SharpCell.Worksheet.RowStyle(int row) -> SharpCell.CellStyle?
 SharpCell.Worksheet.SetColumnStyle(int column, SharpCell.CellStyle? style) -> void
 SharpCell.Worksheet.SetRowStyle(int row, SharpCell.CellStyle? style) -> void
+SharpCell.CellStyle.Name.get -> string?
+SharpCell.CellStyle.Name.init -> void
+SharpCell.Workbook.NamedStyles.get -> System.Collections.Generic.IReadOnlyDictionary<string!, SharpCell.CellStyle!>!
+SharpCell.Workbook.RemoveNamedStyle(string! name) -> bool
+SharpCell.Workbook.SetNamedStyle(string! name, SharpCell.CellStyle! look) -> SharpCell.CellStyle!

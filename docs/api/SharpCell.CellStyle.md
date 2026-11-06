@@ -126,6 +126,19 @@ public bool Locked { get; init; }
 
 Whether the cell is locked: it cannot be changed while its sheet is protected (see [Worksheet.Protect](SharpCell.Worksheet.md#protect-string-sheetprotection)). Excel's default is true; set false for input cells.
 
+<a id="name"></a>
+### Name
+
+```csharp
+public string? Name { get; init; }
+```
+
+The named cell style this style is based on, as Excel's Home > Cell Styles applies them, such as `Good` or `Heading 1`; null for Normal. The look is this record's own: take one from [Workbook.NamedStyles](SharpCell.Workbook.md#namedstyles) to give a cell a named style's look and name.
+
+**Exceptions**
+
+- `ArgumentException`: The name is empty or only white space.
+
 <a id="patterncolor"></a>
 ### PatternColor
 

@@ -30,6 +30,7 @@ internal static class PackageWriter
         var styles = StylesWriter.Open(edit, source.WorkbookPart, relationships);
         if (workbook.DefaultStyle != source.Look.DefaultStyle)
             styles.SetDefault(workbook.DefaultStyle);
+        styles.SetNamedStyles(workbook.NamedStyles, source.Look.NamedStyles);
 
         var folder = source.WorkbookPart[..(source.WorkbookPart.LastIndexOf('/') + 1)];
         var parts = new Dictionary<Worksheet, string>();

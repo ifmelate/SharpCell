@@ -40,8 +40,24 @@ internal sealed class StylesWriter
     private XDocument? _document;
     private StyleSheet _read = new();
     private List<XElement> _xfs = [];
+    private List<XElement> _masters = [];
+    private Dictionary<string, int> _named = new(StringComparer.OrdinalIgnoreCase);
     private bool _changed;
     private readonly Dictionary<(int, CellStyle, string), int> _cache = [];
+
+    // Excel's built-in cell styles by name, with the builtinId that makes Excel treat them as its own.
+    private static readonly Dictionary<string, int> BuiltIn = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Comma"] = 3, ["Currency"] = 4, ["Percent"] = 5, ["Comma [0]"] = 6, ["Currency [0]"] = 7, ["Hyperlink"] = 8,
+        ["Followed Hyperlink"] = 9, ["Note"] = 10, ["Warning Text"] = 11, ["Title"] = 15, ["Heading 1"] = 16, ["Heading 2"] = 17,
+        ["Heading 3"] = 18, ["Heading 4"] = 19, ["Input"] = 20, ["Output"] = 21, ["Calculation"] = 22, ["Check Cell"] = 23,
+        ["Linked Cell"] = 24, ["Total"] = 25, ["Good"] = 26, ["Bad"] = 27, ["Neutral"] = 28, ["Accent1"] = 29, ["20% - Accent1"] = 30,
+        ["40% - Accent1"] = 31, ["60% - Accent1"] = 32, ["Accent2"] = 33, ["20% - Accent2"] = 34, ["40% - Accent2"] = 35,
+        ["60% - Accent2"] = 36, ["Accent3"] = 37, ["20% - Accent3"] = 38, ["40% - Accent3"] = 39, ["60% - Accent3"] = 40,
+        ["Accent4"] = 41, ["20% - Accent4"] = 42, ["40% - Accent4"] = 43, ["60% - Accent4"] = 44, ["Accent5"] = 45,
+        ["20% - Accent5"] = 46, ["40% - Accent5"] = 47, ["60% - Accent5"] = 48, ["Accent6"] = 49, ["20% - Accent6"] = 50,
+        ["40% - Accent6"] = 51, ["60% - Accent6"] = 52, ["Explanatory Text"] = 53,
+    };
 
     private StylesWriter(PackageEdit edit, string workbookPart, string? part, CellColor[] theme)
     {
@@ -146,7 +162,7 @@ internal sealed class StylesWriter
             return;
         foreach (var section in _document!.Root!.Elements())
         {
-            if (section.Attribute("count") is not null || section.Name.LocalName is "numFmts" or "fonts" or "fills" or "borders" or "cellXfs" or "dxfs")
+            if (section.Attribute("count") is not null || section.Name.LocalName is "numFmts" or "fonts" or "fills" or "borders" or "cellStyleXfs" or "cellXfs" or "cellStyles" or "dxfs")
                 section.SetAttributeValue("count", section.Elements().Count());
         }
 
@@ -170,6 +186,12 @@ internal sealed class StylesWriter
             throw new System.IO.InvalidDataException("The styles part is not a SpreadsheetML style sheet.");
         _read = StylesReader.ReadStyleSheet(_document.Root, _theme);
         _xfs = Section("cellXfs").Elements(Main + "xf").ToList();
+        _masters = _document.Root.Element(Main + "cellStyleXfs")?.Elements(Main + "xf").ToList() ?? [];
+        foreach (var entry in _document.Root.Element(Main + "cellStyles")?.Elements(Main + "cellStyle") ?? [])
+        {
+            if ((string?)entry.Attribute("name") is { } name && int.TryParse((string?)entry.Attribute("xfId"), NumberStyles.None, CultureInfo.InvariantCulture, out var id))
+                _named.TryAdd(name, id);
+        }
         if (_xfs.Count == 0)
         {
             var xf = new XElement(Main + "xf", new XAttribute("numFmtId", 0), new XAttribute("fontId", Font(CellFont.Default)),
@@ -199,6 +221,71 @@ internal sealed class StylesWriter
             SetProtection(xf, style);
         if (formatCode != (old.Format?.FormatCode ?? "General"))
             Set(xf, "numFmtId", NumberFormatId(formatCode), "applyNumberFormat");
+        if (!string.Equals(style.Name, was.Name, StringComparison.Ordinal))
+            xf.SetAttributeValue("xfId", style.Name is { } name ? MasterFor(name, style) : 0);
+    }
+
+    /// <summary>
+    /// Adds the workbook's named styles the file lacks, changes the look of those whose look changed,
+    /// and drops those removed from the workbook (their cell styles are no longer used).
+    /// </summary>
+    public void SetNamedStyles(IReadOnlyDictionary<string, CellStyle> now, IReadOnlyDictionary<string, CellStyle> loaded)
+    {
+        if (now.Count == loaded.Count && now.All(pair => loaded.TryGetValue(pair.Key, out var was) && was == pair.Value))
+            return;
+        Load();
+        foreach (var (name, style) in now)
+        {
+            if (!_named.TryGetValue(name, out var index))
+            {
+                MasterFor(name, style);
+            }
+            else if (loaded.TryGetValue(name, out var was) && was != style && index < _masters.Count)
+            {
+                Apply(_masters[index], new CellXf(null, was), style, "General");
+                _cache.Clear();
+                _changed = true;
+            }
+        }
+
+        foreach (var name in loaded.Keys.Where(name => !now.ContainsKey(name)))
+        {
+            _document!.Root!.Element(Main + "cellStyles")?.Elements(Main + "cellStyle")
+                .Where(entry => string.Equals((string?)entry.Attribute("name"), name, StringComparison.OrdinalIgnoreCase)).Remove();
+            _named.Remove(name);
+            _changed = true;
+        }
+    }
+
+    // The cellStyleXfs entry of a named style, added with its cellStyles entry when the file has none.
+    private int MasterFor(string name, CellStyle look)
+    {
+        if (_named.TryGetValue(name, out var existing))
+            return existing;
+        var section = Section("cellStyleXfs");
+        if (_masters.Count == 0)
+        {
+            var normal = new XElement(Main + "xf", new XAttribute("numFmtId", 0), new XAttribute("fontId", 0), new XAttribute("fillId", 0), new XAttribute("borderId", 0));
+            section.Add(normal);
+            _masters.Add(normal);
+        }
+
+        var master = new XElement(_masters[0]);
+        master.Attributes().Where(a => a.Name.LocalName.StartsWith("apply", StringComparison.Ordinal)).Remove();
+        var basis = _read.Xfs.Count > 0 ? _read.Xfs[0] with { Format = null } : new CellXf(null, CellStyle.Default);
+        Apply(master, basis, look with { Name = basis.Style.Name }, "General");   // the look only: a style entry has no xfId
+        section.Add(master);
+        _masters.Add(master);
+        var index = _masters.Count - 1;
+        var styles = Section("cellStyles");
+        if (!styles.Elements(Main + "cellStyle").Any())
+            styles.Add(new XElement(Main + "cellStyle", new XAttribute("name", "Normal"), new XAttribute("xfId", 0), new XAttribute("builtinId", 0)));
+        styles.Add(new XElement(Main + "cellStyle", new XAttribute("name", name), new XAttribute("xfId", index),
+            BuiltIn.TryGetValue(name, out var builtIn) ? new XAttribute("builtinId", builtIn) : null,
+            BuiltIn.ContainsKey(name) ? new XAttribute("customBuiltin", 1) : null));
+        _named[name] = index;
+        _changed = true;
+        return index;
     }
 
     private static void Set(XElement xf, string attribute, int value, string apply)
